@@ -2,7 +2,10 @@
 // 米家控制台后端 —— Cloudflare Pages Functions catch-all 路由
 // 挂到 /api/login/*、/api/spec、/app/*；其余请求回落静态资源，
 // 与 functions/api/kg.js 等现有接口互不影响（具体路由优先于 catch-all）。
-// 签名与扫码登录流程参考：github.com/Zayrick gist 62701850c833c4051356268fa9afc3ff
+//
+// 米家 API 采用 RC4 加密参数方案（rc4_hash__ + 加密 data + signature +
+// ssecurity + _nonce），与 Do1e/mijia-api、micloud 等实现一致；
+// 扫码登录流程参考：github.com/Zayrick gist 62701850c833c4051356268fa9afc3ff
 // =====================================================================
 
 const SID = 'xiaomiio'
@@ -35,7 +38,7 @@ function checkPin(request, env) {
   return request.headers.get('X-Access-Pin') === pw
 }
 
-// ---------- 签名工具 ----------
+// ---------- 编解码工具 ----------
 function base64ToUint8Array(base64) {
   const binary = atob(base64)
   const bytes = new Uint8Array(binary.length)
@@ -56,6 +59,30 @@ function randomString(len = 16) {
   return res
 }
 
+// ---------- RC4（米家云加密方案，前 1024 字节丢弃） ----------
+function rc4Crypt(keyBytes, dataBytes) {
+  const s = new Uint8Array(256)
+  for (let i = 0; i < 256; i++) s[i] = i
+  let j = 0
+  for (let i = 0; i < 256; i++) {
+    j = (j + s[i] + keyBytes[i % keyBytes.length]) & 0xff
+    const t = s[i]; s[i] = s[j]; s[j] = t
+  }
+  const out = new Uint8Array(dataBytes.length)
+  let i = 0; j = 0
+  const total = 1024 + dataBytes.length
+  for (let k = 0; k < total; k++) {
+    i = (i + 1) & 0xff
+    j = (j + s[i]) & 0xff
+    const t = s[i]; s[i] = s[j]; s[j] = t
+    const c = s[(s[i] + s[j]) & 0xff]
+    if (k >= 1024) out[k - 1024] = dataBytes[k - 1024] ^ c
+  }
+  return out
+}
+
+// ---------- 米家签名 ----------
+// nonce：8 字节随机数 + 分钟级时间戳（大端）
 function generateNonce() {
   const randomBytes = new Uint8Array(8)
   crypto.getRandomValues(randomBytes)
@@ -67,6 +94,7 @@ function generateNonce() {
   return uint8ToBase64(combined)
 }
 
+// signedNonce = base64(SHA256(ssecurity || nonce))
 async function generateSignedNonce(secret, nonce) {
   const secretBytes = base64ToUint8Array(secret)
   const nonceBytes = base64ToUint8Array(nonce)
@@ -77,15 +105,13 @@ async function generateSignedNonce(secret, nonce) {
   return uint8ToBase64(new Uint8Array(hash))
 }
 
-async function generateSignature(urlPath, signedNonce, nonce, data) {
-  const signString = urlPath + '&' + signedNonce + '&' + nonce + '&data=' + data
-  const key = await crypto.subtle.importKey(
-    'raw', base64ToUint8Array(signedNonce),
-    { name: 'HMAC', hash: { name: 'SHA-256' } },
-    false, ['sign']
-  )
-  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signString))
-  return uint8ToBase64(new Uint8Array(signature))
+// encSignature = base64(SHA1("POST&<uri>&k1=v1&k2=v2&...&<signedNonce>"))
+async function encSignature(uri, method, signedNonce, params) {
+  const parts = [method.toUpperCase(), uri]
+  for (const [k, v] of Object.entries(params)) parts.push(k + '=' + v)
+  parts.push(signedNonce)
+  const hash = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(parts.join('&')))
+  return uint8ToBase64(new Uint8Array(hash))
 }
 
 function extractCookie(headers, name) {
@@ -147,34 +173,59 @@ async function pollQRCode(lp, deviceId) {
   }
 }
 
-// ---------- 米家 API 签名转发 ----------
-async function proxyMiAPI(request, upstreamPath) {
-  const bodyJson = await request.json()
-  const { userId, serviceToken, deviceId, securityToken, data } = bodyJson || {}
-  if (!userId || !serviceToken || !deviceId || !securityToken || data === undefined) {
-    return json({ error: '缺少身份验证信息或 data 字段' }, 400)
-  }
-  // upstreamPath 形如 '/app/miotspec/prop/set'；签名用的路径要去掉 /app 前缀
-  const miPath = upstreamPath.replace(/^\/app/, '')
+// ---------- 米家 API 请求（RC4 加密方案） ----------
+// uri 形如 '/home/home_device_list'（不含 /app 前缀）；实际请求 api.io.mi.com/app<uri>
+async function miRequest(creds, uri, data) {
+  const ssecurity = creds.securityToken
   const nonce = generateNonce()
-  const signedNonce = await generateSignedNonce(securityToken, nonce)
-  const dataString = typeof data === 'string' ? data : JSON.stringify(data)
-  const signature = await generateSignature(miPath, signedNonce, nonce, dataString)
+  const signedNonce = await generateSignedNonce(ssecurity, nonce)
+  const dataStr = JSON.stringify(data)
+  const keyBytes = base64ToUint8Array(signedNonce)
+  const te = new TextEncoder()
 
-  const formParams = new URLSearchParams({ _nonce: nonce, data: dataString, signature })
-  const remote = await fetch(API_HOST + upstreamPath, {
+  // 1. rc4_hash__ 对明文参数签名
+  const plainParams = { data: dataStr }
+  const rc4Hash = await encSignature(uri, 'POST', signedNonce, plainParams)
+
+  // 2. 用 signedNonce 作 RC4 密钥加密各参数值
+  const encData = uint8ToBase64(rc4Crypt(keyBytes, te.encode(dataStr)))
+  const encHash = uint8ToBase64(rc4Crypt(keyBytes, te.encode(rc4Hash)))
+
+  // 3. 对加密后的参数再签名
+  const signature = await encSignature(uri, 'POST', signedNonce, { data: encData, rc4_hash__: encHash })
+
+  const form = new URLSearchParams({
+    data: encData,
+    rc4_hash__: encHash,
+    signature,
+    ssecurity,
+    _nonce: nonce
+  })
+  const remote = await fetch(API_HOST + '/app' + uri, {
     method: 'POST',
     headers: {
       'User-Agent': DEFAULT_UA,
       'x-xiaomi-protocal-flag-cli': 'PROTOCAL-HTTP2',
+      'miot-encrypt-algorithm': 'ENCRYPT-RC4',
       'Content-Type': 'application/x-www-form-urlencoded',
-      Cookie: 'serviceToken=' + serviceToken + '; userId=' + userId + '; PassportDeviceId=' + deviceId
+      Cookie: 'serviceToken=' + creds.serviceToken + '; yetAnotherServiceToken=' + creds.serviceToken +
+        '; userId=' + creds.userId + '; PassportDeviceId=' + creds.deviceId +
+        '; locale=zh_CN; timezone=GMT+08:00; timezone_id=Asia/Shanghai; countryCode=CN'
     },
-    body: formParams
+    body: form
   })
-  const respHeaders = new Headers(remote.headers)
-  Object.entries(cors()).forEach(([k, v]) => respHeaders.set(k, v))
-  return new Response(remote.body, { status: remote.status, headers: respHeaders })
+  const text = (await remote.text()).trim()
+  // 响应可能是明文 JSON，也可能是 RC4 加密的（需用 signedNonce 解密）
+  try {
+    return JSON.parse(text)
+  } catch (e) {
+    try {
+      const dec = rc4Crypt(keyBytes, base64ToUint8Array(text))
+      return JSON.parse(new TextDecoder().decode(dec))
+    } catch (e2) {
+      return { code: -1, message: '响应解析失败: ' + text.slice(0, 150) }
+    }
+  }
 }
 
 // ---------- 路由识别：支持任意子目录前缀（如 /mijia-pages/api/...） ----------
@@ -223,10 +274,17 @@ async function handle(request, env) {
     return new Response(r.body, { status: r.status, headers: { 'Content-Type': 'application/json; charset=UTF-8', ...cors() } })
   }
 
-  // 米家 API 签名转发
+  // 米家 API 签名转发（RC4 加密方案）
   if (request.method === 'POST' && loc.kind === 'app') {
     try {
-      return await proxyMiAPI(request, sub)
+      const bodyJson = await request.json()
+      const { userId, serviceToken, deviceId, securityToken, data } = bodyJson || {}
+      if (!userId || !serviceToken || !deviceId || !securityToken || data === undefined) {
+        return json({ error: '缺少身份验证信息或 data 字段' }, 400)
+      }
+      // 前端路径 '/app/miotspec/prop/set' → 米家 uri '/miotspec/prop/set'
+      const uri = sub.replace(/^\/app/, '')
+      return json(await miRequest({ userId, serviceToken, deviceId, securityToken }, uri, data))
     } catch (e) {
       return json({ error: e.message }, 500)
     }
