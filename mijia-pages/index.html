@@ -444,20 +444,22 @@
     if (!type) return Promise.resolve(null)
     if (specCache[type]) return Promise.resolve(specCache[type])
     return api('api/spec?type=' + encodeURIComponent(type)).then(asJson).then(function (j) {
-      var inst = j.instance || null
+      var inst = j.instance || (j && j.services ? j : null)   // 后端直接返回规格本体，顶层即 services
       if (inst) { specCache[type] = inst; saveSpecCache() }
       return inst
     }).catch(function () { return null })
   }
 
-  // ---- spec 解析：提取可控制属性 ----
+  // ---- spec 解析：提取可控制属性（miot-spec 格式：服务与属性各自带 iid，完整编号 = 服务iid + 属性iid） ----
   function extractControls(inst) {
     if (!inst) return []
     var out = []
     inst.services.forEach(function (svc) {
-      (svc.properties || []).forEach(function (p) {
+      var siid = svc.iid
+      ;(svc.properties || []).forEach(function (p) {
+        var piid = p.iid
         var access = p.access || []
-        var ctl = { siid: p.siid, piid: p.piid, name: (p.description && p.description !== '' ? p.description : p.name) || (p.siid + '-' + p.piid) }
+        var ctl = { siid: siid, piid: piid, name: (p.description && p.description !== '' ? p.description : p.name) || (siid + '-' + piid) }
         if (access.indexOf('write') >= 0) {
           if (p.format === 'bool') ctl.kind = 'bool'
           else if (['uint8','uint16','uint32','int8','int16','int32','float'].indexOf(p.format) >= 0) {
