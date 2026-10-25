@@ -480,6 +480,91 @@ body.lb-lock{overflow:hidden}
   .lb-btn{width:42px;height:42px}
 }
 
+/* ===================== 相册：子相册卡片 / 视频与 Live Photo ===================== */
+/* 瓷砖里的视频：抓首帧当封面，铺满正方形 */
+.ph-tile video{
+  width:100%;height:100%;object-fit:cover;display:block;
+  background:#000;
+}
+/* Live Photo：静态图上盖一层动态视频，悬停（电脑）时播放，平时只露静态图 */
+.ph-tile .ph-live-v{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  display:none;pointer-events:none;background:#000;
+}
+.ph-tile:hover .ph-live-v{display:block}
+/* 瓷砖角标：LIVE / 视频 */
+.ph-badge{
+  position:absolute;left:8px;top:8px;z-index:3;
+  padding:3px 9px;border-radius:999px;
+  font-size:10.5px;font-weight:800;letter-spacing:.08em;color:#fff;
+  background:rgba(8,12,24,.55);backdrop-filter:blur(6px);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);
+  pointer-events:none;
+}
+/* 子相册卡片网格 */
+.album-label{
+  display:flex;align-items:center;gap:14px;
+  font-size:12.5px;font-weight:700;letter-spacing:.22em;
+  color:var(--text-2);text-transform:uppercase;
+  margin:6px 0 16px;
+}
+.album-label::before{
+  content:"";width:34px;height:2.5px;border-radius:99px;
+  background:var(--accent);
+}
+.album-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:14px;margin-bottom:34px;
+}
+.al-card{
+  position:relative;text-align:left;
+  border-radius:16px;overflow:hidden;
+  background:var(--card);border:1px solid var(--card-border);
+  box-shadow:var(--shadow);cursor:pointer;
+  transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s;
+}
+.al-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.al-card:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px}
+.al-cover{
+  display:block;position:relative;aspect-ratio:4/3;
+  background:var(--img-placeholder);
+}
+.al-cover img{width:100%;height:100%;object-fit:cover}
+.al-folder{display:grid;place-items:center;height:100%;font-size:34px}
+.al-name{
+  display:block;margin:10px 12px 0;
+  font-size:14px;font-weight:700;color:var(--text-1);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.al-count{
+  display:block;margin:3px 12px 12px;
+  font-size:11.5px;color:var(--text-3);
+}
+/* 相册页里的返回按钮（进入子相册后出现） */
+.al-back{
+  display:inline-flex;align-items:center;gap:6px;
+  margin-top:16px;padding:8px 18px;border-radius:999px;
+  font-size:13px;font-weight:600;color:var(--text-2);
+  background:var(--card);border:1px solid var(--card-border);
+  transition:color .2s,background .2s,transform .2s;
+}
+.al-back:hover{color:var(--accent);background:var(--accent-soft)}
+.al-back:active{transform:scale(.96)}
+/* 灯箱：视频与 LIVE 切换按钮 */
+.lightbox video{
+  position:relative;z-index:1;
+  max-width:88vw;max-height:80vh;border-radius:16px;
+  box-shadow:0 40px 100px rgba(0,0,0,.6);
+  background:#000;
+  animation:fadeUp .3s cubic-bezier(.2,.7,.2,1) both;
+}
+.lb-live{
+  right:22px;top:82px;width:auto;min-width:48px;height:34px;border-radius:999px;
+  padding:0 14px;font-size:12px;font-weight:800;letter-spacing:.1em;
+  color:#ffd23f;border:1.5px solid rgba(255,210,63,.7);
+}
+
 /* ===================== 内页标题 ===================== */
 .page-head{padding:130px 0 30px}
 .page-head h1{
@@ -811,6 +896,8 @@ setTimeout(function(){var b=document.getElementById("boot");if(b)b.classList.add
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
   </button>
   <img id="lbImg" src="" alt="">
+  <video id="lbVideo" playsinline style="display:none"></video>
+  <button class="lb-btn lb-live" id="lbLiveBtn" type="button" aria-label="Live Photo">LIVE</button>
   <button class="lb-btn lb-next" id="lbNext" aria-label="下一张">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
   </button>
@@ -836,7 +923,7 @@ const PROJECTS=[
    u:"https://jianye.pages.dev/pe",ic:"🧰",c:"linear-gradient(135deg,#8e7bff,#4a36c4)"},
   {zh:"鉴业浏览器主页",en:"Jianye Browser Homepage",
    dzh:"摒弃弹窗与冗余推荐，打开即是搜索框的极简浏览器主页。",den:"A minimal browser homepage — no popups or clutter, just a search box the moment you open a tab.",
-   u:"https://jianye.pages.dev/homepage-sharepage",ic:"🏠",c:"linear-gradient(135deg,#34d399,#0d9488)"},
+   u:"https://jianye.pages.dev/homepage/sharepage",ic:"🏠",c:"linear-gradient(135deg,#34d399,#0d9488)"},
   {zh:"Jianye AI 智能助手",en:"Jianye AI Assistant",
    dzh:"接入大模型的智能对话助手。",den:"A smart chat assistant powered by large language models.",
    u:"https://jianye.pages.dev/ai",ic:"🤖",c:"linear-gradient(135deg,#ff6a8e,#c01e52)"},
@@ -849,7 +936,7 @@ const PROJECTS=[
 ];
 /* ---------- 个人信息 ---------- */
 const EMAIL="aimjianye@outlook.com";
-const AVATAR="%E5%A4%B4%E5%83%8F.png";   /* 站点根目录的「头像.png」（首页已在根目录，直接同级引用） */
+const AVATAR="avatar.png";   /* 站点根目录的 avatar.png（首页已在根目录，直接同级引用） */
 const CHIPS=[
   {i:"📍",zh:"中国",en:"China"},
   {i:"💻",zh:"全栈开发",en:"Full-stack Dev"},
@@ -875,37 +962,54 @@ const FRIENDS=[
    u:"https://www.xgpe.top",logo:"https://www.xgpe.top/images/logo.jpg"}
 ];
 
-/* ---------- 图库：照片来自站点根目录下的「图片」文件夹 ----------
-   new/index.html 在子目录里，所以先试同级的 图片/，再试上一级的 ../图片/。
-   两种来源：① 本地服务器/静态托管的目录列表；② 直连打开（file://）时用兜底清单。 */
-const PHOTO_DIRS=["图片/","../图片/"];
+/* ---------- 相册：媒体来自站点根目录下的「Photo Album」文件夹 ----------
+   Photo Album 里的照片/视频是「全部」；里面再建的子文件夹是各自的相册，
+   子文件夹之间互不混淆（图库页顶部会列出相册卡片，点进去只看该相册）。
+   支持三种内容：普通图片、视频（mp4/mov/webm…）、Live Photo
+   （同一相册里「同名图片 + 同名 .mov/.mp4」自动识别为一组 Live Photo，
+   悬停/灯箱里可以看到动态效果）。
+   两种来源：① 本地服务器/静态托管的目录列表；② GitHub API 兜底。 */
+const PHOTO_DIRS=["Photo Album/","../Photo Album/"];
 const IMG_RE=/\.(jpe?g|png|gif|webp|bmp|avif|heic|heif)$/i;
+const VID_RE=/\.(mp4|mov|m4v|webm)$/i;
+const MEDIA_RE=/\.(jpe?g|png|gif|webp|bmp|avif|heic|heif|mp4|mov|m4v|webm)$/i;
 const GH_REPO="jianye50/Jianye-Cloud", GH_BRANCH="main";
-/* file:// 下读不到目录时用的兜底清单（按文件名倒序，新增照片请用本地服务器打开自动读取） */
+/* file:// 下读不到目录时用的兜底清单（只覆盖 Photo Album 根目录的图片，
+   子相册与视频需用本地服务器打开自动读取；新增照片请用本地服务器打开） */
 const PHOTO_FALLBACK=[
   "1790351352075.jpg","1790351352067.jpg","1790351352057.jpg","1790351352047.jpg",
   "1790351352038.jpg","1790351352027.jpg","1790351352014.jpg","1790351352003.jpg",
   "1790351351987.jpg","1790351351975.jpg","1790351351943.jpg","1790351351908.jpg",
   "1790351351896.jpeg","1790351351878.jpeg"
 ];
-let photos=[];            // [{src,name,fb}]
+let photos=[];            // [{src,name,album,type:"image"|"video"|"live",live:视频地址,fb}]
+let albums=[];            // [{name,count,cover}]  子相册列表（cover 为该相册第一张图片）
+let galleryFilter="";     // 当前查看的子相册名（"" = 全部）
 let photosStatus="loading"; // loading | ready | error
 
 /* ---------- 国际化 ---------- */
 const I18N={
   zh:{
     brand:"鉴业の小站",
-    nav:{home:"首页",gallery:"图库",blog:"博客",about:"关于"},
+    nav:{home:"首页",gallery:"相册",blog:"博客",about:"关于"},
     langTip:"切换到英文",
     cloud:"文件传送",
     hero:{badge:"个人空间",sub:"愿我们拥有的时候不要毁，<br>失去的时候不要悔。",read:"浏览博客",aboutBtn:"关于我",hint:"向下浏览"},
-    home:{gallery:"图库",more:"查看全部照片",projects:"项目",moreProj:"查看全部项目"},
+    home:{gallery:"相册",more:"查看全部照片",projects:"项目",moreProj:"查看全部项目"},
     gallery:{
-      title:"图库",
-      sub:n=>`共 ${n} 张照片 · 点击可放大`,
-      tip:"照片放在站点根目录的「图片」文件夹里，增删后刷新页面即可。",
-      empty:"「图片」文件夹里还没有照片，把图片放进去后刷新页面试试。",
-      err:"暂时读不到「图片」文件夹。<br>用本地服务器打开本页即可自动扫描，例如在站点目录运行 <code>python -m http.server</code>。"
+      title:"相册",
+      sub:n=>`共 ${n} 张照片 / 视频 · 点击查看`,
+      tip:"照片放在站点根目录的「Photo Album」文件夹里；在里面建的子文件夹会自动成为独立相册，视频与 Live Photo（同名图片 + 同名 mov/mp4）也会一起展示。增删后刷新页面即可。",
+      empty:"「Photo Album」文件夹里还没有照片，把图片放进去后刷新页面试试。",
+      err:"暂时读不到「Photo Album」文件夹。<br>用本地服务器打开本页即可自动扫描，例如在站点目录运行 <code>python -m http.server</code>。",
+      albums:"子相册",
+      all:"全部",
+      back:"← 全部相册",
+      albumCount:n=>`${n} 项`,
+      liveTag:"LIVE",
+      videoTag:"视频",
+      liveBtn:"播放动态效果",
+      stillBtn:"查看静态照片"
     },
     blog:{
       title:"博客",
@@ -940,17 +1044,25 @@ const I18N={
   },
   en:{
     brand:"Jianye's Corner",
-    nav:{home:"Home",gallery:"Gallery",blog:"Blog",about:"About"},
+    nav:{home:"Home",gallery:"Albums",blog:"Blog",about:"About"},
     langTip:"Switch to Chinese",
     cloud:"File Transfer",
     hero:{badge:"PERSONAL SPACE",sub:"Making things, keeping notes,<br>and the light I like.",read:"Browse Blog",aboutBtn:"About Me",hint:"Scroll down"},
-    home:{gallery:"Gallery",more:"View all photos",projects:"Projects",moreProj:"View all projects"},
+    home:{gallery:"Albums",more:"View all photos",projects:"Projects",moreProj:"View all projects"},
     gallery:{
-      title:"Gallery",
-      sub:n=>`${n} photo${n===1?"":"s"} · click to enlarge`,
-      tip:"Photos live in the “图片” folder at the site root — add or remove some and refresh.",
-      empty:"No photos in the “图片” folder yet. Drop some in and refresh.",
-      err:"Can't read the “图片” folder right now.<br>Serve the site locally to scan it, e.g. run <code>python -m http.server</code> in the site folder."
+      title:"Albums",
+      sub:n=>`${n} photos & videos · click to view`,
+      tip:"Media lives in the “Photo Album” folder at the site root — subfolders inside become separate albums, and videos / Live Photos (same-named image + mov/mp4) show up too. Add or remove some and refresh.",
+      empty:"No media in the “Photo Album” folder yet. Drop some in and refresh.",
+      err:"Can't read the “Photo Album” folder right now.<br>Serve the site locally to scan it, e.g. run <code>python -m http.server</code> in the site folder.",
+      albums:"Sub-albums",
+      all:"All",
+      back:"← All albums",
+      albumCount:n=>`${n} item${n===1?"":"s"}`,
+      liveTag:"LIVE",
+      videoTag:"Video",
+      liveBtn:"Play live effect",
+      stillBtn:"View still photo"
     },
     blog:{
       title:"Blog",
@@ -1037,149 +1149,278 @@ function setLang(v){
 }
 
 /* =====================================================================
- *  图库：扫描目录 → 渲染照片墙 → 灯箱
+ *  相册：扫描目录 → 相册/照片墙 → 灯箱
  * ===================================================================== */
 
-/* 目录文件清单：优先读服务器的目录列表；静态托管没有目录列表时回退 GitHub API */
-async function listDirFiles(dir,regex){
+/* 读取一个目录的条目（媒体文件 + 子文件夹）：优先解析服务器的目录列表页。
+   子文件夹会被当作独立相册，媒体文件按类型（图片/视频）识别。 */
+async function listEntries(dir){
   try{
-    /* 直接把相对目录交给 URL 解析：'图片/'、'../图片/' 都能正确落到目录上 */
     const base=new URL(dir,location.href);
     const res=await fetch(base.href);
     if(res.ok){
       const doc=new DOMParser().parseFromString(await res.text(),"text/html");
-      const urls=new Set();
+      const files=new Set(),dirs=new Set();
       doc.querySelectorAll("a[href]").forEach(a=>{
-        let h=a.getAttribute("href");
-        if(!h)return;
-        h=h.split("#")[0];
-        if(!regex.test(h.split("?")[0]))return;
-        urls.add(new URL(h,base.href).href);
+        let h=a.getAttribute("href"); if(!h)return;
+        h=h.split("#")[0].split("?")[0];
+        if(!h||h==="."||h===".."||/\/(\.|\.\.)\/?$/.test(h))return;
+        if(/\/$/.test(h)){
+          const n=decodeURIComponent(h.replace(/\/$/,"").split("/").pop());
+          if(n)dirs.add(n);
+        }else if(MEDIA_RE.test(h)){
+          files.add(new URL(h,base.href).href);
+        }
       });
-      if(urls.size)return Array.from(urls);
+      if(files.size||dirs.size)return {files:Array.from(files),dirs:Array.from(dirs)};
     }
   }catch(e){}
   return null;
 }
-async function listFromGitHub(dir){
+/* GitHub API：列出仓库里某个目录的媒体文件与子文件夹（静态托管没有目录列表时兜底） */
+async function listEntriesGH(dir){
   try{
-    const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${encodeURIComponent(dir)}?ref=${GH_BRANCH}`,
+    const path=dir.split("/").filter(Boolean).map(encodeURIComponent).join("/");
+    const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`,
       {headers:{Accept:"application/vnd.github+json"}});
     if(!r.ok)return null;
     const arr=await r.json();
     if(!Array.isArray(arr))return null;
-    const files=arr.filter(x=>x.type==="file"&&IMG_RE.test(x.name));
-    if(!files.length)return null;
-    /* 站点可能部署在域名根路径，也可能在子目录（如 /one/）。
-       GitHub API 给的是仓库根目录相对路径，直链拼法要靠探针验证：
-       先试页面相对路径，再试域名根路径，都不行就用 GitHub raw 直链。 */
-    const bases=[
-      new URL(dir,location.href),
-      new URL("/"+encodeURIComponent(dir)+"/",location.origin)
-    ];
-    for(const base of bases){
-      let ok=false;
-      try{
-        const probe=await fetch(new URL(encodeURIComponent(files[0].name),base).href,{method:"HEAD"});
-        ok=probe.ok&&(probe.headers.get("content-type")||"").toLowerCase().startsWith("image");
-      }catch(e){}
-      if(ok)return files.map(x=>new URL(encodeURIComponent(x.name),base).href);
-    }
-    const raw=files.map(x=>x.download_url).filter(Boolean);
-    return raw.length?raw:null;
+    const names=arr.filter(x=>x.type==="file"&&MEDIA_RE.test(x.name)).map(x=>x.name);
+    const dirs=arr.filter(x=>x.type==="dir").map(x=>x.name);
+    const files=await resolveGHUrls(dir,names);
+    return {files:files,dirs:dirs};
   }catch(e){ return null; }
+}
+/* GitHub 给的是仓库相对路径，直链拼法要靠探针验证：
+   先试页面相对路径，再试域名根路径，都不行就用 raw 直链。 */
+async function resolveGHUrls(dir,names){
+  if(!names.length)return [];
+  const dirEnc=dir.split("/").filter(Boolean).map(encodeURIComponent).join("/")+"/";
+  const bases=[
+    new URL(dirEnc,location.href),
+    new URL("/"+dirEnc,location.origin)
+  ];
+  for(const base of bases){
+    let ok=false;
+    try{
+      const probe=await fetch(new URL(encodeURIComponent(names[0]),base).href,{method:"HEAD"});
+      ok=probe.ok;
+    }catch(e){}
+    if(ok)return names.map(n=>new URL(encodeURIComponent(n),base).href);
+  }
+  const raw=dir.split("/").filter(Boolean).map(encodeURIComponent).join("/");
+  return names.map(n=>`https://raw.githubusercontent.com/${GH_REPO}/${GH_BRANCH}/${raw}/${encodeURIComponent(n)}`);
 }
 function nameOf(src){
   return decodeURIComponent(String(src).split("/").pop().split("?")[0]);
 }
-function sortPhotos(){
-  photos.sort((a,b)=>b.name.localeCompare(a.name,"zh-Hans-CN",{numeric:true}));
-}
+/* 装载整个相册库：
+   ① 扫 Photo Album 根目录（图片/视频 = 「全部」；子文件夹 = 子相册）
+   ② 逐个扫描子相册里的媒体
+   ③ 同一相册里「同名图片 + 同名视频」自动配成 Live Photo（视频不再单独显示）
+   ④ 汇总 photos 与 albums（相册封面取该相册第一张媒体） */
 async function loadPhotos(){
-  let urls=null;
+  const isFile=location.protocol==="file:";
+  let root=null,rootBase=PHOTO_DIRS[0];
   for(const dir of PHOTO_DIRS){
-    urls=await listDirFiles(dir,IMG_RE);
-    if(urls)break;
+    const r=await listEntries(dir);
+    if(r){ root=r; rootBase=dir; break; }
   }
-  if(!urls && location.protocol!=="file:") urls=await listFromGitHub("图片");
-
-  if(urls){
-    photos=urls.map(src=>{
-      const file=nameOf(src);
-      return {src,name:file.replace(/\.[^.]+$/,""),fb:""};
-    });
-    sortPhotos();
-    photosStatus="ready";
-  }else if(location.protocol==="file:" && PHOTO_FALLBACK.length){
-    /* 直接双击打开：读不到目录，用兜底清单，图片分别试 ../图片/ 与 图片/ */
-    photos=PHOTO_FALLBACK.map(file=>({
-      src:PHOTO_DIRS[1]+encodeURIComponent(file),
-      name:file.replace(/\.[^.]+$/,""),
-      fb:file
-    }));
-    photosStatus="ready";
-  }else{
-    photos=[]; photosStatus="error";
+  if(!root&&!isFile)root=await listEntriesGH(PHOTO_DIRS[0].replace(/\/$/,""));
+  if(!root){
+    if(isFile&&PHOTO_FALLBACK.length){
+      /* 直接双击打开：读不到目录，用兜底清单（只覆盖根目录图片） */
+      photos=PHOTO_FALLBACK.map(file=>({
+        src:PHOTO_DIRS[0]+encodeURIComponent(file),
+        name:file.replace(/\.[^.]+$/,""),
+        album:"",type:"image",live:"",fb:file
+      }));
+      photosStatus="ready";
+      paintPhotoGrids();
+      return;
+    }
+    photos=[]; albums=[]; photosStatus="error";
+    paintPhotoGrids();
+    return;
   }
+  const ghDir=PHOTO_DIRS[0].replace(/\/$/,"");
+  const items=[];
+  root.files.forEach(u=>items.push({src:u,album:""}));
+  const rootDirs=root.dirs||[];
+  for(const dname of rootDirs){
+    let r=await listEntries(rootBase+dname+"/");
+    if(!r&&!isFile)r=await listEntriesGH(ghDir+"/"+dname);
+    if(!r||!r.files||!r.files.length)continue;   /* 空相册 / 读不到 → 先不显示 */
+    r.files.forEach(u=>items.push({src:u,album:dname}));
+  }
+  /* 分类：视频 / 图片 */
+  items.forEach(it=>{
+    const f=nameOf(it.src);
+    it.name=f.replace(/\.[^.]+$/,"");
+    it.type=VID_RE.test(f)?"video":"image";
+    it.live=""; it.fb="";
+  });
+  /* Live Photo 配对：同名（忽略大小写）且在同一相册（根目录也算一个"相册"） */
+  const vidMap=new Map();
+  items.forEach(it=>{ if(it.type==="video")vidMap.set((it.album+"|"+it.name).toLowerCase(),it); });
+  const out=[];
+  items.forEach(it=>{
+    if(it.type==="video"){
+      const paired=items.some(x=>x.type==="image"&&x.album===it.album
+        &&x.name.toLowerCase()===it.name.toLowerCase());
+      if(paired)return;                 /* 配成 Live Photo 的视频不单独显示 */
+    }
+    out.push(it);
+  });
+  out.forEach(it=>{
+    if(it.type==="image"){
+      const v=vidMap.get((it.album+"|"+it.name).toLowerCase());
+      if(v){ it.type="live"; it.live=v.src; }
+    }
+  });
+  /* 相册汇总（封面优先取图片，其次视频首帧） */
+  const amap=new Map();
+  out.forEach(it=>{
+    if(!it.album)return;
+    let a=amap.get(it.album);
+    if(!a){ a={name:it.album,count:0,cover:""}; amap.set(it.album,a); }
+    a.count++;
+    if(!a.cover&&it.type!=="video")a.cover=it.src;
+    if(!a.cover)a.cover=it.src;
+  });
+  albums=Array.from(amap.values())
+    .sort((a,b)=>a.name.localeCompare(b.name,"zh-Hans-CN",{numeric:true}));
+  photos=out;
+  photos.sort((a,b)=>b.name.localeCompare(a.name,"zh-Hans-CN",{numeric:true}));
+  photosStatus="ready";
   paintPhotoGrids();
 }
 
-/* 照片 <img>：兜底模式下第一张源失败就换另一个目录再试一次 */
-function photoImgTag(p){
+/* 当前要显示的媒体：全部（galleryFilter 为空）或某个子相册 */
+function viewList(){
+  return galleryFilter?photos.filter(p=>p.album===galleryFilter):photos;
+}
+/* 瓷砖内容：图片直接 <img>；视频用 <video> 抓首帧；Live Photo 静态图 + 悬停播放动态视频 */
+function mediaTileTag(p){
+  if(p.type==="video"){
+    return `<video src="${esc(p.src)}" preload="metadata" muted playsinline
+      onerror="this.style.display='none'"></video>`;
+  }
   const err=p.fb
     ? `this.dataset.s?(this.style.display='none'):(this.dataset.s=1,this.src=this.dataset.alt)`
     : `this.style.display='none'`;
+  const fbAttr=p.fb?`data-alt="${esc(PHOTO_DIRS[0]+encodeURIComponent(p.fb))}"`:"";
+  const liveV=p.type==="live"
+    ? `<video class="ph-live-v" src="${esc(p.live)}" muted playsinline loop preload="none"></video>`:"";
   return `<img src="${esc(p.src)}" alt="${esc(p.name)}" loading="lazy" decoding="async"
-    ${p.fb?`data-alt="${esc(PHOTO_DIRS[0]+encodeURIComponent(p.fb))}"`:""}
-    onerror="${err}">`;
+    ${fbAttr}
+    onerror="${err}">${liveV}`;
 }
-function photoTilesHtml(limit){
+function photoTilesHtml(list,limit){
   if(photosStatus==="loading"){
     const n=Math.min(limit||8,8);
     return Array.from({length:n}).map(()=>`<div class="ph-tile ph-skel"></div>`).join("");
   }
-  if(!photos.length){
+  if(!list.length){
     const msg=photosStatus==="error"?T().gallery.err:T().gallery.empty;
     return `<div class="ph-empty">${msg}</div>`;
   }
-  const total=limit>0?Math.min(limit,photos.length):photos.length;
-  return photos.slice(0,total).map((p,i)=>{
-    const more=(limit>0 && limit<photos.length && i===total-1);
-    return `<div class="ph-tile" data-idx="${i}" role="button" tabindex="0" aria-label="${esc(p.name)}">
-      ${photoImgTag(p)}
+  const total=limit>0?Math.min(limit,list.length):list.length;
+  return list.slice(0,total).map((p,i)=>{
+    const more=(limit>0 && limit<list.length && i===limit-1);
+    const badge=p.type==="live"?`<span class="ph-badge">${esc(T().gallery.liveTag)}</span>`
+      :p.type==="video"?`<span class="ph-badge">${esc(T().gallery.videoTag)}</span>`:"";
+    return `<div class="ph-tile${p.type==="live"?" is-live":""}" data-idx="${i}" role="button" tabindex="0" aria-label="${esc(p.name)}">
+      ${mediaTileTag(p)}${badge}
       <span class="ph-cap">${esc(p.name)}</span>
-      ${more?`<div class="ph-more">+${photos.length-limit}</div>`:""}
+      ${more?`<div class="ph-more">+${list.length-limit}</div>`:""}
     </div>`;
   }).join("");
 }
-/* 把页面上所有占位容器填上照片（首页预览用 limit，图库页用全部） */
+/* 子相册卡片（相册页顶部；进入某个相册后隐藏，靠「← 全部相册」返回） */
+function albumStripHtml(){
+  if(!albums.length||galleryFilter)return "";
+  const t=T().gallery;
+  return `<div class="album-label">${esc(t.albums)}</div>
+  <div class="album-grid">
+    ${albums.map(a=>`
+    <button class="al-card" data-album="${esc(a.name)}" type="button" aria-label="${esc(a.name)}">
+      <span class="al-cover">${
+        a.cover?`<img src="${esc(a.cover)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`
+        :`<span class="al-folder">📁</span>`}</span>
+      <span class="al-name">${esc(a.name)}</span>
+      <span class="al-count">${esc(t.albumCount(a.count))}</span>
+    </button>`).join("")}
+  </div>`;
+}
+/* 把页面上所有占位容器填上媒体（首页预览用 limit+全部，相册页用当前相册） */
 function paintPhotoGrids(){
   document.querySelectorAll("[data-photo-grid]").forEach(el=>{
     const limit=Number(el.dataset.photoGrid)||0;
-    el.innerHTML=photoTilesHtml(limit);
+    const list=limit>0?photos:viewList();
+    el.innerHTML=photoTilesHtml(list,limit);
+    el._items=list;                     /* 灯箱要按这份清单导航 */
   });
+  const strip=$("#albumStrip");
+  if(strip)strip.innerHTML=albumStripHtml();
   const sub=$("#gallerySub");
-  if(sub)sub.textContent=photos.length?T().gallery.sub(photos.length):"";
-}
-
-/* ---------- 灯箱 ---------- */
-let lbIndex=0, lbFocus=null;
-function setLbImg(p){
-  const img=$("#lbImg");
-  img.onerror=null;
-  img.removeAttribute("data-alt");
-  img.src=p.src;
-  if(p.fb){
-    img.dataset.alt=PHOTO_DIRS[0]+encodeURIComponent(p.fb);
-    img.onerror=function(){
-      if(img.dataset.s){img.onerror=null;return}
-      img.dataset.s="1"; img.src=img.dataset.alt;
-    };
+  if(sub){
+    const list=viewList();
+    sub.textContent=list.length?T().gallery.sub(list.length):"";
   }
 }
-function openLb(i){
-  if(!photos.length)return;
-  lbIndex=(i+photos.length)%photos.length;
+
+/* ---------- 灯箱（图片 / 视频 / Live Photo） ---------- */
+let lbIndex=0, lbFocus=null, lbItems=[];
+function setLbMedia(p){
+  const img=$("#lbImg"), vid=$("#lbVideo"), liveBtn=$("#lbLiveBtn");
+  liveBtn.style.display=(p.type==="live")?"":"none";
+  liveBtn.textContent=T().gallery.liveBtn;
+  /* 先停掉上一条的动态视频，防止切换后还在放 */
+  try{ vid.pause(); }catch(e){}
+  vid.removeAttribute("src"); vid.load();
+  if(p.type==="video"){
+    img.style.display="none";
+    vid.style.display="";
+    vid.controls=true; vid.muted=false; vid.loop=false;
+    vid.src=p.src;
+  }else{
+    vid.style.display="none";
+    img.style.display="";
+    img.onerror=null;
+    img.removeAttribute("data-alt");
+    img.src=p.src;
+    if(p.fb){
+      img.dataset.alt=PHOTO_DIRS[0]+encodeURIComponent(p.fb);
+      img.onerror=function(){
+        if(img.dataset.s){img.onerror=null;return}
+        img.dataset.s="1"; img.src=img.dataset.alt;
+      };
+    }
+  }
+}
+/* Live Photo：灯箱里在静态照片与动态视频之间切换 */
+function lbToggleLive(){
+  const p=lbItems[lbIndex];
+  if(!p||p.type!=="live")return;
+  const img=$("#lbImg"), vid=$("#lbVideo"), liveBtn=$("#lbLiveBtn");
+  if(vid.style.display==="none"){
+    img.style.display="none"; vid.style.display="";
+    vid.controls=false; vid.muted=true; vid.loop=true;
+    vid.src=p.live;
+    vid.play().catch(()=>{});
+    liveBtn.textContent=T().gallery.stillBtn;
+  }else{
+    try{ vid.pause(); }catch(e){}
+    vid.style.display="none"; img.style.display="";
+    liveBtn.textContent=T().gallery.liveBtn;
+  }
+}
+function openLb(items,i){
+  lbItems=items||[];
+  if(!lbItems.length)return;
+  lbIndex=(i+lbItems.length)%lbItems.length;
   showLb();
   lbFocus=document.activeElement;                 /* 关掉灯箱后把焦点还给刚才那张图 */
   $("#lightbox").classList.add("open");
@@ -1187,19 +1428,20 @@ function openLb(i){
   try{ $("#lbClose").focus(); }catch(e){}
 }
 function showLb(){
-  const p=photos[lbIndex];
+  const p=lbItems[lbIndex];
   if(!p)return;
-  setLbImg(p);
+  setLbMedia(p);
   $("#lbImg").alt=p.name;
-  $("#lbCount").textContent=`${lbIndex+1} / ${photos.length} · ${p.name}`;
+  $("#lbCount").textContent=`${lbIndex+1} / ${lbItems.length} · ${p.name}`;
 }
 function closeLb(){
+  try{ $("#lbVideo").pause(); }catch(e){}
   $("#lightbox").classList.remove("open");
   document.body.classList.remove("lb-lock");
   if(lbFocus&&typeof lbFocus.focus==="function"){ try{ lbFocus.focus(); }catch(e){} }
   lbFocus=null;
 }
-function stepLb(d){ openLb(lbIndex+d); }
+function stepLb(d){ openLb(lbItems,lbIndex+d); }
 
 /* ---------- 视图渲染 ---------- */
 function renderHome(){
@@ -1255,13 +1497,18 @@ function renderHome(){
 
 function renderGallery(){
   const t=T();
+  const list=viewList();
+  const backBtn=galleryFilter
+    ?`<button class="al-back" data-album-back type="button">${esc(t.gallery.back)}</button>`:"";
   app.innerHTML=`
   <section class="view">
     <div class="wrap">
       <div class="page-head">
         <h1>${esc(t.gallery.title)}</h1>
-        <div class="sub" id="gallerySub">${photos.length?esc(t.gallery.sub(photos.length)):""}</div>
+        <div class="sub" id="gallerySub">${list.length?esc(t.gallery.sub(list.length)):""}</div>
+        ${backBtn}
       </div>
+      <div id="albumStrip"></div>
       <div class="photo-grid" data-photo-grid="0"></div>
       <p style="margin:22px 0 0;color:var(--text-3);font-size:13px">${esc(t.gallery.tip)}</p>
       <div style="height:60px"></div>
@@ -1940,18 +2187,35 @@ $("#lbPrev").addEventListener("click",e=>{e.stopPropagation();stepLb(-1)});
 $("#lbNext").addEventListener("click",e=>{e.stopPropagation();stepLb(1)});
 $("#lightbox").addEventListener("click",e=>{if(e.target.id==="lightbox")closeLb()});
 document.addEventListener("click",e=>{
-  /* 首屏那个滚动提示：点一下平滑滚到图库预览 */
+  /* 首屏那个滚动提示：点一下平滑滚到相册预览 */
   const sc=e.target.closest("[data-scroll-to]");
   if(sc){
     const target=document.getElementById(sc.dataset.scrollTo);
     if(target)target.scrollIntoView({behavior:"smooth",block:"start"});
     return;
   }
+  /* 子相册卡片：进入该相册；返回按钮：回到全部 */
+  const alb=e.target.closest("[data-album]");
+  if(alb){ galleryFilter=alb.dataset.album||""; route(); return; }
+  const albBack=e.target.closest("[data-album-back]");
+  if(albBack){ galleryFilter=""; route(); return; }
   const tile=e.target.closest(".ph-tile");
   if(!tile||tile.dataset.idx===undefined||tile.classList.contains("ph-skel"))return;
-  /* 带「+N」角标的瓷砖 → 跳转图库页，而不是开灯箱 */
+  /* 带「+N」角标的瓷砖 → 跳转相册页，而不是开灯箱 */
   if(tile.querySelector(".ph-more")){location.hash="#/gallery";return;}
-  openLb(Number(tile.dataset.idx));
+  const grid=tile.closest("[data-photo-grid]");
+  openLb((grid&&grid._items)||photos,Number(tile.dataset.idx));
+});
+/* Live Photo 瓷砖：鼠标悬停播放动态效果，移开还原成静态照片 */
+document.addEventListener("mouseover",e=>{
+  const tile=e.target.closest(".ph-tile.is-live"); if(!tile)return;
+  const v=tile.querySelector(".ph-live-v");
+  if(v){ v.style.display="block"; v.play().catch(()=>{}); }
+});
+document.addEventListener("mouseout",e=>{
+  const tile=e.target.closest(".ph-tile.is-live"); if(!tile)return;
+  const v=tile.querySelector(".ph-live-v");
+  if(v){ v.pause(); try{ v.currentTime=0; }catch(err){} v.style.display="none"; }
 });
 document.addEventListener("keydown",e=>{
   if($("#lightbox").classList.contains("open")){
@@ -1964,7 +2228,8 @@ document.addEventListener("keydown",e=>{
   if(tile&&tile.classList&&tile.classList.contains("ph-tile")&&(e.key==="Enter"||e.key===" ")){
     e.preventDefault();
     if(tile.querySelector(".ph-more")){location.hash="#/gallery";return;}
-    openLb(Number(tile.dataset.idx));
+    const grid=tile.closest("[data-photo-grid]");
+    openLb((grid&&grid._items)||photos,Number(tile.dataset.idx));
   }
 });
 
@@ -1980,7 +2245,7 @@ loadPhotos();
 })();
 </script>
 
-<!-- ============ 迷你音乐播放器（功能同原站音乐组件：酷狗歌单 / 本地音乐 / 在线搜歌） ============ -->
+<!-- ============ 迷你音乐播放器（功能同原站音乐组件：酷狗歌单 / 在线搜歌） ============ -->
 <style>
 /* ===================== 迷你播放器：导航栏入口 + 歌单面板 ===================== */
 /* 导航栏里的音乐入口：接替原来深浅色切换按钮的位置（进度环就画在按钮外圈） */
@@ -2183,7 +2448,6 @@ input[type=range].mp-range::-moz-range-thumb{
     <div class="mp-hint" id="mpMeta">正在读取酷狗歌单…</div>
     <div class="mp-tabs">
       <button class="mp-tab on" data-tab="kg">酷狗歌单</button>
-      <button class="mp-tab" data-tab="local">本地音乐</button>
       <button class="mp-tab" data-tab="search">在线搜歌</button>
     </div>
     <div class="mp-search" id="mpSearchBar">
@@ -2217,11 +2481,10 @@ input[type=range].mp-range::-moz-range-thumb{
 /* =====================================================================
  *  鉴业音乐 · 导航栏迷你播放器（功能对齐原站音乐组件）
  *  ---------------------------------------------------------------
- *  三个分类：
+ *  两个分类：
  *    ① 酷狗歌单 —— 云端 /api/kg 实时读取「我喜欢的音乐」，
  *       读不到时退回同目录的 kugou-playlist.js 内置快照；
- *    ② 本地音乐 —— 自动扫描站点根目录「音乐」文件夹（GitHub API 兜底）；
- *    ③ 在线搜歌 —— GD 音乐台「网易云」源搜索。
+ *    ② 在线搜歌 —— GD 音乐台「网易云」源搜索。
  *  酷狗歌单只给「歌名 + 歌手」，没有播放地址，播放时按「歌名 歌手」
  *  到网易云解析一次（结果缓存在曲目对象上，不重复请求），再取 320k
  *  音源地址；签名地址 5 分钟过期，超时自动重取。
@@ -2231,8 +2494,6 @@ input[type=range].mp-range::-moz-range-thumb{
 
   /* ---------------- 常量 ---------------- */
   const KEY="jy-mini-music-state";
-  const AUDIO_RE=/\.(mp3|m4a|flac|wav|ogg|opus|aac|wma)$/i;
-  const MUSIC_DIRS=["音乐/","../音乐/"];
   const SNAP_FILES=["../kugou-playlist.js","kugou-playlist.js"];
   const GH_REPO="jianye50/Jianye-Cloud", GH_BRANCH="main";
   const GD_API="https://music-api.gdstudio.xyz/api.php";
@@ -2260,10 +2521,10 @@ input[type=range].mp-range::-moz-range-thumb{
       search:"搜索", searchPh:"搜歌名 / 歌手，回车搜索", seekAria:"播放进度", volAria:"音量",
       filterPh:"筛选歌名 / 歌手", filterAria:"筛选", clearFilter:"清除",
       filterTip:(k,n)=>"筛选「"+k+"」 · 命中 "+n+" 首", filterEmpty:k=>"这个歌单里没有匹配「"+k+"」的歌",
-      tabs:{kg:"酷狗歌单",local:"本地音乐",search:"在线搜歌"},
+      tabs:{kg:"酷狗歌单",search:"在线搜歌"},
       modes:["列表循环","单曲循环","随机播放"],
-      kKind:{kg:"酷狗歌单",nc:"网易云音乐",local:"本地音乐"},
-      localArtist:"本地文件", unknown:"(未知曲目)", myKg:"我的酷狗歌单", kgSrc:"酷狗音乐",
+      kKind:{kg:"酷狗歌单",nc:"网易云音乐"},
+      unknown:"(未知曲目)", myKg:"我的酷狗歌单", kgSrc:"酷狗音乐",
       cloudLoading:"云端同步中", cloudLive:"云端实时读取", cloudSnap:"内置快照",
       kgLoading:"正在读取酷狗歌单…", kgNone:"还没有读到酷狗歌单",
       cloudFail:"云端暂时读不到，先用内置快照 · ",
@@ -2271,7 +2532,6 @@ input[type=range].mp-range::-moz-range-thumb{
       synced:n=>"已从云端同步 "+n+" 首", cloudNone:"云端没读到，先用内置歌单",
       emptySearch:"输入歌名或歌手，回车搜索<br>结果来自网易云，点一下即播放",
       emptyKg:"<b>还没有读到酷狗歌单</b><br>联网打开时会自动从云端同步<br>也可以点右上角按钮重试",
-      emptyLocal:"<b>「音乐」文件夹里还没有歌曲</b><br>把 mp3 / flac 等放进去刷新即可",
       nowTitle:"正在播放 / 上次播放", more:n=>"加载更多（还有 "+n+" 首）",
       resolving:"解析中…", loading:"加载中…",
       notFound:n=>"《"+n+"》没找到，下一首", noSrc:n=>"《"+n+"》暂时取不到地址",
@@ -2290,10 +2550,10 @@ input[type=range].mp-range::-moz-range-thumb{
       search:"Search", searchPh:"Search title / artist, press Enter", seekAria:"Playback progress", volAria:"Volume",
       filterPh:"Filter by title / artist", filterAria:"Filter", clearFilter:"Clear",
       filterTip:(k,n)=>"Filter “"+k+"” · "+n+" match"+(n===1?"":"es"), filterEmpty:k=>"No songs matching “"+k+"” in this playlist",
-      tabs:{kg:"Kugou Playlist",local:"Local Music",search:"Search Online"},
+      tabs:{kg:"Kugou Playlist",search:"Search Online"},
       modes:["Repeat all","Repeat one","Shuffle"],
-      kKind:{kg:"Kugou Playlist",nc:"NetEase Music",local:"Local Music"},
-      localArtist:"Local file", unknown:"(Unknown track)", myKg:"My Kugou Playlist", kgSrc:"Kugou Music",
+      kKind:{kg:"Kugou Playlist",nc:"NetEase Music"},
+      unknown:"(Unknown track)", myKg:"My Kugou Playlist", kgSrc:"Kugou Music",
       cloudLoading:"Syncing from cloud", cloudLive:"Live from cloud", cloudSnap:"Built-in snapshot",
       kgLoading:"Loading Kugou playlist…", kgNone:"No Kugou playlist yet",
       cloudFail:"Cloud unavailable, using built-in snapshot · ",
@@ -2301,7 +2561,6 @@ input[type=range].mp-range::-moz-range-thumb{
       synced:n=>"Synced "+n+" songs from the cloud", cloudNone:"Cloud unavailable, using built-in playlist",
       emptySearch:"Type a title or artist and press Enter<br>Results come from NetEase — click to play",
       emptyKg:"<b>No Kugou playlist yet</b><br>It syncs from the cloud automatically when online<br>You can also hit the button at the top right to retry",
-      emptyLocal:"<b>No songs in the “音乐” folder yet</b><br>Drop in some mp3 / flac files and refresh",
       nowTitle:"Now playing / Last played", more:n=>"Load more ("+n+" left)",
       resolving:"Resolving…", loading:"Loading…",
       notFound:n=>"“"+n+"” not found — next", noSrc:n=>"“"+n+"” has no available source",
@@ -2343,9 +2602,9 @@ input[type=range].mp-range::-moz-range-thumb{
   audio.volume=(function(){ const v=parseFloat(localStorage.getItem(KEY+"-vol")); return (isFinite(v)&&v>0&&v<=1)?v:0.85; })();
   volEl.value=String(Math.round(audio.volume*100));
 
-  let kgPool=[], localPool=[], searchPool=[];
+  let kgPool=[], searchPool=[];
   let kgMeta=null, cloudState="";     /* '' 未尝试 / loading / ok / fail */
-  let tab="kg", shown=LIMIT_STEP, filterKw="";   /* filterKw：酷狗/本地歌单内的筛选词 */
+  let tab="kg", shown=LIMIT_STEP, filterKw="";   /* filterKw：酷狗歌单内的筛选词 */
   let q=[], cur=-1, kind="kg";        /* q = 当前播放队列，kind = 队列来自哪个分类 */
   let mode=0, loadedId="", seeking=false, failCount=0, errCount=0;
   let restored=false, lastKw="";
@@ -2380,9 +2639,9 @@ input[type=range].mp-range::-moz-range-thumb{
     paintMode();
   })();
 
-  const poolOf=k=> k==="kg"?kgPool : k==="local"?localPool : searchPool;
+  const poolOf=k=> k==="kg"?kgPool : searchPool;
   const curTrack=()=> (cur>=0&&cur<q.length)?q[cur]:null;
-  const kindLabel=t=> !t?"": t.online ? (t.kg?L().kKind.kg:L().kKind.nc) : L().kKind.local;
+  const kindLabel=t=> !t?"": t.kg?L().kKind.kg:L().kKind.nc;
 
   /* ---------------- 轻提示 ----------------
      入口收进了导航栏（一个小音符按钮），没地方写字了，所以提示这样分流：
@@ -2523,50 +2782,7 @@ input[type=range].mp-range::-moz-range-thumb{
   }
 
   /* =====================================================================
-   *  ② 本地音乐：扫描「音乐」文件夹
-   * ===================================================================== */
-  async function listDir(dir){
-    try{
-      const base=new URL(dir,location.href);
-      const res=await fetch(base.href);
-      if(res.ok){
-        const doc=new DOMParser().parseFromString(await res.text(),"text/html");
-        const urls=new Set();
-        doc.querySelectorAll("a[href]").forEach(a=>{
-          let h=a.getAttribute("href")||"";
-          h=h.split("#")[0];
-          if(!AUDIO_RE.test(h.split("?")[0]))return;
-          urls.add(new URL(h,base.href).href);
-        });
-        if(urls.size)return Array.from(urls);
-      }
-    }catch(e){}
-    return null;
-  }
-  async function listGH(){
-    try{
-      const r=await fetch("https://api.github.com/repos/"+GH_REPO+"/contents/"+encodeURIComponent("音乐")+"?ref="+GH_BRANCH,
-        {headers:{Accept:"application/vnd.github+json"}});
-      if(!r.ok)return null;
-      const arr=await r.json();
-      if(!Array.isArray(arr))return null;
-      const raw=arr.filter(x=>x.type==="file"&&AUDIO_RE.test(x.name)).map(x=>x.download_url).filter(Boolean);
-      return raw.length?raw:null;
-    }catch(e){ return null; }
-  }
-  async function scanLocal(){
-    let urls=null;
-    for(const d of MUSIC_DIRS){ urls=await listDir(d); if(urls)break; }
-    if(!urls&&location.protocol!=="file:")urls=await listGH();
-    localPool=(urls||[]).map(src=>{
-      const f=decodeURIComponent(src.split("/").pop().split("?")[0]);
-      return {online:false,id:"lf:"+src,name:f.replace(/\.[^.]+$/,""),artist:L().localArtist,src:src};
-    }).sort((a,b)=>a.name.localeCompare(b.name,"zh-Hans-CN",{numeric:true}));
-    if(tab==="local")renderList();
-  }
-
-  /* =====================================================================
-   *  ③ 在线搜歌：GD 音乐台「网易云」源（限流 + 会话缓存）
+   *  ② 在线搜歌：GD 音乐台「网易云」源（限流 + 会话缓存）
    * ===================================================================== */
   const gdCache=new Map();
   let gdChain=Promise.resolve(), gdLastAt=0;
@@ -2653,7 +2869,7 @@ input[type=range].mp-range::-moz-range-thumb{
     const s=((t.name||"")+" "+(t.artist||"")).toLowerCase();
     return kw.split(/\s+/).filter(Boolean).every(w=>s.indexOf(w)>=0);
   }
-  /* 当前分类实际要显示的歌曲：酷狗 / 本地按筛选词过滤；在线搜歌用搜索结果 */
+  /* 当前分类实际要显示的歌曲：酷狗按筛选词过滤；在线搜歌用搜索结果 */
   function visiblePool(k){
     const p=poolOf(k);
     if(k==="search"||k!==tab||!filterKw)return p;
@@ -2692,7 +2908,7 @@ input[type=range].mp-range::-moz-range-thumb{
       return;
     }
     if(!full.length){
-      listEl.innerHTML='<div class="mp-empty">'+(tab==="kg"?L().emptyKg:L().emptyLocal)+'</div>';
+      listEl.innerHTML='<div class="mp-empty">'+L().emptyKg+'</div>';
       return;
     }
     if(!pool.length){                  /* 歌单里有歌，只是筛不出来 */
@@ -2954,11 +3170,9 @@ input[type=range].mp-range::-moz-range-thumb{
       localStorage.setItem(KEY+"-vol",String(audio.volume));
     }catch(e){}
   }
-  /* 保存下来的曲目信息 → 可播放的曲目对象（本地文件自带地址，在线曲目待解析） */
+  /* 保存下来的曲目信息 → 可播放的曲目对象（在线曲目待解析） */
   function rebuildTrack(o){
     if(!o||!o.name)return null;
-    if(/^lf:/.test(o.id||""))
-      return {online:false,id:o.id,name:o.name,artist:o.artist||L().localArtist,src:o.src||""};
     return {online:true,kg:/^kg:/.test(o.id||""),id:o.id,name:o.name,artist:o.artist||"",
             album:"",ncId:o.ncId||"",src:"",srcAt:0,failAt:0};
   }
@@ -2971,9 +3185,10 @@ input[type=range].mp-range::-moz-range-thumb{
     paintMode();
     if(typeof st.vol==="number"&&st.vol>0&&st.vol<=1){ audio.volume=st.vol; volEl.value=String(Math.round(st.vol*100)); }
     if(!st.track||!st.track.name){ restored=true; renderList(); paintSub(); return; }
-    /* 对应的列表还没读好（本地要扫目录、酷狗要读快照）就先挂起，读好了再恢复 */
+    /* 对应的列表还没读好（酷狗要读云端/快照）就先挂起，读好了再恢复 */
     if(st.kind==="kg"&&!kgDone)return;
-    if(st.kind==="local"&&!scanDone)return;
+    /* 旧版存过「本地音乐」分类：功能已移除，跳过恢复 */
+    if(st.kind==="local"){ restored=true; renderList(); paintSub(); return; }
 
     const t0=rebuildTrack(st.track);
     const list=[];
@@ -2993,7 +3208,7 @@ input[type=range].mp-range::-moz-range-thumb{
     q=list; kind=st.kind;
     cur=Math.max(0,list.findIndex(x=>x.id===t0.id));
     const t=q[cur];
-    tab=(st.kind==="search")?"search":st.kind;
+    tab=(st.kind==="search")?"search":"kg";
     shown=Math.max(LIMIT_STEP,cur+1);    /* 展开歌单时能直接看到当前这首 */
     setTabUI();
     panelTitle.textContent=L().pillName;   /* 标题固定为「鉴业音乐 / Jianye Music」，跟随语言 */
@@ -3269,14 +3484,12 @@ input[type=range].mp-range::-moz-range-thumb{
       .observe(document.documentElement,{attributes:true,attributeFilter:["lang"]});
   }catch(e){}
 
-  var scanDone=false, kgDone=false;
+  var kgDone=false;
   const CLOUD_WAIT=2000;   /* 云端歌单最多等 2 秒，超时就先用内置快照顶上 */
   (async function boot(){
-    setTabUI();              /* 初始分类高亮 + 搜索栏（三个分类都显示） */
+    setTabUI();              /* 初始分类高亮 + 搜索栏（两个分类都显示） */
     mpApplyLang();           /* 按当前语言把面板文案铺一遍 */
     earlyPaint();            /* 先把上次播放的那首显示出来，歌单慢慢读 */
-    /* 本地音乐扫描与「酷狗歌单」同时开工 */
-    const localP=scanLocal().then(()=>{ scanDone=true; });
     /* 歌单优先问云端 /api/kg：内容最新，而且通了就不必再下载 107KB 的内置快照。
        云端不通（离线 / 没部署 Functions）或 2 秒没回来 → 退回内置快照兜底。
        两个来源谁后到谁生效：快照先到、云端后到 → 云端覆盖快照（内容更新）；
@@ -3287,7 +3500,6 @@ input[type=range].mp-range::-moz-range-thumb{
     clearTimeout(tid);
     if(first!=="ok")await loadSnap();
     kgDone=true;
-    await localP;
     if(!kgPool.length&&!kgMeta)paintMeta();
     restoreState();
     if(tab==="kg")renderList();
