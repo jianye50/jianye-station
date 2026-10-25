@@ -6,86 +6,279 @@
 <title>米家控制台</title>
 <style>
   :root {
-    --bg: #0d1117; --card: #161b22; --border: #30363d;
-    --text: #e6edf3; --muted: #8b949e; --accent: #ff6900; --ok: #3fb950; --off: #6e7681;
+    --bg0: #07080b; --bg1: #0d0f14;
+    --card: rgba(255,255,255,.038);
+    --card-solid: #13151b;
+    --stroke: rgba(255,255,255,.085);
+    --stroke-hi: rgba(255,255,255,.18);
+    --text: #f1f3f7; --muted: #98a0af; --faint: #5c6470;
+    --accent: #ff7a1a; --accent2: #ffb257;
+    --ok: #34d399; --bad: #f87171;
+    --r-lg: 20px; --r-md: 14px; --r-sm: 10px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; min-height: 100vh; }
-  header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 10; }
-  header h1 { font-size: 18px; font-weight: 600; }
-  header .btns { display: flex; gap: 8px; }
-  button { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer; }
-  button:hover { border-color: var(--accent); }
-  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-  main { max-width: 1080px; margin: 0 auto; padding: 24px; }
+  html { color-scheme: dark; }
+  body {
+    background: var(--bg0); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh; -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(600px 400px at 12% -5%, rgba(255,122,26,.10), transparent 60%),
+      radial-gradient(700px 480px at 95% 0%, rgba(56,130,246,.08), transparent 60%),
+      radial-gradient(900px 700px at 50% 115%, rgba(52,211,153,.05), transparent 60%);
+  }
+
+  /* ---------- 顶栏 ---------- */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px;
+    background: rgba(7,8,11,.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--stroke);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark {
+    width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), #ff9d4d);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(255,122,26,.35);
+  }
+  .brand-mark svg { width: 18px; height: 18px; fill: #fff; }
+  .brand h1 { font-size: 16px; font-weight: 650; letter-spacing: .3px; }
+  .brand .sub { font-size: 11px; color: var(--faint); letter-spacing: 2px; text-transform: uppercase; margin-top: 1px; }
+  .btns { display: flex; gap: 10px; align-items: center; }
+  button {
+    background: rgba(255,255,255,.05); color: var(--text);
+    border: 1px solid var(--stroke); border-radius: var(--r-sm);
+    padding: 8px 16px; font-size: 13px; cursor: pointer; font-family: inherit;
+    transition: all .18s ease;
+  }
+  button:hover { border-color: var(--stroke-hi); background: rgba(255,255,255,.09); }
+  button:active { transform: scale(.97); }
+  button.primary {
+    background: linear-gradient(135deg, var(--accent), #ff9d4d);
+    border: none; color: #fff; font-weight: 600;
+    box-shadow: 0 4px 18px rgba(255,122,26,.32);
+  }
+  button.primary:hover { filter: brightness(1.08); }
+  button.ghost { background: transparent; color: var(--muted); }
+  button.ghost:hover { color: var(--text); }
+
+  main { max-width: 1160px; margin: 0 auto; padding: 28px 28px 80px; }
   .view { display: none; }
-  .view.active { display: block; }
-  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
-  .device { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-  .device h3 { font-size: 15px; margin-bottom: 4px; word-break: break-all; }
-  .device .model { color: var(--muted); font-size: 12px; margin-bottom: 10px; word-break: break-all; }
-  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
-  .dot.on { background: var(--ok); } .dot.off { background: var(--off); }
-  .ctl { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; font-size: 13px; }
-  .ctl label { color: var(--muted); flex-shrink: 0; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ctl input[type=range] { width: 130px; accent-color: var(--accent); }
-  .ctl select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; max-width: 150px; }
-  .switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+  .view.active { display: block; animation: fadeUp .35s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  /* ---------- 登录 ---------- */
+  .login-wrap { display: flex; justify-content: center; padding-top: 6vh; }
+  .login-box {
+    width: 400px; max-width: 100%; text-align: center;
+    background: linear-gradient(165deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    border: 1px solid var(--stroke); border-radius: 24px; padding: 40px 32px 32px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.45);
+  }
+  .login-box .brand-mark { width: 52px; height: 52px; border-radius: 15px; margin: 0 auto 18px; }
+  .login-box .brand-mark svg { width: 26px; height: 26px; }
+  .login-box h2 { font-size: 21px; font-weight: 650; margin-bottom: 8px; }
+  .login-box .desc { color: var(--muted); font-size: 13px; line-height: 1.7; margin-bottom: 24px; }
+  input[type=password], input[type=text] {
+    background: rgba(0,0,0,.35); color: var(--text);
+    border: 1px solid var(--stroke); border-radius: var(--r-sm);
+    padding: 11px 14px; font-size: 14px; width: 100%; margin-bottom: 12px;
+    outline: none; transition: border-color .18s; font-family: inherit;
+  }
+  input:focus { border-color: rgba(255,122,26,.55); }
+  input::placeholder { color: var(--faint); }
+  #qrImg {
+    width: 216px; height: 216px; border-radius: 16px; background: #fff;
+    display: none; margin: 8px auto 14px; padding: 10px;
+    box-shadow: 0 0 0 1px var(--stroke), 0 12px 32px rgba(0,0,0,.4);
+  }
+  #loginMsg { color: var(--muted); font-size: 13px; margin-top: 14px; min-height: 20px; line-height: 1.6; }
+
+  /* ---------- 错误横幅 ---------- */
+  .err-banner {
+    display: none; margin-bottom: 20px; padding: 14px 18px;
+    background: rgba(248,113,113,.07); border: 1px solid rgba(248,113,113,.28);
+    border-radius: var(--r-md); color: #fca5a5; font-size: 13px; line-height: 1.7;
+    white-space: pre-wrap; word-break: break-all;
+  }
+
+  /* ---------- 分组与网格 ---------- */
+  .room-head {
+    display: flex; align-items: center; gap: 10px; margin: 26px 4px 14px;
+  }
+  .room-head:first-of-type { margin-top: 4px; }
+  .room-head .room-name { font-size: 13px; font-weight: 600; letter-spacing: 1.5px; color: var(--muted); }
+  .room-head .room-line { flex: 1; height: 1px; background: var(--stroke); }
+  .room-head .room-count { font-size: 12px; color: var(--faint); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(272px, 1fr)); gap: 16px; }
+
+  /* ---------- 设备卡片 ---------- */
+  .device {
+    background: linear-gradient(165deg, rgba(255,255,255,.055), rgba(255,255,255,.018));
+    border: 1px solid var(--stroke); border-radius: var(--r-lg);
+    padding: 18px; transition: all .22s ease;
+  }
+  .device:hover { transform: translateY(-2px); border-color: var(--stroke-hi); box-shadow: 0 14px 34px rgba(0,0,0,.4); }
+  .dev-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+  .dev-icon {
+    width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.06); border: 1px solid var(--stroke);
+  }
+  .dev-icon svg { width: 21px; height: 21px; fill: var(--accent2); }
+  .dev-title { flex: 1; min-width: 0; }
+  .dev-title h3 { font-size: 14.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dev-title .model { color: var(--faint); font-size: 11px; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .pill {
+    flex-shrink: 0; font-size: 11px; padding: 3px 9px; border-radius: 99px;
+    border: 1px solid var(--stroke); color: var(--muted); display: flex; align-items: center; gap: 5px;
+  }
+  .pill .pdot { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
+  .pill.on { color: var(--ok); border-color: rgba(52,211,153,.3); background: rgba(52,211,153,.07); }
+  .pill.on .pdot { background: var(--ok); box-shadow: 0 0 6px rgba(52,211,153,.8); }
+  .pill.off { color: var(--faint); }
+
+  .ctls { display: flex; flex-direction: column; gap: 4px; }
+  .ctl {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 7px 0; font-size: 13px; border-bottom: 1px dashed rgba(255,255,255,.05);
+  }
+  .ctl:last-child { border-bottom: none; }
+  .ctl > label { color: var(--muted); flex-shrink: 0; max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ctl input[type=range] { width: 150px; accent-color: var(--accent); cursor: pointer; }
+  .ctl select {
+    background: rgba(0,0,0,.35); color: var(--text); border: 1px solid var(--stroke);
+    border-radius: 8px; padding: 5px 9px; max-width: 158px; font-size: 12.5px; outline: none; font-family: inherit;
+  }
+  .rv { font-size: 12px; color: var(--accent2); min-width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
   .switch input { opacity: 0; width: 0; height: 0; }
-  .switch span { position: absolute; inset: 0; background: var(--off); border-radius: 24px; transition: .2s; cursor: pointer; }
-  .switch span:before { content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%; left: 3px; top: 3px; background: #fff; transition: .2s; }
-  .switch input:checked + span { background: var(--accent); }
-  .switch input:checked + span:before { transform: translateX(20px); }
-  .login-box { max-width: 360px; margin: 60px auto; text-align: center; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px 24px; }
-  .login-box h2 { margin-bottom: 8px; }
-  .login-box p { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
-  #qrImg { width: 220px; height: 220px; border-radius: 12px; background: #fff; display: none; margin: 0 auto 12px; }
-  #loginMsg { color: var(--muted); font-size: 13px; margin-top: 12px; min-height: 18px; }
-  input[type=password], input[type=text] { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 14px; width: 100%; margin-bottom: 12px; }
-  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--card); border: 1px solid var(--border); padding: 10px 20px; border-radius: 10px; font-size: 13px; display: none; z-index: 99; }
-  details { margin-top: 24px; color: var(--muted); font-size: 13px; }
-  details textarea { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px; min-height: 80px; margin: 8px 0; }
+  .switch span {
+    position: absolute; inset: 0; background: rgba(255,255,255,.12);
+    border-radius: 26px; transition: .22s; cursor: pointer;
+  }
+  .switch span::before {
+    content: ""; position: absolute; width: 20px; height: 20px; border-radius: 50%;
+    left: 3px; top: 3px; background: #fff; transition: .22s; box-shadow: 0 2px 6px rgba(0,0,0,.4);
+  }
+  .switch input:checked + span { background: linear-gradient(135deg, var(--accent), #ff9d4d); box-shadow: 0 2px 12px rgba(255,122,26,.45); }
+  .switch input:checked + span::before { transform: translateX(20px); }
+
+  .dev-state {
+    text-align: center; padding: 14px 0 6px; color: var(--faint); font-size: 12.5px;
+  }
+  .dev-state .retry {
+    display: inline-block; margin-left: 8px; color: var(--accent2); cursor: pointer;
+    border-bottom: 1px dashed rgba(255,178,87,.5); font-size: 12.5px;
+  }
+
+  /* 骨架屏 */
+  .skel-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; }
+  .skel {
+    height: 12px; border-radius: 6px;
+    background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.11) 45%, rgba(255,255,255,.05) 65%);
+    background-size: 220% 100%; animation: shimmer 1.4s infinite linear;
+  }
+  @keyframes shimmer { from { background-position: 120% 0; } to { background-position: -100% 0; } }
+
+  /* ---------- 调试面板 ---------- */
+  details.debug {
+    margin-top: 40px; color: var(--muted); font-size: 13px;
+    background: rgba(255,255,255,.02); border: 1px solid var(--stroke);
+    border-radius: var(--r-md); padding: 14px 18px;
+  }
+  details.debug summary { cursor: pointer; user-select: none; letter-spacing: .5px; }
+  details.debug summary:hover { color: var(--text); }
+  details.debug .inner { margin-top: 12px; }
+  details.debug p { margin-bottom: 8px; font-size: 12.5px; }
+  details.debug textarea {
+    width: 100%; background: rgba(0,0,0,.35); color: var(--text);
+    border: 1px solid var(--stroke); border-radius: 8px; padding: 10px 12px;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px;
+    min-height: 72px; margin: 6px 0 12px; outline: none; resize: vertical;
+  }
+  details.debug pre {
+    margin-top: 10px; white-space: pre-wrap; word-break: break-all;
+    background: rgba(0,0,0,.35); border: 1px solid var(--stroke); border-radius: 8px;
+    padding: 12px; font-size: 12px; max-height: 260px; overflow: auto; display: none;
+  }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(8px);
+    background: rgba(22,24,30,.92); backdrop-filter: blur(10px);
+    border: 1px solid var(--stroke-hi); color: var(--text);
+    padding: 11px 22px; border-radius: 12px; font-size: 13px;
+    opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 99;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5); max-width: 84vw;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .empty { text-align: center; color: var(--faint); padding: 60px 0; font-size: 14px; }
+
+  @media (max-width: 640px) {
+    header { padding: 12px 16px; }
+    main { padding: 20px 16px 60px; }
+    .grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .device { padding: 14px; }
+  }
+  @media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 <header>
-  <h1>🏠 米家控制台</h1>
-  <div class="btns">
-    <button id="btnRefresh" onclick="refreshAll()">刷新状态</button>
-    <button onclick="logout()">退出登录</button>
+  <div class="brand">
+    <div class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-2v9h-5v-6H10v6H5v-9H3l9-8z"/></svg></div>
+    <div><h1>米家控制台</h1><div class="sub">MI HOME · WEB</div></div>
+  </div>
+  <div class="btns" id="topBtns" style="display:none">
+    <button class="ghost" onclick="refreshAll()">↻ 刷新状态</button>
+    <button class="ghost" onclick="logout()">退出登录</button>
   </div>
 </header>
 <main>
 
   <!-- 登录视图 -->
   <div id="viewLogin" class="view">
-    <div class="login-box">
-      <h2>扫码登录</h2>
-      <p>使用米家 App 扫描二维码，登录后即可在网页控制设备。凭证只保存在你本机浏览器。</p>
-      <div id="pinRow">
-        <input type="password" id="pinInput" placeholder="访问密码（未设置可留空）">
-        <button class="primary" style="width:100%" onclick="startLogin()">生成二维码</button>
-      </div>
-      <img id="qrImg" alt="二维码">
-      <div id="loginMsg"></div>
-      <div id="manualRow" style="display:none; margin-top:16px; text-align:left;">
-        <input type="text" id="manualJson" placeholder='粘贴 {userId, serviceToken, deviceId, ssecurity} JSON'>
-        <button style="width:100%" onclick="manualImport()">手动导入凭证</button>
+    <div class="login-wrap">
+      <div class="login-box">
+        <div class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-2v9h-5v-6H10v6H5v-9H3l9-8z"/></svg></div>
+        <h2>扫码登录</h2>
+        <p class="desc">使用米家 App 扫描二维码，登录后即可在网页控制设备。<br>凭证只保存在你本机浏览器，不会上传到任何第三方。</p>
+        <div id="pinRow">
+          <input type="password" id="pinInput" placeholder="访问密码（未设置可留空）">
+          <button class="primary" style="width:100%;padding:11px" onclick="startLogin()">生成二维码</button>
+        </div>
+        <img id="qrImg" alt="二维码">
+        <div id="loginMsg"></div>
+        <div id="manualRow" style="display:none; margin-top:16px; text-align:left;">
+          <input type="text" id="manualJson" placeholder='粘贴 {userId, serviceToken, deviceId, ssecurity} JSON'>
+          <button style="width:100%" onclick="manualImport()">手动导入凭证</button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- 设备视图 -->
   <div id="viewDevices" class="view">
-    <div id="devErr" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:16px; color:#f85149; font-size:13px; white-space:pre-wrap;"></div>
-    <div class="card-grid" id="grid"></div>
-    <details>
+    <div id="devErr" class="err-banner"></div>
+    <div id="gridHost"></div>
+    <details class="debug">
       <summary>高级调试（自定义 API 调用）</summary>
-      <p style="margin-top:8px">路径（如 /app/miotspec/prop/set 或 /app/miio/call）与 data JSON，将自动签名转发到米家 API：</p>
-      <textarea id="dbgPath" placeholder="/app/miio/call"></textarea>
-      <textarea id="dbgData" placeholder='{"did":"123","method":"get_prop","params":["power"]}'></textarea>
-      <button class="primary" onclick="debugCall()">发送</button>
-      <pre id="dbgOut" style="margin-top:8px; color:var(--text); white-space:pre-wrap;"></pre>
+      <div class="inner">
+        <p>路径（如 /app/miotspec/prop/set 或 /app/miio/call）与 data JSON，将自动签名转发到米家 API：</p>
+        <textarea id="dbgPath" placeholder="/app/miio/call"></textarea>
+        <textarea id="dbgData" placeholder='{"did":"123","method":"get_prop","params":["power"]}'></textarea>
+        <button class="primary" onclick="debugCall()">发送</button>
+        <pre id="dbgOut"></pre>
+      </div>
     </details>
   </div>
 
@@ -93,41 +286,37 @@
 <div class="toast" id="toast"></div>
 <script>
 (function () {
-  var LS_CREDS = 'mijia_creds', LS_PIN = 'mijia_pin', LS_SPEC = 'mijia_spec_v1'
+  var LS_CREDS = 'mijia_creds', LS_PIN = 'mijia_pin', LS_SPEC = 'mijia_spec_v2'
   var creds = null
   try { creds = JSON.parse(localStorage.getItem(LS_CREDS)) } catch (e) {}
 
   function $(id) { return document.getElementById(id) }
   function toast(msg) {
-    var t = $('toast'); t.textContent = msg; t.style.display = 'block'
-    clearTimeout(t._h); t._h = setTimeout(function () { t.style.display = 'none' }, 2500)
+    var t = $('toast'); t.textContent = msg; t.classList.add('show')
+    clearTimeout(t._h); t._h = setTimeout(function () { t.classList.remove('show') }, 2600)
   }
   function showView(name) {
     $('viewLogin').classList.toggle('active', name === 'login')
     $('viewDevices').classList.toggle('active', name === 'devices')
+    $('topBtns').style.display = name === 'devices' ? 'flex' : 'none'
   }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
 
   function asJson(r) {
     var ct = (r.headers.get('content-type') || '')
-    if (ct.indexOf('json') < 0) {
-      throw new Error('接口返回的不是 JSON —— 请确认已把包含 _worker.js 的整个文件夹一起上传到 Cloudflare Pages')
-    }
+    if (ct.indexOf('json') < 0) throw new Error('接口返回的不是 JSON —— 请确认 Functions 已随站点一起部署')
     return r.json()
   }
 
-  // ---- 基础路径（支持部署在任意子目录，如 /mijia-pages/） ----
   var BASE = location.pathname.replace(/[^/]*$/, '')
-
-  // ---- 带密码头的请求 ----
   function api(path, opts) {
     opts = opts || {}
     opts.headers = Object.assign({ 'X-Access-Pin': localStorage.getItem(LS_PIN) || '' }, opts.headers || {})
     return fetch(BASE + path.replace(/^\/+/, ''), opts)
   }
 
-  // ---- 登录流程（无状态轮询） ----
+  // ---- 登录（无状态轮询） ----
   var loginState = null
-
   window.startLogin = function () {
     var pin = $('pinInput').value.trim()
     localStorage.setItem(LS_PIN, pin)
@@ -135,15 +324,14 @@
     api('api/login/start').then(asJson).then(function (j) {
       if (j.error) { $('loginMsg').textContent = '失败：' + j.error; return }
       loginState = j
-      $('qrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(j.loginUrl)
+      $('qrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(j.loginUrl)
       $('qrImg').style.display = 'block'
-      $('loginMsg').textContent = '请用米家 App 扫码并在手机上确认'
+      $('loginMsg').textContent = '请用米家 App 扫码，并在手机上确认登录'
       pollLogin(0)
     }).catch(function (e) { $('loginMsg').textContent = '网络错误：' + e.message })
   }
-
   function pollLogin(n) {
-    if (n > 100) { $('loginMsg').textContent = '二维码已失效，请点击重新生成'; return }
+    if (n > 100) { $('loginMsg').textContent = '二维码已失效，请点击「生成二维码」重新获取'; return }
     api('api/login/poll?lp=' + encodeURIComponent(loginState.lp) + '&deviceId=' + encodeURIComponent(loginState.deviceId))
       .then(asJson).then(function (j) {
         if (j.status === 'success') {
@@ -154,12 +342,11 @@
         } else if (j.status === 'pending') {
           setTimeout(function () { pollLogin(n + 1) }, 1500)
         } else {
-          $('loginMsg').textContent = '登录失败：' + (j.error || '未知错误') + '（也可用下方手动导入）'
+          $('loginMsg').textContent = '登录失败：' + (j.error || '未知错误') + '（可手动导入凭证）'
           $('manualRow').style.display = 'block'
         }
       }).catch(function () { setTimeout(function () { pollLogin(n + 1) }, 2000) })
   }
-
   window.manualImport = function () {
     try {
       var j = JSON.parse($('manualJson').value)
@@ -169,7 +356,6 @@
       toast('导入成功'); showView('devices'); loadDevices()
     } catch (e) { toast('JSON 解析失败') }
   }
-
   window.logout = function () {
     localStorage.removeItem(LS_CREDS); creds = null
     showView('login'); $('qrImg').style.display = 'none'; $('loginMsg').textContent = ''
@@ -187,18 +373,27 @@
     }).then(asJson)
   }
 
-  // ---- 设备列表（新版接口：先拿家庭，再逐家庭拉设备，均分页） ----
-  var devices = []
+  // ---- 设备列表（新版接口，字段兼容 device_id / id） ----
+  var devices = []   // 归一化：{did, name, model, online, specType, room}
 
-  function showDeviceError(msg) {
-    var e = $('devErr'); e.textContent = msg; e.style.display = 'block'
+  function normDevice(d) {
+    return {
+      did: String(d.device_id || d.id || d.did || ''),
+      name: d.name || '未命名设备',
+      model: d.model || '',
+      online: !(d.is_online === false || d.is_online === 0),
+      specType: d.spec_type || d.specType || '',
+      room: d.room_name || d.roomname || ''
+    }
   }
+
+  function showDeviceError(msg) { var e = $('devErr'); e.textContent = msg; e.style.display = 'block' }
   function hideDeviceError() { $('devErr').style.display = 'none' }
 
   window.loadDevices = function () {
     if (!creds) return
     hideDeviceError()
-    toast('加载设备中...')
+    toast('正在加载设备...')
     miCall('v2/homeroom/gethome_merged', { fg: true, fetch_share: true, fetch_share_dev: true, fetch_cariot: true, limit: 300, app_ver: 7, plat_form: 0 }).then(function (j) {
       if (j.code !== 0 || !j.result || !j.result.homelist) {
         showDeviceError('获取家庭列表失败：' + (j.message || j.error || JSON.stringify(j).slice(0, 150)) + '\n若提示 token 失效，请点右上角「退出登录」重新扫码。')
@@ -214,9 +409,9 @@
         if (!all.length) {
           showDeviceError('已登录，但在 ' + homes.length + ' 个家庭中未找到任何设备。')
         } else {
-          devices = all
+          devices = all.map(normDevice).filter(function (d) { return d.did })
           renderAll()
-          toast('已加载 ' + all.length + ' 台设备')
+          toast('已加载 ' + devices.length + ' 台设备')
         }
       })
     }).catch(function (e) { showDeviceError('网络错误：' + e.message) })
@@ -240,21 +435,22 @@
     })
   }
 
-  // ---- spec 解析与渲染 ----
+  // ---- spec 缓存 ----
   var specCache = {}
   try { specCache = JSON.parse(localStorage.getItem(LS_SPEC)) || {} } catch (e) {}
+  function saveSpecCache() { try { localStorage.setItem(LS_SPEC, JSON.stringify(specCache)) } catch (e) {} }
 
   function getSpec(type) {
     if (!type) return Promise.resolve(null)
     if (specCache[type]) return Promise.resolve(specCache[type])
     return api('api/spec?type=' + encodeURIComponent(type)).then(asJson).then(function (j) {
       var inst = j.instance || null
-      if (inst) { specCache[type] = inst; try { localStorage.setItem(LS_SPEC, JSON.stringify(specCache)) } catch (e) {} }
+      if (inst) { specCache[type] = inst; saveSpecCache() }
       return inst
     }).catch(function () { return null })
   }
 
-  // 从 spec 提取可控制属性
+  // ---- spec 解析：提取可控制属性 ----
   function extractControls(inst) {
     if (!inst) return []
     var out = []
@@ -264,7 +460,7 @@
         var ctl = { siid: p.siid, piid: p.piid, name: (p.description && p.description !== '' ? p.description : p.name) || (p.siid + '-' + p.piid) }
         if (access.indexOf('write') >= 0) {
           if (p.format === 'bool') ctl.kind = 'bool'
-          else if (p.format === 'uint8' || p.format === 'uint16' || p.format === 'uint32' || p.format === 'int8' || p.format === 'int16' || p.format === 'int32' || p.format === 'float') {
+          else if (['uint8','uint16','uint32','int8','int16','int32','float'].indexOf(p.format) >= 0) {
             if (p['value-range'] && p['value-range'].length === 3) {
               ctl.kind = 'range'; ctl.min = p['value-range'][0]; ctl.max = p['value-range'][1]; ctl.step = p['value-range'][2]
             } else if (p['value-list'] && p['value-list'].length) { ctl.kind = 'enum'; ctl.list = p['value-list'] }
@@ -277,111 +473,217 @@
     return out.slice(0, 6)
   }
 
+  // ---- 图标 ----
+  var ICONS = {
+    airconditioner: '<path d="M4 4h16a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zm1 2.5h10V8H5V6.5zm0 3h7V11H5V9.5z"/><path d="M7 16h2c0 2-1.5 2-1.5 4H6c0-2 1-2 1-4zm5 0h2c0 2-1.5 2-1.5 4h-1.5c0-2 1-2 1-4zm5 0h2c0 2-1.5 2-1.5 4h-1.5c0-2 1-2 1-4z"/>',
+    light: '<path d="M12 2a7 7 0 00-4 12.7V17a1 1 0 001 1h6a1 1 0 001-1v-2.3A7 7 0 0012 2zM9.5 20h5a1 1 0 010 2h-5a1 1 0 010-2z"/>',
+    curtain: '<path d="M3 3h18v2H3v14a2 2 0 002 2h5V5h2v16H5a4 4 0 01-4-4V5h2V3zm14 18h2a4 4 0 004-4V5h-2v14h-4V5h-2v16h2z"/>',
+    plug: '<path d="M16 2v6h2a2 2 0 012 2v2a8 8 0 01-7 7.94V22h-2v-2.06A8 8 0 014 12v-2a2 2 0 012-2h2V2h2v6h4V2h2z"/>',
+    fan: '<path d="M12 11a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm-1.8-1.5C10.5 6 10 2 12 2s3.5 4 3.8 7.5c2.8-2 6.2-3.4 7.2-1.7 1 1.7-2 4.4-5.2 5.7 3.2 1.3 6.2 4 5.2 5.7-1 1.7-4.4.3-7.2-1.7C15.5 20 14 22 12 22s-3.5-2-3.8-4.5c-2.8 2-6.2 3.4-7.2 1.7-1-1.7 2-4.4 5.2-5.7C3 12.2 0 9.5 1 7.8c1-1.7 4.4-.3 7.2 1.7z"/>',
+    vacuum: '<path d="M12 2a10 10 0 00-10 10 10 10 0 0020 0A10 10 0 0012 2zm0 2a8 8 0 018 8H4a8 8 0 018-8zm-3 10h6a3 3 0 01-6 0z"/>',
+    sensor: '<path d="M12 9a3 3 0 013 3 3 3 0 01-3 3 3 3 0 01-3-3 3 3 0 013-3zM6.3 4.9l1.4 1.4a8 8 0 000 11.4l-1.4 1.4a10 10 0 010-14.2zm11.4 0a10 10 0 010 14.2l-1.4-1.4a8 8 0 000-11.4l1.4-1.4z"/>',
+    camera: '<path d="M4 6h3l2-2h6l2 2h3a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2zm8 3a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6z"/>',
+    router: '<path d="M12 3a9 9 0 019 9h-3a6 6 0 00-12 0H3a9 9 0 019-9zm0 5a4 4 0 014 4H8a4 4 0 014-4zm-9 6h18a1 1 0 011 1v4a1 1 0 01-1 1H3a1 1 0 01-1-1v-4a1 1 0 011-1zm3 2v2h2v-2H6zm4 0v2h2v-2h-2z"/>',
+    tv: '<path d="M21 4H3a2 2 0 00-2 2v10a2 2 0 002 2h7v2H8v2h8v-2h-2v-2h7a2 2 0 002-2V6a2 2 0 00-2-2zm0 12H3V6h18v10z"/>',
+    heater: '<path d="M12 2c1 4-3 5-3 9a3 3 0 006 0c0-1.5-1-2.5-1-4 2 1.5 4 4 4 7a6 6 0 01-12 0c0-6 5-8 6-12z"/>',
+    humidifier: '<path d="M12 2s6 7 6 12a6 6 0 01-12 0c0-5 6-12 6-12zm0 20a4 4 0 004-4h-2a2 2 0 01-4 0H8a4 4 0 004 4z"/>',
+    default: '<path d="M12 2a4 4 0 014 4c0 1.5-.8 2.8-2 3.4V12h4a2 2 0 012 2v1.6c1.2.6 2 1.9 2 3.4a4 4 0 01-8 0c0-1.5.8-2.8 2-3.4V14h-4v1.6c1.2.6 2 1.9 2 3.4a4 4 0 01-8 0c0-1.5.8-2.8 2-3.4V14a2 2 0 012-2h4V9.4A4 4 0 1112 2z"/>'
+  }
+  function pickIcon(model, name) {
+    var s = (model + ' ' + name).toLowerCase()
+    if (s.indexOf('aircondition') >= 0 || s.indexOf('acpartner') >= 0 || s.indexOf('空调') >= 0) return 'airconditioner'
+    if (s.indexOf('light') >= 0 || s.indexOf('lamp') >= 0 || s.indexOf('灯') >= 0) return 'light'
+    if (s.indexOf('curtain') >= 0 || s.indexOf('窗帘') >= 0) return 'curtain'
+    if (s.indexOf('fan') >= 0 || s.indexOf('风扇') >= 0) return 'fan'
+    if (s.indexOf('vacuum') >= 0 || s.indexOf('robotcleaner') >= 0 || s.indexOf('扫地') >= 0) return 'vacuum'
+    if (s.indexOf('sensor') >= 0 || s.indexOf('motion') >= 0 || s.indexOf('sensor') >= 0) return 'sensor'
+    if (s.indexOf('camera') >= 0 || s.indexOf('摄像') >= 0) return 'camera'
+    if (s.indexOf('router') >= 0 || s.indexOf('gateway') >= 0 || s.indexOf('网关') >= 0) return 'router'
+    if (s.indexOf('tv') >= 0 || s.indexOf('电视') >= 0) return 'tv'
+    if (s.indexOf('heater') >= 0 || s.indexOf('暖气') >= 0) return 'heater'
+    if (s.indexOf('humidifier') >= 0 || s.indexOf('加湿') >= 0) return 'humidifier'
+    if (s.indexOf('plug') >= 0 || s.indexOf('switch') >= 0 || s.indexOf('outlet') >= 0 || s.indexOf('插座') >= 0) return 'plug'
+    return 'default'
+  }
+  function svgIcon(key) { return '<svg viewBox="0 0 24 24">' + (ICONS[key] || ICONS.default) + '</svg>' }
+
+  // ---- 渲染 ----
+  var ctlMap = {}   // did -> [{siid, piid, el, kind}]
+  var idxMap = {}   // did -> device
+
   function renderAll() {
-    var grid = $('grid'); grid.innerHTML = ''
-    devices.forEach(function (d, idx) {
-      var card = document.createElement('div')
-      card.className = 'device'
-      card.id = 'dev-' + d.id
-      var online = d.is_online !== false && d.is_online !== 0
-      card.innerHTML = '<h3><span class="dot ' + (online ? 'on' : 'off') + '"></span>' + esc(d.name) + '</h3>' +
-        '<div class="model">' + esc(d.model) + ' · did ' + esc(String(d.id)) + '</div>' +
-        '<div class="ctls" id="ctls-' + d.id + '"><div class="ctl"><label>加载中...</label></div></div>'
-      grid.appendChild(card)
-      getSpec(d.spec_type).then(function (inst) {
-        var box = $('ctls-' + d.id)
-        if (!box) return
-        if (!inst) {
-          box.innerHTML = '<div class="ctl"><label>无 miot 规格，可用下方调试面板手动控制</label></div>'
-          return
-        }
-        var ctls = extractControls(inst)
-        if (!ctls.length) { box.innerHTML = '<div class="ctl"><label>该设备无可直接写的属性</label></div>'; return }
-        box.innerHTML = ''
-        ctls.forEach(function (c) {
-          var row = document.createElement('div'); row.className = 'ctl'
-          var label = document.createElement('label'); label.textContent = c.name; row.appendChild(label)
-          if (c.kind === 'bool') {
-            var sw = document.createElement('div'); sw.className = 'switch'
-            sw.innerHTML = '<input type="checkbox" onchange="setProp(' + idx + ',' + c.siid + ',' + c.piid + ',this.checked,this)"><span></span>'
-            row.appendChild(sw)
-          } else if (c.kind === 'range') {
-            var rg = document.createElement('input'); rg.type = 'range'
-            rg.min = c.min; rg.max = c.max; rg.step = c.step
-            rg.setAttribute('onchange', 'setProp(' + idx + ',' + c.siid + ',' + c.piid + ',Number(this.value),this)')
-            row.appendChild(rg)
-          } else if (c.kind === 'enum') {
-            var sel = document.createElement('select')
-            sel.innerHTML = '<option value="">--</option>' + c.list.map(function (v) {
-              return '<option value="' + v.value + '">' + esc(v.description || String(v.value)) + '</option>'
-            }).join('')
-            sel.setAttribute('onchange', 'setProp(' + idx + ',' + c.siid + ',' + c.piid + ',Number(this.value),this)')
-            row.appendChild(sel)
-          }
-          box.appendChild(row)
-        })
-        refreshDevice(idx)
+    var host = $('gridHost')
+    host.innerHTML = ''
+    ctlMap = {}; idxMap = {}
+    devices.forEach(function (d) { idxMap[d.did] = d })
+
+    var hasRoom = devices.some(function (d) { return d.room })
+    var groups = {}
+    if (hasRoom) {
+      devices.forEach(function (d) {
+        var k = d.room || '其他'
+        ;(groups[k] = groups[k] || []).push(d)
       })
+    } else {
+      groups[''] = devices
+    }
+
+    Object.keys(groups).forEach(function (room) {
+      if (hasRoom) {
+        var head = document.createElement('div')
+        head.className = 'room-head'
+        head.innerHTML = '<span class="room-name">' + esc(room) + '</span><span class="room-line"></span><span class="room-count">' + groups[room].length + ' 台</span>'
+        host.appendChild(head)
+      }
+      var grid = document.createElement('div')
+      grid.className = 'grid'
+      groups[room].forEach(function (d) {
+        grid.appendChild(buildCard(d))
+      })
+      host.appendChild(grid)
     })
   }
 
-  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
+  function buildCard(d) {
+    var card = document.createElement('div')
+    card.className = 'device'
+    var iconKey = pickIcon(d.model, d.name)
+    card.innerHTML =
+      '<div class="dev-head">' +
+        '<div class="dev-icon">' + svgIcon(iconKey) + '</div>' +
+        '<div class="dev-title"><h3>' + esc(d.name) + '</h3><div class="model">' + esc(d.model) + '</div></div>' +
+        '<div class="pill ' + (d.online ? 'on' : 'off') + '"><span class="pdot"></span>' + (d.online ? '在线' : '离线') + '</div>' +
+      '</div>' +
+      '<div class="ctls" data-ctls="' + esc(d.did) + '">' +
+        '<div class="dev-state"><div class="skel-row"><div class="skel" style="width:40%"></div><div class="skel" style="width:46px;height:22px;border-radius:99px"></div></div>' +
+        '<div class="skel-row"><div class="skel" style="width:55%"></div><div class="skel" style="width:96px"></div></div></div>' +
+      '</div>'
 
-  window.setProp = function (idx, siid, piid, value, el) {
-    var d = devices[idx]
+    // 异步加载规格
+    if (!d.specType) {
+      var box0 = card.querySelector('[data-ctls]')
+      box0.innerHTML = '<div class="dev-state">该设备未提供 miot 规格，可用底部调试面板控制</div>'
+      return card
+    }
+    getSpec(d.specType).then(function (inst) {
+      var box = card.querySelector('[data-ctls]')
+      if (!box) return
+      if (!inst) {
+        box.innerHTML = '<div class="dev-state">规格加载失败<span class="retry" data-retry="' + esc(d.did) + '">重试</span></div>'
+        return
+      }
+      var ctls = extractControls(inst)
+      if (!ctls.length) {
+        box.innerHTML = '<div class="dev-state">该设备无可直接写的属性</div>'
+        return
+      }
+      box.innerHTML = ''
+      ctlMap[d.did] = []
+      ctls.forEach(function (c) {
+        var row = document.createElement('div'); row.className = 'ctl'
+        var label = document.createElement('label'); label.textContent = c.name; row.appendChild(label)
+
+        if (c.kind === 'bool') {
+          var sw = document.createElement('div'); sw.className = 'switch'
+          var inp = document.createElement('input'); inp.type = 'checkbox'
+          inp.addEventListener('change', function () { setProp(d, c, inp.checked, inp) })
+          var sp = document.createElement('span')
+          sw.appendChild(inp); sw.appendChild(sp); row.appendChild(sw)
+          ctlMap[d.did].push({ siid: c.siid, piid: c.piid, el: inp, kind: 'bool', readable: c.readable })
+        } else if (c.kind === 'range') {
+          var wrap = document.createElement('div'); wrap.style.cssText = 'display:flex;align-items:center;gap:8px'
+          var rg = document.createElement('input'); rg.type = 'range'
+          rg.min = c.min; rg.max = c.max; rg.step = c.step
+          var rv = document.createElement('span'); rv.className = 'rv'; rv.textContent = '--'
+          rg.addEventListener('input', function () { rv.textContent = rg.value })
+          rg.addEventListener('change', function () { setProp(d, c, Number(rg.value), rg) })
+          wrap.appendChild(rg); wrap.appendChild(rv); row.appendChild(wrap)
+          ctlMap[d.did].push({ siid: c.siid, piid: c.piid, el: rg, kind: 'range', rvEl: rv, readable: c.readable })
+        } else if (c.kind === 'enum') {
+          var sel = document.createElement('select')
+          var opt0 = document.createElement('option'); opt0.value = ''; opt0.textContent = '选择...'; sel.appendChild(opt0)
+          c.list.forEach(function (v) {
+            var o = document.createElement('option'); o.value = v.value; o.textContent = v.description || String(v.value); sel.appendChild(o)
+          })
+          sel.addEventListener('change', function () {
+            if (sel.value === '') return
+            setProp(d, c, Number(sel.value), sel)
+          })
+          row.appendChild(sel)
+          ctlMap[d.did].push({ siid: c.siid, piid: c.piid, el: sel, kind: 'enum', readable: c.readable })
+        }
+        box.appendChild(row)
+      })
+      refreshDevice(d)
+    })
+    return card
+  }
+
+  // 重试按钮（事件委托）
+  $('gridHost').addEventListener('click', function (ev) {
+    var t = ev.target.closest('[data-retry]')
+    if (!t) return
+    var did = t.getAttribute('data-retry')
+    var d = idxMap[did]
+    if (d && d.specType) {
+      delete specCache[d.specType]; saveSpecCache()
+      renderAll()
+    }
+  })
+
+  window.setProp = function (d, c, value, el) {
     toast('发送指令...')
-    miCall('/miotspec/prop/set', { params: [{ did: String(d.id), siid: siid, piid: piid, value: value }] }).then(function (j) {
+    miCall('/miotspec/prop/set', { params: [{ did: d.did, siid: c.siid, piid: c.piid, value: value }] }).then(function (j) {
       var ok = j.code === 0 && j.result && j.result[0] && j.result[0].code === 0
-      toast(ok ? '设置成功' : '设置失败：' + JSON.stringify(j.result || j.message || j))
-      if (!ok && el && el.type === 'checkbox') el.checked = !el.checked
-    }).catch(function (e) { toast('网络错误：' + e.message) })
+      if (ok) { toast('已设置'); setTimeout(function () { refreshDevice(d) }, 600) }
+      else {
+        toast('设置失败：' + JSON.stringify(j.result || j.message || j).slice(0, 80))
+        if (el.type === 'checkbox') el.checked = !el.checked
+        if (el.tagName === 'SELECT') el.value = ''
+      }
+    }).catch(function (e) {
+      toast('网络错误：' + e.message)
+      if (el.type === 'checkbox') el.checked = !el.checked
+    })
   }
 
   window.refreshAll = function () {
-    if (!creds) return
-    devices.forEach(function (_, idx) { refreshDevice(idx) })
+    if (!creds || !devices.length) return
+    devices.forEach(function (d) { refreshDevice(d) })
+    toast('正在刷新状态...')
   }
 
-  function refreshDevice(idx) {
-    var d = devices[idx]
-    var inst = d.spec_type ? specCache[d.spec_type] : null
-    if (!inst) return
-    var reads = []
-    inst.services.forEach(function (svc) {
-      (svc.properties || []).forEach(function (p) {
-        if ((p.access || []).indexOf('read') >= 0) reads.push({ did: String(d.id), siid: p.siid, piid: p.piid })
-      })
+  function refreshDevice(d) {
+    var list = ctlMap[d.did]
+    if (!list || !list.length) return
+    var reads = list.filter(function (c) { return c.readable }).map(function (c) {
+      return { did: d.did, siid: c.siid, piid: c.piid }
     })
     if (!reads.length) return
-    miCall('/miotspec/prop/get', { params: reads.slice(0, 60) }).then(function (j) {
+    miCall('/miotspec/prop/get', { params: reads.slice(0, 40) }).then(function (j) {
       if (j.code !== 0 || !j.result) return
-      var box = $('ctls-' + d.id)
-      if (!box) return
       j.result.forEach(function (r) {
         if (r.code !== 0) return
-        var nodes = box.querySelectorAll('input[type=range], select, input[type=checkbox]')
-        nodes.forEach(function (node) {
-          var attr = node.getAttribute('onchange') || ''
-          var m = attr.match(/setProp\(\d+,(\d+),(\d+),/)
-          if (m && Number(m[1]) === r.siid && Number(m[2]) === r.piid) {
-            if (node.type === 'range') node.value = r.value
-            else if (node.type === 'checkbox') node.checked = !!r.value
-            else if (node.tagName === 'SELECT' && r.value !== null && r.value !== undefined) node.value = String(r.value)
-          }
+        list.forEach(function (c) {
+          if (c.siid !== r.siid || c.piid !== r.piid) return
+          if (c.kind === 'bool') c.el.checked = !!r.value
+          else if (c.kind === 'range') { c.el.value = r.value; if (c.rvEl) c.rvEl.textContent = String(r.value) }
+          else if (c.kind === 'enum' && r.value !== null && r.value !== undefined) c.el.value = String(r.value)
         })
       })
-    })
+    }).catch(function () {})
   }
 
   // ---- 调试 ----
   window.debugCall = function () {
     var path = $('dbgPath').value.trim()
     var data
-    try { data = JSON.parse($('dbgData').value) } catch (e) { $('dbgOut').textContent = 'data JSON 解析失败'; return }
+    try { data = JSON.parse($('dbgData').value) } catch (e) { $('dbgOut').style.display = 'block'; $('dbgOut').textContent = 'data JSON 解析失败'; return }
     api('app/' + path.replace(/^\/+/, ''), {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: creds.userId, serviceToken: creds.serviceToken, deviceId: creds.deviceId, securityToken: creds.ssecurity, data: data })
     }).then(asJson).then(function (j) {
+      $('dbgOut').style.display = 'block'
       $('dbgOut').textContent = JSON.stringify(j, null, 2)
     })
   }
