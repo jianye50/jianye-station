@@ -551,7 +551,7 @@ body.lb-lock{overflow:hidden}
 }
 .al-back:hover{color:var(--accent);background:var(--accent-soft)}
 .al-back:active{transform:scale(.96)}
-/* 灯箱：视频与 LIVE 切换按钮 */
+/* 灯箱：视频与动态照片控制条（仿 Windows 照片的「动态 + 声音」胶囊） */
 .lightbox video{
   position:relative;z-index:1;
   max-width:88vw;max-height:80vh;border-radius:16px;
@@ -559,10 +559,33 @@ body.lb-lock{overflow:hidden}
   background:#000;
   animation:fadeUp .3s cubic-bezier(.2,.7,.2,1) both;
 }
-.lb-live{
-  right:22px;top:82px;width:auto;min-width:48px;height:34px;border-radius:999px;
-  padding:0 14px;font-size:12px;font-weight:800;letter-spacing:.1em;
-  color:#ffd23f;border:1.5px solid rgba(255,210,63,.7);
+.lb-motion{
+  position:absolute;left:22px;top:22px;z-index:2;
+  display:flex;align-items:center;gap:2px;
+  padding:5px 8px;border-radius:999px;
+  /* 液态玻璃胶囊（同导航栏材质） */
+  background:linear-gradient(120deg,rgba(255,255,255,.16),rgba(255,255,255,.07) 38%,rgba(255,255,255,.12) 62%,rgba(255,255,255,.05)),rgba(16,20,30,.35);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.22),
+    inset 0 1.5px .5px -1px rgba(255,255,255,.55),
+    0 4px 14px rgba(6,10,25,.30);
+}
+.lb-mbtn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 13px;border-radius:999px;
+  font-size:13px;font-weight:650;color:#fff;
+  transition:background .2s,color .2s;
+}
+.lb-mbtn:hover{background:rgba(255,255,255,.14)}
+.lb-mbtn:active{transform:scale(.95)}
+.lb-mbtn svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lb-mbtn.on{background:var(--accent-soft);color:var(--accent)}
+.lb-mic{padding:7px 10px}
+.lb-msep{width:1px;height:16px;background:rgba(255,255,255,.22);flex:none}
+@media (max-width:640px){
+  .lb-motion{left:12px;top:12px}
 }
 
 /* ===================== 内页标题 ===================== */
@@ -897,7 +920,12 @@ setTimeout(function(){var b=document.getElementById("boot");if(b)b.classList.add
   </button>
   <img id="lbImg" src="" alt="">
   <video id="lbVideo" playsinline style="display:none"></video>
-  <button class="lb-btn lb-live" id="lbLiveBtn" type="button" aria-label="Live Photo">LIVE</button>
+  <!-- 动态照片控制条（仿 Windows 照片）：动态开关 + 声音开关 -->
+  <div class="lb-motion" id="lbMotionBar" style="display:none">
+    <button class="lb-mbtn" id="lbMotionBtn" type="button" aria-label="动态"></button>
+    <span class="lb-msep"></span>
+    <button class="lb-mbtn lb-mic" id="lbSoundBtn" type="button" aria-label="声音"></button>
+  </div>
   <button class="lb-btn lb-next" id="lbNext" aria-label="下一张">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
   </button>
@@ -1009,8 +1037,10 @@ const I18N={
       albumCount:n=>`${n} 项`,
       liveTag:"LIVE",
       videoTag:"视频",
-      liveBtn:"播放动态效果",
-      stillBtn:"查看静态照片"
+      motion:"动态",
+      still:"静态",
+      soundOn:"开声音",
+      soundOff:"静音"
     },
     blog:{
       title:"博客",
@@ -1062,8 +1092,10 @@ const I18N={
       albumCount:n=>`${n} item${n===1?"":"s"}`,
       liveTag:"LIVE",
       videoTag:"Video",
-      liveBtn:"Play live effect",
-      stillBtn:"View still photo"
+      motion:"Motion",
+      still:"Still",
+      soundOn:"Unmute",
+      soundOff:"Mute"
     },
     blog:{
       title:"Blog",
@@ -1424,10 +1456,68 @@ function paintPhotoGrids(){
 
 /* ---------- 灯箱（图片 / 视频 / Live Photo） ---------- */
 let lbIndex=0, lbFocus=null, lbItems=[];
+/* 灯箱控制条图标（描边风格，与按钮 stroke 一致） */
+const ICON_MOTION='<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>';
+const ICON_SND_ON='<svg viewBox="0 0 24 24"><path d="M11 5 6.5 9H3v6h3.5L11 19z"/><path d="M15.6 9.2a4 4 0 0 1 0 5.6"/><path d="M18.4 6.5a8 8 0 0 1 0 11"/></svg>';
+const ICON_SND_OFF='<svg viewBox="0 0 24 24"><path d="M11 5 6.5 9H3v6h3.5L11 19z"/><path d="m16 9 5 6"/><path d="m21 9-5 6"/></svg>';
+/* 灯箱动态状态：lbMotionOn 当前是否在播动态；lbSoundOn 声音开关（默认开） */
+let lbMotionOn=false, lbSoundOn=true;
+function paintMotionBtn(){
+  const p=lbItems[lbIndex];
+  const btn=$("#lbMotionBtn");
+  if(!btn||!p||p.type!=="live")return;
+  btn.innerHTML=ICON_MOTION+"<span>"+esc(lbMotionOn?T().gallery.still:T().gallery.motion)+"</span>";
+  btn.title=lbMotionOn?T().gallery.still:T().gallery.motion;
+  btn.classList.toggle("on",lbMotionOn);
+}
+function paintSoundBtn(){
+  const snd=$("#lbSoundBtn");
+  if(!snd)return;
+  snd.innerHTML=lbSoundOn?ICON_SND_ON:ICON_SND_OFF;
+  snd.title=lbSoundOn?T().gallery.soundOff:T().gallery.soundOn;
+  snd.setAttribute("aria-label",snd.title);
+  snd.classList.toggle("on",false);
+}
+/* 按当前状态应用动态/静态显示 */
+function applyLbMotion(){
+  const p=lbItems[lbIndex];
+  if(!p||p.type!=="live")return;
+  const img=$("#lbImg"), vid=$("#lbVideo");
+  if(lbMotionOn){
+    img.style.display="none"; vid.style.display="";
+    vid.controls=false; vid.loop=true;
+    vid.muted=!lbSoundOn;
+    if(vid.src!==p.live)vid.src=p.live;
+    vid.play().catch(()=>{
+      /* 出声自动播放被拦 → 先静音播起来（声音开关还亮着，用户再点一下即可） */
+      if(!vid.muted){ vid.muted=true; vid.play().catch(()=>{}); }
+    });
+  }else{
+    try{ vid.pause(); }catch(e){}
+    vid.style.display="none"; img.style.display="";
+  }
+  paintMotionBtn();
+}
+/* 动态/静态切换（Windows 照片同款：左上角「动态」按钮） */
+function lbToggleLive(){
+  const p=lbItems[lbIndex];
+  if(!p||p.type!=="live")return;
+  lbMotionOn=!lbMotionOn;
+  applyLbMotion();
+}
+/* 声音开关 */
+function lbToggleSound(){
+  lbSoundOn=!lbSoundOn;
+  const vid=$("#lbVideo");
+  vid.muted=!lbSoundOn;
+  /* 静音状态下被浏览器拦住的播放，开声后补一次播放尝试 */
+  if(lbMotionOn&&vid.paused&&lbSoundOn)vid.play().catch(()=>{});
+  paintSoundBtn();
+}
 function setLbMedia(p){
-  const img=$("#lbImg"), vid=$("#lbVideo"), liveBtn=$("#lbLiveBtn");
-  liveBtn.style.display=(p.type==="live")?"":"none";
-  liveBtn.textContent=T().gallery.liveBtn;
+  const img=$("#lbImg"), vid=$("#lbVideo"), bar=$("#lbMotionBar");
+  lbMotionOn=false;
+  bar.style.display="none";
   /* 先停掉上一条的动态视频，防止切换后还在放 */
   try{ vid.pause(); }catch(e){}
   vid.removeAttribute("src"); vid.load();
@@ -1449,30 +1539,19 @@ function setLbMedia(p){
         img.dataset.s="1"; img.src=img.dataset.alt;
       };
     }
-    /* 普通图片也试一下是不是动态照片（内嵌视频的 JPG），识别成功就现出 LIVE 按钮 */
-    if(p.type==="image"){
+    if(p.type==="live"){
+      /* 已识别的动态照片（配对 Live Photo / 内嵌视频 Motion Photo）→ 显示控制条 */
+      bar.style.display="";
+      paintMotionBtn(); paintSoundBtn();
+    }else if(p.type==="image"){
+      /* 普通图片也试一下是不是动态照片（内嵌视频的 JPG），识别成功就显示控制条 */
       promoteMotion(p,null,false).then(url=>{
-        if(url&&lbItems[lbIndex]===p)liveBtn.style.display="";
+        if(url&&lbItems[lbIndex]===p){
+          bar.style.display="";
+          paintMotionBtn(); paintSoundBtn();
+        }
       });
     }
-  }
-}
-/* Live Photo / 动态照片：灯箱里在静态照片与动态视频之间切换
-   动态播放带声音、带控制条（点击按钮是用户手势，浏览器允许出声） */
-function lbToggleLive(){
-  const p=lbItems[lbIndex];
-  if(!p||p.type!=="live")return;
-  const img=$("#lbImg"), vid=$("#lbVideo"), liveBtn=$("#lbLiveBtn");
-  if(vid.style.display==="none"){
-    img.style.display="none"; vid.style.display="";
-    vid.controls=true; vid.muted=false; vid.loop=true;
-    vid.src=p.live;
-    vid.play().catch(()=>{});
-    liveBtn.textContent=T().gallery.stillBtn;
-  }else{
-    try{ vid.pause(); }catch(e){}
-    vid.style.display="none"; img.style.display="";
-    liveBtn.textContent=T().gallery.liveBtn;
   }
 }
 function openLb(items,i){
@@ -2243,6 +2322,12 @@ $("#langBtn").addEventListener("click",()=>setLang(lang==="zh"?"en":"zh"));
 $("#lbClose").addEventListener("click",closeLb);
 $("#lbPrev").addEventListener("click",e=>{e.stopPropagation();stepLb(-1)});
 $("#lbNext").addEventListener("click",e=>{e.stopPropagation();stepLb(1)});
+$("#lbMotionBtn").addEventListener("click",e=>{e.stopPropagation();lbToggleLive()});
+$("#lbSoundBtn").addEventListener("click",e=>{e.stopPropagation();lbToggleSound()});
+/* 动态视频解析出来却播不动（罕见坏数据）→ 自动退回静态照片，别卡在黑屏 */
+$("#lbVideo").addEventListener("error",()=>{
+  if(lbMotionOn){ lbMotionOn=false; applyLbMotion(); }
+});
 $("#lightbox").addEventListener("click",e=>{if(e.target.id==="lightbox")closeLb()});
 document.addEventListener("click",e=>{
   /* 首屏那个滚动提示：点一下平滑滚到相册预览 */
