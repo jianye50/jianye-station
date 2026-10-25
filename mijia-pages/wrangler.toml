@@ -1,8 +1,0 @@
-name = "mijia-control"
-pages_build_output_dir = "."
-
-# 访问密码（强烈建议设置）
-# Pages Dashboard → 你的项目 → Settings → Variables and Secrets → 添加：
-#   变量名 ACCESS_PASSWORD，类型 Secret，值为你的密码（Production 和 Preview 都加）
-# 添加后需要重新部署一次才生效。
-# 本地调试：在同目录创建 .dev.vars 文件写入 ACCESS_PASSWORD=你的密码
