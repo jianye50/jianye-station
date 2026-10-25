@@ -77,6 +77,7 @@
 
   <!-- 设备视图 -->
   <div id="viewDevices" class="view">
+    <div id="devErr" style="display:none; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:16px; color:#f85149; font-size:13px; white-space:pre-wrap;"></div>
     <div class="card-grid" id="grid"></div>
     <details>
       <summary>高级调试（自定义 API 调用）</summary>
@@ -186,18 +187,56 @@
     }).then(asJson)
   }
 
-  // ---- 设备列表 ----
+  // ---- 设备列表（新版接口：先拿家庭，再逐家庭拉设备，均分页） ----
   var devices = []
+
+  function showDeviceError(msg) {
+    var e = $('devErr'); e.textContent = msg; e.style.display = 'block'
+  }
+  function hideDeviceError() { $('devErr').style.display = 'none' }
+
   window.loadDevices = function () {
     if (!creds) return
+    hideDeviceError()
     toast('加载设备中...')
-    miCall('/home/device_list', { start: 0, limit: 200, getExtendedInfoFromOs: 1 }).then(function (j) {
-      if (j.code !== 0 || !j.result || !j.result.list) {
-        toast('获取设备失败：' + (j.message || j.error || 'token 可能已失效，请退出重新扫码'))
+    miCall('v2/homeroom/gethome_merged', { fg: true, fetch_share: true, fetch_share_dev: true, fetch_cariot: true, limit: 300, app_ver: 7, plat_form: 0 }).then(function (j) {
+      if (j.code !== 0 || !j.result || !j.result.homelist) {
+        showDeviceError('获取家庭列表失败：' + (j.message || j.error || JSON.stringify(j).slice(0, 150)) + '\n若提示 token 失效，请点右上角「退出登录」重新扫码。')
         return
       }
-      devices = j.result.list
-      renderAll()
+      var homes = j.result.homelist
+      var all = []
+      var chain = Promise.resolve()
+      homes.forEach(function (h) {
+        chain = chain.then(function () { return fetchHomeDevices(h.id, h.uid, all) })
+      })
+      chain.then(function () {
+        if (!all.length) {
+          showDeviceError('已登录，但在 ' + homes.length + ' 个家庭中未找到任何设备。')
+        } else {
+          devices = all
+          renderAll()
+          toast('已加载 ' + all.length + ' 台设备')
+        }
+      })
+    }).catch(function (e) { showDeviceError('网络错误：' + e.message) })
+  }
+
+  function fetchHomeDevices(homeId, uid, all, startDid) {
+    var data = {
+      home_owner: uid, home_id: Number(homeId), limit: 200,
+      start_did: startDid || '', get_split_device: true,
+      support_smart_home: true, get_cariot_device: true, get_third_device: true
+    }
+    return miCall('home/home_device_list', data).then(function (j) {
+      if (j.code !== 0 || !j.result) {
+        showDeviceError('获取设备列表失败（家庭 ' + homeId + '）：' + (j.message || JSON.stringify(j).slice(0, 150)))
+        return
+      }
+      ;(j.result.device_info || []).forEach(function (d) { all.push(d) })
+      if (j.result.has_more && j.result.max_did) {
+        return fetchHomeDevices(homeId, uid, all, j.result.max_did)
+      }
     })
   }
 
