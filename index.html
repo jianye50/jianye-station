@@ -585,7 +585,9 @@ body.lb-lock{overflow:hidden}
 .lb-mic{padding:7px 10px}
 .lb-msep{width:1px;height:16px;background:rgba(255,255,255,.22);flex:none}
 @media (max-width:640px){
+  /* 手机端：动态控制条与右上角关闭按钮同高对齐（12px 边距、垂直居中对齐） */
   .lb-motion{left:12px;top:12px}
+  .lb-close{right:12px;top:12px}
 }
 
 /* ===================== 内页标题 ===================== */
@@ -1328,6 +1330,15 @@ async function loadPhotos(){
   photos.sort((a,b)=>b.name.localeCompare(a.name,"zh-Hans-CN",{numeric:true}));
   photosStatus="ready";
   paintPhotoGrids();
+  /* 页面一打开就逐张探测动态照片（轻量，只读头尾各 1MB），
+     是动态的提前升级并补上 LIVE 角标，不用等鼠标悬停 */
+  photos.forEach(p=>{
+    if(p.type!=="image"||p._motionTried)return;
+    motionProbe(p.src).then(y=>{
+      if(!y)return;
+      promoteMotion(p,null,false).then(url=>{ if(url)motionRepaint(); });
+    });
+  });
 }
 
 /* 当前要显示的媒体：子相册之间互相独立 ——
@@ -1363,6 +1374,37 @@ function motionVideoURL(src){
   })();
   motionCache.set(src,p);
   return p;
+}
+/* 轻量探测：只取文件头尾各一小段，看有没有动态照片标记
+   （XMP 的 MotionPhoto / MicroVideo，或三星的 SEFT 尾标记），
+   页面刚打开时逐张探测，这样不用等悬停就能提前标出 LIVE 角标 */
+const motionProbeCache=new Map();   /* src -> Promise<bool> */
+function motionProbe(src){
+  let p=motionProbeCache.get(src);
+  if(p)return p;
+  p=(async()=>{
+    try{
+      const grab=r=>fetch(src,{headers:{Range:r}})
+        .then(res=>res.ok?res.arrayBuffer():new ArrayBuffer(0)).catch(()=>new ArrayBuffer(0));
+      const [hb,tb]=await Promise.all([grab("bytes=0-65535"),grab("bytes=-1048576")]);
+      const hasMark=b=>/MotionPhoto|MicroVideo|SEFT/.test(new TextDecoder("latin1").decode(new Uint8Array(b)));
+      if(hasMark(hb)||hasMark(tb))return true;
+      /* 兜底：尾段里直接找 mp4 盒子的 ftyp 开盒标记 */
+      const u=new Uint8Array(tb);
+      for(let i=u.length-12;i>0;i--){
+        if(u[i]===0x66&&u[i+1]===0x74&&u[i+2]===0x79&&u[i+3]===0x70)return true;
+      }
+      return false;
+    }catch(e){ return false; }
+  })();
+  motionProbeCache.set(src,p);
+  return p;
+}
+/* 探测出动态照片后要重铺网格让 LIVE 角标显出来；多张并发时合并成一次重铺 */
+let motionPaintTimer=0;
+function motionRepaint(){
+  clearTimeout(motionPaintTimer);
+  motionPaintTimer=setTimeout(paintPhotoGrids,150);
 }
 /* 把普通图片升级成动态照片：识别成功就改成 live 类型；
    传入 tile 时顺手塞进悬停用的动态视频层（autoplay=true 立即播放） */
@@ -1456,8 +1498,9 @@ function paintPhotoGrids(){
 
 /* ---------- 灯箱（图片 / 视频 / Live Photo） ---------- */
 let lbIndex=0, lbFocus=null, lbItems=[];
-/* 灯箱控制条图标（描边风格，与按钮 stroke 一致） */
-const ICON_MOTION='<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>';
+/* 灯箱控制条图标（描边风格，与按钮 stroke 一致）；
+   动态图标用苹果 Live Photo 同款同心圆（微软照片也是这个），不是刷新箭头 */
+const ICON_MOTION='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none"/></svg>';
 const ICON_SND_ON='<svg viewBox="0 0 24 24"><path d="M11 5 6.5 9H3v6h3.5L11 19z"/><path d="M15.6 9.2a4 4 0 0 1 0 5.6"/><path d="M18.4 6.5a8 8 0 0 1 0 11"/></svg>';
 const ICON_SND_OFF='<svg viewBox="0 0 24 24"><path d="M11 5 6.5 9H3v6h3.5L11 19z"/><path d="m16 9 5 6"/><path d="m21 9-5 6"/></svg>';
 /* 灯箱动态状态：lbMotionOn 当前是否在播动态；lbSoundOn 声音开关（默认开） */
@@ -1485,8 +1528,9 @@ function applyLbMotion(){
   const img=$("#lbImg"), vid=$("#lbVideo");
   if(lbMotionOn){
     img.style.display="none"; vid.style.display="";
-    vid.controls=false; vid.loop=true;
+    vid.controls=false; vid.loop=false;    /* Windows 同款：点一下只播一次，播完自动回静态 */
     vid.muted=!lbSoundOn;
+    vid.currentTime=0;
     if(vid.src!==p.live)vid.src=p.live;
     vid.play().catch(()=>{
       /* 出声自动播放被拦 → 先静音播起来（声音开关还亮着，用户再点一下即可） */
@@ -2326,6 +2370,10 @@ $("#lbMotionBtn").addEventListener("click",e=>{e.stopPropagation();lbToggleLive(
 $("#lbSoundBtn").addEventListener("click",e=>{e.stopPropagation();lbToggleSound()});
 /* 动态视频解析出来却播不动（罕见坏数据）→ 自动退回静态照片，别卡在黑屏 */
 $("#lbVideo").addEventListener("error",()=>{
+  if(lbMotionOn){ lbMotionOn=false; applyLbMotion(); }
+});
+/* Windows 同款：动态效果播完一次自动回到静态照片 */
+$("#lbVideo").addEventListener("ended",()=>{
   if(lbMotionOn){ lbMotionOn=false; applyLbMotion(); }
 });
 $("#lightbox").addEventListener("click",e=>{if(e.target.id==="lightbox")closeLb()});
