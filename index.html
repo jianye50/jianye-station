@@ -965,15 +965,16 @@ const FRIENDS=[
 /* ---------- 相册：媒体来自站点根目录下的「Photo Album」文件夹 ----------
    Photo Album 里的照片/视频是「全部」；里面再建的子文件夹是各自的相册，
    子文件夹之间互不混淆（图库页顶部会列出相册卡片，点进去只看该相册）。
-   支持三种内容：普通图片、视频（mp4/mov/webm…）、Live Photo
-   （同一相册里「同名图片 + 同名 .mov/.mp4」自动识别为一组 Live Photo，
-   悬停/灯箱里可以看到动态效果）。
+   支持三种内容：普通图片、视频（mp4/mov/webm…）、动态图片
+   （① Live Photo 配对：同一相册里「同名图片 + 同名 .mov/.mp4」自动配成一组；
+     ② 手机动态照片/Motion Photo：单张内嵌视频的 JPG，自动解析出动态部分，
+        悬停预览、灯箱里带声音播放）。
    两种来源：① 本地服务器/静态托管的目录列表；② GitHub API 兜底。 */
 const PHOTO_DIRS=["Photo Album/","../Photo Album/"];
 const IMG_RE=/\.(jpe?g|png|gif|webp|bmp|avif|heic|heif)$/i;
 const VID_RE=/\.(mp4|mov|m4v|webm)$/i;
 const MEDIA_RE=/\.(jpe?g|png|gif|webp|bmp|avif|heic|heif|mp4|mov|m4v|webm)$/i;
-const GH_REPO="jianye50/Jianye-Cloud", GH_BRANCH="main";
+const GH_REPO="jianye50/jianye-station", GH_BRANCH="main";
 /* file:// 下读不到目录时用的兜底清单（只覆盖 Photo Album 根目录的图片，
    子相册与视频需用本地服务器打开自动读取；新增照片请用本地服务器打开） */
 const PHOTO_FALLBACK=[
@@ -999,7 +1000,7 @@ const I18N={
     gallery:{
       title:"相册",
       sub:n=>`共 ${n} 张照片 / 视频 · 点击查看`,
-      tip:"照片放在站点根目录的「Photo Album」文件夹里；在里面建的子文件夹会自动成为独立相册，视频与 Live Photo（同名图片 + 同名 mov/mp4）也会一起展示。增删后刷新页面即可。",
+      tip:"照片放在站点根目录的「Photo Album」文件夹里；里面的子文件夹是独立相册（内容互不混杂），视频与动态图片（Live Photo 配对 / 手机 Motion Photo 单文件）也会一起展示。增删后刷新页面即可。",
       empty:"「Photo Album」文件夹里还没有照片，把图片放进去后刷新页面试试。",
       err:"暂时读不到「Photo Album」文件夹。<br>用本地服务器打开本页即可自动扫描，例如在站点目录运行 <code>python -m http.server</code>。",
       albums:"子相册",
@@ -1052,7 +1053,7 @@ const I18N={
     gallery:{
       title:"Albums",
       sub:n=>`${n} photos & videos · click to view`,
-      tip:"Media lives in the “Photo Album” folder at the site root — subfolders inside become separate albums, and videos / Live Photos (same-named image + mov/mp4) show up too. Add or remove some and refresh.",
+      tip:"Media lives in the “Photo Album” folder at the site root — subfolders are independent albums, and videos / motion photos (Live Photo pairs or single-file Motion Photos) show up too. Add or remove some and refresh.",
       empty:"No media in the “Photo Album” folder yet. Drop some in and refresh.",
       err:"Can't read the “Photo Album” folder right now.<br>Serve the site locally to scan it, e.g. run <code>python -m http.server</code> in the site folder.",
       albums:"Sub-albums",
@@ -1297,9 +1298,59 @@ async function loadPhotos(){
   paintPhotoGrids();
 }
 
-/* 当前要显示的媒体：全部（galleryFilter 为空）或某个子相册 */
+/* 当前要显示的媒体：子相册之间互相独立 ——
+   没选相册时只显示 Photo Album 根目录的内容，子相册里的只在点进去后显示 */
 function viewList(){
-  return galleryFilter?photos.filter(p=>p.album===galleryFilter):photos;
+  return galleryFilter?photos.filter(p=>p.album===galleryFilter):photos.filter(p=>!p.album);
+}
+/* ---------- 动态照片（手机「动态图片 / Motion Photo / Live Photo」单文件）----------
+   这类「动态图片」是一张内嵌了带声音视频的 JPG：XMP 带 MotionPhoto 标记，
+   视频以 mp4 盒子（ftyp…）附在文件尾部。浏览器只把它渲染成普通图片，
+   这里把内嵌的 mp4 抠出来转成 Blob URL，供悬停预览与灯箱播放（有声音）。
+   识别结果缓存在照片对象上，一张图只解析一次。 */
+const motionCache=new Map();   /* src -> Promise<blobURL|""> */
+function motionVideoURL(src){
+  let p=motionCache.get(src);
+  if(p)return p;
+  p=(async()=>{
+    try{
+      const res=await fetch(src);
+      if(!res.ok)return "";
+      const buf=new Uint8Array(await res.arrayBuffer());
+      const n=buf.length;
+      /* 从尾部往前找 mp4 盒子的 "ftyp" 标记（动态照片的视频都附在文件末尾；
+         跳过开头 1KB，避免误把 EXIF 缩略图里的数据当成视频） */
+      for(let i=n-12;i>1024;i--){
+        if(buf[i]===0x66&&buf[i+1]===0x74&&buf[i+2]===0x79&&buf[i+3]===0x70){
+          const blob=new Blob([buf.subarray(i-4,n)],{type:"video/mp4"});
+          return URL.createObjectURL(blob);
+        }
+      }
+      return "";
+    }catch(e){ return ""; }
+  })();
+  motionCache.set(src,p);
+  return p;
+}
+/* 把普通图片升级成动态照片：识别成功就改成 live 类型；
+   传入 tile 时顺手塞进悬停用的动态视频层（autoplay=true 立即播放） */
+function promoteMotion(p,tile,autoplay){
+  if(!p||p.type!=="image"||p._motionTried)return Promise.resolve("");
+  p._motionTried=true;
+  return motionVideoURL(p.src).then(url=>{
+    if(!url)return "";
+    if(p.type==="image"){ p.type="live"; p.live=url; }
+    if(tile){
+      tile.classList.add("is-live");
+      const v=document.createElement("video");
+      v.className="ph-live-v"; v.src=url; v.muted=true; v.loop=true;
+      v.playsInline=true; v.preload="auto";
+      const cap=tile.querySelector(".ph-cap");
+      if(cap)tile.insertBefore(v,cap); else tile.appendChild(v);
+      if(autoplay){ v.style.display="block"; v.play().catch(()=>{}); }
+    }
+    return url;
+  });
 }
 /* 瓷砖内容：图片直接 <img>；视频用 <video> 抓首帧；Live Photo 静态图 + 悬停播放动态视频 */
 function mediaTileTag(p){
@@ -1358,7 +1409,7 @@ function albumStripHtml(){
 function paintPhotoGrids(){
   document.querySelectorAll("[data-photo-grid]").forEach(el=>{
     const limit=Number(el.dataset.photoGrid)||0;
-    const list=limit>0?photos:viewList();
+    const list=limit>0?photos.filter(p=>!p.album):viewList();   /* 首页预览也只取根目录 */
     el.innerHTML=photoTilesHtml(list,limit);
     el._items=list;                     /* 灯箱要按这份清单导航 */
   });
@@ -1398,16 +1449,23 @@ function setLbMedia(p){
         img.dataset.s="1"; img.src=img.dataset.alt;
       };
     }
+    /* 普通图片也试一下是不是动态照片（内嵌视频的 JPG），识别成功就现出 LIVE 按钮 */
+    if(p.type==="image"){
+      promoteMotion(p,null,false).then(url=>{
+        if(url&&lbItems[lbIndex]===p)liveBtn.style.display="";
+      });
+    }
   }
 }
-/* Live Photo：灯箱里在静态照片与动态视频之间切换 */
+/* Live Photo / 动态照片：灯箱里在静态照片与动态视频之间切换
+   动态播放带声音、带控制条（点击按钮是用户手势，浏览器允许出声） */
 function lbToggleLive(){
   const p=lbItems[lbIndex];
   if(!p||p.type!=="live")return;
   const img=$("#lbImg"), vid=$("#lbVideo"), liveBtn=$("#lbLiveBtn");
   if(vid.style.display==="none"){
     img.style.display="none"; vid.style.display="";
-    vid.controls=false; vid.muted=true; vid.loop=true;
+    vid.controls=true; vid.muted=false; vid.loop=true;
     vid.src=p.live;
     vid.play().catch(()=>{});
     liveBtn.textContent=T().gallery.stillBtn;
@@ -2206,11 +2264,20 @@ document.addEventListener("click",e=>{
   const grid=tile.closest("[data-photo-grid]");
   openLb((grid&&grid._items)||photos,Number(tile.dataset.idx));
 });
-/* Live Photo 瓷砖：鼠标悬停播放动态效果，移开还原成静态照片 */
+/* 动态瓷砖：悬停播放动态效果，移开还原成静态照片。
+   普通图片首次悬停时顺带探测是不是动态照片（内嵌视频），是就升级成动态。 */
 document.addEventListener("mouseover",e=>{
-  const tile=e.target.closest(".ph-tile.is-live"); if(!tile)return;
-  const v=tile.querySelector(".ph-live-v");
-  if(v){ v.style.display="block"; v.play().catch(()=>{}); }
+  const tile=e.target.closest(".ph-tile");
+  if(!tile||tile.classList.contains("ph-skel")||tile.dataset.idx===undefined)return;
+  const grid=tile.closest("[data-photo-grid]");
+  const p=((grid&&grid._items)||[])[Number(tile.dataset.idx)];
+  if(!p)return;
+  if(tile.classList.contains("is-live")){
+    const v=tile.querySelector(".ph-live-v");
+    if(v){ v.style.display="block"; v.play().catch(()=>{}); }
+    return;
+  }
+  if(p.type==="image")promoteMotion(p,tile,true);
 });
 document.addEventListener("mouseout",e=>{
   const tile=e.target.closest(".ph-tile.is-live"); if(!tile)return;
@@ -2495,7 +2562,7 @@ input[type=range].mp-range::-moz-range-thumb{
   /* ---------------- 常量 ---------------- */
   const KEY="jy-mini-music-state";
   const SNAP_FILES=["../kugou-playlist.js","kugou-playlist.js"];
-  const GH_REPO="jianye50/Jianye-Cloud", GH_BRANCH="main";
+  const GH_REPO="jianye50/jianye-station", GH_BRANCH="main";
   const GD_API="https://music-api.gdstudio.xyz/api.php";
   const GD_SRC="netease";
   const URL_TTL=5*60*1000;          /* 在线音源签名地址有效期 */
