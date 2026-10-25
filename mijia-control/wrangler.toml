@@ -1,0 +1,8 @@
+name = "mijia-control"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+# 访问密码（强烈建议设置）
+# 方式一：Dashboard 部署 → Settings → Variables and Secrets → 添加 ACCESS_PASSWORD
+# 方式二：命令行部署 → npx wrangler secret put ACCESS_PASSWORD
+# 本地调试时可在同目录创建 .dev.vars 文件写入：ACCESS_PASSWORD=你的密码
