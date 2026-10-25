@@ -531,6 +531,7 @@ body.lb-lock{overflow:hidden}
   background:var(--img-placeholder);
 }
 .al-cover img{width:100%;height:100%;object-fit:cover}
+.al-cover video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
 .al-folder{display:grid;place-items:center;height:100%;font-size:34px}
 .al-name{
   display:block;margin:10px 12px 0;
@@ -1472,7 +1473,9 @@ function albumStripHtml(){
     ${albums.map(a=>`
     <button class="al-card" data-album="${esc(a.name)}" type="button" aria-label="${esc(a.name)}">
       <span class="al-cover">${
-        a.cover?`<img src="${esc(a.cover)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`
+        a.cover?(VID_RE.test(a.cover)
+          ?`<video src="${esc(a.cover)}" preload="metadata" muted playsinline></video>`
+          :`<img src="${esc(a.cover)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`)
         :`<span class="al-folder">📁</span>`}</span>
       <span class="al-name">${esc(a.name)}</span>
       <span class="al-count">${esc(t.albumCount(a.count))}</span>
@@ -1569,8 +1572,10 @@ function setLbMedia(p){
   if(p.type==="video"){
     img.style.display="none";
     vid.style.display="";
-    vid.controls=true; vid.muted=false; vid.loop=false;
+    vid.controls=true; vid.muted=false; vid.loop=false;   /* 只播一遍，播完停在结尾 */
     vid.src=p.src;
+    /* 打开视频默认自动播放一遍；带声播放被浏览器拦时先静音播起来 */
+    vid.play().catch(()=>{ vid.muted=true; vid.play().catch(()=>{}); });
   }else{
     vid.style.display="none";
     img.style.display="";
