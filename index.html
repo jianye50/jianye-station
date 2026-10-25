@@ -460,9 +460,14 @@ body.lb-lock{overflow:hidden}
 .lb-btn:hover{background:rgba(255,255,255,.22)}
 .lb-btn:active{transform:scale(.92)}
 .lb-btn svg{width:22px;height:22px}
+/* 扩大箭头有效点击区：按钮外一圈 22px 的隐形热区，避免点偏误触背景关闭 */
+.lb-btn::before{content:"";position:absolute;inset:-22px;border-radius:inherit}
 .lb-prev{left:26px;top:50%;transform:translateY(-50%)}
 .lb-next{right:26px;top:50%;transform:translateY(-50%)}
 .lb-close{right:22px;top:22px}
+/* :active 的 scale 不能覆盖 prev/next 的 translateY，否则按下瞬间按钮会跳位 */
+.lb-prev:active{transform:translateY(-50%) scale(.92)}
+.lb-next:active{transform:translateY(-50%) scale(.92)}
 .lb-count{
   position:absolute;left:50%;bottom:26px;transform:translateX(-50%);
   z-index:2;
