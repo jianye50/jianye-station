@@ -562,7 +562,7 @@ body.lb-lock{overflow:hidden}
 .lb-motion{
   position:absolute;left:22px;top:22px;z-index:2;
   display:flex;align-items:center;gap:2px;
-  padding:5px 8px;border-radius:999px;
+  height:48px;padding:0 8px;border-radius:999px;   /* 与右上角 ✕ 同高同顶，保持同一平面 */
   /* 液态玻璃胶囊（同导航栏材质） */
   background:linear-gradient(120deg,rgba(255,255,255,.16),rgba(255,255,255,.07) 38%,rgba(255,255,255,.12) 62%,rgba(255,255,255,.05)),rgba(16,20,30,.35);
   backdrop-filter:blur(20px) saturate(180%);
@@ -585,8 +585,8 @@ body.lb-lock{overflow:hidden}
 .lb-mic{padding:7px 10px}
 .lb-msep{width:1px;height:16px;background:rgba(255,255,255,.22);flex:none}
 @media (max-width:640px){
-  /* 手机端：动态控制条与右上角关闭按钮同高对齐（12px 边距、垂直居中对齐） */
-  .lb-motion{left:12px;top:12px}
+  /* 手机端：动态控制条与右上角关闭按钮同高（42px）同顶对齐（12px 边距） */
+  .lb-motion{left:12px;top:12px;height:42px}
   .lb-close{right:12px;top:12px}
 }
 
@@ -1509,8 +1509,9 @@ function paintMotionBtn(){
   const p=lbItems[lbIndex];
   const btn=$("#lbMotionBtn");
   if(!btn||!p||p.type!=="live")return;
-  btn.innerHTML=ICON_MOTION+"<span>"+esc(lbMotionOn?T().gallery.still:T().gallery.motion)+"</span>";
-  btn.title=lbMotionOn?T().gallery.still:T().gallery.motion;
+  /* 文字固定显示「动态」，播放中只靠高亮表示状态（点击总是重新播一次） */
+  btn.innerHTML=ICON_MOTION+"<span>"+esc(T().gallery.motion)+"</span>";
+  btn.title=T().gallery.motion;
   btn.classList.toggle("on",lbMotionOn);
 }
 function paintSoundBtn(){
