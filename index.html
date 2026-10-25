@@ -1585,15 +1585,20 @@ function setLbMedia(p){
       };
     }
     if(p.type==="live"){
-      /* 已识别的动态照片（配对 Live Photo / 内嵌视频 Motion Photo）→ 显示控制条 */
+      /* 已识别的动态照片（配对 Live Photo / 内嵌视频 Motion Photo）→ 显示控制条
+         并自动先播一遍动态效果，之后想再看再点「动态」 */
       bar.style.display="";
-      paintMotionBtn(); paintSoundBtn();
+      paintSoundBtn();
+      lbMotionOn=true;
+      applyLbMotion();
     }else if(p.type==="image"){
-      /* 普通图片也试一下是不是动态照片（内嵌视频的 JPG），识别成功就显示控制条 */
+      /* 普通图片也试一下是不是动态照片（内嵌视频的 JPG），识别成功就显示控制条并自动播放 */
       promoteMotion(p,null,false).then(url=>{
         if(url&&lbItems[lbIndex]===p){
           bar.style.display="";
-          paintMotionBtn(); paintSoundBtn();
+          paintSoundBtn();
+          lbMotionOn=true;
+          applyLbMotion();
         }
       });
     }
