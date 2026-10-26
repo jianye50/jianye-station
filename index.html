@@ -1577,6 +1577,39 @@ function lbToggleSound(){
   if(lbMotionOn&&vid.paused&&lbSoundOn)vid.play().catch(()=>{});
   paintSoundBtn();
 }
+/* ---------- 灯箱取图（解决「切图还显示上一张 / 空白」） ----------
+   直接换 <img>.src 时，新图解码完成前画面会停在上一张（或者干脆空白），
+   连点箭头时尤其明显。这里改成渐进两段式：
+     ① 先把图墙里已经缓存好的 960 缩略图塞进灯箱 —— 同一帧就有正确画面；
+     ② 再在后台预载清晰的 view 图，到了才无缝换上。
+   并且用「当前下标还是不是这张」做校验，防止旧图的回调把新图盖掉。 */
+function showLbImage(p){
+  const img=$("#lbImg");
+  const small=p.thumb2x||p.thumb||"";
+  const big=p.view||p.src;
+  img.onload=img.onerror=null;
+  img.src=(small&&small!==big)?small:big;
+  if(!big||big===small)return;
+  const hi=new Image();
+  hi.decoding="async";
+  hi.onload=function(){
+    if(lbItems[lbIndex]===p)img.src=big;
+  };
+  hi.src=big;
+}
+/* 预取前后各一张，连点箭头基本瞬开（只多下载两张，不影响首屏） */
+function preloadLbNeighbors(){
+  const n=lbItems.length;
+  if(n<2)return;
+  [lbIndex+1,lbIndex-1].forEach(k=>{
+    const p=lbItems[(k+n)%n];
+    if(!p||p.type==="video")return;
+    const view=p.view||p.src;
+    const thumb=p.thumb2x||p.thumb;
+    if(view){ const a=new Image(); a.decoding="async"; a.src=view; }
+    if(thumb&&thumb!==view){ const b=new Image(); b.src=thumb; }
+  });
+}
 function setLbMedia(p){
   const img=$("#lbImg"), vid=$("#lbVideo"), bar=$("#lbMotionBar");
   lbMotionOn=false;
@@ -1594,10 +1627,9 @@ function setLbMedia(p){
   }else{
     vid.style.display="none";
     img.style.display="";
-    img.onerror=null;
     img.removeAttribute("data-alt");
-    /* 灯箱用预缩放好的 view 图（长边 ≤1800、体积几十 KB），不再直接拉原图 */
-    img.src=p.view||p.src;
+    /* 先秒出已缓存的缩略图，再换清晰的 view 图 —— 切图不再空白 / 停在上一张 */
+    showLbImage(p);
     if(p.fb){
       img.dataset.alt=PHOTO_DIRS[0]+encodeURIComponent(p.fb);
       img.onerror=function(){
@@ -1642,6 +1674,7 @@ function showLb(){
   setLbMedia(p);
   $("#lbImg").alt=p.name;
   $("#lbCount").textContent=`${lbIndex+1} / ${lbItems.length} · ${p.name}`;
+  preloadLbNeighbors();
 }
 function closeLb(){
   try{ $("#lbVideo").pause(); }catch(e){}

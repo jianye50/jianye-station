@@ -5,7 +5,7 @@
  *
  *    ① 缩略图  assets/photos/<相册>/<名>-<内容hash>-480.webp   （列表用，方形裁切）
  *              assets/photos/<相册>/<名>-<内容hash>-960.webp   （高分屏 2x）
- *    ② 查看图  assets/photos/<相册>/<名>-<内容hash>-view.webp  （灯箱用，长边 ≤1800）
+ *    ② 查看图  assets/photos/<相册>/<名>-<内容hash>-view.webp  （灯箱用，长边 ≤1600）
  *    ③ 占位图  24px 宽的极小 webp，以 base64 内联进 photos.json（消除白块）
  *    ④ 清单    photos.json —— 文件名 / 尺寸 / 相册分组 / 是否动态照片，全部预计算
  *
@@ -48,7 +48,7 @@ const IMG_RE = /\.(jpe?g|png|gif|webp|bmp|avif|heic|heif)$/i;
 const VID_RE = /\.(mp4|mov|m4v|webm)$/i;
 
 const THUMB_SIZES = [480, 960];              /* 列表图：方形裁切 */
-const VIEW_BOX = { w: 1800, h: 9000, area: 7.5e6 }; /* 灯箱图：等比缩放，面积封顶 */
+const VIEW_BOX = { w: 1600, h: 9000, area: 7.5e6 }; /* 灯箱图：等比缩放，面积封顶 */
 const BLUR_W = 24;                           /* 占位图宽度 */
 const FORCE = process.argv.includes("--force");
 
@@ -143,16 +143,20 @@ async function renderImage(abs, key, hash, prevBlur) {
     out.blur = "data:image/webp;base64," + buf.toString("base64");
   }
 
-  /* ③ 灯箱图：等比缩进 1800×9000，且总像素不超过 750 万（长截图也不会撑爆内存） */
-  const scale = Math.min(1, VIEW_BOX.w / w, VIEW_BOX.h / h, Math.sqrt(VIEW_BOX.area / (w * h || 1)));
-  if (scale < 0.95 && w && h) {
+  /* ③ 灯箱图：一律生成 webp（长边 ≤1600、总像素 ≤750 万）。
+       小图不放大，只做「转 webp」这一步 —— 原来小图直接回退原图，
+       结果灯箱要下几百 KB 到几 MB 的 JPG/PNG，切图会卡在上一张。 */
+  if (w && h) {
+    const scale = Math.min(1, VIEW_BOX.w / w, VIEW_BOX.h / h, Math.sqrt(VIEW_BOX.area / (w * h)));
+    const tw = Math.max(1, Math.round(w * scale));
+    const th = Math.max(1, Math.round(h * scale));
     const file = path.join(dir, `${stem}-view.webp`);
     if (!FORCE && fs.existsSync(file)) {
       out.view = rel(file);
     } else {
       await base()
-        .resize(Math.round(w * scale), Math.round(h * scale), { fit: "inside" })
-        .webp({ quality: 78, effort: 4 })
+        .resize({ width: tw, height: th, fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 74, effort: 4 })
         .toFile(file);
       out.view = rel(file);
     }
