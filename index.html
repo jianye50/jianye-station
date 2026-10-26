@@ -477,6 +477,19 @@ body.lb-lock{overflow:hidden}
   background:rgba(255,255,255,.1);padding:6px 14px;border-radius:999px;
   max-width:80vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
+/* 切图时的「等待」态：模糊占位铺满占位框 + 中间转圈。
+   目的：新图没解码完之前，画面上绝不会残留上一张，让人以为点错了。
+   转圈延迟 150ms 才淡入 —— 命中缓存时不会闪一下白圈 */
+.lightbox img.lb-ph{object-fit:cover;animation:none;filter:saturate(105%)}
+.lb-spin{
+  position:absolute;z-index:2;pointer-events:none;
+  width:36px;height:36px;border-radius:50%;
+  border:2.5px solid rgba(255,255,255,.18);border-top-color:rgba(255,255,255,.9);
+  animation:lbSpin .8s linear infinite;
+  opacity:0;transition:opacity .16s ease;
+}
+.lightbox.lb-busy .lb-spin{opacity:1;transition-delay:.15s}
+@keyframes lbSpin{to{transform:rotate(360deg)}}
 @media (max-width:640px){
   .lb-prev{left:8px}.lb-next{right:8px}
   .lb-btn{width:42px;height:42px}
@@ -924,6 +937,7 @@ setTimeout(function(){var b=document.getElementById("boot");if(b)b.classList.add
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
   </button>
   <img id="lbImg" src="" alt="">
+  <span class="lb-spin" id="lbSpin" aria-hidden="true"></span>
   <video id="lbVideo" playsinline style="display:none"></video>
   <!-- 动态照片控制条（仿 Windows 照片）：动态开关 + 声音开关 -->
   <div class="lb-motion" id="lbMotionBar" style="display:none">
@@ -1578,24 +1592,66 @@ function lbToggleSound(){
   paintSoundBtn();
 }
 /* ---------- 灯箱取图（解决「切图还显示上一张 / 空白」） ----------
-   直接换 <img>.src 时，新图解码完成前画面会停在上一张（或者干脆空白），
-   连点箭头时尤其明显。这里改成渐进两段式：
-     ① 先把图墙里已经缓存好的 960 缩略图塞进灯箱 —— 同一帧就有正确画面；
-     ② 再在后台预载清晰的 view 图，到了才无缝换上。
-   并且用「当前下标还是不是这张」做校验，防止旧图的回调把新图盖掉。 */
+   直接换 <img>.src 时，新图解码完成前浏览器会继续画上一张的位图 —— 连点时
+   看起来就像「点了没反应 / 点错了」。这里改成三段式，每段都带 token 校验：
+     ⓪ 切图同一帧，先把上一张彻底撤掉，换上这张图自己的 24px 模糊占位
+        （data URI，不走网络），并按原始比例把位置占好，绝不残留上一张；
+     ① 缩略图（图墙里通常已缓存）解码完 → 换成稍清晰的画面；
+     ② 清晰的 view 图解码完 → 最终画面。
+   真正「解码完成」才赋值给可见的 <img>，所以画面永远不会停在错误的那张。 */
+let lbImgToken=0;
+function lbImgReset(){
+  const img=$("#lbImg");
+  img.onload=img.onerror=null;
+  img.removeAttribute("src");
+  img.classList.remove("lb-ph");
+  img.style.removeProperty("width");
+  img.style.removeProperty("height");
+}
 function showLbImage(p){
   const img=$("#lbImg");
-  const small=p.thumb2x||p.thumb||"";
-  const big=p.view||p.src;
+  const token=++lbImgToken;
+  const thumb=p.thumb2x||p.thumb||"";
+  const big=p.view||p.src||"";
   img.onload=img.onerror=null;
-  img.src=(small&&small!==big)?small:big;
-  if(!big||big===small)return;
-  const hi=new Image();
-  hi.decoding="async";
-  hi.onload=function(){
-    if(lbItems[lbIndex]===p)img.src=big;
+
+  /* ⓪ 立即换成这张图的模糊占位 + 转圈，等的过程看到的是「这张图糊的样子」 */
+  if(p.blur){
+    img.classList.add("lb-ph");
+    if(p.w&&p.h){
+      const box=Math.min(innerWidth*0.88, innerHeight*0.8*(p.w/p.h));
+      img.style.width=box+"px";
+      img.style.height=(box*p.h/p.w)+"px";
+    }else{
+      img.style.removeProperty("width");
+      img.style.removeProperty("height");
+    }
+    img.src=p.blur;
+  }else{
+    lbImgReset();
+  }
+  $("#lightbox").classList.add("lb-busy");
+
+  const load=url=>new Promise(res=>{
+    if(!url)return res("");
+    const i=new Image();
+    i.decoding="async";
+    i.onload=()=>res(url);
+    i.onerror=()=>res("");
+    i.src=url;
+  });
+  const paint=url=>{
+    if(!url||token!==lbImgToken)return;
+    img.classList.remove("lb-ph");
+    img.style.removeProperty("width");
+    img.style.removeProperty("height");
+    img.src=url;
   };
-  hi.src=big;
+  (async()=>{
+    if(thumb&&thumb!==big)paint(await load(thumb));
+    paint(await load(big||thumb));
+    if(token===lbImgToken)$("#lightbox").classList.remove("lb-busy");
+  })();
 }
 /* 预取前后各一张，连点箭头基本瞬开（只多下载两张，不影响首屏） */
 function preloadLbNeighbors(){
@@ -1618,6 +1674,9 @@ function setLbMedia(p){
   try{ vid.pause(); }catch(e){}
   vid.removeAttribute("src"); vid.load();
   if(p.type==="video"){
+    lbImgToken++;                 /* 作废还没回来的图片回调 */
+    lbImgReset();
+    $("#lightbox").classList.remove("lb-busy");
     img.style.display="none";
     vid.style.display="";
     vid.controls=true; vid.muted=false; vid.loop=false;   /* 只播一遍，播完停在结尾 */
@@ -1677,6 +1736,8 @@ function showLb(){
   preloadLbNeighbors();
 }
 function closeLb(){
+  lbImgToken++;                                   /* 作废还没回来的取图回调 */
+  $("#lightbox").classList.remove("lb-busy");
   try{ $("#lbVideo").pause(); }catch(e){}
   $("#lightbox").classList.remove("open");
   document.body.classList.remove("lb-lock");
