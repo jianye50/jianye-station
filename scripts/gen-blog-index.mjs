@@ -80,7 +80,7 @@ posts.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 /* ---------- 生成缩略图（可选，装了 sharp 就自动做）----------
  * 列表缩略图 480px WebP / 文章页头图 1600px WebP，输出到 blog/thumbs/。
  * 没装 sharp 时自动跳过，网站会回退用原图，不影响构建。 */
-import { mkdirSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 let sharp = null;
 try { sharp = (await import("sharp")).default; } catch (e) {}
@@ -101,6 +101,7 @@ const IMG_RE = /\.(jpe?g|png|gif|webp|bmp|avif|heic|heif)$/i;
 if (sharp) {
   try {
     mkdirSync(thumbDir, { recursive: true });
+    const keep = new Set();   /* 本轮实际生成的缩略图文件名，其余的在末尾清掉 */
     let n = 0;
     for (const { slug, dir } of coverDirs) {
       const post = posts.find(x => x.slug === slug);
@@ -112,16 +113,26 @@ if (sharp) {
           if (!IMG_RE.test(f)) return;
           const outName = `${slugSafe(slug)}-i${i}.webp`;
           imgs[f] = `blog/thumbs/${outName}`;
+          keep.add(outName);
         });
       } catch (e) {}
       for (const [srcFile, outRel] of Object.entries(imgs)) {
         const src = join(dir, srcFile);
-        if (!existsSync(src)) continue;
-        await sharp(src, { failOn: "none" }).rotate()
-          .resize({ width: 1600, withoutEnlargement: true })
-          .webp({ quality: 72 })
-          .toFile(join(thumbDir, outRel.split("/").pop()));
-        n++;
+        const outName = outRel.split("/").pop();
+        if (!existsSync(src)) { delete imgs[srcFile]; keep.delete(outName); continue; }
+        try {
+          await sharp(src, { failOn: "none" }).rotate()
+            .resize({ width: 1600, withoutEnlargement: true })
+            .webp({ quality: 72 })
+            .toFile(join(thumbDir, outName));
+          n++;
+        } catch (err) {
+          /* 单张失败（文件损坏等）→ 撤掉这张的映射，前端回退用原图；
+             绝不能留着指向不存在缩略图的链接，也别让一张坏图中断全部生成 */
+          console.warn(`! 跳过 ${outRel}：${err.message}`);
+          delete imgs[srcFile];
+          keep.delete(outName);
+        }
       }
       if (Object.keys(imgs).length) post.imgs = imgs;
       /* 封面 480px / 头图 1600px 专用版本 */
@@ -131,19 +142,32 @@ if (sharp) {
         const src = join(dir, file);
         if (!existsSync(src)) continue;
         const outName = `${slugSafe(slug)}-${key === "coverThumb" ? "cover" : "bg"}.webp`;
-        await sharp(src, { failOn: "none" }).rotate()
-          .resize({ width, withoutEnlargement: true })
-          .webp({ quality: q })
-          .toFile(join(thumbDir, outName));
+        try {
+          await sharp(src, { failOn: "none" }).rotate()
+            .resize({ width, withoutEnlargement: true })
+            .webp({ quality: q })
+            .toFile(join(thumbDir, outName));
+        } catch (err) {
+          console.warn(`! 跳过 ${slug} 的 ${field} 缩略图：${err.message}`);
+          continue;
+        }
         post[key] = `blog/thumbs/${outName}`;
+        keep.add(outName);
         n++;
       }
     }
     console.log(`✓ 已生成 ${n} 张缩略图到 blog/thumbs/`);
-    /* 把缩略图加入 git 暂存区（配合 GitHub Action 的提交步骤；本地手动运行时静默跳过） */
+    /* ---------- 清理孤儿缩略图（删了文章 / 改了文件夹名 / 删了配图后留下的旧 webp） ---------- */
+    let removed = 0;
+    for (const f of readdirSync(thumbDir)) {
+      if (/\.webp$/i.test(f) && !keep.has(f)) { rmSync(join(thumbDir, f)); removed++; }
+    }
+    if (removed) console.log(`✓ 清理 ${removed} 个过期缩略图`);
+    /* 把缩略图加入 git 暂存区（配合 GitHub Action 的提交步骤；本地手动运行时静默跳过）。
+       用 -A 让「被清理的旧缩略图」的删除也一起进暂存区 */
     try {
       const { execSync } = await import("node:child_process");
-      execSync("git add blog/thumbs", { cwd: root, stdio: "ignore" });
+      execSync("git add -A blog/thumbs", { cwd: root, stdio: "ignore" });
     } catch (e) {}
   } catch (e) {
     console.warn("! 缩略图生成失败（网站会回退用原图）：" + e.message);
@@ -152,10 +176,17 @@ if (sharp) {
   console.log("! 未安装 sharp，跳过缩略图（可运行 npm install sharp 后重试）");
 }
 
-const out = JSON.stringify({ generated: new Date().toISOString(), posts }, null, 2);
 if (process.argv.includes("--stdout")) {
-  process.stdout.write(out);
+  process.stdout.write(JSON.stringify({ generated: new Date().toISOString(), posts }, null, 2));
 } else {
-  writeFileSync(join(blogDir, "index.json"), out, "utf8");
-  console.log(`✓ blog/index.json 已生成（${posts.length} 篇文章）`);
+  /* posts 没变化就不重写文件：时间戳不刷新 → git 无 diff →
+     不会触发监听 blog/** 的 GitHub Action 无限提交（与 gen-photo-assets.mjs 同策略） */
+  let prev = null;
+  try { prev = JSON.parse(readFileSync(join(blogDir, "index.json"), "utf8")); } catch (e) {}
+  if (prev && JSON.stringify(prev.posts, null, 2) === JSON.stringify(posts, null, 2)) {
+    console.log(`✓ blog/index.json 无变化（${posts.length} 篇文章），跳过重写`);
+  } else {
+    writeFileSync(join(blogDir, "index.json"), JSON.stringify({ generated: new Date().toISOString(), posts }, null, 2), "utf8");
+    console.log(`✓ blog/index.json 已生成（${posts.length} 篇文章）`);
+  }
 }
