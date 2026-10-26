@@ -1,6 +1,25 @@
 {
-  "generated": "2026-10-24T18:23:14.736Z",
+  "generated": "2026-10-26T16:34:36.669Z",
   "posts": [
+    {
+      "slug": "测试",
+      "md": "blog/测试/index.md",
+      "imgBase": "blog/测试/",
+      "title": "1",
+      "desc": "ces",
+      "tags": [
+        1
+      ],
+      "date": "2026-10-26",
+      "minutes": 1,
+      "cover": "luna-final-2-frame-001-00-00-00-000.png",
+      "bg": "luna-final-2-frame-001-00-00-00-000.png",
+      "imgs": {
+        "luna-final-2-frame-001-00-00-00-000.png": "blog/thumbs/测试-i1.webp"
+      },
+      "coverThumb": "blog/thumbs/测试-cover.webp",
+      "bgThumb": "blog/thumbs/测试-bg.webp"
+    },
     {
       "slug": "3D咖啡店",
       "md": "blog/3D咖啡店/index.md",
