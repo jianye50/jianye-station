@@ -1529,7 +1529,7 @@ function paintPhotoGrids(){
 }
 
 /* ---------- 灯箱（图片 / 视频 / Live Photo） ---------- */
-let lbIndex=0, lbFocus=null, lbItems=[];
+let lbIndex=0, lbFocus=null, lbItems=[], lbGrid=null;
 /* 灯箱控制条图标（描边风格，与按钮 stroke 一致）；
    动态图标用苹果 Live Photo 同款同心圆（微软照片也是这个），不是刷新箭头 */
 const ICON_MOTION='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none"/></svg>';
@@ -1591,14 +1591,16 @@ function lbToggleSound(){
   if(lbMotionOn&&vid.paused&&lbSoundOn)vid.play().catch(()=>{});
   paintSoundBtn();
 }
-/* ---------- 灯箱取图（解决「切图还显示上一张 / 空白」） ----------
-   直接换 <img>.src 时，新图解码完成前浏览器会继续画上一张的位图 —— 连点时
-   看起来就像「点了没反应 / 点错了」。这里改成三段式，每段都带 token 校验：
-     ⓪ 切图同一帧，先把上一张彻底撤掉，换上这张图自己的 24px 模糊占位
-        （data URI，不走网络），并按原始比例把位置占好，绝不残留上一张；
-     ① 缩略图（图墙里通常已缓存）解码完 → 换成稍清晰的画面；
-     ② 清晰的 view 图解码完 → 最终画面。
-   真正「解码完成」才赋值给可见的 <img>，所以画面永远不会停在错误的那张。 */
+/* ---------- 灯箱取图 ----------
+   两个要求同时满足：① 等的过程绝不能残留上一张；② 等的时间要尽可能短。
+   做法：
+     ⓪ 切图同一帧就换上「属于这张图」的内容 —— 优先用图墙里**已经解码好的同一张
+        位图**（p._cache，同一 URL 命中内存缓存，0 请求 0 等待），没有才用内联的
+        24px 模糊占位；同时按原始比例占好版式，画面绝不残留上一张、也不会跳版。
+     ① 缩略图与清晰图**并行**请求（不是串行等待），谁先到先用谁，清晰图到了再升级；
+     ② 全程 token 校验 + 档位 rank，旧的/低清的回调永远盖不掉新的。
+   注：原来先等缩略图再拉 view，等于多付一次完整往返 —— 慢网下就是「一直转圈」，
+   现在改成并行后少一个 RTT，且首帧往往直接命中缓存。 */
 let lbImgToken=0;
 function lbImgReset(){
   const img=$("#lbImg");
@@ -1611,26 +1613,33 @@ function lbImgReset(){
 function showLbImage(p){
   const img=$("#lbImg");
   const token=++lbImgToken;
-  const thumb=p.thumb2x||p.thumb||"";
-  const big=p.view||p.src||"";
+  const view=p.view||p.src||"";
+  const mid=(p._cache&&p._cache!==view)?p._cache
+           :(p.thumb2x&&p.thumb2x!==view)?p.thumb2x
+           :(p.thumb&&p.thumb!==view)?p.thumb:"";
   img.onload=img.onerror=null;
 
-  /* ⓪ 立即换成这张图的模糊占位 + 转圈，等的过程看到的是「这张图糊的样子」 */
-  if(p.blur){
-    img.classList.add("lb-ph");
-    if(p.w&&p.h){
-      const box=Math.min(innerWidth*0.88, innerHeight*0.8*(p.w/p.h));
-      img.style.width=box+"px";
-      img.style.height=(box*p.h/p.w)+"px";
-    }else{
-      img.style.removeProperty("width");
-      img.style.removeProperty("height");
-    }
+  /* ⓪ 同一帧铺上这张图自己的画面 */
+  img.classList.add("lb-ph");
+  if(p.w&&p.h){
+    const box=Math.min(innerWidth*0.88, innerHeight*0.8*(p.w/p.h));
+    img.style.width=box+"px";
+    img.style.height=(box*p.h/p.w)+"px";
+  }else{
+    img.style.removeProperty("width");
+    img.style.removeProperty("height");
+  }
+  /* rank：0=模糊占位 1=缩略图 2=清晰图，只允许往上换 */
+  let rank=0;
+  if(p._cache&&p._cacheReady&&p._cache!==view){
+    img.src=p._cache; rank=1;          /* 图墙里已经解码好，立刻就是清晰画面 */
+  }else if(p.blur){
     img.src=p.blur;
   }else{
-    lbImgReset();
+    img.removeAttribute("src");
   }
   $("#lightbox").classList.add("lb-busy");
+  if(rank>=1)$("#lightbox").classList.remove("lb-busy");   /* 已经有真图垫底，不用转圈 */
 
   const load=url=>new Promise(res=>{
     if(!url)return res("");
@@ -1640,20 +1649,31 @@ function showLbImage(p){
     i.onerror=()=>res("");
     i.src=url;
   });
-  const paint=url=>{
-    if(!url||token!==lbImgToken)return;
+  const paint=(url,r)=>{
+    if(!url||token!==lbImgToken||r<rank)return;
+    rank=r;
     img.classList.remove("lb-ph");
     img.style.removeProperty("width");
     img.style.removeProperty("height");
     img.src=url;
+    /* 一旦画面上已经是「真图」（哪怕只是缩略图），就别再转圈了 ——
+       用户已经能看到照片，剩下的只是从模糊/低清变清晰 */
+    $("#lightbox").classList.remove("lb-busy");
   };
-  (async()=>{
-    if(thumb&&thumb!==big)paint(await load(thumb));
-    paint(await load(big||thumb));
-    if(token===lbImgToken)$("#lightbox").classList.remove("lb-busy");
-  })();
+  /* ① 两路并行：缩略图先到先上，清晰图到了再升级 */
+  const jobs=[];
+  if(mid&&rank<1)jobs.push(load(mid).then(u=>paint(u,1)));
+  jobs.push(load(view).then(u=>{ if(u)paint(u,2); }));
+  Promise.all(jobs).then(()=>{
+    if(token!==lbImgToken)return;
+    $("#lightbox").classList.remove("lb-busy");
+    /* 当前这张已经落地，再去预取前后两张 —— 不在下载途中抢带宽 */
+    clearTimeout(lbNeighborTimer);
+    lbNeighborTimer=setTimeout(preloadLbNeighbors,60);
+  });
 }
 /* 预取前后各一张，连点箭头基本瞬开（只多下载两张，不影响首屏） */
+let lbNeighborTimer=0;
 function preloadLbNeighbors(){
   const n=lbItems.length;
   if(n<2)return;
@@ -1661,10 +1681,27 @@ function preloadLbNeighbors(){
     const p=lbItems[(k+n)%n];
     if(!p||p.type==="video")return;
     const view=p.view||p.src;
-    const thumb=p.thumb2x||p.thumb;
     if(view){ const a=new Image(); a.decoding="async"; a.src=view; }
-    if(thumb&&thumb!==view){ const b=new Image(); b.src=thumb; }
   });
+}
+/* 点击/悬停时「预热」：把瓷砖里已经解码好的那张位图记到 p 上（灯箱可直接复用），
+   并提前开始拉清晰图 —— 比等 click 再发请求快一拍，慢网下尤其明显。 */
+function lbPreheat(tile){
+  if(!tile||tile.dataset.idx===undefined)return null;
+  const grid=tile.closest("[data-photo-grid]");
+  const list=(grid&&grid._items)||photos;
+  const p=list[Number(tile.dataset.idx)];
+  if(!p)return null;
+  const im=tile.querySelector("img");
+  if(im&&im.currentSrc){
+    p._cache=im.currentSrc;
+    p._cacheReady=!!im.complete&&im.naturalWidth>0;
+  }
+  if(p.type!=="video"&&!p._viewPreloaded){
+    p._viewPreloaded=true;
+    const a=new Image(); a.decoding="async"; a.src=p.view||p.src;
+  }
+  return p;
 }
 function setLbMedia(p){
   const img=$("#lbImg"), vid=$("#lbVideo"), bar=$("#lbMotionBar");
@@ -1717,9 +1754,10 @@ function setLbMedia(p){
     }
   }
 }
-function openLb(items,i){
+function openLb(items,i,grid){
   lbItems=items||[];
   if(!lbItems.length)return;
+  lbGrid=grid||null;                              /* 记住灯箱是从哪个网格打开的（找缓存位图要用） */
   lbIndex=(i+lbItems.length)%lbItems.length;
   showLb();
   lbFocus=document.activeElement;                 /* 关掉灯箱后把焦点还给刚才那张图 */
@@ -1730,10 +1768,19 @@ function openLb(items,i){
 function showLb(){
   const p=lbItems[lbIndex];
   if(!p)return;
+  clearTimeout(lbNeighborTimer);       /* 上一张的邻居预取作废，别抢当前这张的带宽 */
+  /* 用方向键 / 滑动切图时没经过点击，这里补一次：把图墙里那张已解码的位图记下来复用。
+     必须校验「网格里这个下标对应的就是这张照片」，避免拿到别的相册的同下标照片 */
+  if(!p._cache&&lbGrid){
+    const tile=lbGrid.querySelector(`.ph-tile[data-idx="${lbIndex}"]`);
+    const list=lbGrid._items||photos;
+    if(tile&&list[Number(tile.dataset.idx)]===p)lbPreheat(tile);
+  }
   setLbMedia(p);
   $("#lbImg").alt=p.name;
   $("#lbCount").textContent=`${lbIndex+1} / ${lbItems.length} · ${p.name}`;
-  preloadLbNeighbors();
+  /* 图片的邻居预取放在这张加载完之后（见 showLbImage）；视频没有加载回调，直接预取 */
+  if(p.type==="video")preloadLbNeighbors();
 }
 function closeLb(){
   lbImgToken++;                                   /* 作废还没回来的取图回调 */
@@ -1744,7 +1791,7 @@ function closeLb(){
   if(lbFocus&&typeof lbFocus.focus==="function"){ try{ lbFocus.focus(); }catch(e){} }
   lbFocus=null;
 }
-function stepLb(d){ openLb(lbItems,lbIndex+d); }
+function stepLb(d){ openLb(lbItems,lbIndex+d,lbGrid); }
 
 /* ---------- 视图渲染 ---------- */
 function renderHome(){
@@ -2517,7 +2564,28 @@ document.addEventListener("click",e=>{
   /* 带「+N」角标的瓷砖 → 跳转相册页，而不是开灯箱 */
   if(tile.querySelector(".ph-more")){location.hash="#/gallery";return;}
   const grid=tile.closest("[data-photo-grid]");
-  openLb((grid&&grid._items)||photos,Number(tile.dataset.idx));
+  lbPreheat(tile);
+  openLb((grid&&grid._items)||photos,Number(tile.dataset.idx),grid);
+});
+/* 手指按下 / 鼠标移上去就先预热（提前发清晰图请求），真正 click 时往往已经在路上 */
+document.addEventListener("pointerdown",e=>{
+  const tile=e.target.closest&&e.target.closest(".ph-tile");
+  if(!tile||tile.classList.contains("ph-skel")||tile.dataset.idx===undefined)return;
+  if(tile.querySelector(".ph-more"))return;
+  lbPreheat(tile);
+},{passive:true});
+let lbHoverTimer=0;
+document.addEventListener("mouseover",e=>{
+  const tile=e.target.closest&&e.target.closest(".ph-tile");
+  if(!tile||tile.classList.contains("ph-skel")||tile.dataset.idx===undefined)return;
+  if(tile.querySelector(".ph-more"))return;
+  /* 悬停 140ms 才算「有意思」，避免鼠标划过整墙时把 view 全下一遍 */
+  clearTimeout(lbHoverTimer);
+  lbHoverTimer=setTimeout(()=>lbPreheat(tile),140);
+});
+document.addEventListener("mouseout",e=>{
+  const tile=e.target.closest&&e.target.closest(".ph-tile");
+  if(tile)clearTimeout(lbHoverTimer);
 });
 /* 动态瓷砖：悬停播放动态效果，移开还原成静态照片。
    普通图片首次悬停时顺带探测是不是动态照片（内嵌视频），是就升级成动态。 */
@@ -2555,7 +2623,8 @@ document.addEventListener("keydown",e=>{
     e.preventDefault();
     if(tile.querySelector(".ph-more")){location.hash="#/gallery";return;}
     const grid=tile.closest("[data-photo-grid]");
-    openLb((grid&&grid._items)||photos,Number(tile.dataset.idx));
+    lbPreheat(tile);
+    openLb((grid&&grid._items)||photos,Number(tile.dataset.idx),grid);
   }
 });
 
