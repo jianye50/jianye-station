@@ -1,0 +1,13 @@
+{
+  "name": "jianye-station-scripts",
+  "private": true,
+  "type": "module",
+  "description": "站点构建脚本（相册缩略图、博客索引等）",
+  "scripts": {
+    "photos": "node gen-photo-assets.mjs",
+    "blog": "node gen-blog-index.mjs"
+  },
+  "dependencies": {
+    "sharp": "^0.33.5"
+  }
+}

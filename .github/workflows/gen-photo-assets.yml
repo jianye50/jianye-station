@@ -1,0 +1,39 @@
+# 「Photo Album」里有照片增删改时，自动生成缩略图 + photos.json 并提交，
+# Cloudflare Pages 随之重新部署。（也可以本地手动跑：cd scripts && npm i && npm run photos）
+name: gen-photo-assets
+on:
+  push:
+    paths:
+      - "Photo Album/**"
+      - "scripts/gen-photo-assets.mjs"
+      - "scripts/package.json"
+      - ".github/workflows/gen-photo-assets.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: gen-photo-assets
+  cancel-in-progress: true
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 安装依赖（sharp）
+        run: npm install --prefix scripts
+      - name: 生成相册资源
+        run: node scripts/gen-photo-assets.mjs
+      - name: Commit & Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add photos.json assets/photos
+          if git diff --cached --quiet; then
+            echo "相册资源无变化，跳过提交"
+          else
+            git commit -m "chore: 自动更新相册缩略图与清单"
+            git push
+          fi

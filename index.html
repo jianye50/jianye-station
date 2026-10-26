@@ -383,6 +383,8 @@ img{display:block;max-width:100%}
 .ph-tile:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px}
 .ph-tile img{
   width:100%;height:100%;object-fit:cover;
+  /* 底图是内联的 24px 模糊占位（photos.json 里的 blur），图片加载完就被盖住 */
+  background-size:cover;background-position:center;
   transition:transform .6s cubic-bezier(.2,.7,.2,1);
 }
 .ph-tile:hover img{transform:scale(1.06)}
@@ -530,7 +532,7 @@ body.lb-lock{overflow:hidden}
   display:block;position:relative;aspect-ratio:4/3;
   background:var(--img-placeholder);
 }
-.al-cover img{width:100%;height:100%;object-fit:cover}
+.al-cover img{width:100%;height:100%;object-fit:cover;background-size:cover;background-position:center}
 .al-cover video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
 .al-folder{display:grid;place-items:center;height:100%;font-size:34px}
 .al-name{
@@ -1002,6 +1004,10 @@ const FRIENDS=[
         悬停预览、灯箱里带声音播放）。
    两种来源：① 本地服务器/静态托管的目录列表；② GitHub API 兜底。 */
 const PHOTO_DIRS=["Photo Album/","../Photo Album/"];
+/* 构建期清单：scripts/gen-photo-assets.mjs 生成（缩略图路径 + 尺寸 + 动态照片标记）。
+   有它就完全不用在运行时扫目录、调 GitHub API、逐张探测动态照片；
+   没有它（还没跑脚本 / 新加图没重新生成）自动退回下面的目录扫描方式。 */
+const PHOTO_MANIFEST="photos.json";
 const IMG_RE=/\.(jpe?g|png|gif|webp|bmp|avif|heic|heif)$/i;
 const VID_RE=/\.(mp4|mov|m4v|webm)$/i;
 const MEDIA_RE=/\.(jpe?g|png|gif|webp|bmp|avif|heic|heif|mp4|mov|m4v|webm)$/i;
@@ -1251,12 +1257,46 @@ async function resolveGHUrls(dir,names){
 function nameOf(src){
   return decodeURIComponent(String(src).split("/").pop().split("?")[0]);
 }
-/* 装载整个相册库：
+/* 装载整个相册库（下面的兜底扫描版本）：
    ① 扫 Photo Album 根目录（图片/视频 = 「全部」；子文件夹 = 子相册）
    ② 逐个扫描子相册里的媒体
    ③ 同一相册里「同名图片 + 同名视频」自动配成 Live Photo（视频不再单独显示）
    ④ 汇总 photos 与 albums（相册封面取该相册第一张媒体） */
+/* 装载相册：优先读构建期清单（快、稳），读不到再退回运行时目录扫描。
+   清单模式下的数据形状与扫描模式完全一致，后面的渲染/灯箱代码不用区分。 */
 async function loadPhotos(){
+  if(await loadPhotosFromManifest())return;
+  await loadPhotosByScan();
+}
+async function loadPhotosFromManifest(){
+  try{
+    const res=await fetch(PHOTO_MANIFEST,{cache:"no-cache"});
+    if(!res.ok)return false;
+    const data=await res.json();
+    if(!data||!Array.isArray(data.photos))return false;
+    const list=data.photos.map(p=>({
+      name:p.name,
+      album:p.album||"",
+      type:p.type||"image",
+      src:p.src,                                  /* 原图：只在播放动态/下载时用 */
+      thumb:p.thumb||p.src,
+      thumb2x:p.thumb2x||p.thumb||p.src,
+      view:p.view||p.src,                         /* 灯箱用图（预缩放，别用原图） */
+      blur:p.blur||"",                            /* 占位小图（data URI） */
+      live:p.live||"",
+      motion:!!p.motion,
+      w:p.w||0, h:p.h||0, fb:""
+    }));
+    if(!list.length)return false;
+    photos=list;
+    albums=(data.albums||[]).map(a=>({name:a.name,count:a.count,cover:a.cover,blur:a.coverBlur||""}));
+    photosStatus="ready";
+    paintPhotoGrids();
+    return true;
+  }catch(e){ return false; }
+}
+/* 以下为兜底：运行时扫目录 / GitHub API（慢一点，但不跑脚本也能显示） */
+async function loadPhotosByScan(){
   const isFile=location.protocol==="file:";
   let root=null,rootBase=PHOTO_DIRS[0];
   for(const dir of PHOTO_DIRS){
@@ -1331,15 +1371,6 @@ async function loadPhotos(){
   photos.sort((a,b)=>b.name.localeCompare(a.name,"zh-Hans-CN",{numeric:true}));
   photosStatus="ready";
   paintPhotoGrids();
-  /* 页面一打开就逐张探测动态照片（轻量，只读头尾各 1MB），
-     是动态的提前升级并补上 LIVE 角标，不用等鼠标悬停 */
-  photos.forEach(p=>{
-    if(p.type!=="image"||p._motionTried)return;
-    motionProbe(p.src).then(y=>{
-      if(!y)return;
-      promoteMotion(p,null,false).then(url=>{ if(url)motionRepaint(); });
-    });
-  });
 }
 
 /* 当前要显示的媒体：子相册之间互相独立 ——
@@ -1376,37 +1407,10 @@ function motionVideoURL(src){
   motionCache.set(src,p);
   return p;
 }
-/* 轻量探测：只取文件头尾各一小段，看有没有动态照片标记
-   （XMP 的 MotionPhoto / MicroVideo，或三星的 SEFT 尾标记），
-   页面刚打开时逐张探测，这样不用等悬停就能提前标出 LIVE 角标 */
-const motionProbeCache=new Map();   /* src -> Promise<bool> */
-function motionProbe(src){
-  let p=motionProbeCache.get(src);
-  if(p)return p;
-  p=(async()=>{
-    try{
-      const grab=r=>fetch(src,{headers:{Range:r}})
-        .then(res=>res.ok?res.arrayBuffer():new ArrayBuffer(0)).catch(()=>new ArrayBuffer(0));
-      const [hb,tb]=await Promise.all([grab("bytes=0-65535"),grab("bytes=-1048576")]);
-      const hasMark=b=>/MotionPhoto|MicroVideo|SEFT/.test(new TextDecoder("latin1").decode(new Uint8Array(b)));
-      if(hasMark(hb)||hasMark(tb))return true;
-      /* 兜底：尾段里直接找 mp4 盒子的 ftyp 开盒标记 */
-      const u=new Uint8Array(tb);
-      for(let i=u.length-12;i>0;i--){
-        if(u[i]===0x66&&u[i+1]===0x74&&u[i+2]===0x79&&u[i+3]===0x70)return true;
-      }
-      return false;
-    }catch(e){ return false; }
-  })();
-  motionProbeCache.set(src,p);
-  return p;
-}
-/* 探测出动态照片后要重铺网格让 LIVE 角标显出来；多张并发时合并成一次重铺 */
-let motionPaintTimer=0;
-function motionRepaint(){
-  clearTimeout(motionPaintTimer);
-  motionPaintTimer=setTimeout(paintPhotoGrids,150);
-}
+/* 动态照片的「是否动态」改由构建期判定（photos.json 里的 motion 字段），
+   页面打开时不再逐张探测。原来那套 Range 探测在静态托管上代价极高：
+   服务器不认 Range 时每张图都会整份下载，十几张就是十几兆的额外流量。
+   现在只有用户真的悬停 / 打开某张动态照片时，才会去取那一张的原图。 */
 /* 把普通图片升级成动态照片：识别成功就改成 live 类型；
    传入 tile 时顺手塞进悬停用的动态视频层（autoplay=true 立即播放） */
 function promoteMotion(p,tile,autoplay){
@@ -1427,20 +1431,29 @@ function promoteMotion(p,tile,autoplay){
     return url;
   });
 }
-/* 瓷砖内容：图片直接 <img>；视频用 <video> 抓首帧；Live Photo 静态图 + 悬停播放动态视频 */
-function mediaTileTag(p){
+/* 瓷砖内容：图片用缩略图（srcset 给高分屏）+ 模糊占位底；视频抓首帧；
+   Live Photo 静态图 + 悬停播放动态视频。
+   注意：列表里绝不加载原图 —— 原图只在播放动态照片时按需取一次。 */
+function mediaTileTag(p,i){
   if(p.type==="video"){
-    return `<video src="${esc(p.src)}" preload="metadata" muted playsinline
+    return `<video src="${esc(p.thumb||p.src)}" preload="metadata" muted playsinline
       onerror="this.style.display='none'"></video>`;
   }
+  const src=p.thumb||p.src;
+  const srcset=(p.thumb2x&&p.thumb2x!==src)
+    ? ` srcset="${esc(src)} 480w, ${esc(p.thumb2x)} 960w" sizes="(max-width:620px) 46vw,(max-width:900px) 31vw,320px"`
+    : "";
+  /* 首屏前几张直接取，其余懒加载（缩略图只有十几 KB，但也没必要一次全拉） */
+  const eager=i<4;
+  const blur=p.blur?` style="background-image:url('${p.blur}')"`:"";
+  const liveV=(p.type==="live"&&p.live)
+    ? `<video class="ph-live-v" src="${esc(p.live)}" muted playsinline loop preload="none"></video>`:"";
   const err=p.fb
     ? `this.dataset.s?(this.style.display='none'):(this.dataset.s=1,this.src=this.dataset.alt)`
     : `this.style.display='none'`;
-  const fbAttr=p.fb?`data-alt="${esc(PHOTO_DIRS[0]+encodeURIComponent(p.fb))}"`:"";
-  const liveV=p.type==="live"
-    ? `<video class="ph-live-v" src="${esc(p.live)}" muted playsinline loop preload="none"></video>`:"";
-  return `<img src="${esc(p.src)}" alt="${esc(p.name)}" loading="lazy" decoding="async"
-    ${fbAttr}
+  const fbAttr=p.fb?` data-alt="${esc(PHOTO_DIRS[0]+encodeURIComponent(p.fb))}"`:"";
+  return `<img src="${esc(src)}"${srcset} alt="${esc(p.name)}"${blur}
+    loading="${eager?"eager":"lazy"}"${eager?' fetchpriority="high"':""} decoding="async"${fbAttr}
     onerror="${err}">${liveV}`;
 }
 function photoTilesHtml(list,limit){
@@ -1455,10 +1468,12 @@ function photoTilesHtml(list,limit){
   const total=limit>0?Math.min(limit,list.length):list.length;
   return list.slice(0,total).map((p,i)=>{
     const more=(limit>0 && limit<list.length && i===limit-1);
-    const badge=p.type==="live"?`<span class="ph-badge">${esc(T().gallery.liveTag)}</span>`
+    /* 动态照片 = 已配对的 Live Photo，或构建期判定为内嵌视频的 Motion Photo */
+    const isLive=p.type==="live"||p.motion;
+    const badge=isLive?`<span class="ph-badge">${esc(T().gallery.liveTag)}</span>`
       :p.type==="video"?`<span class="ph-badge">${esc(T().gallery.videoTag)}</span>`:"";
-    return `<div class="ph-tile${p.type==="live"?" is-live":""}" data-idx="${i}" role="button" tabindex="0" aria-label="${esc(p.name)}">
-      ${mediaTileTag(p)}${badge}
+    return `<div class="ph-tile${isLive?" is-live":""}" data-idx="${i}" role="button" tabindex="0" aria-label="${esc(p.name)}">
+      ${mediaTileTag(p,i)}${badge}
       <span class="ph-cap">${esc(p.name)}</span>
       ${more?`<div class="ph-more">+${list.length-limit}</div>`:""}
     </div>`;
@@ -1475,7 +1490,7 @@ function albumStripHtml(){
       <span class="al-cover">${
         a.cover?(VID_RE.test(a.cover)
           ?`<video src="${esc(a.cover)}" preload="metadata" muted playsinline></video>`
-          :`<img src="${esc(a.cover)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`)
+          :`<img src="${esc(a.cover)}" alt="" loading="lazy" decoding="async"${a.blur?` style="background-image:url('${a.blur}')"`:""} onerror="this.remove()">`)
         :`<span class="al-folder">📁</span>`}</span>
       <span class="al-name">${esc(a.name)}</span>
       <span class="al-count">${esc(t.albumCount(a.count))}</span>
@@ -1581,7 +1596,8 @@ function setLbMedia(p){
     img.style.display="";
     img.onerror=null;
     img.removeAttribute("data-alt");
-    img.src=p.src;
+    /* 灯箱用预缩放好的 view 图（长边 ≤1800、体积几十 KB），不再直接拉原图 */
+    img.src=p.view||p.src;
     if(p.fb){
       img.dataset.alt=PHOTO_DIRS[0]+encodeURIComponent(p.fb);
       img.onerror=function(){
@@ -1596,8 +1612,9 @@ function setLbMedia(p){
       paintSoundBtn();
       lbMotionOn=true;
       applyLbMotion();
-    }else if(p.type==="image"){
-      /* 普通图片也试一下是不是动态照片（内嵌视频的 JPG），识别成功就显示控制条并自动播放 */
+    }else if(p.type==="image"&&p.motion!==false){
+      /* motion 未知（旧扫描模式）时才现场探测；清单模式已知不是动态照片就跳过，
+         免得为了一张静态图去整份下载原图 */
       promoteMotion(p,null,false).then(url=>{
         if(url&&lbItems[lbIndex]===p){
           bar.style.display="";
@@ -2418,10 +2435,14 @@ document.addEventListener("mouseover",e=>{
   if(!p)return;
   if(tile.classList.contains("is-live")){
     const v=tile.querySelector(".ph-live-v");
-    if(v){ v.style.display="block"; v.play().catch(()=>{}); }
+    if(v){ v.style.display="block"; v.play().catch(()=>{}); return; }
+    /* 清单里已标为动态照片，但视频还没解析 → 现在按需取这一张的原图 */
+    if(p.type==="image"&&p.motion)promoteMotion(p,tile,true);
     return;
   }
-  if(p.type==="image")promoteMotion(p,tile,true);
+  /* 只有「不知道是不是动态」的旧扫描模式才现场探测；
+     清单模式已知是静态图，就不必为它下载原图 */
+  if(p.type==="image"&&p.motion===undefined)promoteMotion(p,tile,true);
 });
 document.addEventListener("mouseout",e=>{
   const tile=e.target.closest(".ph-tile.is-live"); if(!tile)return;

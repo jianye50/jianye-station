@@ -1,0 +1,16 @@
+# Cloudflare Pages 响应头配置（放在站点根目录，Pages 会自动识别）
+# 语法：先写路径（支持 * 通配），缩进两格写响应头。
+
+# 相册预处理图（缩略图 / 灯箱图）：文件名里带内容 hash，可以放心永久缓存
+/assets/photos/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# 相册清单：要能及时反映新增照片，每次都做一次轻量校验（304 很快）
+/photos.json
+  Cache-Control: public, max-age=0, must-revalidate
+
+# 站点图标、头像等根目录静态资源：一天
+/*.ico
+  Cache-Control: public, max-age=86400
+/*.png
+  Cache-Control: public, max-age=86400

@@ -1,0 +1,3 @@
+# 本地安装依赖时不进仓库
+node_modules/
+package-lock.json
