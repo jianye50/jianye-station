@@ -1442,6 +1442,8 @@ function promoteMotion(p,tile,autoplay){
       if(cap)tile.insertBefore(v,cap); else tile.appendChild(v);
       if(autoplay){ v.style.display="block"; v.play().catch(()=>{}); }
     }
+    /* 解析完成时灯箱可能已经打开（悬停触发的解析比点击慢）→ 补上动态播放 */
+    lbPlayMotion(p);
     return url;
   });
 }
@@ -1590,6 +1592,19 @@ function lbToggleSound(){
   /* 静音状态下被浏览器拦住的播放，开声后补一次播放尝试 */
   if(lbMotionOn&&vid.paused&&lbSoundOn)vid.play().catch(()=>{});
   paintSoundBtn();
+}
+/* 动态照片解析完成时补一手：若灯箱正开着这张，立刻显示控制条并播动态。
+   修复：悬停会先于点击触发原图解析（promoteMotion），等灯箱打开时那次调用
+   因 _motionTried 立即返回空，解析结果又只更新了图墙瓷砖 ——
+   若不在这里补上，第一次打开就只有静态图，控制条也不出现，得关掉重开才有。 */
+function lbPlayMotion(p){
+  if(!p||p.type!=="live"||!p.live)return;
+  if(!$("#lightbox").classList.contains("open"))return;
+  if(lbItems[lbIndex]!==p)return;
+  $("#lbMotionBar").style.display="";
+  paintSoundBtn();
+  lbMotionOn=true;
+  applyLbMotion();
 }
 /* ---------- 灯箱取图 ----------
    两个要求同时满足：① 等的过程绝不能残留上一张；② 等的时间要尽可能短。
@@ -1742,15 +1757,11 @@ function setLbMedia(p){
       applyLbMotion();
     }else if(p.type==="image"&&p.motion!==false){
       /* motion 未知（旧扫描模式）时才现场探测；清单模式已知不是动态照片就跳过，
-         免得为了一张静态图去整份下载原图 */
-      promoteMotion(p,null,false).then(url=>{
-        if(url&&lbItems[lbIndex]===p){
-          bar.style.display="";
-          paintSoundBtn();
-          lbMotionOn=true;
-          applyLbMotion();
-        }
-      });
+         免得为了一张静态图去整份下载原图。
+         注意：悬停可能已经触发过解析（_motionTried 已置位），promoteMotion 会
+         立即返回空 —— 所以这里必须再挂到真正的解析 promise 上，出结果后补播 */
+      promoteMotion(p,null,false);
+      motionVideoURL(p.src).then(()=>lbPlayMotion(p));
     }
   }
 }
