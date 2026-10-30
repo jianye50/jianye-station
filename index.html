@@ -2687,19 +2687,48 @@ async function trViaGoogle(text){
     return out;
   }finally{ tk.done(); }
 }
+/* HTML 实体还原：MyMemory 会把换行返回成 &#10;、引号返回成 &quot;，
+   不还原的话「多行标签」永远对不齐、译文里还会冒出 &#10; 字面量 */
+function trDecodeEntities(s){
+  return String(s)
+    .replace(/&#(\d+);/g,(m,d)=>String.fromCharCode(+d))
+    .replace(/&#x([0-9a-f]+);/gi,(m,h)=>String.fromCharCode(parseInt(h,16)))
+    .replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&nbsp;/g," ")
+    .replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&");
+}
+/* 按句子切块：MyMemory 单次约 500 字符上限，太长的段落切成几块分别翻再拼回去 */
+function trChunks(text,max){
+  const out=[];let rest=String(text);
+  while(rest.length>max){
+    let cut=-1;
+    for(let i=max;i>Math.floor(max*0.5);i--){
+      if(/[。！？；\n.!?;]/.test(rest.charAt(i))){cut=i+1;break;}
+    }
+    if(cut<0)cut=max;
+    out.push(rest.slice(0,cut));rest=rest.slice(cut);
+  }
+  if(rest)out.push(rest);
+  return out;
+}
 /* 引擎 3：MyMemory 兜底（免费免密钥，单次约 500 字符） */
 async function trViaMyMemory(text){
-  const tk=trTimeout(9000);
-  try{
-    const r=await fetch("https://api.mymemory.translated.net/get?langpair=zh-CN%7Cen&q="
-      +encodeURIComponent(text),{signal:tk.signal});
-    if(!r.ok)throw new Error("mymemory "+r.status);
-    const j=await r.json();
-    const s=j&&j.responseData&&j.responseData.translatedText;
-    if(typeof s!=="string"||!s.trim())throw new Error("mymemory empty");
-    if(/MYMEMORY WARNING|QUERY LENGTH LIMIT/i.test(s))throw new Error("mymemory quota");
-    return s.replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,"&");
-  }finally{ tk.done(); }
+  const parts=trChunks(text,450);
+  const outs=[];
+  for(const part of parts){
+    const tk=trTimeout(9000);
+    try{
+      const r=await fetch("https://api.mymemory.translated.net/get?langpair=zh-CN%7Cen&q="
+        +encodeURIComponent(part),{signal:tk.signal});
+      if(!r.ok)throw new Error("mymemory "+r.status);
+      const j=await r.json();
+      const s=j&&j.responseData&&j.responseData.translatedText;
+      if(typeof s!=="string"||!s.trim())throw new Error("mymemory empty");
+      if(/MYMEMORY WARNING|QUERY LENGTH LIMIT|INVALID SOURCE LANGUAGE/i.test(s))throw new Error("mymemory quota");
+      outs.push(trDecodeEntities(s).trim());
+    }finally{ tk.done(); }
+  }
+  if(!outs.length)throw new Error("mymemory empty");
+  return outs.join(" ").trim();
 }
 const TR_ENGINES=[{id:"proxy",run:trViaProxy},{id:"google",run:trViaGoogle},{id:"mymemory",run:trViaMyMemory}];
 /* 统一入口：按「上次成功的引擎优先」依次尝试，全失败才抛错（调用方保留原文） */
@@ -2772,7 +2801,8 @@ async function translateMarkdown(md){
   await trPool(jobs,4,async job=>{ out[job.i]=await translateLine(job.line); });
   return out.join("\n");
 }
-/* 翻译标签数组：带中文的标签合并成一次请求（按行对齐），纯英文标签原样保留 */
+/* 翻译标签数组：带中文的标签先合并成一次请求（换行分隔、按行对齐），
+   行数对不上（不同引擎对换行的处理不一样）就逐个翻，保证标签不会整组卡在中文 */
 async function translateTags(tags){
   const arr=(Array.isArray(tags)?tags:[]).map(x=>String(x));
   const idx=arr.map((x,i)=>hasCJK(x)?i:-1).filter(i=>i>=0);
@@ -2780,17 +2810,41 @@ async function translateTags(tags){
   try{
     const out=await gTranslate(idx.map(i=>arr[i]).join("\n"));
     const parts=out.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-    if(parts.length!==idx.length)return arr;           /* 行数对不上就整组保留原文 */
-    const res=arr.slice();
-    idx.forEach((orig,k)=>res[orig]=parts[k]);
-    return res;
-  }catch(e){ return arr; }
+    if(parts.length===idx.length){
+      const res=arr.slice();
+      idx.forEach((orig,k)=>res[orig]=parts[k]);
+      return res;
+    }
+  }catch(e){}
+  /* 兜底：逐个翻译，成功的替换、失败的原样保留 */
+  const res=arr.slice();
+  let hit=0;
+  await trPool(idx,3,async i=>{
+    try{
+      const s=await gTranslate(arr[i]);
+      if(s&&s.trim()){ res[i]=s.trim(); hit++; }
+    }catch(e){}
+  });
+  return hit?res:arr;
 }
 const TR_MEM=new Map();   /* 本次会话内缓存，避免同一篇文章来回切语言反复请求 */
-/* 翻译一篇完整文章（标题 + 摘要 + 标签 + 正文），带 localStorage 持久缓存 */
+/* 旧版缓存里可能存着「翻译失败、标题仍是中文」的结果，会让标题一直显中文 —— 启动时清一次 */
+(function trPurgeOldCache(){
+  try{
+    const kill=[];
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&(/^jy-tr:/.test(k)||/^jy-trm:/.test(k)))kill.push(k);
+    }
+    kill.forEach(k=>localStorage.removeItem(k));
+  }catch(e){}
+})();
+/* 翻译一篇完整文章（标题 + 摘要 + 标签 + 正文），带 localStorage 持久缓存。
+   只有「该翻的都翻成了」才落盘缓存：部分失败的结果只放内存，下次打开会重新尝试，
+   避免把中文原样当成译文永久缓存下来 */
 async function translatePost(slug,title,desc,body,tags){
   tags=Array.isArray(tags)?tags:[];
-  const key="jy-tr:"+slug+":"+trHash(title+"\u0000"+desc+"\u0000"+body+"\u0000"+tags.join("\u0000"));
+  const key="jy-tr2:"+slug+":"+trHash(title+"\u0000"+desc+"\u0000"+body+"\u0000"+tags.join("\u0000"));
   try{ const c=localStorage.getItem(key); if(c)return JSON.parse(c); }catch(e){}
   if(TR_MEM.has(key))return TR_MEM.get(key);
   const [tt,dd,gg,bb]=await Promise.all([
@@ -2801,16 +2855,21 @@ async function translatePost(slug,title,desc,body,tags){
   ]);
   const r={t:tt||title,d:dd||desc,g:gg,b:bb};
   TR_MEM.set(key,r);
-  try{ localStorage.setItem(key,JSON.stringify(r)); }catch(e){}   /* 存满就算了，会话内缓存还在 */
+  const okT=!hasCJK(title)||!!tt;
+  const okD=!desc||!hasCJK(desc)||!!dd;
+  const okG=tags.every((x,i)=>!hasCJK(x)||(gg[i]&&gg[i]!==x));
+  if(okT&&okD&&okG){
+    try{ localStorage.setItem(key,JSON.stringify(r)); }catch(e){}   /* 存满就算了，会话内缓存还在 */
+  }
   return r;
 }
 /* 列表条目的轻量翻译：只翻标题 + 摘要 + 标签，不碰正文（正文进详情页才翻）。
-   独立缓存 jy-trm:...，与详情页的 jy-tr:... 互不干扰 */
+   独立缓存 jy-trm2:...，与详情页的 jy-tr2:... 互不干扰 */
 const TRM_MEM=new Map();
 async function translatePostMeta(post){
   const title=post.title||"",desc=post.desc||"",tags=Array.isArray(post.tags)?post.tags:[];
   if(!hasCJK(title+desc+tags.join("")))return null;   /* 全英文条目不用翻 */
-  const key="jy-trm:"+(post.slug||"")+":"+trHash(title+"\u0000"+desc+"\u0000"+tags.join("\u0000"));
+  const key="jy-trm2:"+(post.slug||"")+":"+trHash(title+"\u0000"+desc+"\u0000"+tags.join("\u0000"));
   try{ const c=localStorage.getItem(key); if(c)return JSON.parse(c); }catch(e){}
   if(TRM_MEM.has(key))return TRM_MEM.get(key);
   const [tt,gg,dd]=await Promise.all([
@@ -2820,7 +2879,13 @@ async function translatePostMeta(post){
   ]);
   const r={t:tt||title,g:gg,d:dd||desc};
   TRM_MEM.set(key,r);
-  try{ localStorage.setItem(key,JSON.stringify(r)); }catch(e){}
+  /* 标题 / 摘要 / 标签有任意一项没翻成就不落盘，下次打开重试，别把中文永久当成译文缓存 */
+  const okT=!hasCJK(title)||!!tt;
+  const okD=!desc||!hasCJK(desc)||!!dd;
+  const okG=tags.every((x,i)=>!hasCJK(x)||(gg[i]&&gg[i]!==x));
+  if(okT&&okD&&okG){
+    try{ localStorage.setItem(key,JSON.stringify(r)); }catch(e){}
+  }
   return r;
 }
 /* 英文界面下批量翻译博客列表：列表先按中文秒出，译文逐张无感替换。

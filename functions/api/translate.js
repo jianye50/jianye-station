@@ -59,18 +59,49 @@ async function translateGoogle(text, from, to) {
   return out;
 }
 
+/* HTML 实体还原：MyMemory 会把换行返回成 &#10;，不还原会让多行文本对不齐 */
+function decodeEntities(s) {
+  return String(s)
+    .replace(/&#(\d+);/g, (m, d) => String.fromCharCode(+d))
+    .replace(/&#x([0-9a-f]+);/gi, (m, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+}
+
+/* 按句子切块：MyMemory 单次约 500 字符上限 */
+function chunkText(text, max) {
+  const out = [];
+  let rest = String(text);
+  while (rest.length > max) {
+    let cut = -1;
+    for (let i = max; i > Math.floor(max * 0.5); i--) {
+      if (/[。！？；\n.!?;]/.test(rest.charAt(i))) { cut = i + 1; break; }
+    }
+    if (cut < 0) cut = max;
+    out.push(rest.slice(0, cut));
+    rest = rest.slice(cut);
+  }
+  if (rest) out.push(rest);
+  return out;
+}
+
 /* MyMemory 备用接口：免费、无需密钥，单次约 500 字符上限 */
 async function translateMyMemory(text, from, to) {
-  const url =
-    "https://api.mymemory.translated.net/get?langpair=" +
-    `${encodeURIComponent(from)}%7C${encodeURIComponent(to)}&q=${encodeURIComponent(text)}`;
-  const r = await tfetch(url);
-  if (!r.ok) throw new Error("mymemory " + r.status);
-  const j = await r.json();
-  const s = j && j.responseData && j.responseData.translatedText;
-  if (typeof s !== "string" || !s.trim()) throw new Error("mymemory empty");
-  if (/MYMEMORY WARNING|QUERY LENGTH LIMIT/i.test(s)) throw new Error("mymemory quota");
-  return s.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+  const outs = [];
+  for (const part of chunkText(text, 450)) {
+    const url =
+      "https://api.mymemory.translated.net/get?langpair=" +
+      `${encodeURIComponent(from)}%7C${encodeURIComponent(to)}&q=${encodeURIComponent(part)}`;
+    const r = await tfetch(url);
+    if (!r.ok) throw new Error("mymemory " + r.status);
+    const j = await r.json();
+    const s = j && j.responseData && j.responseData.translatedText;
+    if (typeof s !== "string" || !s.trim()) throw new Error("mymemory empty");
+    if (/MYMEMORY WARNING|QUERY LENGTH LIMIT/i.test(s)) throw new Error("mymemory quota");
+    outs.push(decodeEntities(s).trim());
+  }
+  if (!outs.length) throw new Error("mymemory empty");
+  return outs.join(" ").trim();
 }
 
 async function translateOne(text, from, to) {
