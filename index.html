@@ -1039,13 +1039,66 @@ const SOCIALS=[
   {zh:"Steam",en:"Steam",u:"https://steamcommunity.com/id/aimjianye/",c:"#66c0f4"},
   {zh:"意见反馈",en:"Feedback",u:"https://my.feishu.cn/share/base/form/shrcnZomfA2kKrY311TeM2OaRpe",c:"#4d8dff"}
 ];
-/* ---------- 友情链接：加新朋友就往这里加一条 ---------- */
-const FRIEND_FORM="https://my.feishu.cn/share/base/form/shrcn33uvUS0WgKehGEiDMxZAHe"; /* 友链申请表单 */
-const FRIENDS=[
+/* ---------- 友情链接：内容在站点根目录的 friends.txt 里配置 ----------
+   每行一位朋友，字段用 | 隔开，顺序固定：
+     中文名|英文名|中文描述|英文描述|网址|图标地址
+   图标一栏可省略；行首带 # 的是注释；「表单|网址」单独一行设置申请表单。
+   加朋友直接另起一行保存即可，不用动本文件（名称/描述里别用 | 字符）。
+   这里只留一份内置兜底（配置读不到时，比如 file:// 直接打开，仍能正常显示） */
+const FRIEND_FORM_DEFAULT="https://my.feishu.cn/share/base/form/shrcn33uvUS0WgKehGEiDMxZAHe"; /* 友链申请表单 */
+const FRIENDS_DEFAULT=[
   {zh:"小刚PE",en:"XiaoGang PE",
    dzh:"小刚PE 系统维护",den:"XiaoGang PE · System maintenance",
    u:"https://www.xgpe.top",logo:"https://www.xgpe.top/images/logo.jpg"}
 ];
+let FRIENDS=FRIENDS_DEFAULT;
+let FRIEND_FORM=FRIEND_FORM_DEFAULT;
+/* 解析 friends.txt 的行式配置 */
+function parseFriendsText(text){
+  const out={form:"",friends:[]};
+  String(text||"").split(/\r?\n/).forEach(raw=>{
+    const line=raw.trim();
+    if(!line||line.charAt(0)==="#")return;
+    const p=line.split("|").map(s=>s.trim());
+    if(/^(表单|form)$/i.test(p[0])){ if(p[1])out.form=p[1]; return; }
+    if(p.length>=5&&p[4]){
+      out.friends.push({zh:p[0]||p[1],en:p[1]||p[0],
+        dzh:p[2]||p[3]||"",den:p[3]||p[2]||"",u:p[4],logo:p[5]||""});
+    }
+  });
+  return (out.friends.length||out.form)?out:null;
+}
+/* 读取友链配置：no-cache 保证改完配置刷新立即生效（没更新时走 304，不重复下载）。
+   friends.txt 读不到时再试旧的 friends.json（内容以 { 开头自动按 JSON 解析） */
+async function loadFriends(){
+  let j=null;
+  try{
+    const r=await fetch("friends.txt",{cache:"no-cache"});
+    if(r.ok){
+      const text=await r.text();
+      if(/^\s*\{/.test(text)){ try{ j=JSON.parse(text); }catch(e){} }
+      else j=parseFriendsText(text);
+    }
+  }catch(e){}
+  if(!j){
+    try{
+      const r=await fetch("friends.json",{cache:"no-cache"});
+      if(r.ok)j=await r.json();
+    }catch(e){}
+  }
+  if(!j)return;
+  if(typeof j.form==="string"&&j.form)FRIEND_FORM=j.form;
+  if(Array.isArray(j.friends)&&j.friends.length)FRIENDS=j.friends;
+  /* 配置到达时正停在关于页 → 原地重绘友链区（保住滚动位置，不打断浏览） */
+  if(/^#\/about/.test(location.hash)){
+    const root=document.documentElement,prev=root.style.scrollBehavior;
+    root.style.scrollBehavior="auto";
+    const y=window.scrollY;
+    renderAbout();
+    window.scrollTo(0,y);
+    root.style.scrollBehavior=prev;
+  }
+}
 
 /* ---------- 相册：媒体来自站点根目录下的「Photo Album」文件夹 ----------
    Photo Album 里的照片/视频是「全部」；里面再建的子文件夹是各自的相册，
@@ -2848,6 +2901,7 @@ document.addEventListener("keydown",e=>{
 /* ---------- 启动 ---------- */
 setLang(lang);     /* 统一走 setLang：品牌名、导航文案、语言按钮、云空间入口提示都按语言铺一遍 */
 loadPhotos();
+loadFriends();     /* 异步读 friends.json：读到前先用内置兜底渲染，读到后如停在关于页则原地刷新 */
 /* 首屏与导航文案就绪 → 淡出启动加载屏（顺带移除 DOM） */
 (function(){
   const b=document.getElementById("boot");
