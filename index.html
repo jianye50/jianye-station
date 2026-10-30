@@ -6,9 +6,11 @@
 <meta name="color-scheme" content="dark">
 <title>鉴业の小站</title>
 <meta name="description" content="鉴业の小站 —— 愿我们拥有的时候不要毁，失去的时候不要悔。">
-<!-- 站点图标：站点根目录的 icon.ico -->
+<!-- 站点图标：根目录 icon.png（主）+ icon.ico（老浏览器兜底）；
+     iOS 不认 ICO，apple-touch-icon 必须指 PNG -->
 <link rel="icon" href="icon.ico" sizes="any">
-<link rel="apple-touch-icon" href="icon.ico">
+<link rel="icon" href="icon.png" type="image/png">
+<link rel="apple-touch-icon" href="icon.png">
 <!-- 移动端地址栏配色（站点固定深色） -->
 <meta name="theme-color" content="#0b0d12">
 <!-- 分享卡片预览 -->
@@ -2514,7 +2516,7 @@ window.addEventListener("bloglist",()=>{
   const sub=document.getElementById("blogSub");
   if(sub&&!blogQuery)sub.textContent=T().blog.sub(blogPosts.length);
 });
-async function renderBlog(){
+async function renderBlog(gen){
   const t=T();
   app.innerHTML=`<section class="view"><div class="wrap">
     <div class="page-head"><h1>${esc(t.blog.title)}</h1><p class="sub" id="blogSub"></p></div>
@@ -2531,6 +2533,7 @@ async function renderBlog(){
     <div id="blogBody">${blogSkeletonHTML()}<div id="blogListMount"></div></div>
   </div></section>`;
   const posts=await loadBlog();
+  if(gen!==undefined&&gen!==routeGen)return;   /* await 期间用户已切走：别覆盖新页面 */
   const sub=document.getElementById("blogSub");
   const body=document.getElementById("blogBody");
   if(!body)return;
@@ -2566,15 +2569,17 @@ async function renderBlog(){
   bsSync();
 }
 
-async function renderPost(slug){
+async function renderPost(slug,gen){
   const t=T();
   app.innerHTML=`<section class="view">
     <div class="post-hero"></div>
     <div class="wrap"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a></div>
   </section>`;
+  const stale=()=>gen!==undefined&&gen!==routeGen;   /* await 期间用户已切走 → 放弃渲染 */
   const posts=await loadBlog();
+  if(stale())return;
   const post=posts.find(p=>p.slug===slug);
-  const fail=msg=>{app.innerHTML=`<section class="view"><div class="wrap">
+  const fail=msg=>{ if(stale())return; app.innerHTML=`<section class="view"><div class="wrap">
     <div class="blog-empty">${msg}</div>
     <div style="text-align:center"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a></div>
   </div></section>`;};
@@ -2586,6 +2591,7 @@ async function renderPost(slug){
     if(!r.ok)throw new Error(r.status);
     raw=await r.text();
   }catch(e){fail(esc(t.blog.err));return;}
+  if(stale())return;   /* 正文网络请求最慢，切走后回来绝不能覆盖新页面 */
   const {meta,body}=parsePost(raw);
   const title=meta.title||post.title||t.blog.untitled;
   const desc=meta.desc||post.desc||"";
@@ -2619,6 +2625,8 @@ async function renderPost(slug){
 }
 
 /* ---------- 路由 ---------- */
+let routeGen=0;   /* 渲染代次：异步渲染（博客列表/文章）await 期间用户可能切走页面，
+                     过期的渲染继续写 DOM 会把新页面整个覆盖掉 —— 每个 await 后先校验 */
 let pendingScroll=null;   /* 带锚点的路由：渲染后要缓缓滑到的板块 id */
 /* 缓速滑动：比浏览器原生 smooth 更从容（约 1 秒），用户滚轮/触摸可随时打断 */
 function glideTo(y,dur){
@@ -2647,6 +2655,7 @@ function glideTo(y,dur){
   })(t0);
 }
 function route(){
+  const gen=++routeGen;
   const hash=location.hash.replace(/^#\/?/,"");
   const parts=hash.split("/").filter(Boolean);
   let active="home";
@@ -2657,9 +2666,9 @@ function route(){
       /* slug 解码包一层兜底：孤立的 %（链接被截断等）会抛 URIError，别让它卡死路由 */
       let slug="";
       try{ slug=decodeURIComponent(parts.slice(1).join("/")); }catch(e){}
-      renderPost(slug);
+      renderPost(slug,gen);
     }
-    else renderBlog();
+    else renderBlog(gen);
   }
   else if(parts[0]==="about"){
     active="about";renderAbout();
