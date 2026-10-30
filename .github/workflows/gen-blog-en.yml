@@ -44,7 +44,14 @@ jobs:
           TR_DELAY_MS: "120"     # 每次请求的间隔，防止被限流
         run: node scripts/gen-blog-en.mjs ${{ (github.event_name == 'workflow_dispatch' && inputs.force) && '--force' || '' }}
 
-      - name: 提交英文版
+      # 用 GITHUB_TOKEN 推送的提交不会触发其它 workflow（GitHub 防递归），
+      # 所以 gen-blog-index 不会自动跟着跑 —— 在这里顺手重建索引，
+      # 让 blog/index.json 的 mdEn / titleEn / descEn / tagsEn 和英文版一起进同一个提交，
+      # 否则列表页英文界面拿不到英文标题，还会退化成临时机翻。
+      - name: 同步博客索引（带上英文字段）
+        run: node scripts/gen-blog-index.mjs
+
+      - name: 提交英文版与索引
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -53,7 +60,7 @@ jobs:
             echo "英文版无变化，跳过提交"
             exit 0
           fi
-          git commit -m "chore: 自动生成博客英文版（index.en.md）"
+          git commit -m "chore: 自动生成博客英文版（index.en.md）并更新索引"
           # 索引 Action 可能同时在写 index.json，push 前先 rebase，冲突就重试
           for i in 1 2 3; do
             git pull --rebase --autostash origin "${GITHUB_REF_NAME}" >/dev/null 2>&1 || true

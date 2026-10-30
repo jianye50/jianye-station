@@ -2670,6 +2670,20 @@ function trHash(s){
   return (h>>>0).toString(36);
 }
 function hasCJK(s){return /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/.test(String(s));}
+/* 判断「还有没有真正需要翻译的中文」：代码块、行内代码、图片路径、链接地址、HTML 标签
+   里的中文一律不算 —— 静态英文版里的 ![屏幕截图_x](屏幕截图_x.jpg)、cover: 中文文件名.jpg
+   这类是资源名，本来就不该翻，却被 hasCJK 误判成「没翻译」，于是整页又去走临时机翻 */
+function hasCJKText(s){
+  const t=String(s==null?"":s)
+    .replace(/```[\s\S]*?```/g,"")        /* 围栏代码块 */
+    .replace(/~~~[\s\S]*?~~~/g,"")
+    .replace(/`[^`\n]*`/g,"")             /* 行内代码 */
+    .replace(/!\[[^\]]*\]\([^)]*\)/g,"")  /* 图片：alt 与路径都不算正文 */
+    .replace(/\[([^\]]*)\]\([^)]*\)/g,"$1")/* 链接：只留链接文字 */
+    .replace(/<[^>]*>/g,"")               /* HTML 标签（含属性里的中文） */
+    .replace(/\bhttps?:\/\/\S+/g,"");     /* 裸链 */
+  return hasCJK(t);
+}
 /* 翻译引擎链（全部免密钥、无日配额，已不再使用有每日限额的 MyMemory）：
    ① 浏览器本地模型：Chrome 138+ 内置的 Translator API，模型在本地，零网络请求、
       零次数限制，离线也能翻；模型没装好就自动跳过，不会偷偷下载几十 MB。
@@ -3012,13 +3026,14 @@ async function renderPost(slug,gen){
   if(!post){fail(esc(t.blog.err));return;}
   /* 英文界面优先读静态英文版（index.en.md），读不到再回退中文原文 + 浏览机翻 */
   const enURL=(lang==="en")?(post.mdURLEn||mdEnURL(post.mdURL)):"";
-  let raw="";
+  let raw="",usedEn=false;
   try{
     /* no-cache：文章更新靠 304 协商保证，部署环境不必每次全量回源 */
     let r=null;
     if(enURL){
       try{ r=await fetch(enURL,{cache:"no-cache"}); }catch(e){ r=null; }
       if(!r||!r.ok)r=null;                       /* 英文版缺失/没生成：上一版或中文原文兜底 */
+      else usedEn=true;                          /* 真的拿到了静态英文版 */
     }
     if(!r){
       r=await fetch(post.mdURL,{cache:"no-cache"});
@@ -3057,8 +3072,10 @@ async function renderPost(slug,gen){
       <div class="post-end">${esc(t.blog.end)}</div>
     </div>
   </section>`;
-  /* 英文界面 + 中文文章：正文先按原文秒出，后台机器翻译，完成后无感替换（失败保留原文） */
-  if(lang==="en"&&(hasCJK(body)||hasCJK(title)||hasCJK(desc))){
+  /* 英文界面 + 中文文章：正文先按原文秒出，后台机器翻译，完成后无感替换（失败保留原文）
+     已经拿到静态英文版（index.en.md）就绝不再机翻——那份就是权威译文，
+     里面残留的中文只是图片文件名、代码注释之类不该翻的内容 */
+  if(lang==="en"&&!usedEn&&(hasCJKText(body)||hasCJKText(title)||hasCJKText(desc))){
     const curGen=gen;
     /* 失败后可点「重试」：同一个 run 复用，不必刷新页面 */
     const run=()=>{
@@ -3069,7 +3086,15 @@ async function renderPost(slug,gen){
         if(pm)pm.insertAdjacentHTML("beforeend",
           `<span class="tr-note" id="trNote"><span class="tr-spin"></span>${esc(t.blog.translating)}</span>`);
       }
+      /* 兜底：翻译接口被墙 / 限流时请求可能长时间挂着不回，
+         15 秒还没结果就给「重试」，别让人一直对着 Translating… 干等 */
+      const guard=setTimeout(()=>{
+        const n=document.getElementById("trNote");
+        if(n&&n.querySelector(".tr-spin"))n.innerHTML=
+          `${esc(t.blog.trFail)} <button type="button" class="tr-retry">${esc(t.blog.trRetry)}</button>`;
+      },15000);
       translatePost(slug,title,desc,body,tags).then(r=>{
+        clearTimeout(guard);
         if(curGen!==undefined&&curGen!==routeGen)return;   /* 翻译期间用户切走了：别写新页面 */
         const note=document.getElementById("trNote");
         /* 一处都没翻成（通道全挂 / 网络受限）：给个「重试」，别让人对着中文空等 */
@@ -3092,8 +3117,10 @@ async function renderPost(slug,gen){
         const meta=document.querySelector(".post-meta");
         if(meta)meta.insertAdjacentHTML("beforeend",`<span class="tr-mt">${esc(t.blog.machineTrans)}</span>`);
       }).catch(()=>{
+        clearTimeout(guard);
         const note=document.getElementById("trNote");
-        if(note)note.remove();
+        if(note)note.innerHTML=
+          `${esc(t.blog.trFail)} <button type="button" class="tr-retry">${esc(t.blog.trRetry)}</button>`;
       });
     };
     trResetFail();          /* 新文章：清空上一篇留下的失败记录，所有引擎重新试一遍 */
