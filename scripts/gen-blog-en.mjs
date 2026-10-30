@@ -118,8 +118,26 @@ async function gtx(text, from = "zh-CN", to = "en") {
 }
 
 /* ---------- 行内结构保护 ---------- */
-/* 行内代码 / 图片 / 链接地址 / HTML 标签 / 裸链接 → [[n]] 占位符 */
-const PROT_RE = /`[^`\n]+`|!\[[^\]\n]*\]\([^)\n]*\)|\]\((?:[^()\n]|\([^()]*\))+\)|<[a-zA-Z\/!][^>\n]*>|(?:https?:\/\/|www\.)[^\s)<>"'\]]+/g;
+/* 行内代码 / 图片 / 链接地址 / HTML 标签 / 裸链接 → [[n]] 占位符
+   图片与链接的路径允许空格和一层括号：Windows 截图、手机图片常叫
+   `Moon Cat Under theMoonlight (Day - Night)月光下的月猫(昼夜).png`，
+   老写法 `[^)\n]*` 会被中间那个 `)` 截断，导致剩下半截文件名被送去翻译 ——
+   文件名一改，图片就 404（英文页面里图片显示不出来，只剩 alt 文字）。 */
+const IMG_RE = /!\[[^\]\n]*\]\((?:[^()\n]|\([^()]*\))*\)/g;
+const LINK_RE = /\]\((?:[^()\n]|\([^()]*\))+\)/g;
+const PROT_RE = /`[^`\n]+`|!\[[^\]\n]*\]\((?:[^()\n]|\([^()]*\))*\)|\]\((?:[^()\n]|\([^()]*\))+\)|<[a-zA-Z\/!][^>\n]*>|(?:https?:\/\/|www\.)[^\s)<>"'\]]+/g;
+
+/* 取出文本里所有图片地址（大小写无关、去首尾空白），用来校验翻译有没有动过文件名 */
+function imgSrcs(s) {
+  return (String(s || "").match(IMG_RE) || [])
+    .map(x => x.replace(/^!\[[^\]\n]*\]\(/, "").replace(/\)$/, "").trim().toLowerCase());
+}
+function sameImgs(a, b) {
+  const x = imgSrcs(a), y = imgSrcs(b);
+  if (x.length !== y.length) return false;
+  for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return false;
+  return true;
+}
 
 function protect(text) {
   const keep = [];
@@ -154,7 +172,11 @@ async function trText(text) {
   const { t, keep } = protect(text);
   try {
     const out = await gtx(t);
-    return restore(out, keep);
+    const res = restore(out, keep);
+    /* 安全网：图片地址一个字符都不许变，变了就按失败处理（保留原文），
+       绝不会把一张 404 的图送上线 */
+    if (!sameImgs(text, res)) throw new Error("图片地址被翻译改动");
+    return res;
   } catch (e) {
     if (FATAL) throw e;          /* 接口整体挂了：别再逐行重试，直接向上抛 */
     /* 降级：逐行翻译，单行失败保留该行原文 */
@@ -251,7 +273,8 @@ async function trBody(body) {
       try {
         const { t, keep } = protect(joined);
         const parts = restore(await gtx(t), keep).split(/\n{2,}/);
-        if (parts.length === batch.length) done = parts;      /* 段落数对得上才敢用 */
+        /* 段落数对得上、且每段的图片地址都没被改，才敢用整批结果 */
+        if (parts.length === batch.length && parts.every((p, i) => sameImgs(batch[i], p))) done = parts;
       } catch (e) {
         if (FATAL) throw e;
       }
@@ -333,10 +356,19 @@ for (const a of articles) {
   /* 已有英文版：人工写的别动，自动生成的看哈希 */
   let prev = null;
   if (existsSync(a.dst)) {
-    try { prev = parseFM(readFileSync(a.dst, "utf8")).meta; } catch (e) { prev = null; }
+    let prevBody = "";
+    try {
+      const p = parseFM(readFileSync(a.dst, "utf8"));
+      prev = p.meta; prevBody = p.body;
+    } catch (e) { prev = null; }
     const isAuto = String(prev && prev.auto) === "true";
     if (!isAuto) { console.log(`= 跳过（人工英文版）${rel}`); skipped++; continue; }
-    if (!FORCE && prev.srchash === hash) { console.log(`= 跳过（未改动）${rel}`); skipped++; continue; }
+    if (!FORCE && prev.srchash === hash) {
+      /* 源文章没变，但旧版脚本可能把「带空格/括号的文件名」翻坏了（图片 404）：
+         图片地址对不上就重译一次，让坏图自己修回来 */
+      if (sameImgs(body, prevBody)) { console.log(`= 跳过（未改动）${rel}`); skipped++; continue; }
+      console.log(`! 图片地址与原文对不上，重新翻译 ${rel}`);
+    }
   }
 
   /* 原文本来就没有中文：不生成，网站直接用原文 */
