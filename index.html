@@ -1184,15 +1184,19 @@ async function loadFriends(){
 let STEAM=null;          /* 由 loadSteam() 读入 */
 let steamLastFetch=0;    /* 上次实时刷新时间：60 秒内重复进出关于页不重复请求 */
 async function fetchSteam(){
-  /* IS_LOCAL 在后面（博客区）才定义，这里调用时才求值 */
-  const src=(typeof IS_LOCAL!=="undefined"&&IS_LOCAL)?"steam.json":"api/steam";
-  try{
-    const r=await fetch(STEAM_SRC,{cache:"no-cache"});
-    if(r.ok){
+  /* IS_LOCAL 在后面（博客区）才定义，这里调用时才求值；
+     部署环境优先实时接口，失败逐级退回静态 steam.json（函数没部署/没配 Key 也不空） */
+  const srcs=(typeof IS_LOCAL!=="undefined"&&IS_LOCAL)?["steam.json"]:["api/steam","steam.json"];
+  for(const src of srcs){
+    try{
+      const r=await fetch(src,{cache:"no-cache"});
+      if(!r.ok)continue;
+      const ct=r.headers.get("content-type")||"";
+      if(ct&&!ct.includes("json"))continue;   /* 404 兜底页可能是 200 的 HTML */
       const j=await r.json();
       if(j&&Array.isArray(j.recent)&&j.recent.length)return j;
-    }
-  }catch(e){}
+    }catch(e){}
+  }
   return null;
 }
 /* 数据到达时如正停在关于页 → 原地重绘游戏区（保住滚动位置，不打断浏览） */
