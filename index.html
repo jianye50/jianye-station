@@ -1312,6 +1312,56 @@ function nameOf(src){
   const raw=String(src).split("/").pop().split("?")[0];
   try{ return decodeURIComponent(raw); }catch(e){ return raw; }   /* 文件名含孤立 % 时别让整个图库挂掉 */
 }
+
+/* ---------- 首页 Hero 壁纸：每次访问从 wallpaper/ 文件夹随机挑一个 ----------
+   文件夹里各种格式都行：PNG/JPG/WebP/AVIF/GIF（GIF 天然会动），
+   视频则换成自动循环播放的静音 <video>。读取通道与图库一致：
+   先试服务器目录列表，不行再走 GitHub API 兜底；都失败就退回根目录的 wallpaper.avif */
+const WALLPAPER_DIR="wallpaper/";
+const WALL_FALLBACK="wallpaper.avif";
+let heroWallpaperDone=false;   /* 一次页面加载只挑一次：首页/其他页来回切不反复换壁纸 */
+function setHeroWallpaper(src,isVideo){
+  const hero=document.querySelector(".hero");
+  if(!hero)return;
+  const old=hero.querySelector(".hero-img");
+  let el;
+  if(isVideo){
+    el=document.createElement("video");
+    el.className="hero-img";
+    el.muted=true; el.loop=true; el.autoplay=true;
+    el.setAttribute("muted","");          /* iOS Safari 要属性形式才放行自动播放 */
+    el.setAttribute("playsinline","");
+    el.setAttribute("aria-hidden","true");
+    el.addEventListener("error",()=>el.remove(),{once:true});
+  }else{
+    el=document.createElement("img");
+    el.className="hero-img";
+    el.alt=""; el.decoding="async";
+    el.addEventListener("error",()=>el.remove(),{once:true});
+  }
+  el.src=src;
+  /* 新壁纸真正能显示时才铺上去、撤掉旧的 —— 避免加载途中闪出底色 */
+  const show=()=>{ hero.prepend(el); if(old&&old!==el)old.remove(); if(isVideo)el.play().catch(()=>{}); };
+  if(isVideo){ el.addEventListener("loadeddata",show,{once:true}); }
+  else if(el.complete&&el.naturalWidth){ show(); }
+  else{ el.addEventListener("load",show,{once:true}); }
+}
+async function loadHeroWallpaper(){
+  /* 系统开了「减少动态效果」就只在静态图里挑，视频不参与 */
+  const rm=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let files=null;
+  try{
+    const scan=await listEntries(WALLPAPER_DIR)||await listEntriesGH(WALLPAPER_DIR);
+    if(scan&&scan.files&&scan.files.length)files=scan.files;
+  }catch(e){}
+  const pool=(files&&files.length)?(rm?files.filter(f=>!VID_RE.test(f)):files):null;
+  if(pool&&pool.length){
+    const pick=pool[Math.floor(Math.random()*pool.length)];
+    setHeroWallpaper(pick,VID_RE.test(pick));
+    return;
+  }
+  setHeroWallpaper(WALL_FALLBACK,false);   /* 文件夹读不到 / 是空的 → 用根目录兜底图 */
+}
 /* 装载整个相册库（下面的兜底扫描版本）：
    ① 扫 Photo Album 根目录（图片/视频 = 「全部」；子文件夹 = 子相册）
    ② 逐个扫描子相册里的媒体
@@ -1915,6 +1965,7 @@ function renderHome(){
   app.innerHTML=`
   <section class="view">
     <header class="hero">
+      <!-- 首屏兜底图：先秒显这张，wallpaper/ 文件夹里随机挑中的壁纸加载好后会无缝替换（见 loadHeroWallpaper） -->
       <img class="hero-img"
            src="wallpaper.avif"
            alt="" fetchpriority="high" decoding="async" onerror="this.remove()">
@@ -1959,6 +2010,9 @@ function renderHome(){
     </div>
   </section>`;
   paintPhotoGrids();
+  /* Hero 壁纸：每次页面加载从 wallpaper/ 随机挑一个（图片/GIF/视频均可）。
+     一次加载只挑一次 —— 站内切去别的页再回首页不反复换 */
+  if(!heroWallpaperDone){ heroWallpaperDone=true; loadHeroWallpaper(); }
   setTimeout(prefetchBlog,600);   /* 闲时预取博客清单：点进博客秒开 */
 }
 
