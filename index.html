@@ -925,8 +925,23 @@ footer .heart{color:#ff5d7a}
   </div>
 </div>
 <script>
-/* 兜底：初始化意外变慢时，启动屏最多 5 秒后自动淡出 */
-setTimeout(function(){var b=document.getElementById("boot");if(b)b.classList.add("off");},5000);
+/* 兜底：初始化意外变慢时，启动屏也要能自己淡出，别让人对着黑屏。
+   但不能太急 —— 主脚本在 body 末尾，慢网下 HTML 还没下载完它就不会执行，
+   这时若把启动屏撤了，#app 里那份「静态 SEO 兜底首屏」就会裸露出来，
+   看起来像打开了另一个网站。所以：等页面真正加载完（或最多 15 秒）再揭幕，
+   并且主脚本一旦接管（window.__JY_READY）就立刻让位。 */
+(function(){
+  var t0=Date.now();
+  function tick(){
+    var b=document.getElementById("boot");
+    if(!b||window.__JY_READY)return;                 /* 已接管 / 已移除 */
+    var waited=Date.now()-t0;
+    if(document.readyState!=="complete"&&waited<15000)return setTimeout(tick,300);
+    if(waited<5000)return setTimeout(tick,300);
+    b.classList.add("off");
+  }
+  setTimeout(tick,300);
+})();
 </script>
 
 <!-- ============ 悬浮胶囊导航 ============ -->
@@ -3346,8 +3361,10 @@ document.addEventListener("keydown",e=>{
 setLang(lang);     /* 统一走 setLang：品牌名、导航文案、语言按钮、云空间入口提示都按语言铺一遍 */
 loadPhotos();
 loadFriends();     /* 异步读 friends.txt：配置到达时如正停在关于页，原地重绘友链区 */
-/* 首屏与导航文案就绪 → 淡出启动加载屏（顺带移除 DOM） */
+/* 首屏与导航文案就绪 → 淡出启动加载屏（顺带移除 DOM）
+   先打标记：上面的兜底计时器靠它判断「主脚本已经接管」，不会再抢着揭幕 */
 (function(){
+  window.__JY_READY=true;
   const b=document.getElementById("boot");
   if(!b)return;
   b.classList.add("off");
