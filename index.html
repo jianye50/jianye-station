@@ -17,12 +17,12 @@
 <meta property="og:title" content="鉴业の小站">
 <meta property="og:description" content="愿我们拥有的时候不要毁，失去的时候不要悔。">
 <meta property="og:url" content="https://jianye.pages.dev/">
-<meta property="og:image" content="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=75&auto=format">
+<meta property="og:image" content="https://jianye.pages.dev/wallpaper.avif">
 <meta name="twitter:card" content="summary_large_image">
 <!-- 规范地址：hash 路由的 #/xxx 都是同一个文档，统一指向站点根 -->
 <link rel="canonical" href="https://jianye.pages.dev/">
-<!-- 首屏大图所在的图床，提前建连 -->
-<link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+<!-- 相册的 GitHub API 兜底通道，提前建连（壁纸已改本站根目录，不再依赖外站图床） -->
+<link rel="preconnect" href="https://api.github.com" crossorigin>
 <!-- 语言：首次访问先按系统语言定好（中文→中文，其它语言→英文），
      免得英文用户先看到一闪而过的中文标题 / 语言标记。手动切换过的以本地保存为准。 -->
 <script>
@@ -931,7 +931,7 @@ setTimeout(function(){var b=document.getElementById("boot");if(b)b.classList.add
   <a class="nav-link" data-nav="about" href="#/about">About</a>
   <span class="nav-sep"></span>
   <button class="nav-icon" id="langBtn" title="切换到英文" aria-label="切换到英文">EN</button>
-  <a class="nav-icon" id="cloudBtn" href="https://jianye.pages.dev/drop" target="_blank" rel="noopener" aria-label="文件传送" title="文件传送">
+  <a class="nav-icon" id="cloudBtn" href="/drop" target="_blank" rel="noopener" aria-label="文件传送" title="文件传送">
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
   </a>
   <!-- 音乐入口：点一下展开歌单面板（进度环画在按钮外圈） -->
@@ -995,28 +995,30 @@ setTimeout(function(){var b=document.getElementById("boot");if(b)b.classList.add
  * ===================================================================== */
 
 /* ---------- 数据：项目 ---------- */
+/* 项目链接一律用根相对路径（如 "/os"），浏览器按当前访问的域名自动解析 ——
+   以后换自己的域名无需改这里；新增项目也请保持这个写法，别写死完整网址 */
 const PROJECTS=[
   {zh:"一键系统重装",en:"One-Click OS Reinstall",
    dzh:"让系统重装变得像点一下按钮那样简单的工具站。",den:"A tool site that makes reinstalling your system as easy as one click.",
-   u:"https://jianye.pages.dev/os",ic:"💽",c:"linear-gradient(135deg,#5b8cff,#3a4fd6)"},
+   u:"/os",ic:"💽",c:"linear-gradient(135deg,#5b8cff,#3a4fd6)"},
   {zh:"Jianye File Encryptor",en:"Jianye File Encryptor",
    dzh:"本地文件加密工具，保护你的重要文件安全。",den:"A local file encryption tool that keeps your important files safe.",
-   u:"https://jianye.pages.dev/jye",ic:"🔐",c:"linear-gradient(135deg,#ffc24d,#ff8a1a)"},
+   u:"/jye",ic:"🔐",c:"linear-gradient(135deg,#ffc24d,#ff8a1a)"},
   {zh:"Jianye PE",en:"Jianye PE",
    dzh:"自维护的 PE 系统，装机维护的好帮手。",den:"A self-maintained PE system — a handy companion for PC setup and repair.",
-   u:"https://jianye.pages.dev/pe",ic:"🧰",c:"linear-gradient(135deg,#8e7bff,#4a36c4)"},
+   u:"/pe",ic:"🧰",c:"linear-gradient(135deg,#8e7bff,#4a36c4)"},
   {zh:"鉴业浏览器主页",en:"Jianye Browser Homepage",
    dzh:"摒弃弹窗与冗余推荐，打开即是搜索框的极简浏览器主页。",den:"A minimal browser homepage — no popups or clutter, just a search box the moment you open a tab.",
-   u:"https://jianye.pages.dev/homepage/sharepage",ic:"🏠",c:"linear-gradient(135deg,#34d399,#0d9488)"},
+   u:"/homepage/sharepage",ic:"🏠",c:"linear-gradient(135deg,#34d399,#0d9488)"},
   {zh:"Jianye AI 智能助手",en:"Jianye AI Assistant",
    dzh:"接入大模型的智能对话助手。",den:"A smart chat assistant powered by large language models.",
-   u:"https://jianye.pages.dev/ai",ic:"🤖",c:"linear-gradient(135deg,#ff6a8e,#c01e52)"},
+   u:"/ai",ic:"🤖",c:"linear-gradient(135deg,#ff6a8e,#c01e52)"},
   {zh:"鉴业文件传送",en:"Jianye File Drop",
    dzh:"手机与电脑之间点对点直传文件，不经过服务器，支持跨平台多语言。",den:"Peer-to-peer file transfer between phone and computer — no server in between, cross-platform ready.",
-   u:"https://jianye.pages.dev/drop",ic:"📮",c:"linear-gradient(135deg,#40c8e0,#1f6fe0)"},
+   u:"/drop",ic:"📮",c:"linear-gradient(135deg,#40c8e0,#1f6fe0)"},
   {zh:"鉴业音乐",en:"Jianye Music",
    dzh:"自己的在线音乐播放器，自动同步酷狗「我喜欢的音乐」歌单。",den:"My own online music player that keeps itself in sync with my Kugou favourites.",
-   u:"https://jianye.pages.dev/music",ic:"🎵",c:"linear-gradient(135deg,#ff5b6e,#e3122f)"}
+   u:"/music",ic:"🎵",c:"linear-gradient(135deg,#ff5b6e,#e3122f)"}
 ];
 /* ---------- 个人信息 ---------- */
 const EMAIL="aimjianye@outlook.com";
@@ -1914,11 +1916,7 @@ function renderHome(){
   <section class="view">
     <header class="hero">
       <img class="hero-img"
-           src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&q=78&auto=format"
-           srcset="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75&auto=format 800w,
-                   https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1400&q=78&auto=format 1400w,
-                   https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&q=78&auto=format 2000w"
-           sizes="100vw"
+           src="wallpaper.avif"
            alt="" fetchpriority="high" decoding="async" onerror="this.remove()">
       <div class="wrap hero-inner">
         <span class="hero-badge"><span class="pulse"></span>${esc(t.hero.badge)}</span>
