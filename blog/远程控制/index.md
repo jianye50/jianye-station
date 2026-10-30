@@ -31,7 +31,7 @@ background: 1738905943819.jpeg
 
 ### 4. RustDesk（开源免费）
 完全开源、自托管可选的远程桌面软件，没有强制云端，你可以自建中继服务器，隐私可控。跨平台支持 Windows、Mac、Linux、安卓，适合技术爱好者、程序员使用。
-👉 获取：[前往 RustDesk GitHub / 官网](https://rustdesk.com/)
+👉 获取：[前往 RustDesk GitHub / 官网](https://rustdesk.com/zh-cn/)
 
 ### 5. AnyViewer
 轻量国产远程工具，免费版开放功能较多，连接简单，低延迟，适合新手使用，同样支持跨平台远程访问、无人值守访问。
