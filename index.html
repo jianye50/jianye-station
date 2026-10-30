@@ -55,6 +55,8 @@
   --radius:20px;
   --accent:#4d8dff;
   --accent-soft:rgba(77,141,255,.14);
+  --accent-2:#8fb8ff;                              /* 行内代码用的高亮蓝（post-body code） */
+  --quote-bg:rgba(255,255,255,.05);                /* 文章引用块底色（post-body blockquote） */
   --bg:#0b0d12;
   --bg-2:#10131a;
   --text-1:#f4f5f7;
@@ -1793,7 +1795,9 @@ function openLb(items,i,grid){
   lbGrid=grid||null;                              /* 记住灯箱是从哪个网格打开的（找缓存位图要用） */
   lbIndex=(i+lbItems.length)%lbItems.length;
   showLb();
-  lbFocus=document.activeElement;                 /* 关掉灯箱后把焦点还给刚才那张图 */
+  /* 关掉灯箱后把焦点还给触发元素。已在灯箱内部（如用方向键切图时 openLb 被再次调用）
+     就保留最初记下的那个，别把焦点目标覆盖成灯箱里的按钮 */
+  if(!$("#lightbox").contains(document.activeElement))lbFocus=document.activeElement;
   $("#lightbox").classList.add("open");
   document.body.classList.add("lb-lock");         /* 锁住背景滚动 */
   try{ $("#lbClose").focus(); }catch(e){}
@@ -1832,7 +1836,12 @@ function renderHome(){
   app.innerHTML=`
   <section class="view">
     <header class="hero">
-      <img class="hero-img" src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&q=78&auto=format"
+      <img class="hero-img"
+           src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&q=78&auto=format"
+           srcset="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75&auto=format 800w,
+                   https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1400&q=78&auto=format 1400w,
+                   https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&q=78&auto=format 2000w"
+           sizes="100vw"
            alt="" fetchpriority="high" decoding="async" onerror="this.remove()">
       <div class="wrap hero-inner">
         <span class="hero-badge"><span class="pulse"></span>${esc(t.hero.badge)}</span>
@@ -2434,7 +2443,11 @@ async function renderBlog(){
   if(!body)return;
   blogPosts=posts;
   if(sub)sub.textContent=t.blog.sub(posts.length);
-  if(blogErr){body.innerHTML=`<div class="blog-empty">${t.blog.err}</div>`;return;}
+  if(blogErr){
+    const bs=document.querySelector(".blog-search");
+    if(bs)bs.style.display="none";   /* 读不到文章时搜索框没有绑定事件，留着只会让人白打字 */
+    body.innerHTML=`<div class="blog-empty">${t.blog.err}</div>`;return;
+  }
   if(!posts.length){body.innerHTML=`<div class="blog-empty">${esc(t.blog.empty)}</div>`;return;}
   bindBlogSearch();
   const mount=document.getElementById("blogListMount");
@@ -3575,7 +3588,7 @@ input[type=range].mp-range::-moz-range-thumb{
   }
   function save(){
     try{
-      const base={mode:mode,vol:audio.volume,at:Date.now()};
+      const base={mode:mode,vol:audio.volume,at:Date.now(),tab:tab};   /* tab：当前停留的分类，刷新后原样恢复 */
       const old=readSaved();
       if(!q.length||cur<0||cur>=q.length){
         /* 队列还没恢复出来（刚打开就被刷新 / 切走标签）→ 保住上次那条记录，别清空 */
@@ -3628,6 +3641,10 @@ input[type=range].mp-range::-moz-range-thumb{
     let st=null;
     try{ st=JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){}
     if(!st||typeof st!=="object"){ restored=true; renderList(); return; }
+    /* 当前停留的分类：优先用存档里的 tab（界面上最后看的那个）；
+       旧存档没有 tab 字段时，才按队列来源 kind 猜 */
+    if(st.tab==="search"||st.tab==="kg")tab=st.tab;
+    else if(st.kind==="search")tab="search";
     if(!modeUserSet&&typeof st.mode==="number"&&st.mode>=0&&st.mode<=2)mode=st.mode;
     paintMode();
     if(typeof st.vol==="number"&&st.vol>0&&st.vol<=1){ audio.volume=st.vol; volEl.value=String(Math.round(st.vol*100)); }
@@ -3655,7 +3672,6 @@ input[type=range].mp-range::-moz-range-thumb{
     q=list; kind=st.kind;
     cur=Math.max(0,list.findIndex(x=>x.id===t0.id));
     const t=q[cur];
-    tab=(st.kind==="search")?"search":"kg";
     shown=Math.max(LIMIT_STEP,cur+1);    /* 展开歌单时能直接看到当前这首 */
     setTabUI();
     panelTitle.textContent=L().pillName;   /* 标题固定为「鉴业音乐 / Jianye Music」，跟随语言 */
@@ -3773,6 +3789,7 @@ input[type=range].mp-range::-moz-range-thumb{
     tab=b.dataset.tab; shown=LIMIT_STEP;
     filterKw=""; searchInp.value="";      /* 换分类清空筛选，免得误以为歌单少了歌 */
     setTabUI(); renderList();
+    save();   /* 立刻落盘：就算之后没播歌，刷新后也停在你这次选的分类 */
   });
   listEl.addEventListener("click",e=>{
     const r=e.target.closest(".mp-row");

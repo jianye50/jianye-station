@@ -1,16 +1,13 @@
-# Cloudflare Pages 响应头配置（放在站点根目录，Pages 会自动识别）
-# 语法：先写路径（支持 * 通配），缩进两格写响应头。
-
-# 相册预处理图（缩略图 / 灯箱图）：文件名里带内容 hash，可以放心永久缓存
-/assets/photos/*
-  Cache-Control: public, max-age=31536000, immutable
-
-# 相册清单：要能及时反映新增照片，每次都做一次轻量校验（304 很快）
-/photos.json
-  Cache-Control: public, max-age=0, must-revalidate
-
-# 站点图标、头像等根目录静态资源：一天
-/*.ico
-  Cache-Control: public, max-age=86400
-/*.png
-  Cache-Control: public, max-age=86400
+# Cloudflare Pages 响应头配置（放在部署根目录即可生效）
+# 说明：
+#  - nosniff：阻止浏览器把响应当 HTML/JS 猜类型执行（防 MIME 混淆攻击）
+#  - Referrer-Policy：外链只带站点来源，不带完整 URL（保护访客隐私）
+#  - X-Frame-Options：禁止被第三方网站嵌进 iframe（防点击劫持）
+#  - Permissions-Policy：明确声明本站不需要摄像头/麦克风/定位等敏感权限
+#  注：没有加 CSP，因为页面大量使用内联脚本与内联事件处理器，
+#      强上 CSP 需要先做一轮改造（nonce/hash），收益暂不划算。
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
