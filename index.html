@@ -487,6 +487,14 @@ body.lb-lock{overflow:hidden}
    目的：新图没解码完之前，画面上绝不会残留上一张，让人以为点错了。
    转圈延迟 150ms 才淡入 —— 命中缓存时不会闪一下白圈 */
 .lightbox img.lb-ph{object-fit:cover;animation:none;filter:saturate(105%)}
+/* 切图滑动过渡（stepLb 设方向后播一次）：下一张从右滑入（lb-in-r）/ 上一张从左滑入（lb-in-l）。
+   注意：这两条必须放在上面 .lb-ph 规则之后 —— 切图时 img 同时带 lb-ph + lb-in-*，
+   同优先级下后写的这里胜出，等摘掉 lb-ph 换清晰图时 animation 值不变、不会从头重播
+   （否则又回到之前 fadeUp 那种闪黑问题）。首次打开灯箱不播滑入，由容器 fadeIn 负责。 */
+@keyframes lbInL{from{opacity:0;transform:translateX(-46px)}to{opacity:1;transform:none}}
+@keyframes lbInR{from{opacity:0;transform:translateX(46px)}to{opacity:1;transform:none}}
+.lightbox img.lb-in-l,.lightbox video.lb-in-l{animation:lbInL .26s cubic-bezier(.2,.7,.2,1)}
+.lightbox img.lb-in-r,.lightbox video.lb-in-r{animation:lbInR .26s cubic-bezier(.2,.7,.2,1)}
 .lb-spin{
   position:absolute;z-index:2;pointer-events:none;
   width:36px;height:36px;border-radius:50%;
@@ -499,6 +507,11 @@ body.lb-lock{overflow:hidden}
 @media (max-width:640px){
   .lb-prev{left:8px}.lb-next{right:8px}
   .lb-btn{width:42px;height:42px}
+}
+/* 系统开了「减少动态效果」时，切图滑入也一并关闭（回退为直接换图） */
+@media (prefers-reduced-motion:reduce){
+  .lightbox img.lb-in-l,.lightbox img.lb-in-r,
+  .lightbox video.lb-in-l,.lightbox video.lb-in-r{animation:none}
 }
 
 /* ===================== 相册：子相册卡片 / 视频与 Live Photo ===================== */
@@ -1643,6 +1656,7 @@ function lbPlayMotion(p){
    注：原来先等缩略图再拉 view，等于多付一次完整往返 —— 慢网下就是「一直转圈」，
    现在改成并行后少一个 RTT，且首帧往往直接命中缓存。 */
 let lbImgToken=0;
+let lbAnimDir=0;    /* 灯箱切换方向（stepLb 设置）：>0 下一张、<0 上一张、0=非切换打开（不播滑入） */
 function lbImgReset(){
   const img=$("#lbImg");
   img.onload=img.onerror=null;
@@ -1779,12 +1793,22 @@ function setLbMedia(p){
   /* 先停掉上一条的动态视频，防止切换后还在放 */
   try{ vid.pause(); }catch(e){}
   vid.removeAttribute("src"); vid.load();
+  /* 切图滑动过渡：只有方向键/箭头切换（stepLb 设了 lbAnimDir）才播，首次打开不播。
+     先摘类 → 强制 reflow → 再加类，才能保证同一方向连按时动画每次都重播 */
+  const applyLbSlide=el=>{
+    el.classList.remove("lb-in-l","lb-in-r");
+    if(lbAnimDir){
+      void el.offsetWidth;
+      el.classList.add(lbAnimDir>0?"lb-in-r":"lb-in-l");   /* 往下一张：新图从右滑入 */
+    }
+  };
   if(p.type==="video"){
     lbImgToken++;                 /* 作废还没回来的图片回调 */
     lbImgReset();
     $("#lightbox").classList.remove("lb-busy");
     img.style.display="none";
     vid.style.display="";
+    applyLbSlide(vid);
     vid.controls=true; vid.muted=false; vid.loop=false;   /* 只播一遍，播完停在结尾 */
     vid.src=p.src;
     /* 打开视频默认自动播放一遍；带声播放被浏览器拦时先静音播起来 */
@@ -1792,6 +1816,7 @@ function setLbMedia(p){
   }else{
     vid.style.display="none";
     img.style.display="";
+    applyLbSlide(img);
     img.removeAttribute("data-alt");
     /* 先秒出已缓存的缩略图，再换清晰的 view 图 —— 切图不再空白 / 停在上一张 */
     showLbImage(p);
@@ -1818,6 +1843,7 @@ function setLbMedia(p){
       motionVideoURL(p.src).then(()=>lbPlayMotion(p));
     }
   }
+  lbAnimDir=0;    /* 方向只对本张生效，消费掉：之后的重渲染/动态补播不得再触发滑入 */
 }
 function openLb(items,i,grid){
   lbItems=items||[];
@@ -1858,7 +1884,10 @@ function closeLb(){
   if(lbFocus&&typeof lbFocus.focus==="function"){ try{ lbFocus.focus(); }catch(e){} }
   lbFocus=null;
 }
-function stepLb(d){ openLb(lbItems,lbIndex+d,lbGrid); }
+function stepLb(d){
+  lbAnimDir=d;                       /* 记下切换方向，setLbMedia 里据此播「从左/右滑入」过渡 */
+  openLb(lbItems,lbIndex+d,lbGrid);
+}
 
 /* ---------- 视图渲染 ---------- */
 function renderHome(){
