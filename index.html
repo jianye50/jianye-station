@@ -1116,7 +1116,8 @@ const I18N={
       searchPh:"搜索文章（标题 / 标签 / 摘要）",
       found:n=>`找到 ${n} 篇`,
       noResult:q=>`没有找到与「${q}」相关的文章，换个关键词试试。`,
-      clearTip:"清空搜索"
+      clearTip:"清空搜索",
+      kbdTip:"按 / 快速搜索"
     },
     about:{
       title:"关于",hello:"你好，我是鉴业。",
@@ -1171,7 +1172,8 @@ const I18N={
       searchPh:"Search posts (title / tag / summary)",
       found:n=>`${n} post${n===1?"":"s"} found`,
       noResult:q=>`No posts match “${q}”. Try another keyword.`,
-      clearTip:"Clear search"
+      clearTip:"Clear search",
+      kbdTip:"Press / to search"
     },
     about:{
       title:"About",hello:"Hi, I'm Jianye.",
@@ -2312,10 +2314,16 @@ function parsePost(raw){
 /* 极简 Markdown 渲染：标题/引用/代码块/列表/图片/链接/加粗/斜体/行内码/分隔线 */
 function mdToHTML(md,imgBase,imgMap){
   /* 正文图片缩略图映射：文件名 → 构建时压缩的 WebP 版本 */
+  /* 行内文本先做过 HTML 转义，路径里的 & < > 等已变成 &amp; 等 ——
+     查 imgMap / 拼地址前要先还原，否则带这些字符的文件名永远匹配不上 */
+  const unesc=t=>String(t).replace(/&amp;/g,"&").replace(/&lt;/g,"<")
+    .replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'");
   const imgHit=src=>{
     if(!imgMap)return null;
     if(imgMap[src])return imgMap[src];
-    try{ return imgMap[decodeURIComponent(src)]||null; }catch(e){ return null; }
+    const t=unesc(src);
+    if(imgMap[t])return imgMap[t];
+    try{ return imgMap[decodeURIComponent(t)]||null; }catch(e){ return null; }
   };
   const inline=s=>{
     s=esc(s);
@@ -2323,12 +2331,12 @@ function mdToHTML(md,imgBase,imgMap){
     s=s.replace(/!\[([^\]]*)\]\(((?:[^()]|\([^()]*\))+)\)/g,(m,alt,src)=>{
       src=src.trim();
       let u;
-      if(/^(https?:|data:|\/)/.test(src))u=src;
+      if(/^(https?:|data:|\/)/.test(src))u=unesc(src);
       else{
         const hit=imgHit(src);
-        u=hit?encodeURI(hit):imgBase+src;
+        u=hit?encodeURI(hit):imgBase+unesc(src);
       }
-      return `<img src="${u}" alt="${alt}" loading="lazy" decoding="async">`;
+      return `<img src="${esc(u)}" alt="${alt}" loading="lazy" decoding="async">`;
     });
     s=s.replace(/\[([^\]]+)\]\(((?:[^()]|\([^()]*\))+)\)/g,(m,txt,href)=>{
       const u=href.trim();
@@ -2528,7 +2536,7 @@ async function renderBlog(gen){
         <button id="blogSearchClear" type="button" title="${esc(t.blog.clearTip)}" aria-label="${esc(t.blog.clearTip)}">✕</button>
       </div>
       <span class="bs-count" id="bsCount"></span>
-      <span class="bs-kbd" title="按 / 快速搜索">/</span>
+      <span class="bs-kbd" title="${esc(t.blog.kbdTip||"按 / 快速搜索")}">/</span>
     </div>
     <div id="blogBody">${blogSkeletonHTML()}<div id="blogListMount"></div></div>
   </div></section>`;
@@ -2719,6 +2727,24 @@ $("#lbVideo").addEventListener("ended",()=>{
   if(lbMotionOn){ lbMotionOn=false; applyLbMotion(); }
 });
 $("#lightbox").addEventListener("click",e=>{if(e.target.id==="lightbox")closeLb()});
+/* 移动端：灯箱里左右滑动切上一张/下一张。
+   垂直位移过大不触发；手势落在箭头/控制条/视频上时不抢（视频可能是在拖进度） */
+let lbTouch=null;
+$("#lightbox").addEventListener("touchstart",e=>{
+  if(e.touches.length!==1)return;
+  const t=e.touches[0];
+  lbTouch={x:t.clientX,y:t.clientY};
+},{passive:true});
+$("#lightbox").addEventListener("touchend",e=>{
+  if(!lbTouch)return;
+  const t=e.changedTouches[0];
+  const dx=t.clientX-lbTouch.x,dy=t.clientY-lbTouch.y;
+  lbTouch=null;
+  if(Math.abs(dx)<48||Math.abs(dx)<Math.abs(dy)*1.5)return;
+  if(e.target.closest(".lb-btn,.lb-motion,video"))return;
+  stepLb(dx<0?1:-1);
+},{passive:true});
+$("#lightbox").addEventListener("touchcancel",()=>{lbTouch=null;},{passive:true});
 document.addEventListener("click",e=>{
   /* 相册页在子相册里时 hash 仍是 #/gallery：再点导航「相册」不会触发 hashchange，
      这里手动重置筛选回到全部相册，别让用户只能靠返回按钮出来 */
@@ -2796,6 +2822,17 @@ document.addEventListener("keydown",e=>{
     if(e.key==="Escape")closeLb();
     else if(e.key==="ArrowLeft")stepLb(-1);
     else if(e.key==="ArrowRight")stepLb(1);
+    else if(e.key==="Tab"){
+      /* 焦点圈定：Tab 只在灯箱内可见的按钮间循环，别跑到被遮住的背景页面里 */
+      const btns=Array.from($("#lightbox").querySelectorAll("button"))
+        .filter(b=>b.offsetParent!==null);
+      if(btns.length){
+        const first=btns[0],last=btns[btns.length-1];
+        if(!$("#lightbox").contains(document.activeElement)){e.preventDefault();first.focus();}
+        else if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+        else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+      }
+    }
     return;
   }
   const tile=document.activeElement;
