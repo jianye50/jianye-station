@@ -1165,7 +1165,8 @@ const I18N={
       clearTip:"清空搜索",
       kbdTip:"按 / 快速搜索",
       translating:"正在翻译成英文…",
-      machineTrans:"机器翻译"
+      machineTrans:"机器翻译",
+      trFail:"自动翻译暂不可用，稍后再试"
     },
     about:{
       title:"关于",hello:"你好，我是鉴业。",
@@ -1223,7 +1224,8 @@ const I18N={
       clearTip:"Clear search",
       kbdTip:"Press / to search",
       translating:"Translating…",
-      machineTrans:"Machine-translated"
+      machineTrans:"Machine-translated",
+      trFail:"Auto-translation unavailable — try again later"
     },
     about:{
       title:"About",hello:"Hi, I'm Jianye.",
@@ -2644,14 +2646,31 @@ function trHash(s){
   return (h>>>0).toString(36);
 }
 function hasCJK(s){return /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/.test(String(s));}
-/* 翻译引擎链：本站代理（Cloudflare Pages Function）→ Google 直连 → MyMemory。
-   国内直接请求 translate.googleapis.com 会被墙，所以首选同域代理 /api/translate；
-   代理不可用（本地 http.server、未部署 functions）时自动退回直连；全挂了就保留中文。
-   第一次成功后记住这个引擎，后续请求直接走它，不再重复踩坑。 */
+/* 翻译引擎链（全部免密钥、无日配额，已不再使用有每日限额的 MyMemory）：
+   ① 浏览器本地模型：Chrome 138+ 内置的 Translator API，模型在本地，零网络请求、
+      零次数限制，离线也能翻；模型没装好就自动跳过，不会偷偷下载几十 MB。
+   ② 本站代理：Cloudflare Pages Function（/api/translate），由边缘节点去调 Google，
+      国内网络不受墙影响 —— 这是线上主通道。
+   ③ Google 直连：境外网络或开了代理的访客直接命中，最快。
+   三路都失败才保留中文原文；第一次成功的引擎会被记住，后续请求优先走它。 */
 const TR_PROXY="/api/translate";
 let trProxyDead=false;          /* 代理 404 一次就永久跳过（本地开发场景） */
 let trEngineId="";              /* 上次成功的引擎 id */
+let trBlockedUntil=0;           /* 全部引擎都失败后的静默窗口，别逐段重试白跑 */
+let trLocalState="";            /* ""=未探测 | available | downloadable */
+let trLocalReady=false;         /* 本地模型已就绪：优先用它，零请求零延迟 */
+let trLocal=null;               /* 本地翻译器实例（只建一次） */
 try{ trEngineId=localStorage.getItem("jy-tr-engine")||""; }catch(e){}
+/* 开机就悄悄探一下本地模型（只是查询状态，不会触发下载） */
+if("Translator" in self){
+  Promise.resolve().then(async()=>{
+    try{
+      const av=await self.Translator.availability({sourceLanguage:"zh",targetLanguage:"en"});
+      trLocalState = av==="available" ? "available" : "downloadable";
+      if(trLocalState==="available")trLocalReady=true;
+    }catch(e){ trLocalState="downloadable"; }
+  }).catch(()=>{});
+}
 function trTimeout(ms){
   const ac=new AbortController();
   const timer=setTimeout(()=>ac.abort(),ms);
@@ -2687,16 +2706,7 @@ async function trViaGoogle(text){
     return out;
   }finally{ tk.done(); }
 }
-/* HTML 实体还原：MyMemory 会把换行返回成 &#10;、引号返回成 &quot;，
-   不还原的话「多行标签」永远对不齐、译文里还会冒出 &#10; 字面量 */
-function trDecodeEntities(s){
-  return String(s)
-    .replace(/&#(\d+);/g,(m,d)=>String.fromCharCode(+d))
-    .replace(/&#x([0-9a-f]+);/gi,(m,h)=>String.fromCharCode(parseInt(h,16)))
-    .replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&nbsp;/g," ")
-    .replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&");
-}
-/* 按句子切块：MyMemory 单次约 500 字符上限，太长的段落切成几块分别翻再拼回去 */
+/* 按句子切块：本地模型单次输入不宜过长，长段落切成几块分别翻再拼回去 */
 function trChunks(text,max){
   const out=[];let rest=String(text);
   while(rest.length>max){
@@ -2710,43 +2720,75 @@ function trChunks(text,max){
   if(rest)out.push(rest);
   return out;
 }
-/* 引擎 3：MyMemory 兜底（免费免密钥，单次约 500 字符） */
-async function trViaMyMemory(text){
-  const parts=trChunks(text,450);
-  const outs=[];
-  for(const part of parts){
-    const tk=trTimeout(9000);
-    try{
-      const r=await fetch("https://api.mymemory.translated.net/get?langpair=zh-CN%7Cen&q="
-        +encodeURIComponent(part),{signal:tk.signal});
-      if(!r.ok)throw new Error("mymemory "+r.status);
-      const j=await r.json();
-      const s=j&&j.responseData&&j.responseData.translatedText;
-      if(typeof s!=="string"||!s.trim())throw new Error("mymemory empty");
-      if(/MYMEMORY WARNING|QUERY LENGTH LIMIT|INVALID SOURCE LANGUAGE/i.test(s))throw new Error("mymemory quota");
-      outs.push(trDecodeEntities(s).trim());
-    }finally{ tk.done(); }
+/* 引擎 1：浏览器内置翻译（Chrome 138+ 的 Translator API）
+   —— 模型跑在本机，不联网、不花额度、不限次数，是「无限量」这条需求的根本上解。
+   只在模型已经就绪（availability === "available"）时才用：不替用户偷偷下载模型。
+   Firefox / Safari 暂不支持，会瞬间跳过，不影响其它引擎。 */
+async function trViaLocal(text){
+  if(trLocalState==="downloadable")throw new Error("local model not ready");
+  if(!("Translator" in self)){trLocalState="downloadable";throw new Error("no local translator");}
+  if(!trLocalState){
+    let av="";
+    try{ av=await self.Translator.availability({sourceLanguage:"zh",targetLanguage:"en"}); }
+    catch(e){ av=""; }
+    /* available=可直接用；downloadable/downloading/unavailable=这轮先不用 */
+    trLocalState = av==="available" ? "available" : "downloadable";
   }
-  if(!outs.length)throw new Error("mymemory empty");
+  if(trLocalState!=="available")throw new Error("local model not ready");
+  trLocalReady=true;
+  if(!trLocal){
+    trLocal=await self.Translator.create({sourceLanguage:"zh",targetLanguage:"en"});
+  }
+  const parts=trChunks(text,900);
+  const outs=[];
+  for(const p of parts){
+    const s=await trLocal.translate(p);
+    if(typeof s!=="string"||!s.trim())throw new Error("local empty");
+    outs.push(s.trim());
+  }
   return outs.join(" ").trim();
 }
-const TR_ENGINES=[{id:"proxy",run:trViaProxy},{id:"google",run:trViaGoogle},{id:"mymemory",run:trViaMyMemory}];
+/* 引擎顺序：本地模型优先（零成本零延迟），其次同域代理，最后直连 */
+const TR_ENGINES=[{id:"local",run:trViaLocal},{id:"proxy",run:trViaProxy},{id:"google",run:trViaGoogle}];
+/* 每个引擎各自退避：连续失败两次就冷却 5 分钟，别让一篇长文几十段
+   反复去撞同一个被墙 / 被限流的通道（否则每段都要多等一个超时） */
+const trFail={};
+function trCooling(id){
+  const f=trFail[id];
+  return !!f&&f.until>Date.now();
+}
+function trMarkFail(id){
+  const f=trFail[id]||(trFail[id]={n:0,until:0});
+  f.n++;
+  if(f.n>=2)f.until=Date.now()+5*60*1000;
+}
+function trMarkOk(id){
+  const f=trFail[id];
+  if(f){f.n=0;f.until=0;}
+}
 /* 统一入口：按「上次成功的引擎优先」依次尝试，全失败才抛错（调用方保留原文） */
 async function gTranslate(text){
-  const order=TR_ENGINES.slice().sort((a,b)=>
-    a.id===trEngineId?-1:b.id===trEngineId?1:0);
+  if(Date.now()<trBlockedUntil)throw new Error("translation cooling down");
+  /* 排序：本地模型就绪→最前（不花流量、不等网络）；其次上次成功的引擎；其余按原序 */
+  const rank=e=>(e.id==="local"&&trLocalReady)?0:(e.id===trEngineId?1:2);
+  const order=TR_ENGINES.slice().sort((a,b)=>rank(a)-rank(b));
   let lastErr=null;
   for(const e of order){
+    if(trCooling(e.id))continue;
     try{
       const out=await e.run(text);
       if(out&&out.trim()){
+        trMarkOk(e.id);
         if(trEngineId!==e.id){
           trEngineId=e.id;
           try{ localStorage.setItem("jy-tr-engine",e.id); }catch(_){}
         }
         return out;
       }
-    }catch(err){ lastErr=err; }
+    }catch(err){
+      lastErr=err;
+      trMarkFail(e.id);
+    }
   }
   throw lastErr||new Error("no engine");
 }
@@ -2839,29 +2881,25 @@ const TR_MEM=new Map();   /* 本次会话内缓存，避免同一篇文章来回
     kill.forEach(k=>localStorage.removeItem(k));
   }catch(e){}
 })();
-/* 翻译一篇完整文章（标题 + 摘要 + 标签 + 正文），带 localStorage 持久缓存。
-   只有「该翻的都翻成了」才落盘缓存：部分失败的结果只放内存，下次打开会重新尝试，
-   避免把中文原样当成译文永久缓存下来 */
+/* 翻译一篇完整文章：正文与「标题/摘要/标签」分开缓存。
+   好处是正文翻译成功就先落盘（下次打开秒出，不再重复消耗额度），
+   标题或标签偶发失败也不会连累正文白翻一遍。 */
 async function translatePost(slug,title,desc,body,tags){
   tags=Array.isArray(tags)?tags:[];
-  const key="jy-tr2:"+slug+":"+trHash(title+"\u0000"+desc+"\u0000"+body+"\u0000"+tags.join("\u0000"));
-  try{ const c=localStorage.getItem(key); if(c)return JSON.parse(c); }catch(e){}
-  if(TR_MEM.has(key))return TR_MEM.get(key);
-  const [tt,dd,gg,bb]=await Promise.all([
-    hasCJK(title)?gTranslate(title).catch(()=> ""):Promise.resolve(""),
-    desc&&hasCJK(desc)?gTranslate(desc).catch(()=> ""):Promise.resolve(""),
-    translateTags(tags),
-    translateMarkdown(body)
-  ]);
-  const r={t:tt||title,d:dd||desc,g:gg,b:bb};
-  TR_MEM.set(key,r);
-  const okT=!hasCJK(title)||!!tt;
-  const okD=!desc||!hasCJK(desc)||!!dd;
-  const okG=tags.every((x,i)=>!hasCJK(x)||(gg[i]&&gg[i]!==x));
-  if(okT&&okD&&okG){
-    try{ localStorage.setItem(key,JSON.stringify(r)); }catch(e){}   /* 存满就算了，会话内缓存还在 */
+  /* 元信息（标题/摘要/标签）复用列表页那份缓存，两边只翻一次 */
+  const meta=await translatePostMeta({slug,title,desc,tags});
+  const bkey="jy-trb2:"+slug+":"+trHash(body);
+  let bb=null;
+  try{ const c=localStorage.getItem(bkey); if(c)bb=JSON.parse(c).b; }catch(e){}
+  if(!bb&&TR_MEM.has(bkey))bb=TR_MEM.get(bkey).b;
+  if(!bb){
+    bb=await translateMarkdown(body);
+    if(bb&&bb!==body){
+      TR_MEM.set(bkey,{b:bb});
+      try{ localStorage.setItem(bkey,JSON.stringify({b:bb})); }catch(e){}
+    }
   }
-  return r;
+  return {t:(meta&&meta.t)||title,d:(meta&&meta.d)||desc,g:(meta&&meta.g)||tags,b:bb||body};
 }
 /* 列表条目的轻量翻译：只翻标题 + 摘要 + 标签，不碰正文（正文进详情页才翻）。
    独立缓存 jy-trm2:...，与详情页的 jy-tr2:... 互不干扰 */
@@ -2973,8 +3011,14 @@ async function renderPost(slug,gen){
     translatePost(slug,title,desc,body,tags).then(r=>{
       if(curGen!==undefined&&curGen!==routeGen)return;   /* 翻译期间用户切走了：别写新页面 */
       const note=document.getElementById("trNote");
+      /* 一处都没翻成（额度用尽 / 网络受限）：明说「暂不可用」，别让人对着中文空等 */
+      const nothing=!r
+        ||(r.b===body&&r.t===title&&(r.g||[]).join("\u0000")===(tags||[]).join("\u0000"));
+      if(nothing){
+        if(note)note.innerHTML=`<span class="tr-mt">${esc(t.blog.trFail)}</span>`;
+        return;
+      }
       if(note)note.remove();
-      if(!r||(r.b===body&&r.t===title))return;           /* 整篇都没翻成，保持原文 */
       const h1=document.querySelector(".post-head h1");
       if(h1&&r.t)h1.textContent=r.t;
       const pt=document.querySelector(".post-head .post-tags");
