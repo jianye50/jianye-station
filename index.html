@@ -671,6 +671,17 @@ body.lb-lock{overflow:hidden}
 /* Steam 游戏模块（关于页）：竖版海报卡片网格，数据来自站点根目录 steam.json（GitHub Actions 每 6 小时生成推送） */
 .steam-link{margin-left:auto;font-size:12.5px;color:var(--accent);font-weight:600;white-space:nowrap}
 .steam-link:hover{text-decoration:underline}
+.steam-refresh{
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:28px;height:28px;border-radius:8px;margin-left:6px;
+  border:1px solid var(--card-border);background:var(--bg-2);
+  color:var(--text-2);cursor:pointer;padding:0;
+  transition:color .2s,border-color .2s,box-shadow .2s;
+}
+.steam-refresh:hover{color:#66c0f4;border-color:rgba(102,192,244,.45);box-shadow:var(--shadow)}
+.steam-refresh svg{width:14px;height:14px}
+.steam-refresh.spinning svg{animation:steamSpin .8s linear infinite}
+@keyframes steamSpin{to{transform:rotate(360deg)}}
 .steam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(188px,1fr));gap:14px;margin-top:18px}
 .steam-game{
   position:relative;overflow:hidden;display:block;
@@ -1177,12 +1188,11 @@ async function loadFriends(){
 
 /* ---------- Steam 游戏模块：数据来自站点根目录的 steam.json ----------
    两条通道：
-   · 部署环境优先走 /api/steam（Cloudflare Pages Function）：每次进入关于页实时刷新，
+   · 部署环境优先走 /api/steam（Cloudflare Pages Function）：点模块里的手动刷新按钮时实时拉取，
      边缘缓存 5 分钟；Steam 接口不允许浏览器跨域直连，必须经自己的域名代理；
-   · 实时接口不可用 / 本地 file:// 预览 → 退回静态 steam.json（GitHub Actions 每 6 小时生成）。
+   · 实时接口不可用 / 本地 file:// 预览 → 退回静态 steam.json（GitHub Actions 每小时生成）。
    都读不到时整个模块隐藏，不影响其它区域 */
 let STEAM=null;          /* 由 loadSteam() 读入 */
-let steamLastFetch=0;    /* 上次实时刷新时间：60 秒内重复进出关于页不重复请求 */
 async function fetchSteam(){
   /* IS_LOCAL 在后面（博客区）才定义，这里调用时才求值；
      部署环境优先实时接口，失败逐级退回静态 steam.json（函数没部署/没配 Key 也不空） */
@@ -1215,13 +1225,18 @@ async function loadSteam(){
   const j=await fetchSteam();
   if(j)applySteam(j);
 }
-/* 进入关于页时触发：60 秒节流 + 拿到新数据才重绘 */
-async function refreshSteam(){
-  const now=Date.now();
-  if(now-steamLastFetch<60000)return;
-  steamLastFetch=now;
+/* 手动刷新按钮：点一下实时拉一次最新数据（接口侧有 5 分钟边缘缓存） */
+async function manualSteamRefresh(btn){
+  if(btn.dataset.busy)return;
+  btn.dataset.busy="1";
+  btn.classList.add("spinning");
   const j=await fetchSteam();
-  if(j&&JSON.stringify(j)!==JSON.stringify(STEAM))applySteam(j);
+  btn.classList.remove("spinning");
+  delete btn.dataset.busy;
+  if(j){applySteam(j);return;}   /* 重绘后按钮是新的，无需复原状态 */
+  const t=T();
+  btn.title=t.about.steamRefreshFail||"";
+  setTimeout(()=>{btn.title=t.about.steamRefresh;},2000);
 }
 /* Steam 模块的 HTML：最近玩过的游戏卡片（封面 / 时长 / 成就进度条） */
 function steamModuleHTML(){
@@ -1260,6 +1275,11 @@ function steamModuleHTML(){
       <div class="section-label" style="margin:0">${esc(t.about.steamTitle)}</div>
       <span class="friends-count">${s.totalGames||s.recent.length}</span>
       <a class="steam-link" href="${esc((s.player&&s.player.url)||"https://steamcommunity.com/id/aimjianye/")}" target="_blank" rel="noopener">${esc(t.about.steamProfile)}</a>
+      <button class="steam-refresh" type="button" title="${esc(t.about.steamRefresh)}" aria-label="${esc(t.about.steamRefresh)}" onclick="manualSteamRefresh(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
+        </svg>
+      </button>
     </div>
     ${sub.length?`<p class="friends-sub">${esc(sub.join(" · "))}</p>`:""}
     ${s.recent.length?`
@@ -1381,6 +1401,8 @@ const I18N={
       steamRecentTitle:"最近在玩",
       steamMostTitle:"最常玩",
       steamFriends:"Steam 好友",
+      steamRefresh:"手动刷新",
+      steamRefreshFail:"刷新失败，稍后再试",
       steamSub:"过去 2 周 {h} 小时 · 共 {g} 款游戏",
       steamHours:"总时长 {h} 小时",
       steamRecent:"近 2 周 {h} 小时",
@@ -1451,6 +1473,8 @@ const I18N={
       steamRecentTitle:"Recently Playing",
       steamMostTitle:"Most Played",
       steamFriends:"Steam Friends",
+      steamRefresh:"Refresh",
+      steamRefreshFail:"Refresh failed, try again later",
       steamSub:"{h} hrs in the last 2 weeks · {g} games owned",
       steamHours:"{h} hrs total",
       steamRecent:"{h} hrs recently",
@@ -3391,9 +3415,6 @@ function route(){
   }
   else if(parts[0]==="about"){
     active="about";renderAbout();
-    /* 每次进入关于页都触发一次 Steam 实时刷新（/api/steam，边缘缓存 5 分钟），
-       数据回来且仍在关于页时原地重绘游戏模块 */
-    refreshSteam();
     /* #/about/projects → 渲染后平滑滚到项目板块 */
     if(parts[1]==="projects")pendingScroll="aboutProjects";
   }
