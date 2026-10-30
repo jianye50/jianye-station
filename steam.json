@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-30T16:48:11.130Z",
+  "updated": "2026-10-30T16:52:07.741Z",
   "source": "api",
   "player": {
     "name": "鉴业",
@@ -25,7 +25,7 @@
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/728880/header.jpg",
       "hoursTotal": 36.8,
       "hours2weeks": null,
-      "last": "10月3日"
+      "last": "10月2日"
     },
     {
       "appid": 431960,
@@ -43,7 +43,7 @@
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/880940/header.jpg",
       "hoursTotal": 16.3,
       "hours2weeks": null,
-      "last": "9月12日"
+      "last": "9月11日"
     },
     {
       "appid": 3683770,
@@ -52,7 +52,7 @@
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/3683770/header.jpg",
       "hoursTotal": 15,
       "hours2weeks": null,
-      "last": "8月14日"
+      "last": "8月13日"
     },
     {
       "appid": 3339420,
@@ -61,7 +61,7 @@
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/3339420/header.jpg",
       "hoursTotal": 13.3,
       "hours2weeks": null,
-      "last": "7月22日"
+      "last": "7月21日"
     },
     {
       "appid": 2527500,
