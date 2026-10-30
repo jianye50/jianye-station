@@ -452,10 +452,12 @@ img{display:block;max-width:100%}
 /* 灯箱打开时锁住背景滚动 */
 body.lb-lock{overflow:hidden}
 .lightbox img{
-  position:relative;z-index:1;   /* 图片带 fill 动画会自建层叠上下文，必须显式压到按钮之下 */
+  position:relative;z-index:1;   /* 图片必须显式压到按钮之下 */
   max-width:88vw;max-height:80vh;border-radius:16px;
   box-shadow:0 40px 100px rgba(0,0,0,.6);
-  animation:fadeUp .3s cubic-bezier(.2,.7,.2,1) both;
+  /* 注意：这里绝不能加动画 —— 切图时会先加 lb-ph（animation:none）再移除，
+     animation 属性一变就会从头重播，fadeUp 的 opacity:0 起始帧会让画面闪黑一下。
+     灯箱的入场淡入由 .lightbox.open 的 fadeIn 负责。 */
 }
 .lb-btn{
   position:absolute;z-index:2;width:48px;height:48px;border-radius:50%;
@@ -577,7 +579,7 @@ body.lb-lock{overflow:hidden}
   max-width:88vw;max-height:80vh;border-radius:16px;
   box-shadow:0 40px 100px rgba(0,0,0,.6);
   background:#000;
-  animation:fadeUp .3s cubic-bezier(.2,.7,.2,1) both;
+  /* 同 img：不加动画，避免切视频时 fadeUp 重播闪黑（入场由容器 fadeIn 负责） */
 }
 .lb-motion{
   position:absolute;left:22px;top:22px;z-index:2;
