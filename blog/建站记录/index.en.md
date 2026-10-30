@@ -9,7 +9,7 @@ background: Windows 12 概念.jpg
 lang: en
 auto: true
 srcHash: 175a95ca88ecc215
-translatedAt: 2026-10-30T13:48:26.303Z
+translatedAt: 2026-10-30T15:20:37.667Z
 ---
 Finally, my personal blog is officially completed.
 
@@ -17,7 +17,7 @@ Here, I want to briefly talk about myself and record the meaning of this site.
  
 I am Jian Ye, a person who loves tossing, creating, and building everything from scratch.
 
-![Moon Cat Under theMoonlight (Day - Night)月光下的月猫(昼夜)](Moon Cat Under theMoonlight (Day - Night)Mooncat under the moonlight (day and night).png)
+![Moon Cat Under theMoonlight (Day - Night)月光下的月猫(昼夜)](Moon Cat Under theMoonlight (Day - Night)月光下的月猫(昼夜).png)
 
  
 Rather than following the crowd, I prefer to build my own world with my own hands. From system deployment, website construction, code debugging, to polishing and optimizing various tools, I always enjoy the sense of practicality of creating it with my own hands and implementing it with my own eyes. Rather than being a simple user, I prefer to be a creator, builder, and practitioner.
@@ -26,7 +26,7 @@ I like things that are clean, simple, and efficient.
 I like to dismantle complex things, integrate scattered things, and polish unstable things into stable and usable works.
 I love technology, I love tinkering, and I also love recording.
  
-Establishing this small site is not about following the trend, nor is it about vanity.
+Establishing this small site is not to follow the trend, nor is it vanity.
 I just want to have a corner of the Internet that is completely my own.
  
 Here it is:

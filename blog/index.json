@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T05:32:55.841Z",
+  "generated": "2026-10-30T15:20:46.327Z",
   "posts": [
     {
       "slug": "远程控制",
@@ -14,6 +14,12 @@
       "minutes": 4,
       "cover": "1738905943819.jpeg",
       "bg": "1738905943819.jpeg",
+      "mdEn": "blog/远程控制/index.en.md",
+      "titleEn": "Compilation of mainstream remote control software｜Recommendations for remote assistance, operation and maintenance, and cross-device remote desktop tools",
+      "descEn": "Foreword Remote control software, which we often call remote desktop tools, is a very practical tool whether it is to help family and friends remotely repair computers, work remotely from home, operate servers, or remotely control computers with mobile phones...",
+      "tagsEn": [
+        "remote control"
+      ],
       "imgs": {
         "1738905943819.jpeg": "blog/thumbs/远程控制-i0.webp"
       },
@@ -34,6 +40,13 @@
       "minutes": 4,
       "cover": "1738905943689.jpg",
       "bg": "1738905943689.jpg",
+      "mdEn": "blog/3D咖啡店/index.en.md",
+      "titleEn": "Jianye’s Coffee Shop: In the browser, walk into a 3D corner shop with lights on late at night",
+      "descEn": "Project online address: https://jianye.pages.dev/coffee-shop-3d A coffee shop with lights on late at night, no need to download the client, just open and browse...",
+      "tagsEn": [
+        "3D",
+        "Leisure"
+      ],
       "imgs": {
         "1738905943689.jpg": "blog/thumbs/3D咖啡店-i0.webp",
         "ScreenShot_2026-10-24_145824_539.png": "blog/thumbs/3D咖啡店-i1.webp"
@@ -55,6 +68,13 @@
       "minutes": 2,
       "cover": "1745835951308.jpg",
       "bg": "1745835951308.jpg",
+      "mdEn": "blog/Adguard推荐/index.en.md",
+      "titleEn": "AdGuard",
+      "descEn": "AdGuard is a powerful ad blocking and privacy protection tool suitable for multiple platforms. Company background: AdGuard Software Co., Ltd. was founded in 2009 and is headquartered in Cyprus. male…",
+      "tagsEn": [
+        "AD",
+        "ad blocking"
+      ],
       "imgs": {
         "1745835951308.jpg": "blog/thumbs/Adguard推荐-i0.webp",
         "AdBlocker_banner_EN_728х90_2x.png": "blog/thumbs/Adguard推荐-i1.webp"
@@ -75,6 +95,12 @@
       "minutes": 4,
       "cover": "1739621032672.jpeg",
       "bg": "1739621032672.jpeg",
+      "mdEn": "blog/鉴业音乐/index.en.md",
+      "titleEn": "🎧Jianye Music｜My homemade web music player",
+      "descEn": "Project address: https://jianye.pages.dev/music I have always wanted to have a listening page that is entirely my own, without being disturbed by client ads or pop-up windows, so...",
+      "tagsEn": [
+        "music"
+      ],
       "imgs": {
         "1739621032672.jpeg": "blog/thumbs/鉴业音乐-i0.webp",
         "ScreenShot_2026-10-25_022056_497.png": "blog/thumbs/鉴业音乐-i1.webp"
@@ -96,8 +122,15 @@
       "minutes": 1,
       "cover": "未来都市绮梦.png",
       "bg": "未来都市绮梦.png",
+      "mdEn": "blog/Windows11 跳过OOBE命令/index.en.md",
+      "titleEn": "Windows 11 skips OOBE command",
+      "descEn": "Press Shift + F10 (Shift + Fn + F10 for some notebooks) to open the command prompt. Enter the following command and press Enter: start ms-cx…",
+      "tagsEn": [
+        "OOBE",
+        "Win11"
+      ],
       "imgs": {
-        "未来都市绮梦.png": "blog/thumbs/Windows11_跳过OOBE命令-i1.webp"
+        "未来都市绮梦.png": "blog/thumbs/Windows11_跳过OOBE命令-i2.webp"
       },
       "coverThumb": "blog/thumbs/Windows11_跳过OOBE命令-cover.webp",
       "bgThumb": "blog/thumbs/Windows11_跳过OOBE命令-bg.webp"
@@ -116,6 +149,13 @@
       "minutes": 1,
       "cover": "dMIq1HzJ.jpg",
       "bg": "dMIq1HzJ.jpg",
+      "mdEn": "blog/如何完全删除Windows安全中心病毒和威胁防护功能/index.en.md",
+      "titleEn": "How to completely remove Windows Security Center virus and threat protection features",
+      "descEn": "If you want to completely delete manually, please operate with the highest permissions and delete the following folders \"C:\\Program Files\\Windows Defender\" \"C:\\Program…",
+      "tagsEn": [
+        "Security Center",
+        "Win"
+      ],
       "imgs": {
         "dMIq1HzJ.jpg": "blog/thumbs/如何完全删除Windows安全中心病毒和威胁防护功能-i0.webp"
       },
@@ -136,6 +176,13 @@
       "minutes": 1,
       "cover": "dTTcmJH0.jpeg",
       "bg": "dTTcmJH0.jpeg",
+      "mdEn": "blog/系统激活命令/index.en.md",
+      "titleEn": "System activation command",
+      "descEn": "Execute in Windows PowerShell: irm https://get.activated.win | iex",
+      "tagsEn": [
+        "System activation",
+        "Win"
+      ],
       "imgs": {
         "ScreenShot_2026-10-24_032114_583.png": "blog/thumbs/系统激活命令-i0.webp",
         "dTTcmJH0.jpeg": "blog/thumbs/系统激活命令-i1.webp"
@@ -157,9 +204,16 @@
       "minutes": 4,
       "cover": "mmexport1786370573713.jpg",
       "bg": "mmexport1786370573713.jpg",
+      "mdEn": "blog/鉴业PE 维护系统介绍/index.en.md",
+      "titleEn": "Jianye PE｜Pure Windows PE maintenance system with both good looks and strength",
+      "descEn": "The computer has a blue screen and cannot be turned on? System needs to be reinstalled? Important data needs to be rescued? When encountering these problems, a set of useful PE...",
+      "tagsEn": [
+        "PE",
+        "Maintain system"
+      ],
       "imgs": {
         "55b2278b-c468-4060-ae73-67cb0ff41192.png": "blog/thumbs/鉴业PE_维护系统介绍-i0.webp",
-        "mmexport1786370573713.jpg": "blog/thumbs/鉴业PE_维护系统介绍-i2.webp"
+        "mmexport1786370573713.jpg": "blog/thumbs/鉴业PE_维护系统介绍-i3.webp"
       },
       "coverThumb": "blog/thumbs/鉴业PE_维护系统介绍-cover.webp",
       "bgThumb": "blog/thumbs/鉴业PE_维护系统介绍-bg.webp"
@@ -177,6 +231,12 @@
       "minutes": 3,
       "cover": "330.png",
       "bg": "330.png",
+      "mdEn": "blog/一键重装/index.en.md",
+      "titleEn": "Is it too difficult to reinstall the system? This tool turns \"technical work\" into \"a few clicks\"!",
+      "descEn": "Have you ever encountered these computer problems: the system gets laggy the more you use it, and you have to wait 5 minutes to boot up; you install software by mistake, resulting in pop-up ads that cannot be closed; you want to reinstall the system, but are stuck with \\\"BIOS Settings\\\" and \\\"Partition Format\\\"...",
+      "tagsEn": [
+        "System reinstallation"
+      ],
       "imgs": {
         "330.png": "blog/thumbs/一键重装-i0.webp",
         "7a20f87a-1f5b-43f1-9dfa-d8da48695a3d.png": "blog/thumbs/一键重装-i1.webp",
@@ -203,6 +263,14 @@
       "minutes": 6,
       "cover": "391.png",
       "bg": "391.png",
+      "mdEn": "blog/加密软件/index.en.md",
+      "titleEn": "Simple and secure local file protection tool: Jianye File Encryptor Jianye File Encryptor",
+      "descEn": "In the digital age, personal photos, private documents, and work-related confidential information are at risk of being leaked at any time. Many ordinary users want to protect files, but are daunted by complex cryptography. The threshold for command line encryption tools is too high, and commercial encryption...",
+      "tagsEn": [
+        "File encryption",
+        "encryption software",
+        "File security"
+      ],
       "imgs": {
         "391.png": "blog/thumbs/加密软件-i0.webp",
         "FoCnobLdHNSDkR6Y77fkqanhUFYt.png": "blog/thumbs/加密软件-i1.webp"
@@ -224,11 +292,18 @@
       "minutes": 1,
       "cover": "luna-final-2-frame-001-00-00-00-000.png",
       "bg": "Windows 12 概念.jpg",
+      "mdEn": "blog/建站记录/index.en.md",
+      "titleEn": "About me, about this site",
+      "descEn": "Finally, my personal blog is officially completed. Here, I want to briefly talk about myself and record the meaning of this site. I am Jian Ye, a person who loves tossing, creating, and building everything from scratch. …",
+      "tagsEn": [
+        "Website building record",
+        "About me"
+      ],
       "imgs": {
         "Moon Cat Under theMoonlight (Day - Night)月光下的月猫(昼夜).png": "blog/thumbs/建站记录-i0.webp",
         "Windows 12 概念.jpg": "blog/thumbs/建站记录-i1.webp",
-        "luna-final-2-frame-001-00-00-00-000.png": "blog/thumbs/建站记录-i3.webp",
-        "头像.png": "blog/thumbs/建站记录-i4.webp"
+        "luna-final-2-frame-001-00-00-00-000.png": "blog/thumbs/建站记录-i4.webp",
+        "头像.png": "blog/thumbs/建站记录-i5.webp"
       },
       "coverThumb": "blog/thumbs/建站记录-cover.webp",
       "bgThumb": "blog/thumbs/建站记录-bg.webp"
@@ -247,9 +322,16 @@
       "minutes": 6,
       "cover": "1745762721370.jpg",
       "bg": "1745762721370.jpg",
+      "mdEn": "blog/文件传送/index.en.md",
+      "titleEn": "Appraisal file transfer: web version of P2P peer-to-peer file transfer tool｜No need to download, open the web page and transfer files directly",
+      "descEn": "When transferring files between computers and mobile phones, you will always encounter various pain points: social software has strict...",
+      "tagsEn": [
+        "file transfer",
+        "transmission"
+      ],
       "imgs": {
         "1745762721370.jpg": "blog/thumbs/文件传送-i0.webp",
-        "屏幕截图_17-10-2026_134242_jianye.pages.dev.jpg": "blog/thumbs/文件传送-i2.webp"
+        "屏幕截图_17-10-2026_134242_jianye.pages.dev.jpg": "blog/thumbs/文件传送-i3.webp"
       },
       "coverThumb": "blog/thumbs/文件传送-cover.webp",
       "bgThumb": "blog/thumbs/文件传送-bg.webp"
@@ -268,9 +350,16 @@
       "minutes": 3,
       "cover": "微信图片_20260614030832_13646_1032.jpg",
       "bg": "微信图片_20260614030832_13646_1032.jpg",
+      "mdEn": "blog/浏览器主页/index.en.md",
+      "titleEn": "I made a minimalist browser homepage to say goodbye to advertisements and information bombardment",
+      "descEn": "What do you see every time you open a new tab in your browser? Full screen push news, pop-up ads, and a variety of content recommendations. Many start pages are constantly stacked with functions, turning the new tab page into an information flow plaza. We only want to search quickly, but we are wrapped up in all kinds of information and our attention is constantly chopped up.",
+      "tagsEn": [
+        "Browser home page",
+        "concise"
+      ],
       "imgs": {
-        "屏幕截图_17-10-2026_13579_jianye.pages.dev.jpg": "blog/thumbs/浏览器主页-i1.webp",
-        "微信图片_20260614030832_13646_1032.jpg": "blog/thumbs/浏览器主页-i2.webp"
+        "屏幕截图_17-10-2026_13579_jianye.pages.dev.jpg": "blog/thumbs/浏览器主页-i2.webp",
+        "微信图片_20260614030832_13646_1032.jpg": "blog/thumbs/浏览器主页-i3.webp"
       },
       "coverThumb": "blog/thumbs/浏览器主页-cover.webp",
       "bgThumb": "blog/thumbs/浏览器主页-bg.webp"
