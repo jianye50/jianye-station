@@ -2240,9 +2240,6 @@ function renderAbout(){
         </div>
       </div>
 
-      <!-- Steam 游戏模块：数据来自站点根目录 steam.json（GitHub Actions 定时生成），读不到时自动隐藏 -->
-      ${STEAM?steamModuleHTML():""}
-
       ${(FRIENDS.length||FRIEND_FORM)?`
       <div class="about-card">
         <div class="friends-head">
@@ -2287,6 +2284,9 @@ function renderAbout(){
           </a>`:""}
         </div>
       </div>`:""}
+
+      <!-- Steam 游戏模块：放友链之后，数据来自站点根目录 steam.json（GitHub Actions 定时生成），读不到时自动隐藏 -->
+      ${STEAM?steamModuleHTML():""}
     </div>
   </section>`;
 }
