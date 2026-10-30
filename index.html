@@ -1209,7 +1209,7 @@ function setLang(v){
   lang=v;
   document.documentElement.lang=v==="zh"?"zh-CN":"en";
   document.title=T().brand;
-  localStorage.setItem("jy-lang",v);
+  try{ localStorage.setItem("jy-lang",v); }catch(e){}   /* 隐私模式 / 禁用存储时别让切换语言直接抛异常 */
   $("#langBtn").textContent=v==="zh"?"EN":"中";
   $("#langBtn").title=T().langTip||"Switch language";
   $("#langBtn").setAttribute("aria-label",$("#langBtn").title);
@@ -1242,7 +1242,8 @@ async function listEntries(dir){
         h=h.split("#")[0].split("?")[0];
         if(!h||h==="."||h===".."||/\/(\.|\.\.)\/?$/.test(h))return;
         if(/\/$/.test(h)){
-          const n=decodeURIComponent(h.replace(/\/$/,"").split("/").pop());
+          let n="";
+          try{ n=decodeURIComponent(h.replace(/\/$/,"").split("/").pop()); }catch(e){ n=h.replace(/\/$/,"").split("/").pop(); }
           if(n)dirs.add(n);
         }else if(MEDIA_RE.test(h)){
           files.add(new URL(h,base.href).href);
@@ -1289,7 +1290,8 @@ async function resolveGHUrls(dir,names){
   return names.map(n=>`https://raw.githubusercontent.com/${GH_REPO}/${GH_BRANCH}/${raw}/${encodeURIComponent(n)}`);
 }
 function nameOf(src){
-  return decodeURIComponent(String(src).split("/").pop().split("?")[0]);
+  const raw=String(src).split("/").pop().split("?")[0];
+  try{ return decodeURIComponent(raw); }catch(e){ return raw; }   /* 文件名含孤立 % 时别让整个图库挂掉 */
 }
 /* 装载整个相册库（下面的兜底扫描版本）：
    ① 扫 Photo Album 根目录（图片/视频 = 「全部」；子文件夹 = 子相册）
@@ -2021,7 +2023,9 @@ function samePosts(a,b){return JSON.stringify(a)===JSON.stringify(b);}
       清单由 scripts/gen-blog-index.mjs 自动生成（GitHub Action 或 Pages 构建命令运行），无需手动维护 */
 async function manifestPosts(){
   try{
-    const r=await fetch("blog/index.json?t="+Date.now(),{cache:"no-store"});
+    /* no-cache（而非 no-store + 时间戳）：保留 304 协商缓存，新鲜度不变，
+       部署环境不再每次全量回源下载清单 */
+    const r=await fetch("blog/index.json",{cache:"no-cache"});
     if(!r.ok)return null;
     const j=await r.json();
     if(!j||!Array.isArray(j.posts))return null;
@@ -2069,7 +2073,8 @@ async function grabPost(slug,mdURL,imgBase,found){
   if(!slug||found.has(slug))return;
   let raw;
   try{
-    const r=await fetch(mdURL+(mdURL.includes("?")?"&":"?")+"t="+Date.now(),{cache:"no-store"});
+    /* no-cache：服务器没更新时走 304，不再每次全量拉正文 */
+    const r=await fetch(mdURL,{cache:"no-cache"});
     if(!r.ok)return;
     raw=await r.text();
   }catch(e){return;}
@@ -2222,8 +2227,12 @@ function mdToHTML(md,imgBase,imgMap){
       }
       return `<img src="${u}" alt="${alt}" loading="lazy" decoding="async">`;
     });
-    s=s.replace(/\[([^\]]+)\]\(((?:[^()]|\([^()]*\))+)\)/g,(m,txt,href)=>
-      `<a href="${href.trim()}" target="_blank" rel="noopener">${txt}</a>`);
+    s=s.replace(/\[([^\]]+)\]\(((?:[^()]|\([^()]*\))+)\)/g,(m,txt,href)=>{
+      const u=href.trim();
+      /* 协议白名单：禁掉 javascript: / vbscript: / data: 等危险 scheme，防止文章里藏 XSS 链接 */
+      if(/^(javascript|vbscript|data)\s*:/i.test(u))return txt;
+      return `<a href="${u}" target="_blank" rel="noopener">${txt}</a>`;
+    });
     s=s.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
        .replace(/\*([^*]+)\*/g,"<em>$1</em>")
        .replace(/`([^`]+)`/g,"<code>$1</code>");
@@ -2466,14 +2475,19 @@ async function renderPost(slug){
   if(!post){fail(esc(t.blog.err));return;}
   let raw="";
   try{
-    const r=await fetch(post.mdURL+(post.mdURL.includes("?")?"&":"?")+"t="+Date.now(),{cache:"no-store"});
+    /* no-cache：文章更新靠 304 协商保证，部署环境不必每次全量回源 */
+    const r=await fetch(post.mdURL,{cache:"no-cache"});
     if(!r.ok)throw new Error(r.status);
     raw=await r.text();
   }catch(e){fail(esc(t.blog.err));return;}
   const {meta,body}=parsePost(raw);
   const title=meta.title||post.title||t.blog.untitled;
   const desc=meta.desc||post.desc||"";
-  const tags=meta.tags||post.tags||[];
+  /* 标签归一化：front matter 里「tags: a, b」这种逗号写法解析出来是字符串，
+     直接 .map 会抛 TypeError 导致整篇文章页渲染失败 —— 列表页已归一化，这里补上 */
+  let tags=meta.tags||post.tags||[];
+  if(typeof tags==="string")tags=tags.split(/[,，]/).map(x=>x.trim()).filter(Boolean);
+  if(!Array.isArray(tags))tags=[];
   const date=meta.date||post.date||"";
   const minutes=+meta.minutes||post.minutes||Math.max(1,Math.round(body.replace(/\s/g,"").length/450));
   const bg=meta.background||post.bg||"";
@@ -2526,9 +2540,14 @@ function route(){
   const parts=hash.split("/").filter(Boolean);
   let active="home";
   if(parts[0]==="gallery"){active="gallery";renderGallery()}
-  else if(parts[0]==="blog"){
+  else   if(parts[0]==="blog"){
     active="blog";
-    if(parts[1])renderPost(decodeURIComponent(parts.slice(1).join("/")));
+    if(parts[1]){
+      /* slug 解码包一层兜底：孤立的 %（链接被截断等）会抛 URIError，别让它卡死路由 */
+      let slug="";
+      try{ slug=decodeURIComponent(parts.slice(1).join("/")); }catch(e){}
+      renderPost(slug);
+    }
     else renderBlog();
   }
   else if(parts[0]==="about"){
@@ -3025,7 +3044,9 @@ input[type=range].mp-range::-moz-range-thumb{
   /* ---------------- 状态 ---------------- */
   const audio=new Audio();
   audio.preload="metadata";
-  audio.volume=(function(){ const v=parseFloat(localStorage.getItem(KEY+"-vol")); return (isFinite(v)&&v>0&&v<=1)?v:0.85; })();
+  /* getItem 包一层：禁用存储的环境里抛异常会让整个播放器初始化失败 */
+  audio.volume=(function(){ let v=0.85; try{ v=parseFloat(localStorage.getItem(KEY+"-vol")); }catch(e){}
+    return (isFinite(v)&&v>0&&v<=1)?v:0.85; })();
   volEl.value=String(Math.round(audio.volume*100));
 
   let kgPool=[], searchPool=[];
@@ -3756,7 +3777,7 @@ input[type=range].mp-range::-moz-range-thumb{
   listEl.addEventListener("click",e=>{
     const r=e.target.closest(".mp-row");
     if(!r)return;
-    if(r.dataset.now){ loadAndPlay(cur,true); return; }   /* 置顶的「正在播放 / 上次播放」 */
+    if(r.dataset.now){ loadAndPlay(cur,{play:true}); return; }   /* 置顶的「正在播放 / 上次播放」 */
     playPool(tab,Number(r.dataset.i),visiblePool(tab));   /* 队列 = 当前看到的那一列 */
   });
   function doSearch(){
