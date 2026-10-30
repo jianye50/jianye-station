@@ -848,6 +848,16 @@ body.lb-lock{overflow:hidden}
   .sf-info small{max-width:104px;font-size:9.5px}
   /* 友链卡片收紧 */
   .friend{padding:11px 12px;border-radius:13px}
+  /* 项目卡片：一行 2 张小卡（原先 minmax(230px) 在手机上退化为一张占满一行） */
+  .proj-grid{grid-template-columns:repeat(2,1fr);gap:9px;margin-top:14px}
+  .proj{padding:12px 12px 13px;border-radius:12px}
+  .proj:hover{transform:none}
+  .proj .ic{width:32px;height:32px;border-radius:9px;font-size:15px;margin-bottom:8px}
+  .proj h4{font-size:13px;margin-bottom:3px}
+  .proj p{
+    font-size:11px;line-height:1.55;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  }
 }
 /* ============ 博客（列表 + 文章） ============ */
 .blog-year{display:flex;align-items:center;gap:14px;margin:28px 0 14px;color:var(--text-3);font-size:13px;font-weight:700;letter-spacing:.06em}
