@@ -58,12 +58,15 @@ async function viaApi() {
     get(
       `https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v1/?key=${API_KEY}&steamid=${steamid}&count=10`
     ),
+    /* include_appinfo=1：带游戏名，一次拿全库（总数 + 最常玩榜单的数据源） */
     get(
-      `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${API_KEY}&steamid=${steamid}&include_appinfo=0&include_played_free_games=1`
+      `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${API_KEY}&steamid=${steamid}&include_appinfo=1&include_played_free_games=1`
     ).catch(() => null), /* 库总览可能因隐私关闭而失败，允许缺省 */
   ]);
   const p = player?.response?.players?.[0] || {};
   const games = (recent?.response?.total_count ? recent.response.games : []) || [];
+  const all = (owned?.response?.games || []).slice();
+  const h1 = (min) => Math.round(((min || 0) / 60) * 10) / 10;
   const fmt = (ts) =>
     ts
       ? new Date(ts * 1000).toLocaleDateString("zh-CN", {
@@ -71,6 +74,20 @@ async function viaApi() {
           day: "numeric",
         })
       : "";
+  /* 最常玩：按总时长排序取前 9（只统计玩过的） */
+  const most = all
+    .filter((g) => (g.playtime_forever || 0) > 0)
+    .sort((a, b) => (b.playtime_forever || 0) - (a.playtime_forever || 0))
+    .slice(0, 9)
+    .map((g) => ({
+      appid: g.appid,
+      name: g.name || `App ${g.appid}`,
+      cover: coverURL(g.appid),
+      header: headerURL(g.appid),
+      hoursTotal: h1(g.playtime_forever),
+      hours2weeks: g.playtime_2weeks != null ? h1(g.playtime_2weeks) : null,
+      last: fmt(g.rtime_last_played),
+    }));
   return {
     source: "api",
     player: {
@@ -81,6 +98,7 @@ async function viaApi() {
     totalGames: owned?.response?.game_count ?? null,
     hours2weeks:
       games.reduce((s, g) => s + (g.playtime_2weeks || 0), 0) / 60 || null,
+    most,
     recent: games.map((g) => ({
       appid: g.appid,
       name: g.name || `App ${g.appid}`,
@@ -187,6 +205,47 @@ async function viaProfile() {
   };
 }
 
+/* ---------------- 数据增强：中文游戏名与成就进度（API 通道专用） ----------------
+ * API 返回英文名且不含成就进度，这里用两个无需登录的公开来源补齐：
+ *   · 公开个人主页「最近玩过」区块 → 中文游戏名 + 成就 x/y
+ *   · Steam 商店 appdetails 接口   → 「最常玩」榜单的中文名 */
+async function profileAchMap() {
+  const r = await fetch(`https://steamcommunity.com/id/${VANITY}/?l=schinese`, {
+    headers: { "User-Agent": UA, "Accept-Language": "zh-CN,zh;q=0.9" },
+  });
+  if (!r.ok) return {};
+  const h = await r.text();
+  if (/<title>[^<]*Error/i.test(h)) return {};
+  const map = {};
+  for (const b of h.split(/class="recent_game"/).slice(1)) {
+    const appid = b.match(/steamcommunity\.com\/app\/(\d+)/)?.[1];
+    if (!appid) continue;
+    const name = b.match(/class="game_name"><a[^>]*>([^<]+)<\/a>/)?.[1]?.trim();
+    /* 中文格式「26 项成就中的 8 项」＝总数 26、已解锁 8；英文「8 of 26」相反 */
+    const achZh = b.match(/(\d[\d,]*)\s*项成就中的\s*(\d[\d,]*)\s*项/);
+    const achEn = b.match(/(\d[\d,]*)\s*of\s*(\d[\d,]*)\s*achievements?/i);
+    map[appid] = {
+      name,
+      achTotal: achZh ? num(achZh[1]) : achEn ? num(achEn[2]) : null,
+      achEarned: achZh ? num(achZh[2]) : achEn ? num(achEn[1]) : null,
+    };
+  }
+  return map;
+}
+async function zhAppName(appid) {
+  try {
+    const r = await fetch(
+      `https://store.steampowered.com/api/appdetails?appids=${appid}&l=schinese`,
+      { headers: { "User-Agent": UA } }
+    );
+    if (!r.ok) return null;
+    const j = await r.json();
+    return j?.[String(appid)]?.data?.name || null;
+  } catch {
+    return null;
+  }
+}
+
 /* ---------------- 主流程 ---------------- */
 let data;
 try {
@@ -199,6 +258,23 @@ try {
 if (!data.recent || !data.recent.length) {
   console.error("[steam] 没解析到任何游戏——检查隐私设置（游戏详情需对所有人公开）或换用 API Key。");
   process.exit(1);
+}
+if (API_KEY) {
+  try {
+    const amap = await profileAchMap();
+    for (const g of data.recent || []) {
+      const e = amap[g.appid];
+      if (!e) continue;
+      if (e.achTotal != null) { g.achEarned = e.achEarned; g.achTotal = e.achTotal; }
+      if (e.name) g.name = e.name; /* 主页上的是中文名 */
+    }
+    for (const g of data.most || []) {
+      const zh = await zhAppName(g.appid);
+      if (zh) g.name = zh;
+    }
+  } catch (e) {
+    console.error("[steam] 数据增强失败（不影响主数据）：", e.message);
+  }
 }
 const out = {
   updated: new Date().toISOString(),

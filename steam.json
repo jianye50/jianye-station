@@ -1,23 +1,106 @@
 {
-  "updated": "2026-10-30T16:36:18.499Z",
-  "source": "profile",
+  "updated": "2026-10-30T16:48:11.130Z",
+  "source": "api",
   "player": {
     "name": "鉴业",
-    "avatar": "https://avatars.akamai.steamstatic.com/b72e7a6487c6bd07eb5e95c24474fed86f320b93_full.jpg",
+    "avatar": "https://avatars.steamstatic.com/6bfca3ee5ea5417cc518cffd0c20bde7ad512c1d_full.jpg",
     "url": "https://steamcommunity.com/id/aimjianye/"
   },
-  "totalGames": 35,
-  "hours2weeks": 20.7,
+  "totalGames": 44,
+  "hours2weeks": 20.65,
+  "most": [
+    {
+      "appid": 1260320,
+      "name": "猛兽派对",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/header.jpg",
+      "hoursTotal": 475.3,
+      "hours2weeks": 12.9,
+      "last": "10月30日"
+    },
+    {
+      "appid": 728880,
+      "name": "Overcooked! 2",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/728880/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/728880/header.jpg",
+      "hoursTotal": 36.8,
+      "hours2weeks": null,
+      "last": "10月3日"
+    },
+    {
+      "appid": 431960,
+      "name": "Wallpaper Engine：壁纸引擎",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/431960/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/431960/header.jpg",
+      "hoursTotal": 29.2,
+      "hours2weeks": 0.1,
+      "last": "10月30日"
+    },
+    {
+      "appid": 880940,
+      "name": "Pummel Party",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/880940/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/880940/header.jpg",
+      "hoursTotal": 16.3,
+      "hours2weeks": null,
+      "last": "9月12日"
+    },
+    {
+      "appid": 3683770,
+      "name": "奶茶店模拟器 - 重生之我在冰堡甜城当店长",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/3683770/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/3683770/header.jpg",
+      "hoursTotal": 15,
+      "hours2weeks": null,
+      "last": "8月14日"
+    },
+    {
+      "appid": 3339420,
+      "name": "你的老婆",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/3339420/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/3339420/header.jpg",
+      "hoursTotal": 13.3,
+      "hours2weeks": null,
+      "last": "7月22日"
+    },
+    {
+      "appid": 2527500,
+      "name": "米塔 MiSide",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/2527500/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/2527500/header.jpg",
+      "hoursTotal": 10.1,
+      "hours2weeks": null,
+      "last": "10月13日"
+    },
+    {
+      "appid": 1599600,
+      "name": "速速上菜！",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1599600/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1599600/header.jpg",
+      "hoursTotal": 9.7,
+      "hours2weeks": 4.4,
+      "last": "10月30日"
+    },
+    {
+      "appid": 1787090,
+      "name": "MyDockFinder",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1787090/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1787090/header.jpg",
+      "hoursTotal": 9.7,
+      "hours2weeks": null,
+      "last": "5月16日"
+    }
+  ],
   "recent": [
     {
       "appid": 1260320,
       "name": "猛兽派对",
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/library_600x900.jpg",
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/header.jpg",
-      "capsule": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/capsule_184x69.jpg",
-      "hoursTotal": 475,
-      "hours2weeks": null,
-      "last": "10 月 30 日",
+      "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/1260320/capsule_184x69.jpg",
+      "hoursTotal": 475.3,
+      "hours2weeks": 12.9,
+      "last": "",
       "achEarned": 116,
       "achTotal": 116
     },
@@ -26,22 +109,46 @@
       "name": "速速上菜！",
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1599600/library_600x900.jpg",
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1599600/header.jpg",
-      "capsule": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1599600/8b790826f395bda9aa3fd793d2fd71b4a9f4ee3d/capsule_184x69_schinese.jpg",
+      "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/1599600/capsule_184x69.jpg",
       "hoursTotal": 9.7,
-      "hours2weeks": null,
-      "last": "10 月 30 日",
+      "hours2weeks": 4.4,
+      "last": "",
       "achEarned": 8,
       "achTotal": 26
+    },
+    {
+      "appid": 5354030,
+      "name": "Worst Class Ever Demo",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/5354030/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/5354030/header.jpg",
+      "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/5354030/capsule_184x69.jpg",
+      "hoursTotal": 2.7,
+      "hours2weeks": 2.7,
+      "last": "",
+      "achEarned": null,
+      "achTotal": null
+    },
+    {
+      "appid": 945360,
+      "name": "Among Us",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/945360/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/945360/header.jpg",
+      "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/945360/capsule_184x69.jpg",
+      "hoursTotal": 2.6,
+      "hours2weeks": 0.6,
+      "last": "",
+      "achEarned": null,
+      "achTotal": null
     },
     {
       "appid": 431960,
       "name": "Wallpaper Engine：壁纸引擎",
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/431960/library_600x900.jpg",
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/431960/header.jpg",
-      "capsule": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/431960/capsule_184x69_schinese.jpg",
-      "hoursTotal": 29,
-      "hours2weeks": null,
-      "last": "10 月 30 日",
+      "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/431960/capsule_184x69.jpg",
+      "hoursTotal": 29.2,
+      "hours2weeks": 0.1,
+      "last": "",
       "achEarned": 6,
       "achTotal": 17
     }

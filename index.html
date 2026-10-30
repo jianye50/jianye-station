@@ -700,6 +700,12 @@ body.lb-lock{overflow:hidden}
 .steam-ach-bar{flex:1;height:5px;border-radius:99px;background:rgba(255,255,255,.22);overflow:hidden}
 .steam-ach-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#4d8dff,#66c0f4)}
 .steam-ach span{font-size:11px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.steam-sec{
+  display:flex;align-items:center;gap:9px;
+  margin:22px 0 0;font-size:13px;font-weight:700;color:var(--text-2);letter-spacing:.03em;
+}
+.steam-sec::before{content:"";width:14px;height:2px;border-radius:2px;background:var(--accent);opacity:.7}
+.steam-sec:first-of-type{margin-top:0}
 /* 友情链接（关于页底部）：自适应网格，加新朋友改站点根目录的 friends.txt 即可 */
 .friends-head{display:flex;align-items:center;gap:10px}
 .friends-count{
@@ -1205,9 +1211,16 @@ function steamModuleHTML(){
       <a class="steam-link" href="${esc((s.player&&s.player.url)||"https://steamcommunity.com/id/aimjianye/")}" target="_blank" rel="noopener">${esc(t.about.steamProfile)}</a>
     </div>
     ${sub.length?`<p class="friends-sub">${esc(sub.join(" · "))}</p>`:""}
+    ${s.recent.length?`
+    <div class="steam-sec">${esc(t.about.steamRecentTitle)}</div>
     <div class="steam-grid">
       ${s.recent.map(gameRow).join("")}
-    </div>
+    </div>`:""}
+    ${s.most&&s.most.length?`
+    <div class="steam-sec">${esc(t.about.steamMostTitle)}</div>
+    <div class="steam-grid">
+      ${s.most.map(gameRow).join("")}
+    </div>`:""}
   </div>`;
 }
 
@@ -1301,6 +1314,8 @@ const I18N={
       friendApply:"申请友链",
       friendApplySub:"填写表单提交申请",
       steamTitle:"游戏",
+      steamRecentTitle:"最近在玩",
+      steamMostTitle:"最常玩",
       steamSub:"过去 2 周 {h} 小时 · 共 {g} 款游戏",
       steamHours:"总时长 {h} 小时",
       steamRecent:"近 2 周 {h} 小时",
@@ -1368,6 +1383,8 @@ const I18N={
       friendApply:"Apply for a Link",
       friendApplySub:"Fill in the form to apply",
       steamTitle:"Gaming",
+      steamRecentTitle:"Recently Playing",
+      steamMostTitle:"Most Played",
       steamSub:"{h} hrs in the last 2 weeks · {g} games owned",
       steamHours:"{h} hrs total",
       steamRecent:"{h} hrs recently",
