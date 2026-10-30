@@ -19,6 +19,8 @@
 <meta property="og:url" content="https://jianye.pages.dev/">
 <meta property="og:image" content="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=75&auto=format">
 <meta name="twitter:card" content="summary_large_image">
+<!-- 规范地址：hash 路由的 #/xxx 都是同一个文档，统一指向站点根 -->
+<link rel="canonical" href="https://jianye.pages.dev/">
 <!-- 首屏大图所在的图床，提前建连 -->
 <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
 <!-- 语言：首次访问先按系统语言定好（中文→中文，其它语言→英文），
@@ -926,7 +928,25 @@ setTimeout(function(){var b=document.getElementById("boot");if(b)b.classList.add
   </button>
 </nav>
 
-<main id="app"></main>
+<!-- 静态首屏内容（SEO 兜底）：
+     页面正文由 JS 渲染，不执行 JS 的抓取程序（如 Bing 网站扫描）读不到 <h1>，
+     所以这里放一份真实的静态标题与简介。
+     正常访问时启动屏先盖住它，路由渲染会整块覆盖 #app，不会出现闪烁或重复标题。 -->
+<main id="app">
+  <section class="view">
+    <header class="hero">
+      <div class="wrap hero-inner">
+        <h1>鉴业の小站 · Jianye's Corner</h1>
+        <p>愿我们拥有的时候不要毁，失去的时候不要悔。这里记录拍过的照片、写下的文字，以及正在做的小东西。</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#/blog">阅读博客</a>
+          <a class="btn btn-ghost" href="#/gallery">逛逛图库</a>
+          <a class="btn btn-ghost" href="#/about">关于我</a>
+        </div>
+      </div>
+    </header>
+  </section>
+</main>
 
 <!-- ============ 灯箱 ============ -->
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lbCount">
