@@ -1176,18 +1176,28 @@ async function loadFriends(){
 }
 
 /* ---------- Steam 游戏模块：数据来自站点根目录的 steam.json ----------
-   steam.json 由 GitHub Actions 每 6 小时跑 scripts/gen-steam-data.mjs 自动生成推送，
-   Cloudflare Pages 随之重新部署；读不到（本地 file:// / 还没上传）时整个模块隐藏，不影响其它区域 */
-let STEAM=null;          /* 由 loadSteam() 从 steam.json 读入 */
-async function loadSteam(){
-  let j=null;
+   两条通道：
+   · 部署环境优先走 /api/steam（Cloudflare Pages Function）：每次进入关于页实时刷新，
+     边缘缓存 5 分钟；Steam 接口不允许浏览器跨域直连，必须经自己的域名代理；
+   · 实时接口不可用 / 本地 file:// 预览 → 退回静态 steam.json（GitHub Actions 每 6 小时生成）。
+   都读不到时整个模块隐藏，不影响其它区域 */
+let STEAM=null;          /* 由 loadSteam() 读入 */
+let steamLastFetch=0;    /* 上次实时刷新时间：60 秒内重复进出关于页不重复请求 */
+async function fetchSteam(){
+  /* IS_LOCAL 在后面（博客区）才定义，这里调用时才求值 */
+  const src=(typeof IS_LOCAL!=="undefined"&&IS_LOCAL)?"steam.json":"api/steam";
   try{
-    const r=await fetch("steam.json",{cache:"no-cache"});
-    if(r.ok)j=await r.json();
+    const r=await fetch(STEAM_SRC,{cache:"no-cache"});
+    if(r.ok){
+      const j=await r.json();
+      if(j&&Array.isArray(j.recent)&&j.recent.length)return j;
+    }
   }catch(e){}
-  if(!j||!Array.isArray(j.recent)||!j.recent.length)return;
+  return null;
+}
+/* 数据到达时如正停在关于页 → 原地重绘游戏区（保住滚动位置，不打断浏览） */
+function applySteam(j){
   STEAM=j;
-  /* 数据到达时正停在关于页 → 原地重绘游戏区（保住滚动位置，不打断浏览） */
   if(/^#\/about/.test(location.hash)){
     const root=document.documentElement,prev=root.style.scrollBehavior;
     root.style.scrollBehavior="auto";
@@ -1196,6 +1206,18 @@ async function loadSteam(){
     window.scrollTo(0,y);
     root.style.scrollBehavior=prev;
   }
+}
+async function loadSteam(){
+  const j=await fetchSteam();
+  if(j)applySteam(j);
+}
+/* 进入关于页时触发：60 秒节流 + 拿到新数据才重绘 */
+async function refreshSteam(){
+  const now=Date.now();
+  if(now-steamLastFetch<60000)return;
+  steamLastFetch=now;
+  const j=await fetchSteam();
+  if(j&&JSON.stringify(j)!==JSON.stringify(STEAM))applySteam(j);
 }
 /* Steam 模块的 HTML：最近玩过的游戏卡片（封面 / 时长 / 成就进度条） */
 function steamModuleHTML(){
@@ -3365,6 +3387,9 @@ function route(){
   }
   else if(parts[0]==="about"){
     active="about";renderAbout();
+    /* 每次进入关于页都触发一次 Steam 实时刷新（/api/steam，边缘缓存 5 分钟），
+       数据回来且仍在关于页时原地重绘游戏模块 */
+    refreshSteam();
     /* #/about/projects → 渲染后平滑滚到项目板块 */
     if(parts[1]==="projects")pendingScroll="aboutProjects";
   }
