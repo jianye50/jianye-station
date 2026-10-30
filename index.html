@@ -818,6 +818,18 @@ body.lb-lock{overflow:hidden}
 .friend-apply:hover{border-color:rgba(77,141,255,.42);box-shadow:none}
 .friend-apply:hover .friend-info h4{color:var(--accent)}
 .friends-sub{margin:8px 0 0;font-size:13px;color:var(--text-3)}
+/* 可折叠卡片（关于页：项目 / 友情链接 / 游戏）：点标题行整行收起或展开 */
+.about-card.collapsible>.coll-head{
+  display:flex;align-items:center;gap:10px;   /* flex 才能让箭头 margin-left:auto 顶到卡片最右侧 */
+  cursor:pointer;user-select:none;-webkit-user-select:none;
+}
+.coll-chev{
+  width:16px;height:16px;margin-left:auto;flex:none;color:var(--text-3);
+  transition:transform .25s cubic-bezier(.2,.7,.2,1),color .2s;
+}
+.coll-head:hover .coll-chev{color:var(--text-2)}
+.about-card.collapsed .coll-chev{transform:rotate(-90deg)}
+.about-card.collapsed>.coll-body{display:none}
 /* 关于页手机端紧凑化：海报从“一行 1 张大图”改为“一行 3 张宫格”，全卡片收紧
    （放在本段基础样式之后，保证媒体查询里的覆盖不被层叠顺序吃掉） */
 @media (max-width:640px){
@@ -1314,8 +1326,8 @@ function steamModuleHTML(){
     </a>`;
   };
   return `
-  <div class="about-card" id="aboutSteam">
-    <div class="friends-head">
+  <div class="about-card collapsible" id="aboutSteam">
+    <div class="friends-head coll-head" role="button" tabindex="0" aria-label="${esc(t.about.steamTitle)}">
       <div class="section-label" style="margin:0">${esc(t.about.steamTitle)}</div>
       <span class="friends-count">${s.totalGames||s.recent.length}</span>
       <a class="steam-link" href="${esc((s.player&&s.player.url)||"https://steamcommunity.com/id/aimjianye/")}" target="_blank" rel="noopener">${esc(t.about.steamProfile)}</a>
@@ -1324,7 +1336,9 @@ function steamModuleHTML(){
           <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
         </svg>
       </button>
+      ${COLL_CHEV}
     </div>
+    <div class="coll-body">
     ${sub.length?`<p class="friends-sub">${esc(sub.join(" · "))}</p>`:""}
     ${s.recent.length?`
     <div class="steam-sec">${esc(t.about.steamRecentTitle)}</div>
@@ -1349,6 +1363,7 @@ function steamModuleHTML(){
         <span class="sf-info"><b>${esc(f.name)}</b>${f.playing?`<small>${esc(f.playing)}</small>`:""}</span>
       </a>`).join("")}
     </div>`:""}
+    </div>
   </div>`;
 }
 
@@ -2339,6 +2354,48 @@ function renderGallery(){
   paintPhotoGrids();
 }
 
+/* ---------- 关于页可折叠卡片（项目/友链/游戏）：点标题行收起或展开 ----------
+   状态存 localStorage；没存过时默认手机端收起、桌面端展开 */
+const COLL_KEY="aboutCollapse";
+const COLL_CHEV=`<svg class="coll-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
+function aboutCollapseDefault(){
+  try{return matchMedia("(max-width:640px)").matches;}catch(e){return false;}  /* 手机端默认收起 */
+}
+function applyAboutCollapse(){
+  let saved={};
+  try{saved=JSON.parse(localStorage.getItem(COLL_KEY)||"{}");}catch(e){}
+  document.querySelectorAll(".about-card.collapsible[id]").forEach(c=>{
+    const on=typeof saved[c.id]==="boolean"?saved[c.id]:aboutCollapseDefault();
+    c.classList.toggle("collapsed",on);
+  });
+}
+function saveAboutCollapse(){
+  const s={};
+  document.querySelectorAll(".about-card.collapsible[id]").forEach(c=>{s[c.id]=c.classList.contains("collapsed");});
+  try{localStorage.setItem(COLL_KEY,JSON.stringify(s));}catch(e){}
+}
+/* 事件委托：点击标题行切换折叠；标题行里的链接 / 按钮（如“前往 Steam 主页”、刷新）不触发 */
+document.addEventListener("click",e=>{
+  const head=e.target.closest(".coll-head");
+  if(!head||e.target.closest("a,button"))return;
+  const card=head.closest(".about-card.collapsible");
+  if(!card)return;
+  card.classList.toggle("collapsed");
+  saveAboutCollapse();
+});
+/* 键盘可达：标题行聚焦时 Enter / 空格同样切换 */
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Enter"&&e.key!==" ")return;
+  const head=e.target.closest?e.target.closest(".coll-head"):null;
+  if(!head||e.target.closest("a,button"))return;
+  const card=head.closest(".about-card.collapsible");
+  if(!card)return;
+  e.preventDefault();
+  card.classList.toggle("collapsed");
+  saveAboutCollapse();
+});
+
 function renderAbout(){
   const t=T();
   app.innerHTML=`
@@ -2365,21 +2422,28 @@ function renderAbout(){
         </div>
       </div>
 
-      <!-- 项目模块：从原「项目」页移入，位于个人介绍下方、友情链接上方 -->
-      <div class="about-card" id="aboutProjects">
-        <div class="section-label">${esc(t.about.projTitle)}</div>
-        <p class="friends-sub">${esc(t.about.projSub)}</p>
-        <div class="proj-grid">
-          ${projectsGridHTML()}
+      <!-- 项目模块：从原「项目」页移入，位于个人介绍下方、友情链接上方；可点击标题行折叠 -->
+      <div class="about-card collapsible" id="aboutProjects">
+        <div class="coll-head" role="button" tabindex="0" aria-label="${esc(t.about.projTitle)}">
+          <div class="section-label" style="margin:0">${esc(t.about.projTitle)}</div>
+          ${COLL_CHEV}
+        </div>
+        <div class="coll-body">
+          <p class="friends-sub">${esc(t.about.projSub)}</p>
+          <div class="proj-grid">
+            ${projectsGridHTML()}
+          </div>
         </div>
       </div>
 
       ${(FRIENDS.length||FRIEND_FORM)?`
-      <div class="about-card">
-        <div class="friends-head">
+      <div class="about-card collapsible" id="aboutFriends">
+        <div class="friends-head coll-head" role="button" tabindex="0" aria-label="${esc(t.about.friends)}">
           <div class="section-label" style="margin:0">${esc(t.about.friends)}</div>
           ${FRIENDS.length?`<span class="friends-count">${FRIENDS.length}</span>`:""}
+          ${COLL_CHEV}
         </div>
+        <div class="coll-body">
         <p class="friends-sub">${esc(t.about.friendsSub)}</p>
         <div class="friend-grid">
           ${FRIENDS.map(f=>{
@@ -2417,12 +2481,14 @@ function renderAbout(){
             </svg>
           </a>`:""}
         </div>
+        </div>
       </div>`:""}
 
       <!-- Steam 游戏模块：放友链之后，数据来自站点根目录 steam.json（GitHub Actions 定时生成），读不到时自动隐藏 -->
       ${STEAM?steamModuleHTML():""}
     </div>
   </section>`;
+  applyAboutCollapse();   /* 按上次的选择（或手机默认收起）应用折叠状态 */
 }
 
 /* ---------- 关于页里的项目模块（原独立「项目」页已并入此处） ---------- */
