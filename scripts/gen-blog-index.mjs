@@ -54,7 +54,7 @@ for (const name of readdirSync(blogDir)) {
   if (st.isDirectory()) {
     const idx = join(p, "index.md");
     if (existsSync(idx)) { mdPath = idx; slug = name; imgBase = `blog/${name}/`; }
-  } else if (/\.md$/i.test(name)) {
+  } else if (/\.md$/i.test(name) && !/\.en\.md$/i.test(name)) {
     mdPath = p; slug = name.replace(/\.md$/i, "");   /* 散篇 .md：图片放在 blog 根目录 */
   }
   if (!mdPath) continue;
@@ -62,7 +62,7 @@ for (const name of readdirSync(blogDir)) {
   const { meta, body } = parseFM(readFileSync(mdPath, "utf8"));
   const tags = Array.isArray(meta.tags) ? meta.tags
     : (meta.tags ? String(meta.tags).split(/[,，]/).map(x => x.trim()).filter(Boolean) : []);
-  posts.push({
+  const post = {
     slug,
     md: imgBase === "blog/" ? `blog/${name}` : `blog/${name}/index.md`,
     imgBase,
@@ -73,7 +73,23 @@ for (const name of readdirSync(blogDir)) {
     minutes: +meta.minutes || Math.max(1, Math.round(body.replace(/\s/g, "").length / 450)),
     cover: meta.cover || "",
     bg: meta.background || ""
-  });
+  };
+  /* 英文版（index.en.md / 名字.en.md，由 scripts/gen-blog-en.mjs 生成）存在时，
+     把英文正文地址与英文标题/摘要/标签一起塞进清单：
+     英文界面直接读静态英文，不再逐条机翻，首屏也不会有中英跳变 */
+  const enPath = st.isDirectory() ? join(p, "index.en.md") : join(blogDir, slug + ".en.md");
+  if (existsSync(enPath)) {
+    try {
+      const en = parseFM(readFileSync(enPath, "utf8")).meta;
+      const enTags = Array.isArray(en.tags) ? en.tags
+        : (en.tags ? String(en.tags).split(/[,，]/).map(x => x.trim()).filter(Boolean) : []);
+      post.mdEn = st.isDirectory() ? `blog/${name}/index.en.md` : `blog/${slug}.en.md`;
+      if (en.title) post.titleEn = en.title;
+      if (en.desc) post.descEn = en.desc;
+      if (enTags.length) post.tagsEn = enTags;
+    } catch (e) { /* 英文版读坏了就当没有，网站回退中文原文 */ }
+  }
+  posts.push(post);
 }
 posts.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 

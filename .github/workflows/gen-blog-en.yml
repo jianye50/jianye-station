@@ -1,0 +1,63 @@
+# 博客文章一有变动（新增 / 修改 / 删除），自动生成英文版 index.en.md 并提交。
+# 之后 gen-blog-index 会跟着更新 blog/index.json，Cloudflare Pages 自动重新部署，
+# 英文界面就直接读这份静态英文版，不再依赖浏览器临时机翻。
+#
+# 手动补翻历史文章：Actions → gen-blog-en → Run workflow（勾 force 可强制全部重译）。
+name: gen-blog-en
+on:
+  push:
+    paths:
+      - "blog/**"
+      - "!blog/*.en.md"          # 英文版自身的变化不再触发（否则会自己套自己）
+      - "!blog/**/*.en.md"
+      - "!blog/index.json"
+      - "scripts/gen-blog-en.mjs"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "强制重译全部文章（忽略内容哈希）"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-blog-en
+  cancel-in-progress: false      # 翻到一半被掐掉会白烧接口调用，绝不取消
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 生成 / 更新 / 清理英文版
+        env:
+          TR_DELAY_MS: "120"     # 每次请求的间隔，防止被限流
+        run: node scripts/gen-blog-en.mjs ${{ (github.event_name == 'workflow_dispatch' && inputs.force) && '--force' || '' }}
+
+      - name: 提交英文版
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A blog
+          if git diff --cached --quiet; then
+            echo "英文版无变化，跳过提交"
+            exit 0
+          fi
+          git commit -m "chore: 自动生成博客英文版（index.en.md）"
+          # 索引 Action 可能同时在写 index.json，push 前先 rebase，冲突就重试
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME}" >/dev/null 2>&1 || true
+            if git push; then echo "✓ 已推送"; break; fi
+            echo "push 失败，5 秒后重试（$i/3）"
+            sleep 5
+          done
