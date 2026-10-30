@@ -30,6 +30,9 @@ const UA =
 const CLOUD_CDN = "https://shared.cloudflare.steamstatic.com";
 const fixCapsule = (u) =>
   u ? u.replace(/^https:\/\/[^/]+/, CLOUD_CDN).split("?")[0] : "";
+/* Steam 素材直链：竖版海报（关于页卡片用）与横版头图（兜底） */
+const coverURL = (id) => `${CLOUD_CDN}/store_item_assets/steam/apps/${id}/library_600x900.jpg`;
+const headerURL = (id) => `${CLOUD_CDN}/store_item_assets/steam/apps/${id}/header.jpg`;
 
 const num = (s) => parseFloat(String(s).replace(/,/g, "")) || 0;
 
@@ -81,6 +84,8 @@ async function viaApi() {
     recent: games.map((g) => ({
       appid: g.appid,
       name: g.name || `App ${g.appid}`,
+      cover: coverURL(g.appid),
+      header: headerURL(g.appid),
       capsule: `https://steamcdn-a.akamaihd.net/steam/apps/${g.appid}/capsule_184x69.jpg`.replace(
         "steamcdn-a.akamaihd.net",
         "shared.cloudflare.steamstatic.com"
@@ -136,6 +141,8 @@ async function viaProfile() {
     recent.push({
       appid: +appid || null,
       name: name.trim(),
+      cover: appid ? coverURL(appid) : "",
+      header: appid ? headerURL(appid) : "",
       capsule: fixCapsule(cap) ||
         (appid ? `${CLOUD_CDN}/store_item_assets/steam/apps/${appid}/capsule_184x69.jpg` : ""),
       hoursTotal: hoursTotal || null,

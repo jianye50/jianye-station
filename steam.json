@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-30T16:27:58.703Z",
+  "updated": "2026-10-30T16:32:12.921Z",
   "source": "profile",
   "player": {
     "name": "鉴业",
@@ -12,6 +12,8 @@
     {
       "appid": 1260320,
       "name": "猛兽派对",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/header.jpg",
       "capsule": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/capsule_184x69.jpg",
       "hoursTotal": 475,
       "hours2weeks": null,
@@ -22,6 +24,8 @@
     {
       "appid": 1599600,
       "name": "速速上菜！",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1599600/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1599600/header.jpg",
       "capsule": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1599600/8b790826f395bda9aa3fd793d2fd71b4a9f4ee3d/capsule_184x69_schinese.jpg",
       "hoursTotal": 9.7,
       "hours2weeks": null,
@@ -32,6 +36,8 @@
     {
       "appid": 431960,
       "name": "Wallpaper Engine：壁纸引擎",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/431960/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/431960/header.jpg",
       "capsule": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/431960/capsule_184x69_schinese.jpg",
       "hoursTotal": 29,
       "hours2weeks": null,

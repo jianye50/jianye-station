@@ -668,32 +668,38 @@ body.lb-lock{overflow:hidden}
 }
 .socials a:hover{transform:translateY(-2px);box-shadow:var(--shadow);color:var(--text-1)}
 .socials a .dot{width:8px;height:8px;border-radius:50%;flex:none}
-/* Steam 游戏模块（关于页）：数据来自站点根目录 steam.json（GitHub Actions 每 6 小时生成推送） */
+/* Steam 游戏模块（关于页）：竖版海报卡片网格，数据来自站点根目录 steam.json（GitHub Actions 每 6 小时生成推送） */
 .steam-link{margin-left:auto;font-size:12.5px;color:var(--accent);font-weight:600;white-space:nowrap}
 .steam-link:hover{text-decoration:underline}
-.steam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(292px,1fr));gap:11px;margin-top:16px}
+.steam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(188px,1fr));gap:14px;margin-top:18px}
 .steam-game{
-  position:relative;overflow:hidden;display:flex;gap:13px;align-items:flex-start;
-  padding:14px 15px;border-radius:16px;border:1px solid var(--card-border);
-  background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(255,255,255,0) 58%),var(--bg-2);
+  position:relative;overflow:hidden;display:block;
+  aspect-ratio:2/3;border-radius:16px;
+  border:1px solid var(--card-border);background:var(--bg-2);
   transition:transform .25s cubic-bezier(.2,.7,.2,1),border-color .25s,box-shadow .25s;
 }
-.steam-game:hover{transform:translateY(-3px);border-color:rgba(102,192,244,.45);box-shadow:0 12px 30px rgba(0,0,0,.42)}
-.steam-game .steam-cap{
-  width:118px;aspect-ratio:184/69;object-fit:cover;border-radius:9px;flex:none;
-  background:var(--card);box-shadow:0 4px 14px rgba(0,0,0,.35);
+.steam-game:hover{transform:translateY(-4px);border-color:rgba(102,192,244,.5);box-shadow:0 14px 34px rgba(0,0,0,.5)}
+.steam-game .steam-bg{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;
+  transition:transform .5s cubic-bezier(.2,.7,.2,1);
 }
-.steam-meta{min-width:0;flex:1;padding-top:2px}
-.steam-meta h4{
-  font-size:14.5px;font-weight:700;color:var(--text-1);margin-bottom:4px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .2s;
+.steam-game:hover .steam-bg{transform:scale(1.06)}
+.steam-game .steam-shade{
+  position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(8,10,15,0) 42%,rgba(8,10,15,.55) 68%,rgba(8,10,15,.93) 100%);
 }
-.steam-game:hover .steam-meta h4{color:#66c0f4}
-.steam-meta p{font-size:12.5px;color:var(--text-3);line-height:1.55;margin:0 0 7px}
+.steam-info{position:absolute;left:0;right:0;bottom:0;padding:14px 15px}
+.steam-info h4{
+  font-size:14.5px;font-weight:700;color:#fff;margin-bottom:4px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  text-shadow:0 1px 8px rgba(0,0,0,.6);transition:color .2s;
+}
+.steam-game:hover .steam-info h4{color:#66c0f4}
+.steam-info p{font-size:12px;color:rgba(255,255,255,.78);line-height:1.55;margin:0 0 8px;text-shadow:0 1px 6px rgba(0,0,0,.6)}
 .steam-ach{display:flex;align-items:center;gap:8px}
-.steam-ach-bar{flex:1;height:5px;border-radius:99px;background:var(--card-border);overflow:hidden}
+.steam-ach-bar{flex:1;height:5px;border-radius:99px;background:rgba(255,255,255,.22);overflow:hidden}
 .steam-ach-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#4d8dff,#66c0f4)}
-.steam-ach span{font-size:11.5px;color:var(--text-3);font-weight:600;white-space:nowrap}
+.steam-ach span{font-size:11px;color:rgba(255,255,255,.85);font-weight:600;white-space:nowrap;text-shadow:0 1px 6px rgba(0,0,0,.6)}
 /* 友情链接（关于页底部）：自适应网格，加新朋友改站点根目录的 friends.txt 即可 */
 .friends-head{display:flex;align-items:center;gap:10px}
 .friends-count{
@@ -1172,11 +1178,15 @@ function steamModuleHTML(){
     if(g.hoursTotal!=null)meta.push(t.about.steamHours.replace("{h}",g.hoursTotal));
     if(g.last)meta.push(t.about.steamLast.replace("{d}",g.last));
     const pct=(g.achEarned!=null&&g.achTotal)?Math.min(100,Math.round(g.achEarned/g.achTotal*100)):null;
+    /* 封面三级兜底：竖版海报 → 横版头图 → 移除图片只留渐变底 */
+    const cover=g.cover||g.capsule||"";
+    const fb=g.header||(g.appid?`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/header.jpg`:"");
     return `
-    <a class="steam-game" href="https://steamcommunity.com/app/${g.appid||""}" target="_blank" rel="noopener">
-      <img class="steam-cap" src="${esc(g.capsule||"")}" alt="${esc(g.name)}" loading="lazy" decoding="async"
-           onerror="if(!this.dataset.f){this.dataset.f=1;this.src='https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid||0}/capsule_184x69.jpg'}else{this.style.display='none'}">
-      <div class="steam-meta">
+    <a class="steam-game" href="https://steamcommunity.com/app/${g.appid||""}" target="_blank" rel="noopener" title="${esc(g.name)}">
+      <img class="steam-bg" src="${esc(cover)}" alt="${esc(g.name)}" loading="lazy" decoding="async"
+           onerror="if(!this.dataset.f&&'${esc(fb)}'){this.dataset.f=1;this.src='${esc(fb)}'}else{this.remove()}">
+      <div class="steam-shade"></div>
+      <div class="steam-info">
         <h4>${esc(g.name)}</h4>
         ${meta.length?`<p>${esc(meta.join(" · "))}</p>`:""}
         ${pct!=null?`
