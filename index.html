@@ -706,6 +706,31 @@ body.lb-lock{overflow:hidden}
 }
 .steam-sec::before{content:"";width:14px;height:2px;border-radius:2px;background:var(--accent);opacity:.7}
 .steam-sec:first-of-type{margin-top:0}
+/* 好友：头像胶囊 + 状态点（灰=离线 绿=在线 蓝=游戏中） */
+.steam-friends{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
+.steam-friend{
+  display:flex;align-items:center;gap:9px;padding:7px 12px 7px 7px;
+  border-radius:12px;border:1px solid var(--card-border);background:var(--bg-2);
+  transition:transform .2s,border-color .2s,box-shadow .2s;
+}
+.steam-friend:hover{transform:translateY(-2px);border-color:rgba(102,192,244,.45);box-shadow:var(--shadow)}
+.steam-friend.sf-off{opacity:.62}
+.sf-ava{position:relative;width:30px;height:30px;flex:none}
+.sf-ava img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;background:var(--card)}
+.sf-dot{position:absolute;right:-2px;bottom:-2px;width:10px;height:10px;border-radius:50%;border:2px solid var(--bg-2)}
+.sf-dot.on{background:#57cb76}
+.sf-dot.play{background:#66c0f4}
+.sf-dot.off{background:#5b6472}
+.sf-info{min-width:0;display:flex;flex-direction:column;line-height:1.3}
+.sf-info b{
+  font-size:12.5px;font-weight:600;color:var(--text-1);
+  max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.steam-friend:hover .sf-info b{color:#66c0f4}
+.sf-info small{
+  font-size:10.5px;color:#66c0f4;
+  max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
 /* 友情链接（关于页底部）：自适应网格，加新朋友改站点根目录的 friends.txt 即可 */
 .friends-head{display:flex;align-items:center;gap:10px}
 .friends-count{
@@ -1221,6 +1246,19 @@ function steamModuleHTML(){
     <div class="steam-grid">
       ${s.most.map(gameRow).join("")}
     </div>`:""}
+    ${s.friends&&s.friends.length?`
+    <div class="steam-sec">${esc(t.about.steamFriends)}<span class="friends-count">${s.friends.length}</span></div>
+    <div class="steam-friends">
+      ${s.friends.map(f=>`
+      <a class="steam-friend${f.state===0?" sf-off":""}" href="${esc(f.profile)}" target="_blank" rel="noopener"
+         title="${f.playing?esc("正在玩 "+f.playing):(f.state===0?"离线":"在线")}">
+        <span class="sf-ava">
+          <img src="${esc(f.avatar)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">
+          <i class="sf-dot ${f.playing?"play":f.state===0?"off":"on"}"></i>
+        </span>
+        <span class="sf-info"><b>${esc(f.name)}</b>${f.playing?`<small>${esc(f.playing)}</small>`:""}</span>
+      </a>`).join("")}
+    </div>`:""}
   </div>`;
 }
 
@@ -1316,6 +1354,7 @@ const I18N={
       steamTitle:"游戏",
       steamRecentTitle:"最近在玩",
       steamMostTitle:"最常玩",
+      steamFriends:"Steam 好友",
       steamSub:"过去 2 周 {h} 小时 · 共 {g} 款游戏",
       steamHours:"总时长 {h} 小时",
       steamRecent:"近 2 周 {h} 小时",
@@ -1385,6 +1424,7 @@ const I18N={
       steamTitle:"Gaming",
       steamRecentTitle:"Recently Playing",
       steamMostTitle:"Most Played",
+      steamFriends:"Steam Friends",
       steamSub:"{h} hrs in the last 2 weeks · {g} games owned",
       steamHours:"{h} hrs total",
       steamRecent:"{h} hrs recently",

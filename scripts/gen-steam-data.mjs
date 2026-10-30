@@ -66,6 +66,8 @@ async function viaApi() {
   const p = player?.response?.players?.[0] || {};
   const games = (recent?.response?.total_count ? recent.response.games : []) || [];
   const all = (owned?.response?.games || []).slice();
+  /* 好友：名单 + 昵称/头像/在线状态/正在玩什么（能否看到对方游戏取决于对方隐私设置） */
+  const friends = await fetchFriends(get, steamid);
   const h1 = (min) => Math.round(((min || 0) / 60) * 10) / 10;
   const fmt = (ts) =>
     ts
@@ -98,6 +100,7 @@ async function viaApi() {
     totalGames: owned?.response?.game_count ?? null,
     hours2weeks:
       games.reduce((s, g) => s + (g.playtime_2weeks || 0), 0) / 60 || null,
+    friends,
     most,
     recent: games.map((g) => ({
       appid: g.appid,
@@ -203,6 +206,42 @@ async function viaProfile() {
     hours2weeks,
     recent,
   };
+}
+
+/* ---------------- 好友：名单 + 在线状态（API 通道专用） ----------------
+ * GetFriendList 拿 SteamID 名单，GetPlayerSummaries 批量补资料；
+ * 输出排序：正在玩 > 在线 > 离线。好友的游戏库是否可见由对方隐私决定，这里不查。 */
+async function fetchFriends(get, steamid) {
+  try {
+    const fl = await get(
+      `https://api.steampowered.com/ISteamUser/GetFriendList/v1/?key=${API_KEY}&steamid=${steamid}&relationship=friend`
+    ).catch(() => null);
+    const ids = (fl?.friendslist?.friends || []).map((f) => f.steamid);
+    if (!ids.length) return [];
+    const players = [];
+    for (let i = 0; i < ids.length; i += 100) { /* 摘要接口一次最多 100 个 */
+      const j = await get(
+        `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${API_KEY}&steamids=${ids.slice(i, i + 100).join(",")}`
+      );
+      players.push(...((j?.response?.players || [])));
+    }
+    return players
+      .map((p) => ({
+        name: p.personaname || "",
+        avatar: p.avatarmedium || p.avatar || "",
+        profile: p.profileurl || "",
+        state: p.personastate ?? 0, /* 0 离线 1 在线 2-6 忙/离开/ snooze…按在线算 */
+        playing: p.gameextrainfo || null,
+      }))
+      .sort((a, b) =>
+        (a.playing ? 0 : a.state === 0 ? 2 : 1) -
+        (b.playing ? 0 : b.state === 0 ? 2 : 1)
+      )
+      .slice(0, 30);
+  } catch (e) {
+    console.error("[steam] 好友数据获取失败（不影响其它数据）：", e.message);
+    return [];
+  }
 }
 
 /* ---------------- 数据增强：中文游戏名与成就进度（API 通道专用） ----------------
