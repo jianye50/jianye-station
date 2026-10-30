@@ -18,6 +18,8 @@
 <meta property="og:description" content="愿我们拥有的时候不要毁，失去的时候不要悔。">
 <meta property="og:url" content="https://jianye.pages.dev/">
 <meta property="og:image" content="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=75&auto=format">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
 <!-- 规范地址：hash 路由的 #/xxx 都是同一个文档，统一指向站点根 -->
 <link rel="canonical" href="https://jianye.pages.dev/">
@@ -71,6 +73,9 @@
   --shadow-lg:0 24px 60px rgba(0,0,0,.55);
   --hero-fallback:linear-gradient(160deg,#10141d 0%,#1d2637 55%,#3a2e22 100%);
   --img-placeholder:linear-gradient(135deg,#232c3e,#39455e);
+  /* 液态玻璃通用材质：导航 / hero 徽章 / 播放器面板 / 轻提示共用，改一处全局生效 */
+  --glass-grad:linear-gradient(120deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.07) 38%,rgba(255,255,255,.12) 62%,rgba(255,255,255,.05) 100%);
+  --glass-blur:blur(22px) saturate(200%) brightness(1.12);
   color-scheme:dark;
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -99,14 +104,9 @@ img{display:block;max-width:100%}
   max-width:calc(100vw - 24px);
   isolation:isolate;
   /* 液态玻璃基体：高透 + 折射感模糊 + 提亮 */
-  background:linear-gradient(
-    120deg,
-    rgba(255,255,255,.16) 0%,
-    rgba(255,255,255,.07) 38%,
-    rgba(255,255,255,.12) 62%,
-    rgba(255,255,255,.05) 100%);
-  backdrop-filter:blur(22px) saturate(200%) brightness(1.12);
-  -webkit-backdrop-filter:blur(22px) saturate(200%) brightness(1.12);
+  background:var(--glass-grad);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
   border:none;
   /* 液态玻璃棱边：外圈微光 + 顶部受光高光 + 底部收光 + 落影 */
   box-shadow:
@@ -210,14 +210,9 @@ img{display:block;max-width:100%}
   display:inline-flex;align-items:center;gap:8px;
   padding:7px 15px;border-radius:999px;
   /* 液态玻璃材质（同导航栏）：高透渐变 + 折射模糊 + 棱边高光 */
-  background:linear-gradient(
-    120deg,
-    rgba(255,255,255,.16) 0%,
-    rgba(255,255,255,.07) 38%,
-    rgba(255,255,255,.12) 62%,
-    rgba(255,255,255,.05) 100%);
-  backdrop-filter:blur(22px) saturate(200%) brightness(1.12);
-  -webkit-backdrop-filter:blur(22px) saturate(200%) brightness(1.12);
+  background:var(--glass-grad);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
   border:none;
   box-shadow:
     inset 0 0 0 1px rgba(255,255,255,.22),
@@ -600,10 +595,10 @@ body.lb-lock{overflow:hidden}
   position:absolute;left:22px;top:22px;z-index:2;
   display:flex;align-items:center;gap:2px;
   height:48px;padding:0 8px;border-radius:999px;   /* 与右上角 ✕ 同高同顶，保持同一平面 */
-  /* 液态玻璃胶囊（同导航栏材质） */
-  background:linear-gradient(120deg,rgba(255,255,255,.16),rgba(255,255,255,.07) 38%,rgba(255,255,255,.12) 62%,rgba(255,255,255,.05)),rgba(16,20,30,.35);
-  backdrop-filter:blur(20px) saturate(180%);
-  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  /* 液态玻璃胶囊（同导航栏材质，统一走 --glass 变量） */
+  background:var(--glass-grad),rgba(16,20,30,.35);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
   box-shadow:
     inset 0 0 0 1px rgba(255,255,255,.22),
     inset 0 1.5px .5px -1px rgba(255,255,255,.55),
@@ -975,7 +970,7 @@ setTimeout(function(){var b=document.getElementById("boot");if(b)b.classList.add
   <button class="lb-btn lb-prev" id="lbPrev" aria-label="上一张">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
   </button>
-  <img id="lbImg" src="" alt="">
+  <img id="lbImg" alt="">
   <span class="lb-spin" id="lbSpin" aria-hidden="true"></span>
   <video id="lbVideo" playsinline style="display:none"></video>
   <!-- 动态照片控制条（仿 Windows 照片）：动态开关 + 声音开关 -->
@@ -1614,7 +1609,11 @@ function applyLbMotion(){
     vid.controls=false; vid.loop=false;    /* Windows 同款：点一下只播一次，播完自动回静态 */
     vid.muted=!lbSoundOn;
     vid.currentTime=0;
-    if(vid.src!==p.live)vid.src=p.live;
+    /* vid.src 读出来恒为绝对地址，p.live 可能是相对路径 ——
+       直接比较永远不等，每次切换都会重新赋 src 触发重载；规范化后再比 */
+    let liveAbs=p.live;
+    try{ liveAbs=new URL(p.live,location.href).href; }catch(e){}
+    if(vid.src!==liveAbs)vid.src=p.live;
     lbWaitMedia(vid);                      /* 动态视频没加载出来前先转圈，不播黑屏 */
     vid.play().catch(()=>{
       /* 出声自动播放被拦 → 先静音播起来（声音开关还亮着，用户再点一下即可） */
@@ -1686,6 +1685,10 @@ function lbImgReset(){
   img.classList.remove("lb-ph");
   img.style.removeProperty("width");
   img.style.removeProperty("height");
+  /* 兜底换图的状态标记一并清掉：上一张用过 data-alt 兜底后若不清 data-s，
+     下一张带兜底的图会命中「已失败过」分支直接被隐藏 */
+  img.removeAttribute("data-alt");
+  delete img.dataset.s;
 }
 /* 灯箱图片的最终显示尺寸：视口约束内保持比例，且不超过清晰图原生尺寸（不拉伸放大）。
    有清晰图原生尺寸记录（p._vw/_vh，预取或首次加载时记下）就用它；
@@ -1845,6 +1848,7 @@ function setLbMedia(p){
     img.style.display="";
     applyLbSlide(img);
     img.removeAttribute("data-alt");
+    delete img.dataset.s;   /* 清掉上一张遗留的兜底失败标记，避免下一张兜底失效 */
     /* 先秒出已缓存的缩略图，再换清晰的 view 图 —— 切图不再空白 / 停在上一张 */
     showLbImage(p);
     if(p.fb){
@@ -2003,7 +2007,7 @@ function renderAbout(){
         <h1>${esc(t.about.title)}</h1>
       </div>
       <div class="about-card">
-        <div class="avatar">J<img src="${AVATAR}" alt="鉴业的头像" onerror="this.remove()"></div>
+        <div class="avatar">J<img src="${AVATAR}" alt="${esc(lang==="zh"?"鉴业的头像":"Jianye's avatar")}" decoding="async" onerror="this.remove()"></div>
         <h2>${esc(t.about.hello)}</h2>
         <p class="tagline">${esc(t.about.tagline)}</p>
         <p>${esc(t.about.bio1)}</p>
@@ -2294,6 +2298,9 @@ function parsePost(raw){
         try{v=JSON.parse(v);}
         catch(e){v=v.slice(1,-1).split(",").map(s=>s.trim().replace(/^["']|["']$/g,"")).filter(Boolean);}
       }else v=v.replace(/^["']|["']$/g,"");
+      /* 同时存原始键与小写键：title/cover 等小写键照常命中，
+         bgThumb 这类驼峰键也能按原样读到（只存小写会让它永远查不到） */
+      meta[kv[1]]=v;
       meta[kv[1].toLowerCase()]=v;
     });
     body=m[2];
@@ -2488,9 +2495,10 @@ function bindBlogSearch(){
   if(clr)clr.addEventListener("click",()=>{inp.value="";blogQuery="";applyBlogFilter();inp.focus();});
   bsSync();
 }
-/* 在博客页按「/」快速聚焦搜索框 */
+/* 在博客页按「/」快速聚焦搜索框（灯箱打开时不抢焦点） */
 document.addEventListener("keydown",e=>{
   if(e.key!=="/"||e.ctrlKey||e.metaKey||e.altKey)return;
+  if($("#lightbox").classList.contains("open"))return;
   const tag=((document.activeElement||{}).tagName||"");
   if(/^(INPUT|TEXTAREA|SELECT)$/.test(tag))return;
   const inp=document.getElementById("blogSearch");
@@ -2513,7 +2521,7 @@ async function renderBlog(){
     <div class="blog-search">
       <div class="bs-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
-        <input id="blogSearch" type="search" autocomplete="off" spellcheck="false"
+        <input id="blogSearch" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
                placeholder="${esc(t.blog.searchPh)}" aria-label="${esc(t.blog.searchPh)}">
         <button id="blogSearchClear" type="button" title="${esc(t.blog.clearTip)}" aria-label="${esc(t.blog.clearTip)}">✕</button>
       </div>
@@ -2581,6 +2589,7 @@ async function renderPost(slug){
   const {meta,body}=parsePost(raw);
   const title=meta.title||post.title||t.blog.untitled;
   const desc=meta.desc||post.desc||"";
+  document.title=title+" · "+t.brand;   /* 浏览器标签页 / 历史记录显示文章标题 */
   /* 标签归一化：front matter 里「tags: a, b」这种逗号写法解析出来是字符串，
      直接 .map 会抛 TypeError 导致整篇文章页渲染失败 —— 列表页已归一化，这里补上 */
   let tags=meta.tags||post.tags||[];
@@ -2618,19 +2627,23 @@ function glideTo(y,dur){
   const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;   /* easeInOutCubic：起停都柔 */
   let stop=false;
   const cancel=()=>{stop=true};
-  window.addEventListener("wheel",cancel,{once:true,passive:true});
-  window.addEventListener("touchstart",cancel,{once:true,passive:true});
+  /* once 监听器在动画正常结束时并不会被消费，会一直挂着等下一次滚动；
+     挂上 AbortController，结束/打断时主动撤掉，避免多次锚点导航累积监听器 */
+  const ac=("AbortController" in window)?new AbortController():null;
+  const opt=ac?{once:true,passive:true,signal:ac.signal}:{once:true,passive:true};
+  window.addEventListener("wheel",cancel,opt);
+  window.addEventListener("touchstart",cancel,opt);
   const root=document.documentElement,prev=root.style.scrollBehavior;
   root.style.scrollBehavior="auto";                    /* 逐帧设值，不能让 CSS smooth 插手 */
   let last=startY;                                     /* 单调钳制：杜绝任何帧间的 1px 回抖 */
   (function step(now){
-    if(stop){root.style.scrollBehavior=prev;return;}
+    if(stop){root.style.scrollBehavior=prev; if(ac)ac.abort(); return;}
     const p=Math.min(1,Math.max(0,(now-t0)/dur));
     const v=startY+d*ease(p);
     last=d>=0?Math.max(last,v):Math.min(last,v);
     window.scrollTo(0,last);
     if(p<1)requestAnimationFrame(step);
-    else root.style.scrollBehavior=prev;
+    else{root.style.scrollBehavior=prev; if(ac)ac.abort();}
   })(t0);
 }
 function route(){
@@ -2657,6 +2670,9 @@ function route(){
   else renderHome();
   document.querySelectorAll(".nav-link").forEach(el=>
     el.classList.toggle("active",el.dataset.nav===active));
+  /* 每页一个独立标题：浏览器历史记录能区分「博客 / 相册 / 关于」
+     （文章页等正文加载后会覆盖成文章标题，见 renderPost） */
+  document.title=(active==="home")?T().brand:(T().nav[active]+" · "+T().brand);
   /* 切页回到顶部：html 上挂着 scroll-behavior:smooth，
      这里先临时关掉再滚，免得每次切页都慢慢「滑」上去 */
   const root=document.documentElement,
@@ -2695,6 +2711,13 @@ $("#lbVideo").addEventListener("ended",()=>{
 });
 $("#lightbox").addEventListener("click",e=>{if(e.target.id==="lightbox")closeLb()});
 document.addEventListener("click",e=>{
+  /* 相册页在子相册里时 hash 仍是 #/gallery：再点导航「相册」不会触发 hashchange，
+     这里手动重置筛选回到全部相册，别让用户只能靠返回按钮出来 */
+  const nav=e.target.closest(".nav-link");
+  if(nav&&nav.dataset.nav==="gallery"&&galleryFilter){
+    const h=location.hash.replace(/^#\/?/,"");
+    if(h==="gallery"||h.indexOf("gallery/")===0){ galleryFilter=""; route(); return; }
+  }
   /* 首屏那个滚动提示：点一下平滑滚到相册预览 */
   const sc=e.target.closest("[data-scroll-to]");
   if(sc){
@@ -2835,10 +2858,10 @@ loadPhotos();
   padding:7px 13px;border-radius:12px;
   font-size:12px;font-weight:600;line-height:1.45;color:var(--text-1);
   /* 与导航栏一致的液态玻璃 */
-  background:linear-gradient(120deg,rgba(255,255,255,.16),rgba(255,255,255,.07) 38%,rgba(255,255,255,.12) 62%,rgba(255,255,255,.05));
+  background:var(--glass-grad);
   border:none;
-  backdrop-filter:blur(22px) saturate(200%) brightness(1.12);
-  -webkit-backdrop-filter:blur(22px) saturate(200%) brightness(1.12);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
   box-shadow:
     inset 0 0 0 1px rgba(255,255,255,.22),
     inset 0 1.5px .5px -1px rgba(255,255,255,.65),
@@ -2858,21 +2881,16 @@ loadPhotos();
 .mp-btn svg{width:15px;height:15px}
 .mp-btn.busy svg{animation:mpSpin .9s linear infinite}
 @keyframes mpSpin{to{transform:rotate(360deg)}}
-/* 展开的歌单面板：跟导航栏同一套「液态玻璃」材质 */
-.mp-panel{
-  pointer-events:auto;display:none;width:100%;
-  border-radius:22px;overflow:hidden;
-  isolation:isolate;
-  /* 液态玻璃基体：高透 + 折射感模糊 + 提亮（与标题栏一致） */
-  background:linear-gradient(
-    120deg,
-    rgba(255,255,255,.16) 0%,
-    rgba(255,255,255,.07) 38%,
-    rgba(255,255,255,.12) 62%,
-    rgba(255,255,255,.05) 100%);
-  backdrop-filter:blur(22px) saturate(200%) brightness(1.12);
-  -webkit-backdrop-filter:blur(22px) saturate(200%) brightness(1.12);
-  border:none;
+  /* 展开的歌单面板：跟导航栏同一套「液态玻璃」材质 */
+  .mp-panel{
+    pointer-events:auto;display:none;width:100%;
+    border-radius:22px;overflow:hidden;
+    isolation:isolate;
+    /* 液态玻璃基体：高透 + 折射感模糊 + 提亮（与标题栏一致） */
+    background:var(--glass-grad);
+    backdrop-filter:var(--glass-blur);
+    -webkit-backdrop-filter:var(--glass-blur);
+    border:none;
   /* 液态玻璃棱边：外圈微光 + 顶部受光高光 + 底部收光 + 落影 */
   box-shadow:
     inset 0 0 0 1px rgba(255,255,255,.22),
@@ -2994,7 +3012,7 @@ input[type=range].mp-range::-moz-range-thumb{
       <button class="mp-tab" data-tab="search">在线搜歌</button>
     </div>
     <div class="mp-search" id="mpSearchBar">
-      <input class="mp-input" id="mpSearchInput" placeholder="搜歌名 / 歌手，回车搜索" autocomplete="off">
+      <input class="mp-input" id="mpSearchInput" placeholder="搜歌名 / 歌手，回车搜索" autocomplete="off" enterkeyhint="search">
       <button class="mp-btn" id="mpSearchGo" title="搜索" aria-label="搜索">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
       </button>
