@@ -840,6 +840,10 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 .tr-spin{width:11px;height:11px;border-radius:50%;border:2px solid color-mix(in srgb,var(--accent) 30%,transparent);border-top-color:var(--accent);animation:trspin .8s linear infinite;flex:none}
 @keyframes trspin{to{transform:rotate(360deg)}}
 .tr-mt{font-size:12px;color:var(--text-3);border:1px solid var(--card-border);border-radius:999px;padding:1px 8px}
+/* 翻译失败时给一个可点的「重试」——网络抖一下不必刷新整页 */
+.tr-retry{font:inherit;font-size:12px;color:var(--text-2);background:none;border:1px solid var(--card-border);
+  border-radius:999px;padding:1px 8px;cursor:pointer;transition:color .2s,border-color .2s}
+.tr-retry:hover{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 50%,transparent)}
 @media (prefers-reduced-motion:reduce){.tr-spin{animation:none}}
 .post-body{max-width:760px;margin:0 auto;padding-top:8px;font-size:15.5px;line-height:1.95;color:var(--text-2)}
 .post-body h2{font-size:22px;color:var(--text-1);margin:34px 0 12px;letter-spacing:-.01em}
@@ -1166,7 +1170,8 @@ const I18N={
       kbdTip:"按 / 快速搜索",
       translating:"正在翻译成英文…",
       machineTrans:"机器翻译",
-      trFail:"自动翻译暂不可用，稍后再试"
+      trFail:"自动翻译暂不可用",
+      trRetry:"重试"
     },
     about:{
       title:"关于",hello:"你好，我是鉴业。",
@@ -1225,7 +1230,8 @@ const I18N={
       kbdTip:"Press / to search",
       translating:"Translating…",
       machineTrans:"Machine-translated",
-      trFail:"Auto-translation unavailable — try again later"
+      trFail:"Auto-translation unavailable",
+      trRetry:"Retry"
     },
     about:{
       title:"About",hello:"Hi, I'm Jianye.",
@@ -2656,10 +2662,10 @@ function hasCJK(s){return /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/.test(Strin
 const TR_PROXY="/api/translate";
 let trProxyDead=false;          /* 代理 404 一次就永久跳过（本地开发场景） */
 let trEngineId="";              /* 上次成功的引擎 id */
-let trBlockedUntil=0;           /* 全部引擎都失败后的静默窗口，别逐段重试白跑 */
 let trLocalState="";            /* ""=未探测 | available | downloadable */
 let trLocalReady=false;         /* 本地模型已就绪：优先用它，零请求零延迟 */
 let trLocal=null;               /* 本地翻译器实例（只建一次） */
+let trRetry=null;               /* 当前文章「重新翻译」入口（失败提示里的按钮用） */
 try{ trEngineId=localStorage.getItem("jy-tr-engine")||""; }catch(e){}
 /* 开机就悄悄探一下本地模型（只是查询状态，不会触发下载） */
 if("Translator" in self){
@@ -2678,22 +2684,23 @@ function trTimeout(ms){
 }
 /* 引擎 1：本站 Pages Function 代理（同域，国内可用） */
 async function trViaProxy(text){
-  if(trProxyDead)throw new Error("no proxy");
+  if(trProxyDead){const e=new Error("no proxy");e.skip=true;throw e;}   /* 环境问题，不计数 */
   const tk=trTimeout(9000);
   try{
     const r=await fetch(TR_PROXY,{method:"POST",signal:tk.signal,
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({q:text,from:"zh-CN",to:"en"})});
-    if(r.status===404){trProxyDead=true;throw new Error("no proxy");}
+    if(r.status===404){trProxyDead=true;const e=new Error("no proxy");e.skip=true;throw e;}
     if(!r.ok)throw new Error("proxy "+r.status);
     const j=await r.json();
     if(!j||typeof j.text!=="string"||!j.text.trim())throw new Error("proxy bad");
     return j.text;
   }finally{ tk.done(); }
 }
-/* 引擎 2：Google 翻译公开接口直连（境外网络/有代理时可用） */
+/* 引擎 2：Google 翻译公开接口直连（境外网络/有代理时可用）
+   超时压到 6 秒：国内被墙时请求会一直挂着，等满 9 秒纯属干耗，短一点能更快放弃 */
 async function trViaGoogle(text){
-  const tk=trTimeout(9000);
+  const tk=trTimeout(6000);
   try{
     const r=await fetch("https://translate.googleapis.com/translate_a/single"
       +"?client=gtx&sl=zh-CN&tl=en&dt=t&q="+encodeURIComponent(text),
@@ -2725,8 +2732,9 @@ function trChunks(text,max){
    只在模型已经就绪（availability === "available"）时才用：不替用户偷偷下载模型。
    Firefox / Safari 暂不支持，会瞬间跳过，不影响其它引擎。 */
 async function trViaLocal(text){
-  if(trLocalState==="downloadable")throw new Error("local model not ready");
-  if(!("Translator" in self)){trLocalState="downloadable";throw new Error("no local translator");}
+  const notReady=msg=>{const e=new Error(msg);e.skip=true;return e;};
+  if(trLocalState==="downloadable")throw notReady("local model not ready");
+  if(!("Translator" in self)){trLocalState="downloadable";throw notReady("no local translator");}
   if(!trLocalState){
     let av="";
     try{ av=await self.Translator.availability({sourceLanguage:"zh",targetLanguage:"en"}); }
@@ -2734,7 +2742,7 @@ async function trViaLocal(text){
     /* available=可直接用；downloadable/downloading/unavailable=这轮先不用 */
     trLocalState = av==="available" ? "available" : "downloadable";
   }
-  if(trLocalState!=="available")throw new Error("local model not ready");
+  if(trLocalState!=="available")throw notReady("local model not ready");
   trLocalReady=true;
   if(!trLocal){
     trLocal=await self.Translator.create({sourceLanguage:"zh",targetLanguage:"en"});
@@ -2750,25 +2758,43 @@ async function trViaLocal(text){
 }
 /* 引擎顺序：本地模型优先（零成本零延迟），其次同域代理，最后直连 */
 const TR_ENGINES=[{id:"local",run:trViaLocal},{id:"proxy",run:trViaProxy},{id:"google",run:trViaGoogle}];
-/* 每个引擎各自退避：连续失败两次就冷却 5 分钟，别让一篇长文几十段
-   反复去撞同一个被墙 / 被限流的通道（否则每段都要多等一个超时） */
+/* 引擎失败计数：只用来避免「同一篇文章内」反复撞死通道。
+   换一篇文章必定清零 —— 绝不能因为上一篇某几段失败，就把引擎冷却到下一篇。
+   只有「真的连不上、被拒」才计数；「本地模型没装 / 代理不存在」这类环境性原因
+   直接标记 skip，不参与计数，也不影响其它引擎。 */
 const trFail={};
+const TR_COOL_MS=90*1000;      /* 冷却时长：短一点，网络抖动后能很快恢复 */
+const TR_FAIL_MAX=3;           /* 同一篇内连续失败 3 次才冷却 */
 function trCooling(id){
   const f=trFail[id];
   return !!f&&f.until>Date.now();
 }
-function trMarkFail(id){
-  const f=trFail[id]||(trFail[id]={n:0,until:0});
+function trMarkFail(id,err){
+  if(err&&err.skip)return;
+  const now=Date.now();
+  const f=trFail[id]||(trFail[id]={n:0,until:0,since:now});
+  if(now-f.since>60000){f.n=0;f.since=now;}   /* 不是连续失败：重新计数 */
   f.n++;
-  if(f.n>=2)f.until=Date.now()+5*60*1000;
+  if(f.n>=TR_FAIL_MAX)f.until=now+TR_COOL_MS;
 }
 function trMarkOk(id){
   const f=trFail[id];
-  if(f){f.n=0;f.until=0;}
+  if(f){f.n=0;f.until=0;f.since=0;}
 }
+/* 换文章 / 重新渲染列表时调用：把上一轮的所有失败记录清空 */
+function trResetFail(){
+  for(const k in trFail)delete trFail[k];
+}
+/* 「重试」按钮：清空冷却与失败记录后重跑当前文章的翻译（不刷新页面） */
+document.addEventListener("click",e=>{
+  const el=e.target&&e.target.closest?e.target.closest(".tr-retry"):null;
+  if(!el)return;
+  el.disabled=true;
+  trResetFail();
+  if(typeof trRetry==="function")trRetry();
+});
 /* 统一入口：按「上次成功的引擎优先」依次尝试，全失败才抛错（调用方保留原文） */
 async function gTranslate(text){
-  if(Date.now()<trBlockedUntil)throw new Error("translation cooling down");
   /* 排序：本地模型就绪→最前（不花流量、不等网络）；其次上次成功的引擎；其余按原序 */
   const rank=e=>(e.id==="local"&&trLocalReady)?0:(e.id===trEngineId?1:2);
   const order=TR_ENGINES.slice().sort((a,b)=>rank(a)-rank(b));
@@ -2787,7 +2813,7 @@ async function gTranslate(text){
       }
     }catch(err){
       lastErr=err;
-      trMarkFail(e.id);
+      trMarkFail(e.id,err);
     }
   }
   throw lastErr||new Error("no engine");
@@ -2932,6 +2958,7 @@ let blogTrSeq=0;
 function translateBlogList(list){
   const seq=++blogTrSeq;   /* 列表每重渲染一次（含切回中文）都让在途翻译全部作废 */
   if(lang!=="en"||!Array.isArray(list)||!list.length)return;
+  trResetFail();           /* 每轮列表翻译都重新开始，不受上一轮失败影响 */
   const q=blogQuery;
   const slugSel=s=>".post-card[data-slug=\""+((window.CSS&&CSS.escape)?CSS.escape(s):String(s).replace(/"/g,""))+"\"]";
   trPool(list,4,async p=>{
@@ -3004,35 +3031,46 @@ async function renderPost(slug,gen){
   </section>`;
   /* 英文界面 + 中文文章：正文先按原文秒出，后台机器翻译，完成后无感替换（失败保留原文） */
   if(lang==="en"&&(hasCJK(body)||hasCJK(title)||hasCJK(desc))){
-    const pm=document.querySelector(".post-meta");
-    if(pm)pm.insertAdjacentHTML("beforeend",
-      `<span class="tr-note" id="trNote"><span class="tr-spin"></span>${esc(t.blog.translating)}</span>`);
     const curGen=gen;
-    translatePost(slug,title,desc,body,tags).then(r=>{
-      if(curGen!==undefined&&curGen!==routeGen)return;   /* 翻译期间用户切走了：别写新页面 */
-      const note=document.getElementById("trNote");
-      /* 一处都没翻成（额度用尽 / 网络受限）：明说「暂不可用」，别让人对着中文空等 */
-      const nothing=!r
-        ||(r.b===body&&r.t===title&&(r.g||[]).join("\u0000")===(tags||[]).join("\u0000"));
-      if(nothing){
-        if(note)note.innerHTML=`<span class="tr-mt">${esc(t.blog.trFail)}</span>`;
-        return;
+    /* 失败后可点「重试」：同一个 run 复用，不必刷新页面 */
+    const run=()=>{
+      const old=document.getElementById("trNote");
+      if(old)old.innerHTML=`<span class="tr-spin"></span>${esc(t.blog.translating)}`;
+      else{
+        const pm=document.querySelector(".post-meta");
+        if(pm)pm.insertAdjacentHTML("beforeend",
+          `<span class="tr-note" id="trNote"><span class="tr-spin"></span>${esc(t.blog.translating)}</span>`);
       }
-      if(note)note.remove();
-      const h1=document.querySelector(".post-head h1");
-      if(h1&&r.t)h1.textContent=r.t;
-      const pt=document.querySelector(".post-head .post-tags");
-      if(pt&&r.g&&r.g.length)pt.innerHTML=r.g.map(x=>`<span class="tag">${esc(x)}</span>`).join("");
-      const sub=document.querySelector(".post-sub");
-      if(sub&&r.d)sub.textContent=r.d;
-      const art=document.querySelector(".post-body");
-      if(art)art.innerHTML=mdToHTML(r.b,post.imgBase,post.imgMap);
-      const meta=document.querySelector(".post-meta");
-      if(meta)meta.insertAdjacentHTML("beforeend",`<span class="tr-mt">${esc(t.blog.machineTrans)}</span>`);
-    }).catch(()=>{
-      const note=document.getElementById("trNote");
-      if(note)note.remove();
-    });
+      translatePost(slug,title,desc,body,tags).then(r=>{
+        if(curGen!==undefined&&curGen!==routeGen)return;   /* 翻译期间用户切走了：别写新页面 */
+        const note=document.getElementById("trNote");
+        /* 一处都没翻成（通道全挂 / 网络受限）：给个「重试」，别让人对着中文空等 */
+        const nothing=!r
+          ||(r.b===body&&r.t===title&&(r.g||[]).join("\u0000")===(tags||[]).join("\u0000"));
+        if(nothing){
+          if(note)note.innerHTML=
+            `${esc(t.blog.trFail)} <button type="button" class="tr-retry">${esc(t.blog.trRetry)}</button>`;
+          return;
+        }
+        if(note)note.remove();
+        const h1=document.querySelector(".post-head h1");
+        if(h1&&r.t)h1.textContent=r.t;
+        const pt=document.querySelector(".post-head .post-tags");
+        if(pt&&r.g&&r.g.length)pt.innerHTML=r.g.map(x=>`<span class="tag">${esc(x)}</span>`).join("");
+        const sub=document.querySelector(".post-sub");
+        if(sub&&r.d)sub.textContent=r.d;
+        const art=document.querySelector(".post-body");
+        if(art)art.innerHTML=mdToHTML(r.b,post.imgBase,post.imgMap);
+        const meta=document.querySelector(".post-meta");
+        if(meta)meta.insertAdjacentHTML("beforeend",`<span class="tr-mt">${esc(t.blog.machineTrans)}</span>`);
+      }).catch(()=>{
+        const note=document.getElementById("trNote");
+        if(note)note.remove();
+      });
+    };
+    trResetFail();          /* 新文章：清空上一篇留下的失败记录，所有引擎重新试一遍 */
+    trRetry=run;            /* 供「重试」按钮调用 */
+    run();
   }
 }
 
