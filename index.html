@@ -835,6 +835,12 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 .post-head h1{font-size:clamp(26px,5vw,38px);font-weight:800;letter-spacing:-.02em;line-height:1.25;margin:0 0 10px}
 .post-head .post-sub{font-size:15px;color:var(--text-2);line-height:1.7;margin:0 0 12px}
 .post-meta{display:flex;align-items:center;gap:10px;color:var(--text-3);font-size:13px;padding-bottom:18px;border-bottom:1px solid var(--card-border)}
+/* 文章自动翻译：进行中提示 + 完成后的「机器翻译」标记 */
+.tr-note{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-size:12.5px}
+.tr-spin{width:11px;height:11px;border-radius:50%;border:2px solid color-mix(in srgb,var(--accent) 30%,transparent);border-top-color:var(--accent);animation:trspin .8s linear infinite;flex:none}
+@keyframes trspin{to{transform:rotate(360deg)}}
+.tr-mt{font-size:12px;color:var(--text-3);border:1px solid var(--card-border);border-radius:999px;padding:1px 8px}
+@media (prefers-reduced-motion:reduce){.tr-spin{animation:none}}
 .post-body{max-width:760px;margin:0 auto;padding-top:8px;font-size:15.5px;line-height:1.95;color:var(--text-2)}
 .post-body h2{font-size:22px;color:var(--text-1);margin:34px 0 12px;letter-spacing:-.01em}
 .post-body h3{font-size:18.5px;color:var(--text-1);margin:28px 0 10px}
@@ -1157,7 +1163,9 @@ const I18N={
       found:n=>`找到 ${n} 篇`,
       noResult:q=>`没有找到与「${q}」相关的文章，换个关键词试试。`,
       clearTip:"清空搜索",
-      kbdTip:"按 / 快速搜索"
+      kbdTip:"按 / 快速搜索",
+      translating:"正在翻译成英文…",
+      machineTrans:"机器翻译"
     },
     about:{
       title:"关于",hello:"你好，我是鉴业。",
@@ -1213,7 +1221,9 @@ const I18N={
       found:n=>`${n} post${n===1?"":"s"} found`,
       noResult:q=>`No posts match “${q}”. Try another keyword.`,
       clearTip:"Clear search",
-      kbdTip:"Press / to search"
+      kbdTip:"Press / to search",
+      translating:"Translating…",
+      machineTrans:"Machine-translated"
     },
     about:{
       title:"About",hello:"Hi, I'm Jianye.",
@@ -2618,6 +2628,95 @@ async function renderBlog(gen){
   bsSync();
 }
 
+/* ---------- 文章自动翻译：英文界面下把中文文章机器翻译成英文 ----------
+   做法：文章先按中文原样秒出，后台用免费的 Google 翻译接口（无需密钥）逐段翻译，
+   完成后无感替换正文；译文按「slug+内容指纹」缓存在 localStorage，第二次打开秒出。
+   Markdown 结构保护：代码块 / 图片 / 行内代码 / 链接地址 / 表格 / HTML 块不送翻，
+   行内元素用 SnPt<序号> 占位符摘出、译后还原；某一行翻译失败就保留原文，绝不白屏。 */
+const TR_TOKEN=/SnPt\s*(\d+)/g;
+function trHash(s){
+  let h=5381;
+  for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;
+  return (h>>>0).toString(36);
+}
+function hasCJK(s){return /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/.test(String(s));}
+/* Google 翻译免费接口（client=gtx）：返回 [[[译文,原文],…],…]，拼接第一层即全文 */
+async function gTranslate(text){
+  const r=await fetch("https://translate.googleapis.com/translate_a/single"
+    +"?client=gtx&sl=zh-CN&tl=en&dt=t&q="+encodeURIComponent(text),{cache:"no-cache"});
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  const j=await r.json();
+  if(!Array.isArray(j)||!Array.isArray(j[0]))throw new Error("bad response");
+  return j[0].map(p=>(p&&typeof p[0]==="string")?p[0]:"").join("");
+}
+/* 小型并发池：同时最多 limit 个任务，单个失败不影响其它 */
+function trPool(items,limit,fn){
+  return new Promise(res=>{
+    let idx=0,act=0;
+    const next=()=>{
+      if(idx>=items.length){ if(!act)res(); return; }
+      const it=items[idx++]; act++;
+      Promise.resolve().then(()=>fn(it)).catch(()=>{}).finally(()=>{act--;next();});
+    };
+    for(let k=0;k<limit&&k<items.length;k++)next();
+  });
+}
+/* 翻译一行：先把行内代码 / 图片 / 链接地址摘成占位符，只送纯文字去翻，译后还原 */
+async function translateLine(line){
+  const keep=[];
+  const stash=s=>{keep.push(s);return "SnPt"+(keep.length-1);};
+  try{
+    let work=line
+      .replace(/`[^`]+`/g,m=>stash(m))                                   /* 行内代码原样保留 */
+      .replace(/!\[[^\]]*\]\([^)\s]+[^)]*\)/g,m=>stash(m))               /* 图片原样保留 */
+      .replace(/\[([^\]]+)\]\(([^)\s]+)[^)]*\)/g,(m,txt,u)=>"["+txt+stash("]("+u+")")); /* 链接只翻文字 */
+    if(!hasCJK(work))return line;                                        /* 摘完没有中文了（纯链接行等） */
+    let out=await gTranslate(work);
+    out=out.replace(TR_TOKEN,(m,n)=>keep[+n]!==undefined?keep[+n]:m);
+    if(TR_TOKEN.test(out)){TR_TOKEN.lastIndex=0;return line;}            /* 占位符没还原干净 → 保原文 */
+    TR_TOKEN.lastIndex=0;
+    /* 链接结构被译坏（[ 数量对不上）也回退原文，宁可显示中文也不显示破图 */
+    const br=s=>(s.match(/\[/g)||[]).length;
+    if(br(out)!==br(line))return line;
+    return out;
+  }catch(e){ return line; }
+}
+/* 整篇 Markdown 翻译：按行分发，代码块 / 表格 / HTML / 纯图片行直接跳过 */
+async function translateMarkdown(md){
+  const lines=String(md).split(/\r?\n/);
+  const out=lines.slice();
+  const jobs=[];
+  let inCode=false;
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    if(/^\s*(```|~~~)/.test(line)){inCode=!inCode;out[i]=line;continue;}
+    if(inCode){out[i]=line;continue;}
+    if(!line.trim()
+      ||/^\s*(<|<!--|\||!\[)/.test(line)
+      ||/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)
+      ||!hasCJK(line)){ out[i]=line; continue; }
+    jobs.push({i,line});
+  }
+  await trPool(jobs,4,async job=>{ out[job.i]=await translateLine(job.line); });
+  return out.join("\n");
+}
+const TR_MEM=new Map();   /* 本次会话内缓存，避免同一篇文章来回切语言反复请求 */
+/* 翻译一篇完整文章（标题 + 摘要 + 正文），带 localStorage 持久缓存 */
+async function translatePost(slug,title,desc,body){
+  const key="jy-tr:"+slug+":"+trHash(title+"\u0000"+desc+"\u0000"+body);
+  try{ const c=localStorage.getItem(key); if(c)return JSON.parse(c); }catch(e){}
+  if(TR_MEM.has(key))return TR_MEM.get(key);
+  const [tt,dd,bb]=await Promise.all([
+    hasCJK(title)?gTranslate(title).catch(()=> ""):Promise.resolve(""),
+    desc&&hasCJK(desc)?gTranslate(desc).catch(()=> ""):Promise.resolve(""),
+    translateMarkdown(body)
+  ]);
+  const r={t:tt||title,d:dd||desc,b:bb};
+  TR_MEM.set(key,r);
+  try{ localStorage.setItem(key,JSON.stringify(r)); }catch(e){}   /* 存满就算了，会话内缓存还在 */
+  return r;
+}
+
 async function renderPost(slug,gen){
   const t=T();
   app.innerHTML=`<section class="view">
@@ -2671,6 +2770,30 @@ async function renderPost(slug,gen){
       <div class="post-end">${esc(t.blog.end)}</div>
     </div>
   </section>`;
+  /* 英文界面 + 中文文章：正文先按原文秒出，后台机器翻译，完成后无感替换（失败保留原文） */
+  if(lang==="en"&&(hasCJK(body)||hasCJK(title)||hasCJK(desc))){
+    const pm=document.querySelector(".post-meta");
+    if(pm)pm.insertAdjacentHTML("beforeend",
+      `<span class="tr-note" id="trNote"><span class="tr-spin"></span>${esc(t.blog.translating)}</span>`);
+    const curGen=gen;
+    translatePost(slug,title,desc,body).then(r=>{
+      if(curGen!==undefined&&curGen!==routeGen)return;   /* 翻译期间用户切走了：别写新页面 */
+      const note=document.getElementById("trNote");
+      if(note)note.remove();
+      if(!r||(r.b===body&&r.t===title))return;           /* 整篇都没翻成，保持原文 */
+      const h1=document.querySelector(".post-head h1");
+      if(h1&&r.t)h1.textContent=r.t;
+      const sub=document.querySelector(".post-sub");
+      if(sub&&r.d)sub.textContent=r.d;
+      const art=document.querySelector(".post-body");
+      if(art)art.innerHTML=mdToHTML(r.b,post.imgBase,post.imgMap);
+      const meta=document.querySelector(".post-meta");
+      if(meta)meta.insertAdjacentHTML("beforeend",`<span class="tr-mt">${esc(t.blog.machineTrans)}</span>`);
+    }).catch(()=>{
+      const note=document.getElementById("trNote");
+      if(note)note.remove();
+    });
+  }
 }
 
 /* ---------- 路由 ---------- */
