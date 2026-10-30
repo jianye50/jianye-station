@@ -17,11 +17,13 @@
 <meta property="og:title" content="鉴业の小站">
 <meta property="og:description" content="愿我们拥有的时候不要毁，失去的时候不要悔。">
 <meta property="og:url" content="https://jianye.pages.dev/">
-<meta property="og:image" content="https://jianye.pages.dev/wallpaper.avif">
+<meta property="og:image" content="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=75&auto=format">
 <meta name="twitter:card" content="summary_large_image">
 <!-- 规范地址：hash 路由的 #/xxx 都是同一个文档，统一指向站点根 -->
 <link rel="canonical" href="https://jianye.pages.dev/">
-<!-- 相册的 GitHub API 兜底通道，提前建连（壁纸已改本站根目录，不再依赖外站图床） -->
+<!-- 首屏大图所在的图床，提前建连 -->
+<link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+<!-- 相册的 GitHub API 兜底通道，提前建连 -->
 <link rel="preconnect" href="https://api.github.com" crossorigin>
 <!-- 语言：首次访问先按系统语言定好（中文→中文，其它语言→英文），
      免得英文用户先看到一闪而过的中文标题 / 语言标记。手动切换过的以本地保存为准。 -->
@@ -1317,60 +1319,6 @@ function nameOf(src){
   try{ return decodeURIComponent(raw); }catch(e){ return raw; }   /* 文件名含孤立 % 时别让整个图库挂掉 */
 }
 
-/* ---------- 首页 Hero 壁纸：每次访问从 wallpaper/ 文件夹随机挑一个 ----------
-   文件夹里各种格式都行：PNG/JPG/WebP/AVIF/GIF（GIF 天然会动），
-   视频则换成自动循环播放的静音 <video>。读取通道与图库一致：
-   先试服务器目录列表，不行再走 GitHub API 兜底；都失败就退回根目录的 wallpaper.avif */
-const WALLPAPER_DIR="wallpaper/";
-const WALL_FALLBACK="wallpaper/wallpaper.avif";   /* 文件夹读不到时的兜底（就在 wallpaper 文件夹里） */
-let heroWallpaperDone=false;   /* 一次页面加载只挑一次：首页/其他页来回切不反复换壁纸 */
-function setHeroWallpaper(src,isVideo,onFail){
-  const hero=document.querySelector(".hero");
-  if(!hero)return;
-  const old=hero.querySelector(".hero-img");
-  let el;
-  if(isVideo){
-    el=document.createElement("video");
-    el.className="hero-img";
-    el.muted=true; el.loop=true; el.autoplay=true;
-    el.setAttribute("muted","");          /* iOS Safari 要属性形式才放行自动播放 */
-    el.setAttribute("playsinline","");
-    el.setAttribute("aria-hidden","true");
-    el.addEventListener("error",()=>{ el.remove(); if(onFail)onFail(); },{once:true});
-  }else{
-    el=document.createElement("img");
-    el.className="hero-img";
-    el.alt=""; el.decoding="async";
-    el.addEventListener("error",()=>{ el.remove(); if(onFail)onFail(); },{once:true});
-  }
-  el.src=src;
-  /* 新壁纸真正能显示时才铺上去、撤掉旧的 —— 避免加载途中闪出底色 */
-  const show=()=>{ hero.prepend(el); if(old&&old!==el)old.remove(); if(isVideo)el.play().catch(()=>{}); };
-  if(isVideo){ el.addEventListener("loadeddata",show,{once:true}); }
-  else if(el.complete&&el.naturalWidth){ show(); }
-  else{ el.addEventListener("load",show,{once:true}); }
-}
-async function loadHeroWallpaper(){
-  /* 系统开了「减少动态效果」就只在静态图里挑，视频不参与 */
-  const rm=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let files=null;
-  try{
-    const scan=await listEntries(WALLPAPER_DIR)||await listEntriesGH(WALLPAPER_DIR);
-    if(scan&&scan.files&&scan.files.length)files=scan.files;
-  }catch(e){}
-  const pool=(files&&files.length)?(rm?files.filter(f=>!VID_RE.test(f)):files):null;
-  if(pool&&pool.length){
-    const pick=pool[Math.floor(Math.random()*pool.length)];
-    /* 挑中的壁纸加载失败（如视频格式浏览器不支持）→ 自动改选一张静态图顶上，
-       重试时传空回调防止连环重试 */
-    const vids=pool.filter(f=>VID_RE.test(f));
-    const imgs=pool.filter(f=>!VID_RE.test(f));
-    setHeroWallpaper(pick,VID_RE.test(pick),
-      ()=>{ if(imgs.length)setHeroWallpaper(imgs[Math.floor(Math.random()*imgs.length)],false); });
-    return;
-  }
-  setHeroWallpaper(WALL_FALLBACK,false);   /* 文件夹读不到 / 是空的 → 用文件夹里的兜底图 */
-}
 /* 装载整个相册库（下面的兜底扫描版本）：
    ① 扫 Photo Album 根目录（图片/视频 = 「全部」；子文件夹 = 子相册）
    ② 逐个扫描子相册里的媒体
@@ -1974,9 +1922,11 @@ function renderHome(){
   app.innerHTML=`
   <section class="view">
     <header class="hero">
-      <!-- 首屏兜底图：先秒显这张，wallpaper/ 文件夹里随机挑中的壁纸加载好后会无缝替换（见 loadHeroWallpaper） -->
-      <img class="hero-img"
-           src="wallpaper/wallpaper.avif"
+      <img class="hero-img" src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&q=78&auto=format"
+           srcset="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75&auto=format 800w,
+                   https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1400&q=78&auto=format 1400w,
+                   https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&q=78&auto=format 2000w"
+           sizes="100vw"
            alt="" fetchpriority="high" decoding="async" onerror="this.remove()">
       <div class="wrap hero-inner">
         <span class="hero-badge"><span class="pulse"></span>${esc(t.hero.badge)}</span>
@@ -2019,9 +1969,6 @@ function renderHome(){
     </div>
   </section>`;
   paintPhotoGrids();
-  /* Hero 壁纸：每次页面加载从 wallpaper/ 随机挑一个（图片/GIF/视频均可）。
-     一次加载只挑一次 —— 站内切去别的页再回首页不反复换 */
-  if(!heroWallpaperDone){ heroWallpaperDone=true; loadHeroWallpaper(); }
   setTimeout(prefetchBlog,600);   /* 闲时预取博客清单：点进博客秒开 */
 }
 
