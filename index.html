@@ -2644,14 +2644,82 @@ function trHash(s){
   return (h>>>0).toString(36);
 }
 function hasCJK(s){return /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/.test(String(s));}
-/* Google 翻译免费接口（client=gtx）：返回 [[[译文,原文],…],…]，拼接第一层即全文 */
+/* 翻译引擎链：本站代理（Cloudflare Pages Function）→ Google 直连 → MyMemory。
+   国内直接请求 translate.googleapis.com 会被墙，所以首选同域代理 /api/translate；
+   代理不可用（本地 http.server、未部署 functions）时自动退回直连；全挂了就保留中文。
+   第一次成功后记住这个引擎，后续请求直接走它，不再重复踩坑。 */
+const TR_PROXY="/api/translate";
+let trProxyDead=false;          /* 代理 404 一次就永久跳过（本地开发场景） */
+let trEngineId="";              /* 上次成功的引擎 id */
+try{ trEngineId=localStorage.getItem("jy-tr-engine")||""; }catch(e){}
+function trTimeout(ms){
+  const ac=new AbortController();
+  const timer=setTimeout(()=>ac.abort(),ms);
+  return {signal:ac.signal,done:()=>clearTimeout(timer)};
+}
+/* 引擎 1：本站 Pages Function 代理（同域，国内可用） */
+async function trViaProxy(text){
+  if(trProxyDead)throw new Error("no proxy");
+  const tk=trTimeout(9000);
+  try{
+    const r=await fetch(TR_PROXY,{method:"POST",signal:tk.signal,
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({q:text,from:"zh-CN",to:"en"})});
+    if(r.status===404){trProxyDead=true;throw new Error("no proxy");}
+    if(!r.ok)throw new Error("proxy "+r.status);
+    const j=await r.json();
+    if(!j||typeof j.text!=="string"||!j.text.trim())throw new Error("proxy bad");
+    return j.text;
+  }finally{ tk.done(); }
+}
+/* 引擎 2：Google 翻译公开接口直连（境外网络/有代理时可用） */
+async function trViaGoogle(text){
+  const tk=trTimeout(9000);
+  try{
+    const r=await fetch("https://translate.googleapis.com/translate_a/single"
+      +"?client=gtx&sl=zh-CN&tl=en&dt=t&q="+encodeURIComponent(text),
+      {cache:"no-cache",signal:tk.signal});
+    if(!r.ok)throw new Error("google "+r.status);
+    const j=await r.json();
+    if(!Array.isArray(j)||!Array.isArray(j[0]))throw new Error("google bad response");
+    const out=j[0].map(p=>(p&&typeof p[0]==="string")?p[0]:"").join("");
+    if(!out.trim())throw new Error("google empty");
+    return out;
+  }finally{ tk.done(); }
+}
+/* 引擎 3：MyMemory 兜底（免费免密钥，单次约 500 字符） */
+async function trViaMyMemory(text){
+  const tk=trTimeout(9000);
+  try{
+    const r=await fetch("https://api.mymemory.translated.net/get?langpair=zh-CN%7Cen&q="
+      +encodeURIComponent(text),{signal:tk.signal});
+    if(!r.ok)throw new Error("mymemory "+r.status);
+    const j=await r.json();
+    const s=j&&j.responseData&&j.responseData.translatedText;
+    if(typeof s!=="string"||!s.trim())throw new Error("mymemory empty");
+    if(/MYMEMORY WARNING|QUERY LENGTH LIMIT/i.test(s))throw new Error("mymemory quota");
+    return s.replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,"&");
+  }finally{ tk.done(); }
+}
+const TR_ENGINES=[{id:"proxy",run:trViaProxy},{id:"google",run:trViaGoogle},{id:"mymemory",run:trViaMyMemory}];
+/* 统一入口：按「上次成功的引擎优先」依次尝试，全失败才抛错（调用方保留原文） */
 async function gTranslate(text){
-  const r=await fetch("https://translate.googleapis.com/translate_a/single"
-    +"?client=gtx&sl=zh-CN&tl=en&dt=t&q="+encodeURIComponent(text),{cache:"no-cache"});
-  if(!r.ok)throw new Error("HTTP "+r.status);
-  const j=await r.json();
-  if(!Array.isArray(j)||!Array.isArray(j[0]))throw new Error("bad response");
-  return j[0].map(p=>(p&&typeof p[0]==="string")?p[0]:"").join("");
+  const order=TR_ENGINES.slice().sort((a,b)=>
+    a.id===trEngineId?-1:b.id===trEngineId?1:0);
+  let lastErr=null;
+  for(const e of order){
+    try{
+      const out=await e.run(text);
+      if(out&&out.trim()){
+        if(trEngineId!==e.id){
+          trEngineId=e.id;
+          try{ localStorage.setItem("jy-tr-engine",e.id); }catch(_){}
+        }
+        return out;
+      }
+    }catch(err){ lastErr=err; }
+  }
+  throw lastErr||new Error("no engine");
 }
 /* 小型并发池：同时最多 limit 个任务，单个失败不影响其它 */
 function trPool(items,limit,fn){
