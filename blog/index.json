@@ -1,6 +1,25 @@
 {
-  "generated": "2026-10-26T16:36:43.066Z",
+  "generated": "2026-10-30T05:32:55.841Z",
   "posts": [
+    {
+      "slug": "远程控制",
+      "md": "blog/远程控制/index.md",
+      "imgBase": "blog/远程控制/",
+      "title": "主流远程控制软件整理｜远程协助、运维、跨设备远程桌面工具推荐",
+      "desc": "前言 远程控制软件，也就是我们常说的远程桌面工具，不管是帮家人朋友远程修电脑、居家远程办公、服务器运维，还是手机远程操控电脑，都是非常实用的工具…",
+      "tags": [
+        "远程控制"
+      ],
+      "date": "2026-10-30",
+      "minutes": 4,
+      "cover": "1738905943819.jpeg",
+      "bg": "1738905943819.jpeg",
+      "imgs": {
+        "1738905943819.jpeg": "blog/thumbs/远程控制-i0.webp"
+      },
+      "coverThumb": "blog/thumbs/远程控制-cover.webp",
+      "bgThumb": "blog/thumbs/远程控制-bg.webp"
+    },
     {
       "slug": "3D咖啡店",
       "md": "blog/3D咖啡店/index.md",
