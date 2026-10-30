@@ -668,7 +668,7 @@ body.lb-lock{overflow:hidden}
 }
 .socials a:hover{transform:translateY(-2px);box-shadow:var(--shadow);color:var(--text-1)}
 .socials a .dot{width:8px;height:8px;border-radius:50%;flex:none}
-/* 友情链接（关于页底部）：自适应网格，加新朋友只往 FRIENDS 里加一条即可 */
+/* 友情链接（关于页底部）：自适应网格，加新朋友改站点根目录的 friends.txt 即可 */
 .friends-head{display:flex;align-items:center;gap:10px}
 .friends-count{
   font-size:11.5px;font-weight:700;line-height:1;
@@ -1044,15 +1044,9 @@ const SOCIALS=[
      中文名|英文名|中文描述|英文描述|网址|图标地址
    图标一栏可省略；行首带 # 的是注释；「表单|网址」单独一行设置申请表单。
    加朋友直接另起一行保存即可，不用动本文件（名称/描述里别用 | 字符）。
-   这里只留一份内置兜底（配置读不到时，比如 file:// 直接打开，仍能正常显示） */
-const FRIEND_FORM_DEFAULT="https://my.feishu.cn/share/base/form/shrcn33uvUS0WgKehGEiDMxZAHe"; /* 友链申请表单 */
-const FRIENDS_DEFAULT=[
-  {zh:"小刚PE",en:"XiaoGang PE",
-   dzh:"小刚PE 系统维护",den:"XiaoGang PE · System maintenance",
-   u:"https://www.xgpe.top",logo:"https://www.xgpe.top/images/logo.jpg"}
-];
-let FRIENDS=FRIENDS_DEFAULT;
-let FRIEND_FORM=FRIEND_FORM_DEFAULT;
+   本文件里不放任何友链数据，一切以 friends.txt 为准 */
+let FRIENDS=[];          /* 由 loadFriends() 从 friends.txt 读入 */
+let FRIEND_FORM="";      /* 友链申请表单地址，来自 friends.txt 的「表单|网址」行 */
 /* 解析 friends.txt 的行式配置 */
 function parseFriendsText(text){
   const out={form:"",friends:[]};
@@ -1069,23 +1063,16 @@ function parseFriendsText(text){
   return (out.friends.length||out.form)?out:null;
 }
 /* 读取友链配置：no-cache 保证改完配置刷新立即生效（没更新时走 304，不重复下载）。
-   friends.txt 读不到时再试旧的 friends.json（内容以 { 开头自动按 JSON 解析） */
+   配置读不到（file:// / 离线 / 忘了上传）时友链区保持隐藏，页面其余功能不受影响 */
 async function loadFriends(){
   let j=null;
   try{
     const r=await fetch("friends.txt",{cache:"no-cache"});
     if(r.ok){
       const text=await r.text();
-      if(/^\s*\{/.test(text)){ try{ j=JSON.parse(text); }catch(e){} }
-      else j=parseFriendsText(text);
+      j=/^\s*\{/.test(text)?null:parseFriendsText(text);
     }
   }catch(e){}
-  if(!j){
-    try{
-      const r=await fetch("friends.json",{cache:"no-cache"});
-      if(r.ok)j=await r.json();
-    }catch(e){}
-  }
   if(!j)return;
   if(typeof j.form==="string"&&j.form)FRIEND_FORM=j.form;
   if(Array.isArray(j.friends)&&j.friends.length)FRIENDS=j.friends;
@@ -2090,11 +2077,11 @@ function renderAbout(){
         </div>
       </div>
 
-      ${FRIENDS.length?`
+      ${(FRIENDS.length||FRIEND_FORM)?`
       <div class="about-card">
         <div class="friends-head">
           <div class="section-label" style="margin:0">${esc(t.about.friends)}</div>
-          <span class="friends-count">${FRIENDS.length}</span>
+          ${FRIENDS.length?`<span class="friends-count">${FRIENDS.length}</span>`:""}
         </div>
         <p class="friends-sub">${esc(t.about.friendsSub)}</p>
         <div class="friend-grid">
@@ -2115,7 +2102,8 @@ function renderAbout(){
               <path d="M7 17 17 7"/><path d="M9 7h8v8"/>
             </svg>
           </a>`;}).join("")}
-          <a class="friend friend-apply" href="${FRIEND_FORM}" target="_blank" rel="noopener">
+          ${FRIEND_FORM?`
+          <a class="friend friend-apply" href="${esc(FRIEND_FORM)}" target="_blank" rel="noopener">
             <div class="friend-logo">
               <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
                    stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
@@ -2130,7 +2118,7 @@ function renderAbout(){
                  stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M7 17 17 7"/><path d="M9 7h8v8"/>
             </svg>
-          </a>
+          </a>`:""}
         </div>
       </div>`:""}
     </div>
@@ -2901,7 +2889,7 @@ document.addEventListener("keydown",e=>{
 /* ---------- 启动 ---------- */
 setLang(lang);     /* 统一走 setLang：品牌名、导航文案、语言按钮、云空间入口提示都按语言铺一遍 */
 loadPhotos();
-loadFriends();     /* 异步读 friends.json：读到前先用内置兜底渲染，读到后如停在关于页则原地刷新 */
+loadFriends();     /* 异步读 friends.txt：配置到达时如正停在关于页，原地重绘友链区 */
 /* 首屏与导航文案就绪 → 淡出启动加载屏（顺带移除 DOM） */
 (function(){
   const b=document.getElementById("boot");
