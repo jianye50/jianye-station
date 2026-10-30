@@ -1606,6 +1606,7 @@ function applyLbMotion(){
     vid.muted=!lbSoundOn;
     vid.currentTime=0;
     if(vid.src!==p.live)vid.src=p.live;
+    lbWaitMedia(vid);                      /* 动态视频没加载出来前先转圈，不播黑屏 */
     vid.play().catch(()=>{
       /* 出声自动播放被拦 → 先静音播起来（声音开关还亮着，用户再点一下即可） */
       if(!vid.muted){ vid.muted=true; vid.play().catch(()=>{}); }
@@ -1657,6 +1658,18 @@ function lbPlayMotion(p){
    现在改成并行后少一个 RTT，且首帧往往直接命中缓存。 */
 let lbImgToken=0;
 let lbAnimDir=0;    /* 灯箱切换方向（stepLb 设置）：>0 下一张、<0 上一张、0=非切换打开（不播滑入） */
+let lbVidToken=0;   /* 视频/动态视频的等待代次：换片后旧回调不得误撤新片的转圈 */
+/* 视频类媒体（普通视频 / 动态照片的动态视频）加载期间显示转圈，
+   直到真正有帧数据（loadeddata）或确认失败（error）才撤 ——
+   让用户明确知道当前看到的还不是完整内容。已就绪（回看/切回）时不加圈。 */
+function lbWaitMedia(el){
+  if(el.readyState>=2)return;        /* HAVE_CURRENT_DATA 及以上：画面已经有了 */
+  const vtok=++lbVidToken, lb=$("#lightbox");
+  lb.classList.add("lb-busy");
+  const done=()=>{ if(vtok===lbVidToken)lb.classList.remove("lb-busy"); };
+  el.addEventListener("loadeddata",done,{once:true});
+  el.addEventListener("error",done,{once:true});
+}
 function lbImgReset(){
   const img=$("#lbImg");
   img.onload=img.onerror=null;
@@ -1684,8 +1697,10 @@ function showLbImage(p){
            :(p.thumb&&p.thumb!==view)?p.thumb:"";
   img.onload=img.onerror=null;
 
-  /* ⓪ 同一帧铺上这张图自己的画面；外框一步到位就是「最终显示尺寸」，
-     之后缩略图/清晰图升级只换内容、不换尺寸 —— 修复切图时先大后小一顿一顿的问题 */
+  /* ⓪ 同一帧铺上这张图自己的画面；外框先按已知信息估一个，
+     之后每级画面（缩略图/清晰图）到位都会按「实际画面的真实比例」校正外框 ——
+     显示内容永远不会被裁剪或拉伸。此前外框只信元数据估算值，比例一旦估错，
+     占位图被 object-fit:cover 裁掉一块，要等清晰图到了才「变全」 */
   img.classList.add("lb-ph");
   const dims=lbBoxDims(p);
   if(dims){
@@ -1704,8 +1719,9 @@ function showLbImage(p){
   }else{
     img.removeAttribute("src");
   }
+  /* 转圈直到「清晰图真正落地」才撤（见 paint / Promise.all）——
+     之前缩略图一到就撤，用户会误以为看到的低清画面就是最终效果 */
   $("#lightbox").classList.add("lb-busy");
-  if(rank>=1)$("#lightbox").classList.remove("lb-busy");   /* 已经有真图垫底，不用转圈 */
 
   const load=(url,saveDims)=>new Promise(res=>{
     if(!url)return res(null);
@@ -1714,32 +1730,34 @@ function showLbImage(p){
     i.onload=()=>{
       /* 记下清晰图原生尺寸：本次及之后切回这张时，占位框直接按最终尺寸算 */
       if(saveDims){ p._vw=i.naturalWidth; p._vh=i.naturalHeight; }
-      res(url);
+      res({url:url,w:i.naturalWidth,h:i.naturalHeight});
     };
     i.onerror=()=>res(null);
     i.src=url;
   });
-  const paint=(url,r)=>{
-    if(!url||token!==lbImgToken||r<rank)return;
+  /* 按实际画面的宽高比校正外框：
+     keepScale=true（缩略图级）→ 保持当前宽度、只修高度，尺寸不跳；
+     keepScale=false（清晰图级）→ 这就是最终真实尺寸，完整重算 */
+  const fixBox=(nw,nh,keepScale)=>{
+    if(!nw||!nh)return;
+    const aspect=nw/nh;
+    const curW=parseFloat(img.style.width)||0;
+    const w=(keepScale&&curW)?curW:Math.min(innerWidth*0.88, nw, innerHeight*0.8*aspect);
+    img.style.width=w+"px";
+    img.style.height=(w/aspect)+"px";
+  };
+  const paint=(pic,r)=>{
+    if(!pic||token!==lbImgToken||r<rank)return;
     rank=r;
     img.classList.remove("lb-ph");
-    /* 占位框全程不摘：缩略图→清晰图只换内容、不换尺寸。
-       只有「首开且没预取记录」时清晰图原生尺寸才知道，这里按它校正一次外框
-       （此前是每级升级都摘框重排，图片一下大一下小，切起来一顿一顿） */
-    if(r===2){
-      const d=lbBoxDims(p);
-      if(d){ img.style.width=d[0]+"px"; img.style.height=d[1]+"px"; }
-      else{ img.style.removeProperty("width"); img.style.removeProperty("height"); }
-    }
-    img.src=url;
-    /* 一旦画面上已经是「真图」（哪怕只是缩略图），就别再转圈了 ——
-       用户已经能看到照片，剩下的只是从模糊/低清变清晰 */
-    $("#lightbox").classList.remove("lb-busy");
+    fixBox(pic.w,pic.h,r===1);
+    img.src=pic.url;
+    if(r===2)$("#lightbox").classList.remove("lb-busy");   /* 清晰图落地才撤转圈 */
   };
-  /* ① 两路并行：缩略图先到先上，清晰图到了再升级 */
+  /* ① 两路并行：缩略图先到先上（顺带校正比例），清晰图到了再升级 */
   const jobs=[];
-  if(mid&&rank<1)jobs.push(load(mid).then(u=>paint(u,1)));
-  jobs.push(load(view,true).then(u=>{ if(u)paint(u,2); }));
+  if(mid)jobs.push(load(mid).then(pic=>paint(pic,1)));
+  jobs.push(load(view,true).then(pic=>{ if(pic)paint(pic,2); }));
   Promise.all(jobs).then(()=>{
     if(token!==lbImgToken)return;
     $("#lightbox").classList.remove("lb-busy");
@@ -1805,11 +1823,11 @@ function setLbMedia(p){
   if(p.type==="video"){
     lbImgToken++;                 /* 作废还没回来的图片回调 */
     lbImgReset();
-    $("#lightbox").classList.remove("lb-busy");
     img.style.display="none";
     vid.style.display="";
     applyLbSlide(vid);
     vid.controls=true; vid.muted=false; vid.loop=false;   /* 只播一遍，播完停在结尾 */
+    lbWaitMedia(vid);             /* 转圈直到视频真正出画面（loadeddata），加载中不装作已就绪 */
     vid.src=p.src;
     /* 打开视频默认自动播放一遍；带声播放被浏览器拦时先静音播起来 */
     vid.play().catch(()=>{ vid.muted=true; vid.play().catch(()=>{}); });
