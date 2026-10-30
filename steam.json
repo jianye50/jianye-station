@@ -1,0 +1,43 @@
+{
+  "updated": "2026-10-30T16:23:04.046Z",
+  "source": "profile",
+  "player": {
+    "name": "鉴业",
+    "avatar": "https://avatars.akamai.steamstatic.com/b72e7a6487c6bd07eb5e95c24474fed86f320b93_full.jpg",
+    "url": "https://steamcommunity.com/id/aimjianye/"
+  },
+  "totalGames": 35,
+  "hours2weeks": 20.7,
+  "recent": [
+    {
+      "appid": 1260320,
+      "name": "猛兽派对",
+      "capsule": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/capsule_184x69.jpg",
+      "hoursTotal": 475,
+      "hours2weeks": null,
+      "last": "10 月 30 日",
+      "achEarned": 116,
+      "achTotal": 116
+    },
+    {
+      "appid": 1599600,
+      "name": "速速上菜！",
+      "capsule": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1599600/8b790826f395bda9aa3fd793d2fd71b4a9f4ee3d/capsule_184x69_schinese.jpg",
+      "hoursTotal": 9.7,
+      "hours2weeks": null,
+      "last": "10 月 30 日",
+      "achEarned": 8,
+      "achTotal": 26
+    },
+    {
+      "appid": 431960,
+      "name": "Wallpaper Engine：壁纸引擎",
+      "capsule": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/431960/capsule_184x69_schinese.jpg",
+      "hoursTotal": 29,
+      "hours2weeks": null,
+      "last": "10 月 30 日",
+      "achEarned": 6,
+      "achTotal": 17
+    }
+  ]
+}

@@ -668,6 +668,32 @@ body.lb-lock{overflow:hidden}
 }
 .socials a:hover{transform:translateY(-2px);box-shadow:var(--shadow);color:var(--text-1)}
 .socials a .dot{width:8px;height:8px;border-radius:50%;flex:none}
+/* Steam 游戏模块（关于页）：数据来自站点根目录 steam.json（GitHub Actions 每 6 小时生成推送） */
+.steam-link{margin-left:auto;font-size:12.5px;color:var(--accent);font-weight:600;white-space:nowrap}
+.steam-link:hover{text-decoration:underline}
+.steam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(292px,1fr));gap:11px;margin-top:16px}
+.steam-game{
+  position:relative;overflow:hidden;display:flex;gap:13px;align-items:flex-start;
+  padding:14px 15px;border-radius:16px;border:1px solid var(--card-border);
+  background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(255,255,255,0) 58%),var(--bg-2);
+  transition:transform .25s cubic-bezier(.2,.7,.2,1),border-color .25s,box-shadow .25s;
+}
+.steam-game:hover{transform:translateY(-3px);border-color:rgba(102,192,244,.45);box-shadow:0 12px 30px rgba(0,0,0,.42)}
+.steam-game .steam-cap{
+  width:118px;aspect-ratio:184/69;object-fit:cover;border-radius:9px;flex:none;
+  background:var(--card);box-shadow:0 4px 14px rgba(0,0,0,.35);
+}
+.steam-meta{min-width:0;flex:1;padding-top:2px}
+.steam-meta h4{
+  font-size:14.5px;font-weight:700;color:var(--text-1);margin-bottom:4px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .2s;
+}
+.steam-game:hover .steam-meta h4{color:#66c0f4}
+.steam-meta p{font-size:12.5px;color:var(--text-3);line-height:1.55;margin:0 0 7px}
+.steam-ach{display:flex;align-items:center;gap:8px}
+.steam-ach-bar{flex:1;height:5px;border-radius:99px;background:var(--card-border);overflow:hidden}
+.steam-ach-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#4d8dff,#66c0f4)}
+.steam-ach span{font-size:11.5px;color:var(--text-3);font-weight:600;white-space:nowrap}
 /* 友情链接（关于页底部）：自适应网格，加新朋友改站点根目录的 friends.txt 即可 */
 .friends-head{display:flex;align-items:center;gap:10px}
 .friends-count{
@@ -1112,6 +1138,69 @@ async function loadFriends(){
   }
 }
 
+/* ---------- Steam 游戏模块：数据来自站点根目录的 steam.json ----------
+   steam.json 由 GitHub Actions 每 6 小时跑 scripts/gen-steam-data.mjs 自动生成推送，
+   Cloudflare Pages 随之重新部署；读不到（本地 file:// / 还没上传）时整个模块隐藏，不影响其它区域 */
+let STEAM=null;          /* 由 loadSteam() 从 steam.json 读入 */
+async function loadSteam(){
+  let j=null;
+  try{
+    const r=await fetch("steam.json",{cache:"no-cache"});
+    if(r.ok)j=await r.json();
+  }catch(e){}
+  if(!j||!Array.isArray(j.recent)||!j.recent.length)return;
+  STEAM=j;
+  /* 数据到达时正停在关于页 → 原地重绘游戏区（保住滚动位置，不打断浏览） */
+  if(/^#\/about/.test(location.hash)){
+    const root=document.documentElement,prev=root.style.scrollBehavior;
+    root.style.scrollBehavior="auto";
+    const y=window.scrollY;
+    renderAbout();
+    window.scrollTo(0,y);
+    root.style.scrollBehavior=prev;
+  }
+}
+/* Steam 模块的 HTML：最近玩过的游戏卡片（封面 / 时长 / 成就进度条） */
+function steamModuleHTML(){
+  const t=T(),s=STEAM;
+  const sub=[];
+  if(s.hours2weeks)sub.push(t.about.steamSub.replace("{h}",s.hours2weeks).split(" · ")[0]);
+  if(s.totalGames)sub.push((lang==="zh"?`共 ${s.totalGames} 款游戏`:`${s.totalGames} games owned`));
+  const gameRow=g=>{
+    const meta=[];
+    if(g.hours2weeks!=null)meta.push(t.about.steamRecent.replace("{h}",g.hours2weeks));
+    if(g.hoursTotal!=null)meta.push(t.about.steamHours.replace("{h}",g.hoursTotal));
+    if(g.last)meta.push(t.about.steamLast.replace("{d}",g.last));
+    const pct=(g.achEarned!=null&&g.achTotal)?Math.min(100,Math.round(g.achEarned/g.achTotal*100)):null;
+    return `
+    <a class="steam-game" href="https://steamcommunity.com/app/${g.appid||""}" target="_blank" rel="noopener">
+      <img class="steam-cap" src="${esc(g.capsule||"")}" alt="${esc(g.name)}" loading="lazy" decoding="async"
+           onerror="if(!this.dataset.f){this.dataset.f=1;this.src='https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid||0}/capsule_184x69.jpg'}else{this.style.display='none'}">
+      <div class="steam-meta">
+        <h4>${esc(g.name)}</h4>
+        ${meta.length?`<p>${esc(meta.join(" · "))}</p>`:""}
+        ${pct!=null?`
+        <div class="steam-ach">
+          <div class="steam-ach-bar"><i style="width:${pct}%"></i></div>
+          <span>${g.achEarned} / ${g.achTotal}${pct===100?" "+t.about.steamAchFull:""}</span>
+        </div>`:""}
+      </div>
+    </a>`;
+  };
+  return `
+  <div class="about-card" id="aboutSteam">
+    <div class="friends-head">
+      <div class="section-label" style="margin:0">${esc(t.about.steamTitle)}</div>
+      <span class="friends-count">${s.totalGames||s.recent.length}</span>
+      <a class="steam-link" href="${esc((s.player&&s.player.url)||"https://steamcommunity.com/id/aimjianye/")}" target="_blank" rel="noopener">${esc(t.about.steamProfile)}</a>
+    </div>
+    ${sub.length?`<p class="friends-sub">${esc(sub.join(" · "))}</p>`:""}
+    <div class="steam-grid">
+      ${s.recent.map(gameRow).join("")}
+    </div>
+  </div>`;
+}
+
 /* ---------- 相册：媒体来自站点根目录下的「Photo Album」文件夹 ----------
    Photo Album 里的照片/视频是「全部」；里面再建的子文件夹是各自的相册，
    子文件夹之间互不混淆（图库页顶部会列出相册卡片，点进去只看该相册）。
@@ -1200,7 +1289,14 @@ const I18N={
       friends:"友情链接",
       friendsSub:"这些朋友的站点，也欢迎逛逛",
       friendApply:"申请友链",
-      friendApplySub:"填写表单提交申请"
+      friendApplySub:"填写表单提交申请",
+      steamTitle:"游戏",
+      steamSub:"过去 2 周 {h} 小时 · 共 {g} 款游戏",
+      steamHours:"总时长 {h} 小时",
+      steamRecent:"近 2 周 {h} 小时",
+      steamLast:"最后游玩 {d}",
+      steamAchFull:"满成就",
+      steamProfile:"前往 Steam 主页 →"
     },
     footer:"© 2026 Jianye · 用心血手写"
   },
@@ -1260,7 +1356,14 @@ const I18N={
       friends:"Friendly Links",
       friendsSub:"Sites from friends — worth a visit",
       friendApply:"Apply for a Link",
-      friendApplySub:"Fill in the form to apply"
+      friendApplySub:"Fill in the form to apply",
+      steamTitle:"Gaming",
+      steamSub:"{h} hrs in the last 2 weeks · {g} games owned",
+      steamHours:"{h} hrs total",
+      steamRecent:"{h} hrs recently",
+      steamLast:"Last played {d}",
+      steamAchFull:"100%",
+      steamProfile:"Open Steam profile →"
     },
     footer:"© 2026 Jianye · Handcrafted"
   }
@@ -2109,6 +2212,9 @@ function renderAbout(){
           ${projectsGridHTML()}
         </div>
       </div>
+
+      <!-- Steam 游戏模块：数据来自站点根目录 steam.json（GitHub Actions 定时生成），读不到时自动隐藏 -->
+      ${STEAM?steamModuleHTML():""}
 
       ${(FRIENDS.length||FRIEND_FORM)?`
       <div class="about-card">
@@ -3361,6 +3467,7 @@ document.addEventListener("keydown",e=>{
 setLang(lang);     /* 统一走 setLang：品牌名、导航文案、语言按钮、云空间入口提示都按语言铺一遍 */
 loadPhotos();
 loadFriends();     /* 异步读 friends.txt：配置到达时如正停在关于页，原地重绘友链区 */
+loadSteam();       /* 异步读 steam.json：GitHub Actions 定时生成，到达时同理重绘游戏区 */
 /* 首屏与导航文案就绪 → 淡出启动加载屏（顺带移除 DOM）
    先打标记：上面的兜底计时器靠它判断「主脚本已经接管」，不会再抢着揭幕 */
 (function(){

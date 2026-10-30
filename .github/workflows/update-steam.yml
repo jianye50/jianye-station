@@ -1,0 +1,54 @@
+# 定时更新 Steam 游戏数据 → 提交 steam.json → Cloudflare Pages 自动重新部署
+#
+# 数据通道：
+#   · 不配置 Secret 也能跑：脚本会抓取公开 Steam 主页解析（要求游戏详情对所有人公开）
+#   · 想要更全的数据（含每款游戏过去 2 周时长）：
+#     到 https://steamcommunity.com/dev/apikey 免费申请 Key，
+#     在仓库 Settings → Secrets and variables → Actions 添加 Secret「STEAM_API_KEY」即可
+#
+# 时区说明：cron 用 UTC。0 */6 * * * = 每天北京时间 08:00 / 14:00 / 20:00 / 02:00
+
+name: Update Steam data
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # 每 6 小时一次
+  workflow_dispatch:          # 支持在 Actions 页面手动触发
+  push:
+    paths:
+      - "scripts/gen-steam-data.mjs"   # 脚本改动后立即校验一次
+
+permissions:
+  contents: write             # 需要推回 steam.json
+
+concurrency:
+  group: update-steam
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate steam.json
+        run: node scripts/gen-steam-data.mjs
+        env:
+          STEAM_ID: aimjianye            # Steam 自定义 URL 或 17 位 SteamID64
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
+
+      - name: Commit steam.json if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add steam.json
+          if git diff --cached --quiet; then
+            echo "数据无变化，跳过提交"
+          else
+            git commit -m "chore: 更新 Steam 游戏数据 ($(date -u '+%Y-%m-%d %H:%M') UTC)"
+            git push
+          fi
