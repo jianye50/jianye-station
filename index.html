@@ -1301,7 +1301,11 @@ async function resolveGHUrls(dir,names){
     let ok=false;
     try{
       const probe=await fetch(new URL(encodeURIComponent(names[0]),base).href,{method:"HEAD"});
-      ok=probe.ok;
+      /* 关键：SPA 回退会让不存在的路径也返回 200 + 网页 HTML（Cloudflare Pages 就是），
+         只看状态码会误判「文件可直链」，导致视频/图片地址指向网页、永远加载失败。
+         必须连 content-type 一起验：是网页的一律不算数，退回 raw 直链 */
+      const ct=(probe.headers.get("content-type")||"").toLowerCase();
+      ok=probe.ok&&!ct.includes("text/html");
     }catch(e){}
     if(ok)return names.map(n=>new URL(encodeURIComponent(n),base).href);
   }
@@ -1318,9 +1322,9 @@ function nameOf(src){
    视频则换成自动循环播放的静音 <video>。读取通道与图库一致：
    先试服务器目录列表，不行再走 GitHub API 兜底；都失败就退回根目录的 wallpaper.avif */
 const WALLPAPER_DIR="wallpaper/";
-const WALL_FALLBACK="wallpaper.avif";
+const WALL_FALLBACK="wallpaper/wallpaper.avif";   /* 文件夹读不到时的兜底（就在 wallpaper 文件夹里） */
 let heroWallpaperDone=false;   /* 一次页面加载只挑一次：首页/其他页来回切不反复换壁纸 */
-function setHeroWallpaper(src,isVideo){
+function setHeroWallpaper(src,isVideo,onFail){
   const hero=document.querySelector(".hero");
   if(!hero)return;
   const old=hero.querySelector(".hero-img");
@@ -1332,12 +1336,12 @@ function setHeroWallpaper(src,isVideo){
     el.setAttribute("muted","");          /* iOS Safari 要属性形式才放行自动播放 */
     el.setAttribute("playsinline","");
     el.setAttribute("aria-hidden","true");
-    el.addEventListener("error",()=>el.remove(),{once:true});
+    el.addEventListener("error",()=>{ el.remove(); if(onFail)onFail(); },{once:true});
   }else{
     el=document.createElement("img");
     el.className="hero-img";
     el.alt=""; el.decoding="async";
-    el.addEventListener("error",()=>el.remove(),{once:true});
+    el.addEventListener("error",()=>{ el.remove(); if(onFail)onFail(); },{once:true});
   }
   el.src=src;
   /* 新壁纸真正能显示时才铺上去、撤掉旧的 —— 避免加载途中闪出底色 */
@@ -1357,10 +1361,15 @@ async function loadHeroWallpaper(){
   const pool=(files&&files.length)?(rm?files.filter(f=>!VID_RE.test(f)):files):null;
   if(pool&&pool.length){
     const pick=pool[Math.floor(Math.random()*pool.length)];
-    setHeroWallpaper(pick,VID_RE.test(pick));
+    /* 挑中的壁纸加载失败（如视频格式浏览器不支持）→ 自动改选一张静态图顶上，
+       重试时传空回调防止连环重试 */
+    const vids=pool.filter(f=>VID_RE.test(f));
+    const imgs=pool.filter(f=>!VID_RE.test(f));
+    setHeroWallpaper(pick,VID_RE.test(pick),
+      ()=>{ if(imgs.length)setHeroWallpaper(imgs[Math.floor(Math.random()*imgs.length)],false); });
     return;
   }
-  setHeroWallpaper(WALL_FALLBACK,false);   /* 文件夹读不到 / 是空的 → 用根目录兜底图 */
+  setHeroWallpaper(WALL_FALLBACK,false);   /* 文件夹读不到 / 是空的 → 用文件夹里的兜底图 */
 }
 /* 装载整个相册库（下面的兜底扫描版本）：
    ① 扫 Photo Album 根目录（图片/视频 = 「全部」；子文件夹 = 子相册）
@@ -1967,7 +1976,7 @@ function renderHome(){
     <header class="hero">
       <!-- 首屏兜底图：先秒显这张，wallpaper/ 文件夹里随机挑中的壁纸加载好后会无缝替换（见 loadHeroWallpaper） -->
       <img class="hero-img"
-           src="wallpaper.avif"
+           src="wallpaper/wallpaper.avif"
            alt="" fetchpriority="high" decoding="async" onerror="this.remove()">
       <div class="wrap hero-inner">
         <span class="hero-badge"><span class="pulse"></span>${esc(t.hero.badge)}</span>
