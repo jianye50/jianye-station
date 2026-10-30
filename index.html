@@ -1651,6 +1651,16 @@ function lbImgReset(){
   img.style.removeProperty("width");
   img.style.removeProperty("height");
 }
+/* 灯箱图片的最终显示尺寸：视口约束内保持比例，且不超过清晰图原生尺寸（不拉伸放大）。
+   有清晰图原生尺寸记录（p._vw/_vh，预取或首次加载时记下）就用它；
+   没有记录时按原图尺寸估 —— 原图远大于视口，算出的就是约束框，与最终一致 */
+function lbBoxDims(p){
+  const nw=p._vw||p.w||0, nh=p._vh||p.h||0;
+  if(!nw||!nh)return null;
+  const aspect=nw/nh;
+  const w=Math.min(innerWidth*0.88, nw, innerHeight*0.8*aspect);
+  return [w, w/aspect];
+}
 function showLbImage(p){
   const img=$("#lbImg");
   const token=++lbImgToken;
@@ -1660,12 +1670,13 @@ function showLbImage(p){
            :(p.thumb&&p.thumb!==view)?p.thumb:"";
   img.onload=img.onerror=null;
 
-  /* ⓪ 同一帧铺上这张图自己的画面 */
+  /* ⓪ 同一帧铺上这张图自己的画面；外框一步到位就是「最终显示尺寸」，
+     之后缩略图/清晰图升级只换内容、不换尺寸 —— 修复切图时先大后小一顿一顿的问题 */
   img.classList.add("lb-ph");
-  if(p.w&&p.h){
-    const box=Math.min(innerWidth*0.88, innerHeight*0.8*(p.w/p.h));
-    img.style.width=box+"px";
-    img.style.height=(box*p.h/p.w)+"px";
+  const dims=lbBoxDims(p);
+  if(dims){
+    img.style.width=dims[0]+"px";
+    img.style.height=dims[1]+"px";
   }else{
     img.style.removeProperty("width");
     img.style.removeProperty("height");
@@ -1682,20 +1693,30 @@ function showLbImage(p){
   $("#lightbox").classList.add("lb-busy");
   if(rank>=1)$("#lightbox").classList.remove("lb-busy");   /* 已经有真图垫底，不用转圈 */
 
-  const load=url=>new Promise(res=>{
-    if(!url)return res("");
+  const load=(url,saveDims)=>new Promise(res=>{
+    if(!url)return res(null);
     const i=new Image();
     i.decoding="async";
-    i.onload=()=>res(url);
-    i.onerror=()=>res("");
+    i.onload=()=>{
+      /* 记下清晰图原生尺寸：本次及之后切回这张时，占位框直接按最终尺寸算 */
+      if(saveDims){ p._vw=i.naturalWidth; p._vh=i.naturalHeight; }
+      res(url);
+    };
+    i.onerror=()=>res(null);
     i.src=url;
   });
   const paint=(url,r)=>{
     if(!url||token!==lbImgToken||r<rank)return;
     rank=r;
     img.classList.remove("lb-ph");
-    img.style.removeProperty("width");
-    img.style.removeProperty("height");
+    /* 占位框全程不摘：缩略图→清晰图只换内容、不换尺寸。
+       只有「首开且没预取记录」时清晰图原生尺寸才知道，这里按它校正一次外框
+       （此前是每级升级都摘框重排，图片一下大一下小，切起来一顿一顿） */
+    if(r===2){
+      const d=lbBoxDims(p);
+      if(d){ img.style.width=d[0]+"px"; img.style.height=d[1]+"px"; }
+      else{ img.style.removeProperty("width"); img.style.removeProperty("height"); }
+    }
     img.src=url;
     /* 一旦画面上已经是「真图」（哪怕只是缩略图），就别再转圈了 ——
        用户已经能看到照片，剩下的只是从模糊/低清变清晰 */
@@ -1704,7 +1725,7 @@ function showLbImage(p){
   /* ① 两路并行：缩略图先到先上，清晰图到了再升级 */
   const jobs=[];
   if(mid&&rank<1)jobs.push(load(mid).then(u=>paint(u,1)));
-  jobs.push(load(view).then(u=>{ if(u)paint(u,2); }));
+  jobs.push(load(view,true).then(u=>{ if(u)paint(u,2); }));
   Promise.all(jobs).then(()=>{
     if(token!==lbImgToken)return;
     $("#lightbox").classList.remove("lb-busy");
@@ -1722,7 +1743,12 @@ function preloadLbNeighbors(){
     const p=lbItems[(k+n)%n];
     if(!p||p.type==="video")return;
     const view=p.view||p.src;
-    if(view){ const a=new Image(); a.decoding="async"; a.src=view; }
+    if(view){
+      const a=new Image(); a.decoding="async";
+      /* 顺手记下原生尺寸：等真切到这张时，占位框第一次就能按最终尺寸画 */
+      if(!p._vw)a.onload=()=>{ p._vw=a.naturalWidth; p._vh=a.naturalHeight; };
+      a.src=view;
+    }
   });
 }
 /* 点击/悬停时「预热」：把瓷砖里已经解码好的那张位图记到 p 上（灯箱可直接复用），
@@ -1740,7 +1766,9 @@ function lbPreheat(tile){
   }
   if(p.type!=="video"&&!p._viewPreloaded){
     p._viewPreloaded=true;
-    const a=new Image(); a.decoding="async"; a.src=p.view||p.src;
+    const a=new Image(); a.decoding="async";
+    if(!p._vw)a.onload=()=>{ p._vw=a.naturalWidth; p._vh=a.naturalHeight; };
+    a.src=p.view||p.src;
   }
   return p;
 }
