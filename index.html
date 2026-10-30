@@ -818,6 +818,37 @@ body.lb-lock{overflow:hidden}
 .friend-apply:hover{border-color:rgba(77,141,255,.42);box-shadow:none}
 .friend-apply:hover .friend-info h4{color:var(--accent)}
 .friends-sub{margin:8px 0 0;font-size:13px;color:var(--text-3)}
+/* 关于页手机端紧凑化：海报从“一行 1 张大图”改为“一行 3 张宫格”，全卡片收紧
+   （放在本段基础样式之后，保证媒体查询里的覆盖不被层叠顺序吃掉） */
+@media (max-width:640px){
+  .about-card{padding:26px 16px;margin-bottom:16px;border-radius:18px}
+  /* 模块标题行（GAMING · 44 · Open Steam profile → · 刷新）小屏允许换行，不再挤爆 */
+  .friends-head{flex-wrap:wrap;row-gap:7px}
+  .steam-refresh{margin-left:0}
+  .steam-link{font-size:12px}
+  /* 海报宫格：一行固定 3 张，间隙收小 */
+  .steam-grid{grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
+  .steam-game{border-radius:11px}
+  .steam-game:hover{transform:none}           /* 触屏没有 hover，避免点击时残留上浮 */
+  .steam-info{padding:8px 9px 7px}
+  .steam-info h4{font-size:11.5px;margin-bottom:2px}
+  .steam-info p{
+    font-size:10px;margin-bottom:5px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;  /* 时长信息单行截断，不再两行堆叠 */
+  }
+  .steam-ach{gap:5px}
+  .steam-ach-bar{height:4px}
+  .steam-ach span{font-size:9.5px}
+  .steam-sec{margin-top:18px;font-size:12.5px}
+  /* 好友胶囊收紧 */
+  .steam-friends{gap:7px;margin-top:10px}
+  .steam-friend{padding:5px 9px 5px 5px;border-radius:10px}
+  .sf-ava{width:26px;height:26px}
+  .sf-info b{font-size:11.5px;max-width:92px}
+  .sf-info small{max-width:104px;font-size:9.5px}
+  /* 友链卡片收紧 */
+  .friend{padding:11px 12px;border-radius:13px}
+}
 /* ============ 博客（列表 + 文章） ============ */
 .blog-year{display:flex;align-items:center;gap:14px;margin:28px 0 14px;color:var(--text-3);font-size:13px;font-weight:700;letter-spacing:.06em}
 .blog-year::before{content:"";width:26px;height:2px;background:var(--accent);border-radius:2px}
