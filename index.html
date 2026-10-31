@@ -50,6 +50,161 @@
   if(s!=="zh") document.title="Jianye's Corner";
 })();
 </script>
+<!-- ============ 开发者工具拦截 ============
+     先把话说清楚：浏览器端没有任何办法真正「禁止」打开开发者工具。
+     用户仍可以通过浏览器菜单、禁用 JS、抓包代理等方式看到全部内容 ——
+     前端能做的只有提高门槛 + 发出信号。这段代码做三件事：
+       1) 屏蔽 F12 / Ctrl+Shift+I·J·C·K / Ctrl+U·S 等快捷键与右键菜单；
+       2) 静音 console，避免顺手翻看输出；
+       3) 定时比对视口尺寸，发现面板被拉出（停靠式）就用遮罩挡住页面并要求关闭，
+          关闭后自动恢复，不需要刷新。
+     站长自己调试：地址后加 ?dev=1，或控制台执行 localStorage.setItem("jy-dev","1")。 -->
+<script>
+(function(){
+  if(window.__JY_GUARD)return; window.__JY_GUARD=1;
+
+  /* 站长调试开关：整体放行 */
+  try{
+    if(/[?&]dev=1(?:&|$)/.test(location.search))return;
+    if(localStorage.getItem("jy-dev")==="1")return;
+  }catch(e){}
+
+  /* ---------- 1. 快捷键：F12 / 检查面板 / 查看源码 / 保存网页 ---------- */
+  var INSPECT={73:1,74:1,67:1,75:1};                 /* I J C K */
+  document.addEventListener("keydown",function(e){
+    var k=e.keyCode||e.which||0;
+    var mod=e.ctrlKey||e.metaKey;
+    var hit=false;
+    if(k===123)hit=true;                                       /* F12 */
+    else if(mod&&e.shiftKey&&INSPECT[k])hit=true;               /* Ctrl/Cmd+Shift+I J C K */
+    else if(mod&&e.altKey&&INSPECT[k])hit=true;                 /* macOS Cmd+Option+I J C */
+    else if(mod&&!e.shiftKey&&!e.altKey&&(k===85||k===83))hit=true; /* Ctrl+U 源码 / Ctrl+S 保存 */
+    if(hit){ e.preventDefault(); e.stopPropagation(); }
+  },true);
+
+  /* ---------- 2. 右键菜单：输入框、可编辑区域放行，别影响正常复制粘贴 ---------- */
+  document.addEventListener("contextmenu",function(e){
+    var t=e.target||{}, tag=(t.tagName||"").toLowerCase();
+    if(tag==="input"||tag==="textarea"||t.isContentEditable)return;
+    e.preventDefault();
+  },true);
+
+  /* ---------- 3. 控制台静音 ---------- */
+  try{
+    var mute=function(){};
+    ["log","info","warn","debug","table","dir","trace","clear"].forEach(function(m){
+      try{ console[m]=mute; }catch(e){}
+    });
+  }catch(e){}
+
+  /* ---------- 4. 打开检测 + 遮罩 ---------- */
+  var on=false, box=null;
+  var TXT={
+    zh:{title:"请先关闭开发者工具",
+        desc:"检测到浏览器开发者工具处于打开状态。为保护站点内容，页面暂时不可用；关闭面板后会自动恢复。",
+        hint:"内容受保护 · 请尊重原创"},
+    en:{title:"Close DevTools to continue",
+        desc:"Browser developer tools were detected. The page is paused to protect its content and will resume once the panel is closed.",
+        hint:"Content protected"}
+  };
+  function tx(){ return (window.__JY_LANG==="en")?TXT.en:TXT.zh; }
+
+  function build(){
+    if(box)return box;
+    box=document.createElement("div");
+    box.id="jy-guard";
+    box.setAttribute("role","alertdialog");
+    box.setAttribute("aria-live","assertive");
+    box.innerHTML=
+      '<div class="jg-card">'+
+        '<span class="jg-lock" aria-hidden="true">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+
+            '<rect x="4" y="10.5" width="16" height="10.5" rx="2.4"/>'+
+            '<path d="M8 10.5V7.6a4 4 0 0 1 8 0v2.9"/>'+
+          '</svg>'+
+        '</span>'+
+        '<h2 class="jg-title"></h2>'+
+        '<p class="jg-desc"></p>'+
+        '<span class="jg-hint"></span>'+
+      '</div>';
+    (document.body||document.documentElement).appendChild(box);
+    return box;
+  }
+  function paint(){
+    if(!box)return;
+    var t=tx();
+    box.querySelector(".jg-title").textContent=t.title;
+    box.querySelector(".jg-desc").textContent=t.desc;
+    box.querySelector(".jg-hint").textContent=t.hint;
+    box.setAttribute("aria-label",t.title);
+  }
+  function show(){
+    if(!document.body)return;      /* 脚本在 head 里跑，body 还没出来时下一轮轮询再补 */
+    on=true;
+    build();
+    paint();                       /* 先建后写，否则首次弹出是空标题 */
+    box.classList.add("on");
+    document.documentElement.classList.add("jy-guard-on");
+  }
+  function hide(){
+    on=false;
+    if(box)box.classList.remove("on");
+    document.documentElement.classList.remove("jy-guard-on");
+  }
+
+  /* 停靠式面板会把视口挤小：outer 与 inner 的差值会突然变大。
+     触屏设备基本打不开开发者工具，窄屏下直接跳过，免得误判。 */
+  function docked(){
+    if(window.innerWidth<820)return false;
+    if(!window.outerWidth)return false;
+    return (window.outerWidth-window.innerWidth>170)||(window.outerHeight-window.innerHeight>170);
+  }
+  function watch(){
+    var hit=docked();
+    if(hit&&!on)show();
+    else if(!hit&&on)hide();
+  }
+  setInterval(watch,700);
+  window.addEventListener("resize",watch);
+  document.addEventListener("DOMContentLoaded",watch);
+  watch();
+})();
+</script>
+<style>
+/* ============ 开发者工具拦截遮罩（#jy-guard） ============ */
+#jy-guard{
+  position:fixed;inset:0;z-index:2147483647;
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  background:rgba(6,8,13,.985);
+  -webkit-backdrop-filter:blur(18px) saturate(120%);
+  backdrop-filter:blur(18px) saturate(120%);
+  opacity:0;visibility:hidden;
+  transition:opacity .18s ease,visibility .18s;
+  font-family:var(--font,system-ui,sans-serif);
+}
+#jy-guard.on{opacity:1;visibility:visible}
+html.jy-guard-on,html.jy-guard-on body{overflow:hidden!important}
+.jg-card{
+  width:min(460px,100%);padding:34px 30px 28px;text-align:center;
+  border-radius:var(--radius,20px);
+  background:var(--card,#151923);
+  border:1px solid var(--card-border,rgba(255,255,255,.08));
+  box-shadow:var(--shadow-lg,0 24px 60px rgba(0,0,0,.55));
+}
+.jg-lock{
+  width:54px;height:54px;margin:0 auto 18px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:16px;color:var(--accent,#4d8dff);
+  background:var(--accent-soft,rgba(77,141,255,.14));
+}
+.jg-lock svg{width:26px;height:26px}
+.jg-card h2{margin:0 0 10px;font-size:19px;font-weight:650;line-height:1.4;color:var(--text-1,#f4f5f7)}
+.jg-card p{margin:0;font-size:13.5px;line-height:1.75;color:var(--text-2,rgba(244,245,247,.68))}
+.jg-hint{
+  display:block;margin-top:18px;font-size:11.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text-3,rgba(244,245,247,.42));
+}
+</style>
 <style>
 /* ===================== 主题变量 =====================
    站点固定深色（<html data-theme="dark">），不再有浅色皮肤，
