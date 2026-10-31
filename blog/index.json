@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-31T09:34:57.145Z",
+  "generated": "2026-10-31T09:37:50.311Z",
   "posts": [
     {
       "slug": "拥有时不毁，失去时不悔",
@@ -222,6 +222,31 @@
       },
       "coverThumb": "blog/thumbs/系统激活命令-cover.webp",
       "bgThumb": "blog/thumbs/系统激活命令-bg.webp"
+    },
+    {
+      "slug": "鉴业PE 维护系统介绍",
+      "md": "blog/鉴业PE 维护系统介绍/index.md",
+      "imgBase": "blog/鉴业PE 维护系统介绍/",
+      "title": "Jianye PE｜颜值与实力兼备的纯净Windows PE维护系统",
+      "desc": "电脑蓝屏无法开机？系统需要重装？重要数据需要抢救？遇到这些问题，一套好用的PE…",
+      "tags": [
+        "PE",
+        "维护系统"
+      ],
+      "date": "2026-10-18",
+      "minutes": 4,
+      "cover": "mmexport1786370573713.jpg",
+      "bg": "mmexport1786370573713.jpg",
+      "imgs": {
+        "55b2278b-c468-4060-ae73-67cb0ff41192.png": "blog/thumbs/鉴业PE_维护系统介绍-i0.webp",
+        "Jianye-PE-2026-04-18-12-56-22-2.png": "blog/thumbs/鉴业PE_维护系统介绍-i1.webp",
+        "mmexport1786370573713.jpg": "blog/thumbs/鉴业PE_维护系统介绍-i3.webp",
+        "品牌常用启动热键.png": "blog/thumbs/鉴业PE_维护系统介绍-i4.webp",
+        "鉴业PE-维护系统-2025-07-07-21-33-38.png": "blog/thumbs/鉴业PE_维护系统介绍-i5.webp",
+        "鉴业PE-维护系统-2026-01-02-23-18-20.png": "blog/thumbs/鉴业PE_维护系统介绍-i6.webp"
+      },
+      "coverThumb": "blog/thumbs/鉴业PE_维护系统介绍-cover.webp",
+      "bgThumb": "blog/thumbs/鉴业PE_维护系统介绍-bg.webp"
     },
     {
       "slug": "一键重装",
