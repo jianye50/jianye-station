@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-31T04:55:05.720Z",
+  "generated": "2026-10-31T05:19:34.463Z",
   "posts": [
     {
       "slug": "拥有时不毁，失去时不悔",
@@ -18,6 +18,16 @@
       "minutes": 1,
       "cover": "1745762684722.jpg",
       "bg": "1745762684722.jpg",
+      "mdEn": "blog/拥有时不毁，失去时不悔/index.en.md",
+      "titleEn": "Don’t destroy it when you have it, don’t regret it when you lose it",
+      "descEn": "May we not destroy what we have and regret when we lose it. I often stop to think about it on a quiet night. Most of people's regrets stem from two states: consuming wantonly when you are in it, and returning to it repeatedly after you are far away...",
+      "tagsEn": [
+        "Enlightenment",
+        "gain and loss",
+        "Random thoughts",
+        "Life",
+        "introspection"
+      ],
       "imgs": {
         "1745762684722.jpg": "blog/thumbs/拥有时不毁，失去时不悔-i0.webp"
       },
