@@ -3395,9 +3395,13 @@ async function gTranslate(text){
   }
   throw lastErr||new Error("no engine");
 }
-/* 小型并发池：同时最多 limit 个任务，单个失败不影响其它 */
+/* 小型并发池：同时最多 limit 个任务，单个失败不影响其它。
+   注意空任务列表必须立刻 resolve —— next() 只在下面的 for 里首次调用，
+   空列表时它一次都不会跑，漏了这步整个 Promise 永远挂着（正文纯段落时
+   「标题/列表行」分组就是空的，全篇无可翻行的文章也会卡在这）。 */
 function trPool(items,limit,fn){
   return new Promise(res=>{
+    if(!items||!items.length){res();return;}
     let idx=0,act=0;
     const next=()=>{
       if(idx>=items.length){ if(!act)res(); return; }
@@ -3427,7 +3431,12 @@ async function translateLine(line){
     return out;
   }catch(e){ return line; }
 }
-/* 整篇 Markdown 翻译：按行分发，代码块 / 表格 / HTML / 纯图片行直接跳过 */
+/* 整篇 Markdown 翻译：按行分发，代码块 / 表格 / HTML / 纯图片行直接跳过。
+   不能一行一个请求 —— 标题摘要三五个请求能过，正文十几行并发打出去
+   必触发接口限流，连续失败还会把引擎冷却掉，整篇正文全留在中文。
+   所以把可翻的行打包成组（6 行一组、换行分隔）一次翻一组；
+   返回行数对不上（引擎吞行/并行不同）就整组退回逐行翻，再不行才保留原文。
+   标签翻译走的正是这种「合并-对齐」路数，实测可靠。 */
 async function translateMarkdown(md){
   const lines=String(md).split(/\r?\n/);
   const out=lines.slice();
@@ -3443,7 +3452,38 @@ async function translateMarkdown(md){
       ||!hasCJK(line)){ out[i]=line; continue; }
     jobs.push({i,line});
   }
-  await trPool(jobs,4,async job=>{ out[job.i]=await translateLine(job.line); });
+  /* 先按行分类再分组：只有「连续的纯段落行」才打包合翻；
+     标题/列表/引用行有行首结构标记，混进合翻组会被引擎弄坏，必须逐行翻。
+     如果先切组再判断「整组都是段落」，段落和结构行一混组就全退化成逐行。 */
+  const GROUP=6;
+  const isStruct=line=>/^#{1,6}\s/.test(line)||/^\s*([-*+]|\d+[.)])\s/.test(line)||/^>\s?/.test(line);
+  const singles=[];        /* 结构行：逐行翻 */
+  const groups=[];         /* 纯段落组：合并成一次请求 */
+  let bundle=[];
+  const flush=()=>{ if(bundle.length){groups.push(bundle);bundle=[];} };
+  for(const j of jobs){
+    if(isStruct(j.line)){ flush(); singles.push(j); }
+    else{ bundle.push(j); if(bundle.length>=GROUP)flush(); }
+  }
+  flush();
+  const byLine=async g=>{   /* 整组失败的兜底：组内逐行翻，成功几行算几行 */
+    await trPool(g,2,async j=>{ out[j.i]=await translateLine(j.line); });
+  };
+  await trPool(singles,3,async j=>{ out[j.i]=await translateLine(j.line); });
+  await trPool(groups,2,async g=>{
+    const joined=g.map(j=>j.line).join("\n");
+    try{
+      const tr=await gTranslate(joined);
+      const parts=String(tr).split(/\r?\n/).map(s=>s.trim());
+      if(parts.length===g.length&&parts.every(s=>s)){
+        g.forEach((j,k)=>{out[j.i]=parts[k];});
+      }else{
+        await byLine(g);     /* 行数没对齐：这组别硬塞，退回逐行 */
+      }
+    }catch(e){
+      await byLine(g);
+    }
+  });
   return out.join("\n");
 }
 /* 翻译标签数组：带中文的标签先合并成一次请求（换行分隔、按行对齐），
@@ -3667,9 +3707,20 @@ async function renderPost(slug,gen){
         const sub=document.querySelector(".post-sub");
         if(sub&&r.d)sub.textContent=r.d;
         const art=document.querySelector(".post-body");
-        if(art)art.innerHTML=mdToHTML(r.b,post.imgBase,post.imgMap);
         const meta=document.querySelector(".post-meta");
-        if(meta)meta.insertAdjacentHTML("beforeend",`<span class="tr-mt">${esc(t.blog.machineTrans)}</span>`);
+        if(r.b&&r.b!==body){
+          /* 正文翻成了：整体替换 */
+          if(art)art.innerHTML=mdToHTML(r.b,post.imgBase,post.imgMap);
+          if(meta)meta.insertAdjacentHTML("beforeend",`<span class="tr-mt">${esc(t.blog.machineTrans)}</span>`);
+        }else if(art&&hasCJKText(body)){
+          /* 正文一行都没翻成（限流/网络问题），标题标签却翻好了：
+             保留中文原文，但挂「翻译失败 + 重试」，别挂 Machine-translated 误导人。
+             注意 note 可能刚被 remove 掉，得重新查一遍 DOM，别往脱节节点里写 */
+          const html=`${esc(t.blog.trFail)} <button type="button" class="tr-retry">${esc(t.blog.trRetry)}</button>`;
+          const noteNow=document.getElementById("trNote");
+          if(noteNow)noteNow.innerHTML=html;
+          else if(meta)meta.insertAdjacentHTML("beforeend",`<span class="tr-note" id="trNote">${html}</span>`);
+        }
       }).catch(()=>{
         clearTimeout(guard);
         const note=document.getElementById("trNote");
