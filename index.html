@@ -4,22 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
-<title>鉴业の小站</title>
-<meta name="description" content="鉴业の小站 —— 愿我们拥有的时候不要毁，失去的时候不要悔。">
-<!-- 站点图标：根目录 icon.png（主）+ icon.ico（老浏览器兜底）；
-     iOS 不认 ICO，apple-touch-icon 必须指 PNG -->
-<link rel="icon" href="icon.ico" sizes="any">
-<link rel="icon" href="icon.png" type="image/png">
+<title></title>
+<meta name="description" content="">
+<!-- 站名 / 描述 / 图标（favicon）都由 profile.txt 配置，JS 启动后填到这里 -->
 <link rel="apple-touch-icon" href="icon.png">
 <!-- 移动端地址栏配色（站点固定深色） -->
 <meta name="theme-color" content="#0b0d12">
-<!-- 分享卡片预览 -->
+<!-- 分享卡片预览（og 内容同样由 profile.txt 配置后回填） -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="鉴业の小站">
-<meta property="og:title" content="鉴业の小站">
-<meta property="og:description" content="愿我们拥有的时候不要毁，失去的时候不要悔。">
+<meta property="og:site_name" content="">
+<meta property="og:title" content="">
+<meta property="og:description" content="">
 <meta property="og:url" content="https://jianye.pages.dev/">
-<meta property="og:image" content="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=75&auto=format">
+<meta property="og:image" content="">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
@@ -1271,7 +1268,7 @@ footer .heart{color:#ff5d7a}
 <!-- ============ 悬浮胶囊导航 ============ -->
 <nav class="nav" id="nav">
   <a class="nav-brand" href="#/">
-    <span class="dot"></span><span id="navBrand">鉴业の小站</span>
+    <span class="dot"></span><span id="navBrand"></span>
   </a>
   <a class="nav-link" data-nav="home" href="#/">Home</a>
   <a class="nav-link" data-nav="gallery" href="#/gallery">图库</a>
@@ -1355,10 +1352,12 @@ let PROJECTS=[];         /* 由 loadProjects() 从 projects.txt 读入 */
    配置读不到（file:// 本地双击打开 / 离线 / 忘了上传 / 删了文件）时，
    关于页的个人介绍卡整体隐藏，页面其余功能不受影响。 */
 let PROFILE=null;        /* 由 loadProfile() 从 profile.txt 读入 */
+let SITE={name:null,icon:"",bg:"",badge:null,desc:null};   /* 站点级配置：站名/图标/背景/徽章/描述 */
 
 /* 解析 profile.txt 的行式配置（键名不区分大小写，中文英文键名都认） */
 function parseProfileText(text){
-  const out={hello:null,tagline:null,bios:[],avatar:"",email:"",chips:[],socials:[]};
+  const out={hello:null,tagline:null,bios:[],avatar:"",email:"",chips:[],socials:[],
+             name:null,icon:"",bg:"",badge:null,desc:null};
   String(text||"").split(/\r?\n/).forEach(raw=>{
     const line=raw.trim();
     if(!line||line.charAt(0)==="#")return;
@@ -1371,8 +1370,45 @@ function parseProfileText(text){
     else if(k==="邮箱"||k==="email"){ if(p[1])out.email=p[1]; }
     else if(k==="标签"||k==="chip"){ if(p[2])out.chips.push({i:p[1]||"",zh:p[2]||p[3]||"",en:p[3]||p[2]||""}); }
     else if(k==="社交"||k==="social"){ if(p[3])out.socials.push({zh:p[1]||p[2],en:p[2]||p[1],u:p[3],c:p[4]||"#8b949e"}); }
+    else if(k==="站名"||k==="site"||k==="sitename"){ if(p[1]||p[2])out.name={zh:p[1]||p[2],en:p[2]||p[1]}; }
+    else if(k==="图标"||k==="icon"||k==="favicon"){ if(p[1])out.icon=p[1]; }
+    else if(k==="背景"||k==="bg"||k==="background"){ if(p[1])out.bg=p[1]; }
+    else if(k==="徽章"||k==="badge"){ if(p[1]||p[2])out.badge={zh:p[1]||p[2],en:p[2]||p[1]}; }
+    else if(k==="描述"||k==="desc"||k==="description"){ if(p[1]||p[2])out.desc={zh:p[1]||p[2],en:p[2]||p[1]}; }
   });
   return out;
+}
+/* 站点级配置（站名/徽章/描述/图标/背景）回填到页面各处：
+   站名进语言表后，浏览器标签页标题、导航品牌名、文章页标题等原有逻辑自动跟上 */
+function applySiteConfig(){
+  if(SITE.name){I18N.zh.brand=SITE.name.zh;I18N.en.brand=SITE.name.en;}
+  if(SITE.badge){I18N.zh.hero.badge=SITE.badge.zh;I18N.en.hero.badge=SITE.badge.en;}
+  if(SITE.desc){I18N.zh.hero.sub=SITE.desc.zh;I18N.en.hero.sub=SITE.desc.en;}
+  setLang(lang,false);   /* 重铺浏览器标签标题 / 导航品牌名（不写盘） */
+  const brand=T().brand||"";
+  /* 浏览器标签页图标（favicon）：删掉旧的再按配置插一张 */
+  if(SITE.icon){
+    document.querySelectorAll("link[rel='icon']").forEach(l=>l.remove());
+    const l=document.createElement("link");
+    l.rel="icon";
+    if(/\.ico$/i.test(SITE.icon)){l.sizes="any";}else{l.type="image/png";}
+    l.href=SITE.icon;
+    document.head.appendChild(l);
+    const at=document.querySelector("link[rel='apple-touch-icon']");
+    if(at&&!/\.ico$/i.test(SITE.icon))at.href=SITE.icon;
+  }
+  /* meta 描述 / 分享卡片（og）：文案取纯文本，图片用背景图 */
+  const plain=s=>String(s||"").replace(/<br\s*\/?>/gi," ").replace(/<[^>]+>/g,"").trim();
+  const d=plain(lang==="zh"?(SITE.desc&&SITE.desc.zh):(SITE.desc&&SITE.desc.en));
+  const md=document.querySelector("meta[name='description']");
+  if(md)md.content=brand?(d?brand+" —— "+d:brand):d;
+  const q=s=>document.querySelector(s);
+  const ogs=q("meta[property='og:site_name']"),ogt=q("meta[property='og:title']"),
+        ogd=q("meta[property='og:description']"),ogi=q("meta[property='og:image']");
+  if(ogs)ogs.content=brand;
+  if(ogt)ogt.content=brand;
+  if(ogd)ogd.content=d;
+  if(ogi&&SITE.bg)ogi.content=SITE.bg;
 }
 /* 读取个人信息配置：no-cache 保证改完配置刷新立即生效（没更新时走 304，不重复下载）。
    文件读不到或整份是空的 → PROFILE 保持 null，关于页的个人介绍卡不渲染；
@@ -1387,15 +1423,21 @@ async function loadProfile(){
     }
   }catch(e){}
   if(!j)return;
-  const valid=j.hello||j.tagline||j.bios.length||j.avatar||j.email||j.chips.length||j.socials.length;
+  const valid=j.hello||j.tagline||j.bios.length||j.avatar||j.email||j.chips.length||j.socials.length
+             ||j.name||j.icon||j.bg||j.badge||j.desc;
   if(!valid)return;
   PROFILE=j;
-  /* 配置到达时正停在关于页 → 原地重绘（保住滚动位置，不打断浏览） */
-  if(/^#\/about/.test(location.hash)){
+  /* 站点级字段单独存一份，回填到标题 / 图标 / meta / 首屏 */
+  SITE={name:j.name,icon:j.icon,bg:j.bg,badge:j.badge,desc:j.desc};
+  applySiteConfig();
+  /* 配置到达时正停在首页 / 关于页 → 原地重绘（保住滚动位置，不打断浏览） */
+  const h=location.hash;
+  if(/^#\/about/.test(h)||h===""||h==="#"||h==="#/"){
+    const redraw=/^#\/about/.test(h)?renderAbout:renderHome;
     const root=document.documentElement,prev=root.style.scrollBehavior;
     root.style.scrollBehavior="auto";
     const y=window.scrollY;
-    renderAbout();
+    redraw();
     window.scrollTo(0,y);
     root.style.scrollBehavior=prev;
   }
@@ -1655,11 +1697,11 @@ let photosStatus="loading"; // loading | ready | error
 /* ---------- 国际化 ---------- */
 const I18N={
   zh:{
-    brand:"鉴业の小站",
+    brand:"",   /* 站名来自 profile.txt 的「站名」，读到后回填 */
     nav:{home:"首页",gallery:"相册",blog:"博客",about:"关于"},
     langTip:"切换到英文",
     cloud:"文件传送",
-    hero:{badge:"个人空间",sub:"愿我们拥有的时候不要毁，<br>失去的时候不要悔。",read:"浏览博客",aboutBtn:"关于我",hint:"向下浏览"},
+    hero:{badge:"",sub:"",read:"浏览博客",aboutBtn:"关于我",hint:"向下浏览"},   /* 徽章/描述来自 profile.txt */
     home:{gallery:"相册",more:"查看全部照片",projects:"项目",moreProj:"查看全部项目"},
     gallery:{
       title:"相册",
@@ -1724,11 +1766,11 @@ const I18N={
     footer:"© 2026 Jianye · 用心血手写"
   },
   en:{
-    brand:"Jianye's Corner",
+    brand:"",   /* Site name from profile.txt */
     nav:{home:"Home",gallery:"Albums",blog:"Blog",about:"About"},
     langTip:"Switch to Chinese",
     cloud:"File Transfer",
-    hero:{badge:"PERSONAL SPACE",sub:"Making things, keeping notes,<br>and the light I like.",read:"Browse Blog",aboutBtn:"About Me",hint:"Scroll down"},
+    hero:{badge:"",sub:"",read:"Browse Blog",aboutBtn:"About Me",hint:"Scroll down"},   /* badge/sub from profile.txt */
     home:{gallery:"Albums",more:"View all photos",projects:"Projects",moreProj:"View all projects"},
     gallery:{
       title:"Albums",
@@ -2537,16 +2579,13 @@ function renderHome(){
   app.innerHTML=`
   <section class="view">
     <header class="hero">
-      <img class="hero-img" src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&q=78&auto=format"
-           srcset="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75&auto=format 800w,
-                   https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1400&q=78&auto=format 1400w,
-                   https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&q=78&auto=format 2000w"
+      ${SITE.bg?`<img class="hero-img" src="${esc(SITE.bg)}"
            sizes="100vw"
-           alt="" fetchpriority="high" decoding="async" onerror="this.remove()">
+           alt="" fetchpriority="high" decoding="async" onerror="this.remove()">`:/* 没配背景 → 用 CSS 里的 --hero-fallback 渐变兜底 */""}
       <div class="wrap hero-inner">
-        <span class="hero-badge"><span class="pulse"></span>${esc(t.hero.badge)}</span>
+        ${t.hero.badge?`<span class="hero-badge"><span class="pulse"></span>${esc(t.hero.badge)}</span>`:""}
         <h1>${esc(t.brand)}</h1>
-        <p>${t.hero.sub}</p>
+        ${t.hero.sub?`<p>${t.hero.sub}</p>`:""}
         <div class="hero-actions">
           <a class="btn btn-primary" href="#/blog">${esc(t.hero.read)}</a>
           <a class="btn btn-ghost" href="#/about">${esc(t.hero.aboutBtn)}</a>
