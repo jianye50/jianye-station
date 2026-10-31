@@ -431,7 +431,7 @@ img{display:block;max-width:100%}
       </div>
       <div class="save-bar">
         <button class="btn btn-primary" id="saveBtn">💾 保存到本地文件</button>
-        <button class="btn" id="autoBakBtn" title="开启后，你的每一次修改都会被记录，可随时还原到任意一次修改">⏺ 自动备份：关</button>
+        <button class="btn" id="autoBakBtn" title="按文件夹分别记忆：开启后，你的每一次修改都会被记录，可随时还原到任意一次修改（只对当前这个文件夹生效）">⏺ 自动备份：关</button>
         <button class="btn" id="histBtn" title="浏览并还原到历史版本">🕘 历史</button>
         <span class="save-state" id="saveState"></span>
       </div>
@@ -510,6 +510,7 @@ let dirty=false;
 let previewOn=false;
 let imgNames=[];
 const blobCache={};
+const fileCache={};   /* 同一张图不重复读盘：缩略图和体积共用一次读取 */
 
 /* =====================================================================
  *  撤销 / 重做（编辑器自己的历史栈：打字合并为一条，工具栏操作各记一条）
@@ -555,23 +556,36 @@ function doRedo(){
 }
 
 /* =====================================================================
- *  自动备份（默认关闭）：开启后，每次修改都记一条快照，可还原到任意一次
+ *  自动备份（每个文件夹各自记忆，默认关闭）：开启后，每次修改都记一条快照
  *    · 快照 = 正文 + 标题/日期/标签/摘要/封面/背景 全套元信息
- *    · 按文章分开存放（localStorage），每篇最多 300 条，超出挤掉最旧的
+ *    · 开关与历史都存放在 localStorage 的「文章文件夹」名下，互不影响：
+ *        jy-blog-histon:<slug>  → 这个文件夹自己的开关状态
+ *        jy-blog-hist:<slug>    → 这个文件夹自己的历史记录
+ *    · A 文件夹开了备份，B 文件夹没开过 → 打开 B 时是「关」，B 不会被 A 带跑
+ *    · 每篇最多 300 条，超出挤掉最旧的
  *    · 还原前会先把当前内容存一条历史，所以来回切换也不会丢东西
  * ===================================================================== */
 let bakOn=false,bakTimer=null,histEntries=[];
-try{bakOn=localStorage.getItem("jy-blog-histon")==="1";}catch(e){}
+function bakKeyOn(){return "jy-blog-histon:"+slug;}
 function histLoad(){
   let arr=null;
   try{arr=JSON.parse(localStorage.getItem("jy-blog-hist:"+slug));}catch(e){}
   histEntries=Array.isArray(arr)?arr:[];
+  /* 关键：开关状态跟着文件夹走，没记录过的文件夹一律「关」 */
+  try{bakOn=localStorage.getItem(bakKeyOn())==="1";}catch(e){bakOn=false;}
 }
+let histQuotaWarned=false;
 function histSave(){
   try{localStorage.setItem("jy-blog-hist:"+slug,JSON.stringify(histEntries));}
   catch(e){ /* 存满了：砍半再试一次 */
-    histEntries=histEntries.slice(-Math.floor(histEntries.length/2));
-    try{localStorage.setItem("jy-blog-hist:"+slug,JSON.stringify(histEntries));}catch(e2){}
+    histEntries=histEntries.slice(-Math.max(1,Math.floor(histEntries.length/2)));
+    try{localStorage.setItem("jy-blog-hist:"+slug,JSON.stringify(histEntries));}
+    catch(e2){
+      if(!histQuotaWarned){
+        histQuotaWarned=true;
+        toast("浏览器存储空间不够了，历史记录存不全。可以在「🕘 历史」里清空旧记录","err");
+      }
+    }
   }
 }
 function bakSnapshot(){
@@ -588,17 +602,21 @@ function bakRecord(){
   if(!bakOn||!editing())return;
   const s=bakSnapshot();
   const last=histEntries[histEntries.length-1];
-  if(last&&last.md===s.md&&last.title===s.title&&last.desc===s.desc)return;
+  /* 整体比较：以前只比 md/title/desc，改封面、背景、标签、日期都不会留下历史 */
+  const sig=e=>JSON.stringify([e.md,e.title,e.desc,e.tags,e.date,e.minutes,e.cover,e.background]);
+  if(last&&sig(last)===sig(s))return;
   histEntries.push(s);
   if(histEntries.length>300)histEntries=histEntries.slice(-300);
   histSave();updateHistBtn();
 }
 function setBak(on){
+  if(!slug){toast("先打开一篇文章再开启自动备份","err");return;}
   bakOn=on;
-  try{localStorage.setItem("jy-blog-histon",on?"1":"0");}catch(e){}
+  /* 只记到当前文件夹名下：别的文件夹该关还关 */
+  try{localStorage.setItem(bakKeyOn(),on?"1":"0");}catch(e){}
   updateBakBtn();updateHistBtn();
-  if(on){bakRecord();toast("自动备份已开启：之后每次修改都会被记录，「🕘 历史」里可还原","ok");}
-  else toast("自动备份已关闭（已记录的历史仍保留，可查看和还原）","ok");
+  if(on){bakRecord();toast(`「${slug}」的自动备份已开启：之后每次修改都会被记录，「🕘 历史」里可还原`,"ok");}
+  else toast(`「${slug}」的自动备份已关闭（已记录的历史仍保留，可查看和还原）`,"ok");
 }
 function updateBakBtn(){
   const b=$("#autoBakBtn");
@@ -608,7 +626,8 @@ function updateBakBtn(){
 function updateHistBtn(){
   const b=$("#histBtn");
   if(!b)return;
-  b.textContent=bakOn?`🕘 历史（${histEntries.length}）`:"🕘 历史";
+  /* 关掉自动备份后历史还在，数量照样显示，免得以为记录没了 */
+  b.textContent=histEntries.length?`🕘 历史（${histEntries.length}）`:"🕘 历史";
   b.disabled=!histEntries.length;
 }
 
@@ -645,6 +664,8 @@ async function writeBlob(dirHandle,name,blob){
 function gateErr(msg){
   const b=$("#gateErr");b.textContent=msg;b.classList.add("on");
   setTimeout(()=>b.classList.remove("on"),9000);
+  /* 已经在编辑页时，起始页的红色横幅根本看不见，补一个 toast */
+  if(!$("#scr-gate").classList.contains("on"))toast(msg,"err");
 }
 function setDirty(v){
   dirty=v;
@@ -716,8 +737,17 @@ async function looksLikeArticle(dirHandle){
 }
 
 /* 打开一个文件夹：自动找正文文件；空文件夹会新建 index.md */
+let openingFolder=false;
 async function openFolder(h,depth){
   depth=depth||0;
+  if(depth===0){
+    if(openingFolder){toast("正在打开上一个文件夹，稍等一下再拖","err");return;}
+    openingFolder=true;
+  }
+  try{return await openFolderCore(h,depth);}
+  finally{if(depth===0)openingFolder=false;}
+}
+async function openFolderCore(h,depth){
   if(!await ensurePerm(h,"readwrite")){
     gateErr(`没有拿到「${h.name}」的读写权限。请改用「📂 选择文章文件夹」按钮再选一次（拖拽偶尔拿不到写入授权）。`);
     return;
@@ -757,25 +787,44 @@ async function openFolder(h,depth){
 }
 
 async function openArticle(cfg){
-  artHandle=cfg.dir;
-  bodyName=cfg.bodyName||"index.md";
-  slug=cfg.slug;
+  /* 切换文章前，先把上一篇压在 debounce 里的草稿/快照按「上一篇」的名字落盘 */
+  try{flushPending();}catch(e){}
+  clearTimeout(bakTimer);clearTimeout(draftTimer);clearTimeout(hTimer);
+  const dir=cfg.dir,bn=cfg.bodyName||"index.md";
+  let existed=true,raw=null;
+  try{
+    raw=await readText(await dir.getFileHandle(bn));
+  }catch(e){
+    const missing=e&&(e.name==="NotFoundError"||e.name==="TypeMismatchError");
+    if(!missing){
+      /* 文件在、但读不出来（权限/IO）：绝不能当成空文章，否则一保存就把原文覆盖掉。
+         这里直接放弃，全局状态一个都不动，上一篇仍然可以正常保存。 */
+      toast("读取正文失败："+e.message+"（为安全起见没有打开，避免覆盖原文件）","err");
+      return;
+    }
+    existed=false;
+  }
+  /* 读盘成功后才提交状态，失败不会留下「半开」的编辑器 */
+  artHandle=dir;
+  bodyName=bn;
+  slug=cfg.slug||dir.name||"";
   meta={...DEFAULT_META};
   mdText=DEFAULT_MD;
-  let existed=true;
-  try{
-    const raw=await readText(await artHandle.getFileHandle(bodyName));
+  if(typeof raw==="string"){
     const p=parsePost(raw);
     meta={...DEFAULT_META,...p.meta};
     if(typeof meta.tags==="string")meta.tags=meta.tags.split(/[,，]/).map(s=>s.trim()).filter(Boolean);
+    if(!Array.isArray(meta.tags))meta.tags=[];
     mdText=p.body;
-  }catch(e){existed=false;}
+  }
   show("#scr-edit");
   setDirty(false);clearDraftView();
   fillForm();setCrumb();updateImgUI();
   hStack=[];hPtr=-1;histPushNow();   /* 撤销栈以打开时的状态为起点 */
   histLoad();updateBakBtn();updateHistBtn();
+  if(bakOn)bakRecord();              /* 打开时的原始状态也留一条，方便回到最初 */
   for(const k in blobCache){URL.revokeObjectURL(blobCache[k]);delete blobCache[k];}
+  for(const k in fileCache)delete fileCache[k];
   await refreshImages();
   await refreshCovers();
   updateStats();
@@ -840,7 +889,7 @@ let dragDepth=0;
 function dragHint(on){
   const el=$("#dropOverlay"),box=$("#dropOverlayBox");
   if(editing()){
-    box.innerHTML=`松手即可写入当前文章<small>拖图片进来 = 直接存进本文章文件夹，并插到光标处</small>`;
+    box.innerHTML=`松手即可把这批图片存进图片库<small>想边存边插到正文，请把图片拖到右侧正文区</small>`;
   }else{
     box.innerHTML=`松手即可打开这篇文章<small>把这一篇的文件夹拖进来</small>`;
   }
@@ -878,7 +927,12 @@ async function pickFolderStart(){
 $("#pickFolderBtn").addEventListener("click",pickFolderStart);
 $("#rePickBtn").addEventListener("click",()=>{
   if(!guardQuit())return;
-  artHandle=null;
+  /* 离开这篇文章：先把待写入的草稿/快照落盘，再清缓存，别串到下一篇 */
+  try{flushPending();}catch(e){}
+  clearTimeout(bakTimer);clearTimeout(draftTimer);clearTimeout(hTimer);
+  for(const k in blobCache){URL.revokeObjectURL(blobCache[k]);delete blobCache[k];}
+  for(const k in fileCache)delete fileCache[k];
+  artHandle=null;slug="";bodyName="index.md";histEntries=[];bakOn=false;
   setDirty(false);setCrumb();show("#scr-gate");
 });
 
@@ -890,19 +944,26 @@ function updateImgUI(){
   $("#uploadBtn").disabled=!artHandle;
   $("#slugLabel").textContent=artHandle?("📁 "+slug+"/"+bodyName):"";
 }
+async function getFileCached(name){
+  if(fileCache[name])return fileCache[name];
+  if(!artHandle)return null;
+  try{
+    const f=await (await artHandle.getFileHandle(name)).getFile();
+    fileCache[name]=f;return f;
+  }catch(e){return null;}
+}
 function imgURL(name){
   if(blobCache[name])return Promise.resolve(blobCache[name]);
   return (async()=>{
-    if(!artHandle)return "";
-    try{
-      const f=await (await artHandle.getFileHandle(name)).getFile();
-      blobCache[name]=URL.createObjectURL(f);
-      return blobCache[name];
-    }catch(e){return "";}
+    const f=await getFileCached(name);
+    if(!f)return "";
+    blobCache[name]=URL.createObjectURL(f);
+    return blobCache[name];
   })();
 }
 function dropBlobCache(name){
   if(blobCache[name]){URL.revokeObjectURL(blobCache[name]);delete blobCache[name];}
+  delete fileCache[name];
 }
 async function primeImages(){
   if(!artHandle)return;
@@ -937,26 +998,33 @@ async function refreshImages(){
         <button data-op="rm" class="rm">删</button>
       </div>
     </div>`).join("");
-  for(const n of imgNames){
+  /* 并行加载：图片多时不再一张接一张排队（原来是串行 2 次读盘/张） */
+  await Promise.all(imgNames.map(async n=>{
     const img=grid.querySelector(`img[data-src="${CSS.escape(n)}"]`);
-    if(!img)continue;
-    img.src=await imgURL(n);
-    try{
-      const f=await (await artHandle.getFileHandle(n)).getFile();
+    if(!img)return;
+    const [u,f]=await Promise.all([imgURL(n),getFileCached(n)]);
+    if(u)img.src=u;
+    if(f){
       const tag=document.createElement("span");
       tag.className="size";tag.textContent=fmtSize(f.size);
-      img.closest(".img-cell").appendChild(tag);
-    }catch(e){}
-  }
+      const cell=img.closest(".img-cell");
+      if(cell)cell.appendChild(tag);
+    }
+  }));
 }
 async function refreshCovers(){
   const set=async(thumbId,infoId,val,ph)=>{
     const th=$(thumbId),inf=$(infoId);
     if(val){
       const u=await imgURL(val);
-      th.classList.add("sel");
-      th.innerHTML=u?`<img src="${u}" alt="">`:ph;
-      inf.innerHTML=`<b>${esc(val)}</b>已设置 · 点图片库里其他图片可更换`;
+      if(u){
+        th.classList.add("sel");
+        th.innerHTML=`<img src="${u}" alt="">`;
+        inf.innerHTML=`<b>${esc(val)}</b>已设置 · 点图片库里其他图片可更换`;
+      }else{   /* 元信息里写了、但文件夹里没这张图：明确提示，别假装设置成功 */
+        th.classList.remove("sel");th.innerHTML=ph;
+        inf.innerHTML=`<b>${esc(val)}</b>⚠ 这个文件夹里找不到这张图片，请重新选一张`;
+      }
     }else{
       th.innerHTML=ph;th.classList.remove("sel");
       inf.innerHTML="尚未设置<br>在下方图片库里点图片进行设置";
@@ -998,6 +1066,7 @@ async function uploadImages(files,opts){
         uniq=pre+(i?"-"+i:"")+".png";i++;
       }
       await writeBlob(artHandle,uniq,f);
+      dropBlobCache(uniq);              /* 同名覆盖时别让缓存的旧图顶上来 */
       inserted.push(uniq);
     }
     await refreshImages();
@@ -1205,17 +1274,36 @@ box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 14px 38px rgba(6,10,25,.28)}
 .post-end::before,.post-end::after{content:"";flex:1;height:1px;background:var(--card-border)}
 `;
 let cssCache=null;
+const HAS_POST_CSS=/\.post-body\s*[{,:]/;
 async function siteInfo(){
   if(cssCache)return cssCache;
+  const self=location.href.split("#")[0].split("?")[0];
   for(const c of CSS_CANDIDATES){
     try{
+      const abs=new URL(c,location.href).href;
+      /* 候选里的 index.html 有可能就是本编辑器自己：绝不能拿自己的样式当真 */
+      if(abs.split("#")[0].split("?")[0]===self)continue;
       const r=await fetch(c,{cache:"no-store"});
       if(!r.ok)continue;
       const html=await r.text();
-      if(!/\.post-body/.test(html))continue;
       let css=[...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map(m=>m[1]).join("\n");
-      const abs=new URL(c,location.href).href;
-      const dir=abs.replace(/[^/]*$/,"");
+      let cssBase=abs;
+      /* 样式表外链的情况：顺着 <link rel=stylesheet> 找一遍 */
+      if(!HAS_POST_CSS.test(css)){
+        const hrefs=[...html.matchAll(/<link\b[^>]*rel=["']?stylesheet["']?[^>]*>/gi)]
+          .map(t=>(t[0].match(/href=["']([^"']+)["']/i)||[])[1]).filter(Boolean);
+        for(const href of hrefs){
+          try{
+            const u=new URL(href,abs).href;
+            const r2=await fetch(u,{cache:"no-store"});
+            if(!r2.ok)continue;
+            const t=await r2.text();
+            if(HAS_POST_CSS.test(t)){css=t;cssBase=u;break;}
+          }catch(e){}
+        }
+      }
+      if(!HAS_POST_CSS.test(css))continue;   /* 认不出文章页样式就换下一个候选 */
+      const dir=cssBase.replace(/[^/]*$/,"");
       css=css.replace(/url\(\s*(['"]?)(?!https?:|data:|blob:|#|\/)([^)'"]+)\1\s*\)/g,
         (m,q,p)=>`url(${q}${dir}${p}${q})`);
       cssCache={css,dir,from:abs};
@@ -1324,14 +1412,16 @@ function countStats(s){
   return {cjk,words,minutes:Math.max(1,Math.round(nonSpace/450))};
 }
 function buildFrontMatter(m,body){
+  /* front matter 是「一行一个字段」，值里绝对不能带换行，否则后面的字段会被吃掉 */
+  const oneline=v=>String(v==null?"":v).replace(/[\r\n]+/g," ").replace(/\s+/g," ").trim();
   const L=["---"];
-  L.push(`title: ${m.title||"未命名"}`);
-  if(m.desc)L.push(`desc: ${m.desc}`);
-  L.push(`tags: [${(m.tags||[]).join(", ")}]`);
-  L.push(`date: ${m.date||today()}`);
-  L.push(`minutes: ${m.minutes||countStats(body).minutes}`);
-  if(m.cover)L.push(`cover: ${m.cover}`);
-  if(m.background)L.push(`background: ${m.background}`);
+  L.push(`title: ${oneline(m.title)||"未命名"}`);
+  if(oneline(m.desc))L.push(`desc: ${oneline(m.desc)}`);
+  L.push(`tags: [${(m.tags||[]).map(oneline).filter(Boolean).join(", ")}]`);
+  L.push(`date: ${oneline(m.date)||today()}`);
+  L.push(`minutes: ${oneline(m.minutes)||countStats(body).minutes}`);
+  if(m.cover)L.push(`cover: ${oneline(m.cover)}`);
+  if(m.background)L.push(`background: ${oneline(m.background)}`);
   L.push("---","");
   return L.join("\n")+body.replace(/^\n+/,"");
 }
@@ -1588,6 +1678,7 @@ $("#genDescBtn").addEventListener("click",()=>{
 });
 /* 快捷键 */
 document.addEventListener("keydown",e=>{
+  if($("#mask").classList.contains("on"))return;   /* 弹窗里按 Ctrl+S 不要偷偷保存 */
   const mod=e.ctrlKey||e.metaKey;
   if(!mod||!editing())return;
   const k=(e.key||"").toLowerCase();
@@ -1640,12 +1731,15 @@ function saveDraft(){
   if(!artHandle)return;
   try{
     localStorage.setItem(draftKey(),JSON.stringify({
-      ts:Date.now(),title:meta.title,date:meta.date,minutes:meta.minutes,
+      ts:Date.now(),slug:slug,title:meta.title,date:meta.date,minutes:meta.minutes,
       tags:meta.tags,desc:meta.desc,cover:meta.cover,background:meta.background,md:mdText
     }));
     const t=new Date();
     $("#statDraft").textContent=`草稿已自动备份 · ${pad2(t.getHours())}:${pad2(t.getMinutes())}:${pad2(t.getSeconds())}`;
-  }catch(e){}
+  }catch(e){
+    /* 以前这里静默失败，界面还显示"已自动备份"，会让人以为存上了 */
+    $("#statDraft").textContent="草稿备份失败：浏览器存储空间已满";
+  }
 }
 function clearDraft(){try{localStorage.removeItem(draftKey());}catch(e){}clearDraftView();}
 async function maybeRestoreDraft(){
@@ -1662,6 +1756,7 @@ async function maybeRestoreDraft(){
   meta.title=d.title||"";meta.date=d.date||"";meta.minutes=d.minutes||"";
   meta.tags=d.tags||[];meta.desc=d.desc||"";meta.cover=d.cover||"";meta.background=d.background||"";
   fillForm();setDirty(true);updateStats();
+  hStack=[];hPtr=-1;histPushNow();   /* 草稿恢复后的状态作为撤销起点，避免 Ctrl+Z 跳回错的地方 */
   await refreshImages();await refreshCovers();
   toast("已恢复本地草稿（记得保存）","ok");
 }
@@ -1747,7 +1842,16 @@ $("#histBtn").addEventListener("click",async()=>{
     gateErr("当前浏览器不支持「拖拽文件夹」——请用电脑版 Chrome / Edge，或改用下面的按钮选择。");
   }
 })();
-window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue="";}});
+/* 关页 / 切后台时把还压在 debounce 里的草稿和备份立刻落盘，别丢最后几秒的修改 */
+function flushPending(){
+  clearTimeout(draftTimer);clearTimeout(bakTimer);
+  if(!artHandle)return;
+  try{saveDraft();}catch(e){}
+  try{if(bakOn)bakRecord();}catch(e){}
+}
+window.addEventListener("pagehide",flushPending);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushPending();});
+window.addEventListener("beforeunload",e=>{flushPending();if(dirty){e.preventDefault();e.returnValue="";}});
 </script>
 </body>
 </html>
