@@ -14,3 +14,4 @@
 PanDaTech's Blog|PanDaTech|愿此行，终抵群星。|May this journey reach the stars.|https://www.pandadatech.cn|https://www.pandadatech.cn/upload/avatar.png
 VirtualHotBarの博客|VirtualHotBar|一个极度普通的自留地|A very ordinary personal corner|https://blog.hotpe.top|https://blog.hotpe.top/img/logo.png
 Angel_天使WinPE|Angel PE|一个纯净、安全、优雅的PE工具|A clean, safe and elegant PE toolkit|https://www.angel-pe.cn|https://www.angel-pe.cn/favicon.ico
+潇然工作室|XiaoRan Studio|分享计算机技术|Sharing computer technology|https://www.xrgzs.top|https://www.xrgzs.top/favicon.png
