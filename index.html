@@ -1178,6 +1178,12 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 .post-body pre code{background:none;padding:0;color:#cfe3ff;font-size:13px;line-height:1.7}
 .post-body hr{border:none;border-top:1px solid var(--card-border);margin:26px auto;width:60%}
 .post-body ul,.post-body ol{margin:0 0 16px;padding-left:24px}
+/* 表格：横向可滚动，窄屏不撑破正文 */
+.post-body .md-table{margin:20px 0;overflow-x:auto;border:1px solid var(--card-border);border-radius:14px}
+.post-body table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.7}
+.post-body th,.post-body td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--card-border);vertical-align:top}
+.post-body thead th{color:var(--text-1);font-weight:600;background:var(--chip);white-space:nowrap}
+.post-body tbody tr:last-child td{border-bottom:none}
 .post-body li{margin-bottom:6px}
 .post-end{display:flex;align-items:center;gap:14px;margin:44px auto 0;max-width:760px;color:var(--text-3);font-size:12.5px}
 .post-end::before,.post-end::after{content:"";flex:1;height:1px;background:var(--card-border)}
@@ -1486,15 +1492,21 @@ async function manualSteamRefresh(btn){
   setTimeout(()=>{btn.title=t.about.steamRefresh;},2000);
 }
 /* Steam 模块的 HTML：最近玩过的游戏卡片（封面 / 时长 / 成就进度条） */
+/* Steam 时长格式化：原始数据是浮点小时数（如 20.616666…），展示时保留一位小数、去掉多余的 .0 */
+const fmtHours=h=>{
+  const n=Number(h);
+  if(!isFinite(n))return h;
+  return String(Math.round(n*10)/10);
+};
 function steamModuleHTML(){
   const t=T(),s=STEAM;
   const sub=[];
-  if(s.hours2weeks)sub.push(t.about.steamSub.replace("{h}",s.hours2weeks).split(" · ")[0]);
+  if(s.hours2weeks)sub.push(t.about.steamSub.replace("{h}",fmtHours(s.hours2weeks)).split(" · ")[0]);
   if(s.totalGames)sub.push((lang==="zh"?`共 ${s.totalGames} 款游戏`:`${s.totalGames} games owned`));
   const gameRow=g=>{
     const meta=[];
-    if(g.hours2weeks!=null)meta.push(t.about.steamRecent.replace("{h}",g.hours2weeks));
-    if(g.hoursTotal!=null)meta.push(t.about.steamHours.replace("{h}",g.hoursTotal));
+    if(g.hours2weeks!=null)meta.push(t.about.steamRecent.replace("{h}",fmtHours(g.hours2weeks)));
+    if(g.hoursTotal!=null)meta.push(t.about.steamHours.replace("{h}",fmtHours(g.hoursTotal)));
     if(g.last)meta.push(t.about.steamLast.replace("{d}",g.last));
     const pct=(g.achEarned!=null&&g.achTotal)?Math.min(100,Math.round(g.achEarned/g.achTotal*100)):null;
     /* 封面三级兜底：竖版海报 → 横版头图 → 移除图片只留渐变底。
@@ -2996,7 +3008,7 @@ function mdToHTML(md,imgBase,imgMap){
     return s;
   };
   const lines=md.split(/\r?\n/),out=[];let i=0;
-  const BLOCK=/^(#{1,4})\s+|^```|^\s*>|^\s*[-*+]\s+|^\s*\d+[.)]\s+|^\s*(---+|\*\*\*+)\s*$|^\|[lcr]\s/;
+  const BLOCK=/^(#{1,4})\s+|^```|^\s*>|^\s*[-*+]\s+|^\s*\d+[.)]\s+|^\s*(---+|\*\*\*+)\s*$|^\s*\|/;
   const ALIGN={l:"left",c:"center",r:"right"};
   while(i<lines.length){
     const L=lines[i];
@@ -3005,6 +3017,30 @@ function mdToHTML(md,imgBase,imgMap){
       while(i<lines.length&&!/^```/.test(lines[i])){buf.push(lines[i]);i++;}
       i++;
       out.push(`<pre><code>${esc(buf.join("\n"))}</code></pre>`);continue;
+    }
+    /* 表格：连续以 | 开头的行，且第二行是分隔行（|---|---| / |:--:|）才认。
+       行尾竖线可省略（GFM 允许）；不是标准表格的竖线行照旧按普通段落渲染，
+       避免把「|l 文字」这类对齐段误判 */
+    if(/^\s*\|/.test(L)){
+      const rows=[];let k=i;
+      while(k<lines.length&&/^\s*\|/.test(lines[k])){rows.push(lines[k]);k++;}
+      const isSep=r=>/^\s*\|[\s:|-]*$/.test(r)&&/-/.test(r);
+      if(rows.length>=2&&isSep(rows[1])){
+        const cells=r=>r.trim().replace(/^\|/,"").replace(/\|$/,"").split("|").map(x=>x.trim());
+        const head=cells(rows[0]);
+        const align=cells(rows[1]).map(a=>{
+          const l=/^:/.test(a), r=/:$/.test(a);
+          return (l&&r)?"center":r?"right":l?"left":"";
+        });
+        const body=rows.slice(2).map(cells);
+        const st=j=>align[j]?` style="text-align:${align[j]}"`:"";
+        out.push('<div class="md-table"><table><thead><tr>'+
+          head.map((c,j)=>`<th${st(j)}>${inline(c)}</th>`).join("")+
+          '</tr></thead><tbody>'+
+          body.map(r=>"<tr>"+head.map((_,j)=>`<td${st(j)}>${inline(r[j]||"")}</td>`).join("")+"</tr>").join("")+
+          '</tbody></table></div>');
+        i=k;continue;
+      }
     }
     /* 对齐段落：|l 文字 / |c 文字 / |r 文字（连续几行算一段） */
     const am=L.match(/^\|([lcr])\s+(.*)/);
