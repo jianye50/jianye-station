@@ -15,9 +15,9 @@
   {
    "name": "动态图片",
    "key": "album-b894e4",
-   "count": 1,
-   "cover": "assets/photos/album-b894e4/1792917261955-90324aba-480.webp",
-   "coverBlur": "data:image/webp;base64,UklGRsIAAABXRUJQVlA4ILYAAABwBQCdASoYABgAPwF2slQrJqQjKAgBYCAJQBdgO4FwYldRxspZXne/cD2rQpy1zNwTWzsAAP7axs5vj9TDFf/do3V73Aqx8umX5BP/2RCMajWOKCrET90GrMZcffLm3FVmVxRVzV43iLX5RjV/4HN0E1v49MUZk2QfgJX3eMosgHaA2wjo+mL2tRVDGevBy7rgbDOlsP0v1a9BSXsmI1Z8w3J4U55LLNT8hpEKZAtMiOIymwAAAA=="
+   "count": 2,
+   "cover": "assets/photos/album-b894e4/1793422628053-9b223a26-480.webp",
+   "coverBlur": "data:image/webp;base64,UklGRswAAABXRUJQVlA4IMAAAAAwBgCdASoYABgAPwF2rlKrJyOiqAqpYCAJZQC91bLWzkbQTNBFbT01hU3Opy0HksvZXKn8iuRhywgAAP7w0ZlV5kaRYr52EBqho9d5ygeBKsH7wQnIK6sXHD4HeiOEN4kcjyOZUDJs00wSyYKkaGgPpqheKOQEDKFZCYt4VocCm70Z8/qEIwrJGNJkkKIZVr17i++tiqoqDiCJQDT/CZwYoXIa6XrC5iDJSEx07dNPmEcyQdOzwTCoQkUxGtmy4AA="
   }
  ],
  "photos": [
@@ -188,6 +188,20 @@
    "w": 0,
    "h": 0,
    "motion": false
+  },
+  {
+   "name": "1793422628053",
+   "album": "动态图片",
+   "type": "image",
+   "src": "Photo%20Album/%E5%8A%A8%E6%80%81%E5%9B%BE%E7%89%87/1793422628053.jpeg",
+   "hash": "9b223a26",
+   "thumb": "assets/photos/album-b894e4/1793422628053-9b223a26-480.webp",
+   "thumb2x": "assets/photos/album-b894e4/1793422628053-9b223a26-960.webp",
+   "view": "assets/photos/album-b894e4/1793422628053-9b223a26-view.webp",
+   "blur": "data:image/webp;base64,UklGRswAAABXRUJQVlA4IMAAAAAwBgCdASoYABgAPwF2rlKrJyOiqAqpYCAJZQC91bLWzkbQTNBFbT01hU3Opy0HksvZXKn8iuRhywgAAP7w0ZlV5kaRYr52EBqho9d5ygeBKsH7wQnIK6sXHD4HeiOEN4kcjyOZUDJs00wSyYKkaGgPpqheKOQEDKFZCYt4VocCm70Z8/qEIwrJGNJkkKIZVr17i++tiqoqDiCJQDT/CZwYoXIa6XrC5iDJSEx07dNPmEcyQdOzwTCoQkUxGtmy4AA=",
+   "w": 2554,
+   "h": 1440,
+   "motion": true
   },
   {
    "name": "1792917261955",
