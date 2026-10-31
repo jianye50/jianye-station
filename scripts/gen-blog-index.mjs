@@ -16,6 +16,10 @@
 import { readdirSync, readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
+
+/* 与 gen-blog-en.mjs 的 sha1 完全同一算法：用来判断英文版是否落后于中文 */
+const sha1 = s => createHash("sha1").update(s).digest("hex").slice(0, 16);
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const blogDir = join(root, "blog");
@@ -27,6 +31,8 @@ if (!existsSync(blogDir) || !statSync(blogDir).isDirectory()) {
 /* 与网站 index.html 里的 parsePost 保持一致 */
 function parseFM(raw) {
   const meta = {}; let body = raw;
+  /* 去掉 BOM 与开头空行（Windows 记事本另存会带 BOM，会让 front matter 整块失配） */
+  raw = String(raw).replace(/^\uFEFF/, "").replace(/^(?:[ \t]*\r?\n)+/, "");
   const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if (m) {
     m[1].split(/\r?\n/).forEach(line => {
@@ -59,7 +65,8 @@ for (const name of readdirSync(blogDir)) {
   }
   if (!mdPath) continue;
   coverDirs.push({ slug, dir: join(blogDir, imgBase === "blog/" ? "" : name) });
-  const { meta, body } = parseFM(readFileSync(mdPath, "utf8"));
+  const mdRaw = readFileSync(mdPath, "utf8");
+  const { meta, body } = parseFM(mdRaw);
   const tags = Array.isArray(meta.tags) ? meta.tags
     : (meta.tags ? String(meta.tags).split(/[,，]/).map(x => x.trim()).filter(Boolean) : []);
   const post = {
@@ -87,6 +94,13 @@ for (const name of readdirSync(blogDir)) {
       if (en.title) post.titleEn = en.title;
       if (en.desc) post.descEn = en.desc;
       if (enTags.length) post.tagsEn = enTags;
+      /* 英文版是否落后于中文：srcHash 与当前中文内容的哈希对不上就标记。
+         纯诊断字段（前端不用它），补翻成功后会自动消失，方便一眼看出哪篇没跟上 */
+      if (en.srchash && en.srchash !== sha1(mdRaw)) {
+        post.enStale = true;
+        /* 走 stderr，别污染 --stdout 的 JSON 输出 */
+        console.warn(`! 英文版落后于中文：${name}（英文记录 ${en.srchash} ≠ 当前 ${sha1(mdRaw)}）`);
+      }
     } catch (e) { /* 英文版读坏了就当没有，网站回退中文原文 */ }
   }
   posts.push(post);

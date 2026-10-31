@@ -1,23 +1,32 @@
-# 博客文章变动时自动重新生成 blog/index.json 并提交，
-# Cloudflare Pages 会随之自动重新部署。
-# （也可以不用本 Action，改为在 Pages 的构建命令里填：node scripts/gen-blog-index.mjs）
+# 博客文章变动时自动重新生成 blog/index.json（含缩略图）并提交，Cloudflare Pages 随之重新部署。
+#
+# 加固点（2026-10-31）：
+#   1. concurrency 改用「blog-writer」，与 gen-blog-en 串行执行 —— 两边以前各用各的组名，
+#      会同时改 blog/index.json，后推的那次必被拒（仓库里 09:34:39 那次失败就是这么来的）；
+#   2. push 失败改成 pull --rebase 后重试 3 次，不再一次失败就整个 Action 变红。
 name: gen-blog-index
 on:
   push:
     paths:
       - "blog/**"
       - "scripts/gen-blog-index.mjs"
+      - "!blog/index.json"       # 自己写出来的文件不再触发自己
   workflow_dispatch:
+
 permissions:
   contents: write
+
 concurrency:
-  group: gen-blog-index
-  cancel-in-progress: true
+  group: blog-writer
+  cancel-in-progress: false      # 不取消在跑的（中途取消会留下写了一半的缩略图）
+
 jobs:
   gen:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -26,10 +35,16 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add blog/index.json
+          git add -A blog/index.json blog/thumbs
           if git diff --cached --quiet; then
             echo "博客索引无变化，跳过提交"
-          else
-            git commit -m "chore: 自动更新博客索引 blog/index.json"
-            git push
+            exit 0
           fi
+          git commit -m "chore: 自动更新博客索引 blog/index.json"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME}" >/dev/null 2>&1 || true
+            if git push; then echo "✓ 已推送"; break; fi
+            echo "push 失败，5 秒后重试（$i/3）"
+            git log --oneline -1
+            sleep 5
+          done

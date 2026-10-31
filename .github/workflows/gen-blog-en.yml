@@ -1,8 +1,13 @@
 # 博客文章一有变动（新增 / 修改 / 删除），自动生成英文版 index.en.md 并提交。
-# 之后 gen-blog-index 会跟着更新 blog/index.json，Cloudflare Pages 自动重新部署，
-# 英文界面就直接读这份静态英文版，不再依赖浏览器临时机翻。
+# 之后 Cloudflare Pages 自动重新部署，英文界面直接读这份静态英文版，不再依赖浏览器临时机翻。
 #
 # 手动补翻历史文章：Actions → gen-blog-en → Run workflow（勾 force 可强制全部重译）。
+#
+# 加固点（2026-10-31）：
+#   1. 与 gen-blog-index 共用 concurrency group「blog-writer」，两者不再同时写 blog/index.json；
+#   2. 翻译失败时本次运行会被标红（脚本以非 0 退出），不再「绿色成功但什么都没翻」；
+#      已成功的部分仍会提交（提交步骤带 if: always()），下一轮自动补翻；
+#   3. 每 6 小时兜底重跑一次，被限流漏掉的篇目自动补上，不用等下次改文章。
 name: gen-blog-en
 on:
   push:
@@ -11,19 +16,24 @@ on:
       - "!blog/*.en.md"          # 英文版自身的变化不再触发（否则会自己套自己）
       - "!blog/**/*.en.md"
       - "!blog/index.json"
+      - "!blog/thumbs/**"        # 只是缩略图变化，没必要重跑翻译
       - "scripts/gen-blog-en.mjs"
+  schedule:
+    - cron: "17 */6 * * *"       # 每 6 小时兜底补翻（UTC）
   workflow_dispatch:
     inputs:
       force:
-        description: "强制重译全部文章（忽略内容哈希）"
+        description: "强制重译全部文章（忽略内容哈希；人工英文版仍不会被覆盖）"
         type: boolean
         default: false
 
 permissions:
   contents: write
 
+# 关键：和 gen-blog-index 用同一个组名，两个 workflow 会排队串行执行，
+# 不会出现「索引把刚写好的英文版字段覆盖掉」的竞争
 concurrency:
-  group: gen-blog-en
+  group: blog-writer
   cancel-in-progress: false      # 翻到一半被掐掉会白烧接口调用，绝不取消
 
 jobs:
@@ -46,12 +56,14 @@ jobs:
 
       # 用 GITHUB_TOKEN 推送的提交不会触发其它 workflow（GitHub 防递归），
       # 所以 gen-blog-index 不会自动跟着跑 —— 在这里顺手重建索引，
-      # 让 blog/index.json 的 mdEn / titleEn / descEn / tagsEn 和英文版一起进同一个提交，
-      # 否则列表页英文界面拿不到英文标题，还会退化成临时机翻。
+      # 让 blog/index.json 的 mdEn / titleEn / descEn / tagsEn 和英文版一起进同一个提交。
+      # if: always() —— 翻译失败（上一步已标红）也要把已翻好的部分和索引写回去
       - name: 同步博客索引（带上英文字段）
+        if: always()
         run: node scripts/gen-blog-index.mjs
 
       - name: 提交英文版与索引
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

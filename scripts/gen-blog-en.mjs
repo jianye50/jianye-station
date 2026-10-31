@@ -44,6 +44,10 @@ const hasCJK = s => /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/.test(String(s ||
 /* ---------- front matter 解析（与网站 index.html / gen-blog-index.mjs 保持一致） ---------- */
 function parseFM(raw) {
   const meta = {}; let body = raw;
+  /* 去掉 BOM 和开头的空行：Windows 记事本「另存为 UTF-8」会加 BOM，
+     带 BOM 时 ^--- 匹配不上，front matter 整块失效 ——
+     下游就会把这份英文版误判成「人工写的」而永不更新，必须先清掉 */
+  raw = String(raw).replace(/^\uFEFF/, "").replace(/^(?:[ \t]*\r?\n)+/, "");
   const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if (m) {
     m[1].split(/\r?\n/).forEach(line => {
@@ -356,18 +360,37 @@ for (const a of articles) {
   /* 已有英文版：人工写的别动，自动生成的看哈希 */
   let prev = null;
   if (existsSync(a.dst)) {
-    let prevBody = "";
-    try {
-      const p = parseFM(readFileSync(a.dst, "utf8"));
+    let prevBody = "", broken = "";
+    let rawEn = "";
+    try { rawEn = readFileSync(a.dst, "utf8"); } catch (e) { broken = "读取失败：" + e.message; }
+    if (!broken) {
+      const p = parseFM(rawEn);
       prev = p.meta; prevBody = p.body;
-    } catch (e) { prev = null; }
-    const isAuto = String(prev && prev.auto) === "true";
-    if (!isAuto) { console.log(`= 跳过（人工英文版）${rel}`); skipped++; continue; }
-    if (!FORCE && prev.srchash === hash) {
-      /* 源文章没变，但旧版脚本可能把「带空格/括号的文件名」翻坏了（图片 404）：
-         图片地址对不上就重译一次，让坏图自己修回来 */
-      if (sameImgs(body, prevBody)) { console.log(`= 跳过（未改动）${rel}`); skipped++; continue; }
-      console.log(`! 图片地址与原文对不上，重新翻译 ${rel}`);
+      /* 连 front matter 都解析不出来，或者正文是空的 → 这份文件是坏的，
+         不能当成「人工英文版」供起来，否则这篇会永远不更新（本脚本最容易踩的坑） */
+      if (!Object.keys(prev).length) broken = "没有可解析的 front matter";
+      else if (!prevBody.trim()) broken = "正文为空";
+    }
+    if (broken) {
+      prev = null;                                  /* 坏文件按「不存在」处理，直接重译覆盖 */
+      console.log(`! 英文版损坏（${broken}），重新翻译 ${rel}`);
+      console.log(`::warning::英文版损坏，已重新生成：${rel}（${broken}）`);
+    } else {
+      const isAuto = String(prev && prev.auto) === "true";
+      if (!isAuto) {
+        /* 人工写的英文版：绝不覆盖，但必须在 Actions 摘要里显性说出来。
+           否则「改了中文、英文不动」会变成看不出来的静默跳过 —— 这是之前排查最费劲的一类问题 */
+        const msg = `跳过人工英文版（front matter 里没有 auto: true）：${rel}`;
+        console.log(`= ${msg}`);
+        console.log(`::warning::${msg}${FORCE ? " —— 即使加了 --force 也不覆盖；确实要重译就删掉这个文件，或补一行 auto: true" : ""}`);
+        skipped++; continue;
+      }
+      if (!FORCE && prev.srchash === hash) {
+        /* 源文章没变，但旧版脚本可能把「带空格/括号的文件名」翻坏了（图片 404）：
+           图片地址对不上就重译一次，让坏图自己修回来 */
+        if (sameImgs(body, prevBody)) { console.log(`= 跳过（未改动）${rel}`); skipped++; continue; }
+        console.log(`! 图片地址与原文对不上，重新翻译 ${rel}`);
+      }
     }
   }
 
@@ -411,9 +434,17 @@ for (const a of articles) {
   } catch (e) {
     failed++;
     console.log(`失败：${e.message}（保留原文，下次再试）`);
+    console.log(`::error::翻译失败，这篇的英文版仍是旧内容：${rel} —— ${e.message}`);
     if (FATAL) { console.log("! 接口本次不可用，先停下——已经翻好的文章照样会提交，剩下的下次再补。"); break; }
   }
 }
 
 console.log(`\n✓ 英文版：新增 ${added} / 更新 ${updated} / 跳过 ${skipped} / 删除 ${removed} / 失败 ${failed}${DRY ? "（dry-run，未写文件）" : ""}`);
-/* 有失败也不要让 Action 挂掉：已成功的那部分照常提交，失败的下一轮自动补 */
+/* ---- 结局：只要有失败，就把这次运行标红 ----
+   以前不管成败都退出 0，接口被限流时 Action 一片绿，实际一个文件都没更新，
+   在页面上和「跳过」完全分不出来。现在失败可见：
+   已翻好的部分照常提交（workflow 的提交步骤带 if: always()），下一轮自动补翻。 */
+if (failed && !DRY) {
+  console.log(`::error::有 ${failed} 篇文章没翻成，线上英文版仍是旧内容 —— 已成功的部分照常提交，稍后重跑会自动补翻`);
+  process.exitCode = 1;
+}
