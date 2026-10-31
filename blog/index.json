@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-31T10:43:23.336Z",
+  "generated": "2026-10-31T10:52:46.649Z",
   "posts": [
     {
       "slug": "Jianye PE驱动安装模块 3.0 重磅发布",
@@ -29,6 +29,31 @@
       },
       "coverThumb": "blog/thumbs/Jianye_PE驱动安装模块_3.0_重磅发布-cover.webp",
       "bgThumb": "blog/thumbs/Jianye_PE驱动安装模块_3.0_重磅发布-bg.webp"
+    },
+    {
+      "slug": "Secure Boot （安全启动）操作说明",
+      "md": "blog/Secure Boot （安全启动）操作说明/index.md",
+      "imgBase": "blog/Secure Boot （安全启动）操作说明/",
+      "title": "Secure Boot （安全启动）操作说明",
+      "desc": "",
+      "tags": [
+        "安全"
+      ],
+      "date": "2026-10-31",
+      "minutes": 1,
+      "cover": "1745762684683.jpg",
+      "bg": "1745762684683.jpg",
+      "mdEn": "blog/Secure Boot （安全启动）操作说明/index.en.md",
+      "titleEn": "Secure Boot Operating Instructions",
+      "tagsEn": [
+        "Safety"
+      ],
+      "imgs": {
+        "1745762684683.jpg": "blog/thumbs/Secure_Boot_（安全启动）操作说明-i0.webp",
+        "secure_key.gif": "blog/thumbs/Secure_Boot_（安全启动）操作说明-i3.webp"
+      },
+      "coverThumb": "blog/thumbs/Secure_Boot_（安全启动）操作说明-cover.webp",
+      "bgThumb": "blog/thumbs/Secure_Boot_（安全启动）操作说明-bg.webp"
     },
     {
       "slug": "拥有时不毁，失去时不悔",
