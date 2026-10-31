@@ -1104,8 +1104,10 @@ body.lb-lock{overflow:hidden}
   background:linear-gradient(105deg,transparent 0%,rgba(122,162,255,.08) 28%,rgba(173,206,255,.22) 50%,rgba(122,162,255,.08) 72%,transparent 100%);
   transform:translateX(-140%);animation:skl-sweep 1.5s ease-in-out infinite}
 @keyframes skl-sweep{to{transform:translateX(420%)}}
-/* 数据到达：卡片按顺序错开 60ms 依次浮现（淡入 + 上移 8px 归位） */
-.rv{animation:card-in .5s cubic-bezier(.22,.61,.36,1) both}
+/* 数据到达：卡片按顺序错开 60ms 依次浮现（淡入 + 上移 8px 归位）
+   填充模式必须是 backwards（只在延迟期间保持起始态），不能用 both ——
+   animation 的 forwards 会一直压着 transform，把 .post-card:hover 的上浮整个吃掉 */
+.rv{animation:card-in .5s cubic-bezier(.22,.61,.36,1) backwards}
 @keyframes card-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @media (prefers-reduced-motion:reduce){
   .skl-beam::before{animation:none}
@@ -1135,7 +1137,7 @@ body.lb-lock{overflow:hidden}
 .bs-kbd{flex:none;margin-left:auto;font-size:11.5px;color:var(--text-3);border:1px solid var(--card-border);
   border-radius:6px;padding:2px 7px;line-height:1.5;user-select:none}
 mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;padding:0 1px}
-.rvf{animation:card-in .2s ease both}   /* 筛选重绘：快速淡入，不做错峰 */
+.rvf{animation:card-in .2s ease backwards}   /* 筛选重绘：快速淡入，不做错峰 */
 @media (max-width:560px){.bs-kbd{display:none}.blog-search{gap:8px}}
 /* 文章页 */
 .post-hero{position:relative;height:min(46vh,380px);background:var(--hero-fallback);overflow:hidden}
@@ -1495,13 +1497,15 @@ function steamModuleHTML(){
     if(g.hoursTotal!=null)meta.push(t.about.steamHours.replace("{h}",g.hoursTotal));
     if(g.last)meta.push(t.about.steamLast.replace("{d}",g.last));
     const pct=(g.achEarned!=null&&g.achTotal)?Math.min(100,Math.round(g.achEarned/g.achTotal*100)):null;
-    /* 封面三级兜底：竖版海报 → 横版头图 → 移除图片只留渐变底 */
+    /* 封面三级兜底：竖版海报 → 横版头图 → 移除图片只留渐变底。
+       兜底地址走 data-fb 交给 dataset 读，不再拼进内联脚本字符串 ——
+       URL 里若带引号，直接拼会把这行 JS 截断 */
     const cover=g.cover||g.capsule||"";
     const fb=g.header||(g.appid?`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/header.jpg`:"");
     return `
     <a class="steam-game" href="https://steamcommunity.com/app/${g.appid||""}" target="_blank" rel="noopener" title="${esc(g.name)}">
-      <img class="steam-bg" src="${esc(cover)}" alt="${esc(g.name)}" loading="lazy" decoding="async"
-           onerror="if(!this.dataset.f&&'${esc(fb)}'){this.dataset.f=1;this.src='${esc(fb)}'}else{this.remove()}">
+      <img class="steam-bg" src="${esc(cover)}" alt="${esc(g.name)}" loading="lazy" decoding="async" data-fb="${esc(fb)}"
+           onerror="if(!this.dataset.f&&this.dataset.fb){this.dataset.f=1;this.src=this.dataset.fb}else{this.remove()}">
       <div class="steam-shade"></div>
       <div class="steam-info">
         <h4>${esc(g.name)}</h4>
@@ -1616,7 +1620,7 @@ const I18N={
       title:"博客",
       sub:n=>`共 ${n} 篇 · 慢慢读`,
       empty:"blog 文件夹里还没有文章。用 blog 里的编辑器写第一篇吧。",
-      err:"暂时读不到文章。<br>本地预览：在站点目录运行 <code>python -m http.server</code>，再访问 <code>http://127.0.0.1:8000/new/index.html</code>；<br>已部署：确认 <code>blog/</code> 里有文章子文件夹（含 <code>index.md</code>）或 <code>.md</code> 文件即可，无需任何清单。",
+      err:"暂时读不到文章。<br>本地预览：在站点目录运行 <code>python -m http.server</code>，再访问 <code>http://127.0.0.1:8000/</code>；<br>已部署：确认 <code>blog/</code> 里有文章子文件夹（含 <code>index.md</code>）或 <code>.md</code> 文件即可，无需任何清单。",
       back:"返回博客",
       read:"阅读全文",
       minutes:n=>`${n} 分钟读完`,
@@ -1688,7 +1692,7 @@ const I18N={
       title:"Blog",
       sub:n=>`${n} post${n===1?"":"s"} · keep reading`,
       empty:"No posts in the blog folder yet. Use the editor inside blog/ to write one.",
-      err:"Can't read any post.<br>For local preview: run <code>python -m http.server</code> in the site folder and open <code>http://127.0.0.1:8000/new/index.html</code>;<br>once deployed: just make sure <code>blog/</code> holds article folders (with <code>index.md</code>) or <code>.md</code> files — no manifest needed.",
+      err:"Can't read any post.<br>For local preview: run <code>python -m http.server</code> in the site folder and open <code>http://127.0.0.1:8000/</code>;<br>once deployed: just make sure <code>blog/</code> holds article folders (with <code>index.md</code>) or <code>.md</code> files — no manifest needed.",
       back:"Back to Blog",
       read:"Read article",
       minutes:n=>`${n} min read`,
@@ -1766,11 +1770,13 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const T=()=>I18N[lang];
 
 /* ---------- 工具函数 ---------- */
-function setLang(v){
+function setLang(v,persist){
   lang=v;
   document.documentElement.lang=v==="zh"?"zh-CN":"en";
   document.title=T().brand;
-  try{ localStorage.setItem("jy-lang",v); }catch(e){}   /* 隐私模式 / 禁用存储时别让切换语言直接抛异常 */
+  /* 只有用户自己点 EN/中 才落盘（persist!==false）。启动时那句 setLang 不写，
+     否则第一次访问就把「系统语言探测结果」固定下来，之后换系统语言也再不跟随 */
+  if(persist!==false){ try{ localStorage.setItem("jy-lang",v); }catch(e){} }
   $("#langBtn").textContent=v==="zh"?"EN":"中";
   $("#langBtn").title=T().langTip||"Switch language";
   $("#langBtn").setAttribute("aria-label",$("#langBtn").title);
@@ -2040,7 +2046,11 @@ function promoteMotion(p,tile,autoplay){
    注意：列表里绝不加载原图 —— 原图只在播放动态照片时按需取一次。 */
 function mediaTileTag(p,i){
   if(p.type==="video"){
-    return `<video src="${esc(p.thumb||p.src)}" preload="metadata" muted playsinline
+    /* #t=0.1：让浏览器去抓第 0.1 秒的画面当封面。
+       只写 preload="metadata" 时，不少浏览器（尤其 iOS Safari）只显示一片黑 */
+    const vsrc=p.thumb||p.src;
+    const src=vsrc.indexOf("#")<0?vsrc+"#t=0.1":vsrc;
+    return `<video src="${esc(src)}" preload="metadata" muted playsinline
       onerror="this.style.display='none'"></video>`;
   }
   const src=p.thumb||p.src;
@@ -2093,7 +2103,7 @@ function albumStripHtml(){
     <button class="al-card" data-album="${esc(a.name)}" type="button" aria-label="${esc(a.name)}">
       <span class="al-cover">${
         a.cover?(VID_RE.test(a.cover)
-          ?`<video src="${esc(a.cover)}" preload="metadata" muted playsinline></video>`
+          ?`<video src="${esc(a.cover.indexOf("#")<0?a.cover+"#t=0.1":a.cover)}" preload="metadata" muted playsinline></video>`
           :`<img src="${esc(a.cover)}" alt="" loading="lazy" decoding="async"${a.blur?` style="background-image:url('${a.blur}')"`:""} onerror="this.remove()">`)
         :`<span class="al-folder">📁</span>`}</span>
       <span class="al-name">${esc(a.name)}</span>
@@ -2521,8 +2531,23 @@ function renderHome(){
   setTimeout(prefetchBlog,600);   /* 闲时预取博客清单：点进博客秒开 */
 }
 
+/* 打开子相册 / 回到「全部」：相册名进 hash，历史记录与刷新都能对上。
+   hash 没变化（点了同一个相册）时手动重绘一次，否则什么都不会发生 */
+function openAlbum(name){
+  galleryFilter=name||"";
+  const h="#/gallery"+(galleryFilter?"/"+encodeURIComponent(galleryFilter):"");
+  if(location.hash===h)route(); else location.hash=h;
+}
+
 function renderGallery(){
   const t=T();
+  /* hash 里的相册名可能已经失效（相册被改名 / 删掉了）：退回「全部」，
+     顺手把地址栏也改回来，免得下次刷新又白跑一趟。
+     相册还没读出来时（albums 为空）先不动，等数据到了再判一次 */
+  if(galleryFilter&&albums.length&&!albums.some(a=>a.name===galleryFilter)){
+    galleryFilter="";
+    try{ history.replaceState(null,"","#/gallery"); }catch(e){}
+  }
   const list=viewList();
   const backBtn=galleryFilter
     ?`<button class="al-back" data-album-back type="button">${esc(t.gallery.back)}</button>`:"";
@@ -2845,7 +2870,9 @@ async function fetchBlogData(){
   return {posts:Array.from(found.values()).sort(byDateDesc),ok};
 }
 async function loadBlog(){
-  if(blogCache)return blogCache;
+  /* 只认「非空」的缓存：之前失败过一次留下空数组，空数组是 truthy，
+     会把后面的重试全部挡掉 —— 断网进来过就再也刷不出文章，只能整页刷新 */
+  if(blogCache&&blogCache.length)return blogCache;
   /* 部署环境：优先读静态清单（一次请求、走 CDN，最快） */
   if(!IS_LOCAL){
     const m=await manifestPosts();
@@ -2887,7 +2914,7 @@ async function refreshBlogInBackground(){
 /* 首页闲时预取清单：等你点进「博客」时列表已经在手里了 */
 let blogPreAt=0;
 function prefetchBlog(){
-  if(IS_LOCAL||blogCache||location.hash.indexOf("#/blog")===0)return;
+  if(IS_LOCAL||(blogCache&&blogCache.length)||location.hash.indexOf("#/blog")===0)return;
   const now=Date.now();
   if(now-blogPreAt<120000)return;blogPreAt=now;
   manifestPosts().then(m=>{if(m&&m.length){blogCache=m;blogErr=false;}});
@@ -2900,8 +2927,11 @@ function isHTMLFallbackText(t){
   return /^\s*(?:\ufeff)?\s*<(!doctype|html|head|body)/i.test(String(t).slice(0,120));
 }
 function parsePost(raw){
-  const meta={};let body=raw;
-  const m=raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  const meta={};
+  /* 先清掉 BOM 与开头的空行：记事本之类另存会加 BOM，手抖先敲个回车也很常见，
+     不处理的话 ^--- 匹配不上，整段 front matter 会当正文渲染出来（标题/标签也全丢） */
+  let body=String(raw==null?"":raw).replace(/^\ufeff/,"").replace(/^(?:[ \t]*\r?\n)+/,"");
+  const m=body.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if(m){
     m[1].split(/\r?\n/).forEach(line=>{
       const kv=line.match(/^([A-Za-z][\w-]*):\s*(.*)$/);
@@ -2936,6 +2966,10 @@ function mdToHTML(md,imgBase,imgMap){
   };
   const inline=s=>{
     s=esc(s);
+    /* 行内代码先摘成占位符：否则里面的 * _ 会被下面的强调规则当成标记，
+       `a*b*c` 会被渲染成 a<em>b</em>c（代码内容被改坏）。译后统一还原。 */
+    const codes=[];
+    s=s.replace(/`([^`]+)`/g,(m,c)=>{codes.push(c);return "\u0001K"+(codes.length-1)+"\u0001";});
     /* 图片/链接路径允许空格与一层括号（Windows 截图等文件名常带空格/括号） */
     s=s.replace(/!\[([^\]]*)\]\(((?:[^()]|\([^()]*\))+)\)/g,(m,alt,src)=>{
       src=src.trim();
@@ -2954,8 +2988,11 @@ function mdToHTML(md,imgBase,imgMap){
       return `<a href="${u}" target="_blank" rel="noopener">${txt}</a>`;
     });
     s=s.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
-       .replace(/\*([^*]+)\*/g,"<em>$1</em>")
-       .replace(/`([^`]+)`/g,"<code>$1</code>");
+       .replace(/\*([^*]+)\*/g,"<em>$1</em>");
+    s=s.replace(/\u0001K(\d+)\u0001/g,(m,i)=>{
+      const c=codes[+i];
+      return c===undefined?m:"<code>"+c+"</code>";
+    });
     return s;
   };
   const lines=md.split(/\r?\n/),out=[];let i=0;
@@ -3006,9 +3043,11 @@ const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov",
 function fmtDate(d,short){
   const m=(d||"").match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
   if(!m)return d||"";
+  const mo=+m[2],day=+m[3];
+  if(!(mo>=1&&mo<=12)||!(day>=1&&day<=31))return d||"";   /* 日期写错就原样显示，别输出 undefined */
   return lang==="zh"
-    ?(short?`${+m[2]} 月 ${+m[3]} 日`:`${m[1]} 年 ${+m[2]} 月 ${+m[3]} 日`)
-    :(short?`${MONTHS[+m[2]-1]} ${+m[3]}`:`${MONTHS[+m[2]-1]} ${+m[3]}, ${m[1]}`);
+    ?(short?`${mo} 月 ${day} 日`:`${m[1]} 年 ${mo} 月 ${day} 日`)
+    :(short?`${MONTHS[mo-1]} ${day}`:`${MONTHS[mo-1]} ${day}, ${m[1]}`);
 }
 function postSrc(p,f){ return /^(https?:|data:|\/)/.test(f)?f:((p&&p.imgBase)||"")+f; }
 /* 由中文原文地址推出英文版地址：blog/x/index.md → blog/x/index.en.md */
@@ -3055,13 +3094,17 @@ function blogMatch(p,q){
 }
 /* 转义后高亮：命中片段包 <mark>，不会引入 HTML 注入 */
 function hiText(str,q){
-  let s=esc(str||"");
+  const s=esc(str||"");
   const words=(q||"").trim().split(/\s+/).filter(Boolean);
-  words.forEach(w=>{
-    const safe=esc(w).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
-    if(safe)s=s.replace(new RegExp("("+safe+")","gi"),"<mark>$1</mark>");
-  });
-  return s;
+  if(!words.length)return s;
+  const safe=words.map(w=>esc(w).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).filter(Boolean);
+  if(!safe.length)return s;
+  const pat=new RegExp("("+safe.join("|")+")","gi");
+  /* 只在「非实体」片段里高亮：整串直接替换的话，搜 "amp" 会把 &amp; 拆成
+     "&<mark>amp</mark>;"，页面就露出一个裸分号。 */
+  return s.split(/(&[#a-zA-Z0-9]+;)/).map(part=>
+    /^&[#a-zA-Z0-9]+;$/.test(part)?part:part.replace(pat,"<mark>$1</mark>")
+  ).join("");
 }
 function blogListHTML(list,q,stagger){
   const t=T();
@@ -3171,6 +3214,7 @@ async function renderBlog(gen){
   const body=document.getElementById("blogBody");
   if(!body)return;
   blogPosts=posts;
+  trResetFail();   /* 进博客页（或换了列表）时清一次引擎冷却；搜索筛选时不再重复清 */
   if(sub)sub.textContent=t.blog.sub(posts.length);
   if(blogErr){
     const bs=document.querySelector(".blog-search");
@@ -3457,12 +3501,15 @@ async function translateMarkdown(md){
      如果先切组再判断「整组都是段落」，段落和结构行一混组就全退化成逐行。 */
   const GROUP=6;
   const isStruct=line=>/^#{1,6}\s/.test(line)||/^\s*([-*+]|\d+[.)])\s/.test(line)||/^>\s?/.test(line);
-  const singles=[];        /* 结构行：逐行翻 */
+  /* 行内含行内代码 / 链接 / 图片的行也必须逐行翻：translateLine 会把它们摘成
+     占位符再送翻，合组翻译则是整段原样发出去，代码与 URL 容易被翻坏。 */
+  const hasInline=/`|!\[|\]\(/;
+  const singles=[];        /* 结构行 / 含行内标记的行：逐行翻 */
   const groups=[];         /* 纯段落组：合并成一次请求 */
   let bundle=[];
   const flush=()=>{ if(bundle.length){groups.push(bundle);bundle=[];} };
   for(const j of jobs){
-    if(isStruct(j.line)){ flush(); singles.push(j); }
+    if(isStruct(j.line)||hasInline.test(j.line)){ flush(); singles.push(j); }
     else{ bundle.push(j); if(bundle.length>=GROUP)flush(); }
   }
   flush();
@@ -3513,17 +3560,36 @@ async function translateTags(tags){
   return hit?res:arr;
 }
 const TR_MEM=new Map();   /* 本次会话内缓存，避免同一篇文章来回切语言反复请求 */
-/* 旧版缓存里可能存着「翻译失败、标题仍是中文」的结果，会让标题一直显中文 —— 启动时清一次 */
+/* 旧版缓存（jy-tr: / jy-trm:）里可能存着「翻译失败、标题仍是中文」的结果，会让标题一直
+   显中文。只在首次运行时清一次并落个标记 —— 以前每打开一次页面都要遍历整库 localStorage，
+   而当前用的键是 jy-trb2: / jy-trm2:，这段其实早就空跑了。 */
 (function trPurgeOldCache(){
   try{
+    if(localStorage.getItem("jy-tr-purged")==="2")return;
     const kill=[];
     for(let i=0;i<localStorage.length;i++){
       const k=localStorage.key(i);
-      if(k&&(/^jy-tr:/.test(k)||/^jy-trm:/.test(k)))kill.push(k);
+      if(k&&(/^jy-tr:/.test(k)||/^jy-trm:/.test(k)||/^jy-tr2:/.test(k)))kill.push(k);
     }
     kill.forEach(k=>localStorage.removeItem(k));
+    localStorage.setItem("jy-tr-purged","2");
   }catch(e){}
 })();
+/* 写缓存：localStorage 有 5MB 上限，整篇译文很容易把它撑满。
+   配额满了就先丢掉正文译文缓存再试一次，别让「翻完了却存不下」白翻一遍 */
+function lsPut(k,v){
+  try{ localStorage.setItem(k,v); return true; }catch(e){}
+  try{
+    const kill=[];
+    for(let i=0;i<localStorage.length;i++){
+      const kk=localStorage.key(i);
+      if(kk&&kk!==k&&/^jy-trb/.test(kk))kill.push(kk);
+    }
+    kill.forEach(kk=>localStorage.removeItem(kk));
+    localStorage.setItem(k,v);
+    return true;
+  }catch(e){ return false; }
+}
 /* 翻译一篇完整文章：正文与「标题/摘要/标签」分开缓存。
    好处是正文翻译成功就先落盘（下次打开秒出，不再重复消耗额度），
    标题或标签偶发失败也不会连累正文白翻一遍。 */
@@ -3539,35 +3605,41 @@ async function translatePost(slug,title,desc,body,tags){
     bb=await translateMarkdown(body);
     if(bb&&bb!==body){
       TR_MEM.set(bkey,{b:bb});
-      try{ localStorage.setItem(bkey,JSON.stringify({b:bb})); }catch(e){}
+      lsPut(bkey,JSON.stringify({b:bb}));
     }
   }
   return {t:(meta&&meta.t)||title,d:(meta&&meta.d)||desc,g:(meta&&meta.g)||tags,b:bb||body};
 }
 /* 列表条目的轻量翻译：只翻标题 + 摘要 + 标签，不碰正文（正文进详情页才翻）。
-   独立缓存 jy-trm2:...，与详情页的 jy-tr2:... 互不干扰 */
+   独立缓存 jy-trm2:...，与详情页的 jy-tr2:... 互不干扰。
+   缓存里存的是 Promise：同一个条目的并发请求（打字筛选时会重渲染列表）共用一次，
+   以前每次重渲染都会为同一篇再发一遍翻译请求 */
 const TRM_MEM=new Map();
-async function translatePostMeta(post){
+function translatePostMeta(post){
   const title=post.title||"",desc=post.desc||"",tags=Array.isArray(post.tags)?post.tags:[];
-  if(!hasCJK(title+desc+tags.join("")))return null;   /* 全英文条目不用翻 */
+  if(!hasCJK(title+desc+tags.join("")))return Promise.resolve(null);   /* 全英文条目不用翻 */
   const key="jy-trm2:"+(post.slug||"")+":"+trHash(title+"\u0000"+desc+"\u0000"+tags.join("\u0000"));
-  try{ const c=localStorage.getItem(key); if(c)return JSON.parse(c); }catch(e){}
+  try{ const c=localStorage.getItem(key); if(c)return Promise.resolve(JSON.parse(c)); }catch(e){}
   if(TRM_MEM.has(key))return TRM_MEM.get(key);
-  const [tt,gg,dd]=await Promise.all([
-    hasCJK(title)?gTranslate(title).catch(()=> ""):Promise.resolve(""),
-    translateTags(tags),
-    desc&&hasCJK(desc)?gTranslate(desc).catch(()=> ""):Promise.resolve("")
-  ]);
-  const r={t:tt||title,g:gg,d:dd||desc};
-  TRM_MEM.set(key,r);
-  /* 标题 / 摘要 / 标签有任意一项没翻成就不落盘，下次打开重试，别把中文永久当成译文缓存 */
-  const okT=!hasCJK(title)||!!tt;
-  const okD=!desc||!hasCJK(desc)||!!dd;
-  const okG=tags.every((x,i)=>!hasCJK(x)||(gg[i]&&gg[i]!==x));
-  if(okT&&okD&&okG){
-    try{ localStorage.setItem(key,JSON.stringify(r)); }catch(e){}
-  }
-  return r;
+  const job=(async()=>{
+    const [tt,gg,dd]=await Promise.all([
+      hasCJK(title)?gTranslate(title).catch(()=> ""):Promise.resolve(""),
+      translateTags(tags),
+      desc&&hasCJK(desc)?gTranslate(desc).catch(()=> ""):Promise.resolve("")
+    ]);
+    const r={t:tt||title,g:gg,d:dd||desc};
+    /* 标题 / 摘要 / 标签有任意一项没翻成就不落盘，下次打开重试，别把中文永久当成译文缓存 */
+    const okT=!hasCJK(title)||!!tt;
+    const okD=!desc||!hasCJK(desc)||!!dd;
+    const okG=tags.every((x,i)=>!hasCJK(x)||(gg[i]&&gg[i]!==x));
+    if(okT&&okD&&okG)lsPut(key,JSON.stringify(r));
+    return r;
+  })();
+  /* 失败就撤掉这次记录、下次还能再试；同时给调用方一个可用的中文兜底。
+     存进缓存的也是这个带兜底的 Promise —— 后来的调用方直接拿它，谁都不会抛 */
+  const safe=job.catch(()=>{TRM_MEM.delete(key);return {t:title,g:tags,d:desc};});
+  TRM_MEM.set(key,safe);
+  return safe;
 }
 /* 英文界面下批量翻译博客列表：列表先按中文秒出，译文逐张无感替换。
    seq 是列表代次——搜索词一变列表就重渲染，旧的翻译结果不许再写新 DOM */
@@ -3575,7 +3647,9 @@ let blogTrSeq=0;
 function translateBlogList(list){
   const seq=++blogTrSeq;   /* 列表每重渲染一次（含切回中文）都让在途翻译全部作废 */
   if(lang!=="en"||!Array.isArray(list)||!list.length)return;
-  trResetFail();           /* 每轮列表翻译都重新开始，不受上一轮失败影响 */
+  /* 注意：这里不再 trResetFail()。搜索每敲一个字都会重渲染列表，
+     每次都清冷却的话，接口一被限流就会「每敲一下重新撞一遍」，反而更糟。
+     换文章 / 重新进博客页时已经各清一次了。 */
   const q=blogQuery;
   const slugSel=s=>".post-card[data-slug=\""+((window.CSS&&CSS.escape)?CSS.escape(s):String(s).replace(/"/g,""))+"\"]";
   trPool(list,4,async p=>{
@@ -3608,7 +3682,7 @@ async function renderPost(slug,gen){
     <div class="blog-empty">${msg}</div>
     <div style="text-align:center"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a></div>
   </div></section>`;};
-  if(!post){fail(esc(t.blog.err));return;}
+  if(!post){fail(t.blog.err);return;}
   /* 英文界面优先读静态英文版（index.en.md），读不到再回退中文原文 + 浏览机翻 */
   const enURL=(lang==="en")?(post.mdURLEn||mdEnURL(post.mdURL)):"";
   let raw="",usedEn=false;
@@ -3634,7 +3708,7 @@ async function renderPost(slug,gen){
       if(isHTMLFallbackText(text))throw new Error("html-fallback");
     }
     raw=text;
-  }catch(e){fail(esc(t.blog.err));return;}
+  }catch(e){fail(t.blog.err);return;}
   if(stale())return;   /* 正文网络请求最慢，切走后回来绝不能覆盖新页面 */
   const {meta,body}=parsePost(raw);
   const title=meta.title||post.title||t.blog.untitled;
@@ -3769,7 +3843,15 @@ function route(){
   const hash=location.hash.replace(/^#\/?/,"");
   const parts=hash.split("/").filter(Boolean);
   let active="home";
-  if(parts[0]==="gallery"){active="gallery";renderGallery()}
+  if(parts[0]==="gallery"){
+    active="gallery";
+    /* 子相册名写进 hash（#/gallery/<相册>）：刷新能停在同一相册，
+       浏览器返回键也能从子相册退回「全部」，而不是直接退到站外 */
+    let alb="";
+    if(parts[1]){ try{ alb=decodeURIComponent(parts.slice(1).join("/")); }catch(e){} }
+    galleryFilter=alb;
+    renderGallery();
+  }
   else   if(parts[0]==="blog"){
     active="blog";
     if(parts[1]){
@@ -3787,8 +3869,12 @@ function route(){
   }
   else if(parts[0]==="projects"){location.replace("#/about/projects");return}  /* 旧链接兜底：项目已并入关于页 */
   else renderHome();
-  document.querySelectorAll(".nav-link").forEach(el=>
-    el.classList.toggle("active",el.dataset.nav===active));
+  /* 导航高亮：顺手标 aria-current，读屏能知道当前在哪一页 */
+  document.querySelectorAll(".nav-link").forEach(el=>{
+    const on=el.dataset.nav===active;
+    el.classList.toggle("active",on);
+    if(on)el.setAttribute("aria-current","page"); else el.removeAttribute("aria-current");
+  });
   /* 每页一个独立标题：浏览器历史记录能区分「博客 / 相册 / 关于」
      （文章页等正文加载后会覆盖成文章标题，见 renderPost） */
   document.title=(active==="home")?T().brand:(T().nav[active]+" · "+T().brand);
@@ -3814,7 +3900,7 @@ function route(){
 window.addEventListener("hashchange",route);
 
 /* ---------- 交互绑定 ---------- */
-$("#langBtn").addEventListener("click",()=>setLang(lang==="zh"?"en":"zh"));
+$("#langBtn").addEventListener("click",()=>setLang(lang==="zh"?"en":"zh",true));
 $("#lbClose").addEventListener("click",closeLb);
 $("#lbPrev").addEventListener("click",e=>{e.stopPropagation();stepLb(-1)});
 $("#lbNext").addEventListener("click",e=>{e.stopPropagation();stepLb(1)});
@@ -3848,13 +3934,9 @@ $("#lightbox").addEventListener("touchend",e=>{
 },{passive:true});
 $("#lightbox").addEventListener("touchcancel",()=>{lbTouch=null;},{passive:true});
 document.addEventListener("click",e=>{
-  /* 相册页在子相册里时 hash 仍是 #/gallery：再点导航「相册」不会触发 hashchange，
-     这里手动重置筛选回到全部相册，别让用户只能靠返回按钮出来 */
+  /* 相册页在子相册里时再点导航「相册」→ 回到全部相册（hash 会同步改回 #/gallery） */
   const nav=e.target.closest(".nav-link");
-  if(nav&&nav.dataset.nav==="gallery"&&galleryFilter){
-    const h=location.hash.replace(/^#\/?/,"");
-    if(h==="gallery"||h.indexOf("gallery/")===0){ galleryFilter=""; route(); return; }
-  }
+  if(nav&&nav.dataset.nav==="gallery"&&galleryFilter){ openAlbum(""); return; }
   /* 首屏那个滚动提示：点一下平滑滚到相册预览 */
   const sc=e.target.closest("[data-scroll-to]");
   if(sc){
@@ -3864,13 +3946,13 @@ document.addEventListener("click",e=>{
   }
   /* 子相册卡片：进入该相册；返回按钮：回到全部 */
   const alb=e.target.closest("[data-album]");
-  if(alb){ galleryFilter=alb.dataset.album||""; route(); return; }
+  if(alb){ openAlbum(alb.dataset.album||""); return; }
   const albBack=e.target.closest("[data-album-back]");
-  if(albBack){ galleryFilter=""; route(); return; }
+  if(albBack){ openAlbum(""); return; }
   const tile=e.target.closest(".ph-tile");
   if(!tile||tile.dataset.idx===undefined||tile.classList.contains("ph-skel"))return;
   /* 带「+N」角标的瓷砖 → 跳转相册页，而不是开灯箱 */
-  if(tile.querySelector(".ph-more")){location.hash="#/gallery";return;}
+  if(tile.querySelector(".ph-more")){openAlbum("");return;}
   const grid=tile.closest("[data-photo-grid]");
   lbPreheat(tile);
   openLb((grid&&grid._items)||photos,Number(tile.dataset.idx),grid);
@@ -3940,7 +4022,7 @@ document.addEventListener("keydown",e=>{
   const tile=document.activeElement;
   if(tile&&tile.classList&&tile.classList.contains("ph-tile")&&(e.key==="Enter"||e.key===" ")){
     e.preventDefault();
-    if(tile.querySelector(".ph-more")){location.hash="#/gallery";return;}
+    if(tile.querySelector(".ph-more")){openAlbum("");return;}
     const grid=tile.closest("[data-photo-grid]");
     lbPreheat(tile);
     openLb((grid&&grid._items)||photos,Number(tile.dataset.idx),grid);
@@ -3948,7 +4030,8 @@ document.addEventListener("keydown",e=>{
 });
 
 /* ---------- 启动 ---------- */
-setLang(lang);     /* 统一走 setLang：品牌名、导航文案、语言按钮、云空间入口提示都按语言铺一遍 */
+setLang(lang,false);     /* 统一走 setLang：品牌名、导航文案、语言按钮、云空间入口提示都按语言铺一遍
+                            （persist=false：启动这次不写盘，首次访问继续跟随系统语言） */
 loadPhotos();
 loadFriends();     /* 异步读 friends.txt：配置到达时如正停在关于页，原地重绘友链区 */
 loadSteam();       /* 异步读 steam.json：GitHub Actions 定时生成，到达时同理重绘游戏区 */
@@ -4312,9 +4395,10 @@ input[type=range].mp-range::-moz-range-thumb{
   /* ---------------- 状态 ---------------- */
   const audio=new Audio();
   audio.preload="metadata";
-  /* getItem 包一层：禁用存储的环境里抛异常会让整个播放器初始化失败 */
+  /* getItem 包一层：禁用存储的环境里抛异常会让整个播放器初始化失败
+     （音量允许是 0：拖到静音也是用户的选择，下次打开要保持静音） */
   audio.volume=(function(){ let v=0.85; try{ v=parseFloat(localStorage.getItem(KEY+"-vol")); }catch(e){}
-    return (isFinite(v)&&v>0&&v<=1)?v:0.85; })();
+    return (isFinite(v)&&v>=0&&v<=1)?v:0.85; })();
   volEl.value=String(Math.round(audio.volume*100));
 
   let kgPool=[], searchPool=[];
@@ -4902,7 +4986,7 @@ input[type=range].mp-range::-moz-range-thumb{
     else if(st.kind==="search")tab="search";
     if(!modeUserSet&&typeof st.mode==="number"&&st.mode>=0&&st.mode<=2)mode=st.mode;
     paintMode();
-    if(typeof st.vol==="number"&&st.vol>0&&st.vol<=1){ audio.volume=st.vol; volEl.value=String(Math.round(st.vol*100)); }
+    if(typeof st.vol==="number"&&st.vol>=0&&st.vol<=1){ audio.volume=st.vol; volEl.value=String(Math.round(st.vol*100)); }
     if(!st.track||!st.track.name){ restored=true; renderList(); paintSub(); return; }
     /* 对应的列表还没读好（酷狗要读云端/快照）就先挂起，读好了再恢复 */
     if(st.kind==="kg"&&!kgDone)return;
@@ -5191,11 +5275,12 @@ input[type=range].mp-range::-moz-range-thumb{
     paintMeta(); paintSub(); renderList();
     syncPanelWidth();   /* 中英文切换后导航栏宽度会变，面板跟着重新对齐 */
   }
-  /* 站点右上角 EN / 中 切换时同步：优先接管 setLang，另用 <html lang> 监听兜底 */
+  /* 站点右上角 EN / 中 切换时同步：优先接管 setLang，另用 <html lang> 监听兜底。
+     接管时把所有参数原样转交（setLang 的第二个参数 persist 决定要不要落盘） */
   try{
     if(typeof setLang==="function"){
       const _setLang=setLang;
-      setLang=function(v){ _setLang(v); try{ mpApplyLang(); }catch(e){} };
+      setLang=function(){ const r=_setLang.apply(null,arguments); try{ mpApplyLang(); }catch(e){} return r; };
     }
   }catch(e){}
   try{
