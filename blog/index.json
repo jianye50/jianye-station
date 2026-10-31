@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-31T09:31:32.965Z",
+  "generated": "2026-10-31T09:33:58.156Z",
   "posts": [
     {
       "slug": "拥有时不毁，失去时不悔",
@@ -237,20 +237,13 @@
       "minutes": 4,
       "cover": "mmexport1786370573713.jpg",
       "bg": "mmexport1786370573713.jpg",
-      "mdEn": "blog/鉴业PE 维护系统介绍/index.en.md",
-      "titleEn": "Jianye PE｜Pure Windows PE maintenance system with both good looks and strength",
-      "descEn": "The computer has a blue screen and cannot be turned on? System needs to be reinstalled? Important data needs to be rescued? When encountering these problems, a set of useful PE...",
-      "tagsEn": [
-        "PE",
-        "Maintain system"
-      ],
       "imgs": {
         "55b2278b-c468-4060-ae73-67cb0ff41192.png": "blog/thumbs/鉴业PE_维护系统介绍-i0.webp",
         "Jianye-PE-2026-04-18-12-56-22-2.png": "blog/thumbs/鉴业PE_维护系统介绍-i1.webp",
-        "mmexport1786370573713.jpg": "blog/thumbs/鉴业PE_维护系统介绍-i4.webp",
-        "品牌常用启动热键.png": "blog/thumbs/鉴业PE_维护系统介绍-i5.webp",
-        "鉴业PE-维护系统-2025-07-07-21-33-38.png": "blog/thumbs/鉴业PE_维护系统介绍-i6.webp",
-        "鉴业PE-维护系统-2026-01-02-23-18-20.png": "blog/thumbs/鉴业PE_维护系统介绍-i7.webp"
+        "mmexport1786370573713.jpg": "blog/thumbs/鉴业PE_维护系统介绍-i3.webp",
+        "品牌常用启动热键.png": "blog/thumbs/鉴业PE_维护系统介绍-i4.webp",
+        "鉴业PE-维护系统-2025-07-07-21-33-38.png": "blog/thumbs/鉴业PE_维护系统介绍-i5.webp",
+        "鉴业PE-维护系统-2026-01-02-23-18-20.png": "blog/thumbs/鉴业PE_维护系统介绍-i6.webp"
       },
       "coverThumb": "blog/thumbs/鉴业PE_维护系统介绍-cover.webp",
       "bgThumb": "blog/thumbs/鉴业PE_维护系统介绍-bg.webp"
