@@ -1,6 +1,27 @@
 {
-  "generated": "2026-10-31T09:40:27.054Z",
+  "generated": "2026-10-31T10:15:56.635Z",
   "posts": [
+    {
+      "slug": "Jianye PE驱动安装模块 3.0 重磅发布",
+      "md": "blog/Jianye PE驱动安装模块 3.0 重磅发布/index.md",
+      "imgBase": "blog/Jianye PE驱动安装模块 3.0 重磅发布/",
+      "title": "Jianye PE驱动安装模块 3.0 重磅发布",
+      "desc": "鉴业 PE 驱动安装模块 3.0 核心优势对比表 在当今数字化时代，计算机系统维护面临着日益复杂的挑战，硬件设备的多样性与更新速度不断提升，对 …",
+      "tags": [
+        "PE",
+        "更新",
+        "驱动"
+      ],
+      "date": "2026-10-31",
+      "minutes": 8,
+      "cover": "1745835951264.jpg",
+      "bg": "1745835951264.jpg",
+      "imgs": {
+        "1745835951264.jpg": "blog/thumbs/Jianye_PE驱动安装模块_3.0_重磅发布-i0.webp"
+      },
+      "coverThumb": "blog/thumbs/Jianye_PE驱动安装模块_3.0_重磅发布-cover.webp",
+      "bgThumb": "blog/thumbs/Jianye_PE驱动安装模块_3.0_重磅发布-bg.webp"
+    },
     {
       "slug": "拥有时不毁，失去时不悔",
       "md": "blog/拥有时不毁，失去时不悔/index.md",
