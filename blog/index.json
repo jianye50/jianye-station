@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-31T10:56:39.064Z",
+  "generated": "2026-10-31T10:58:59.558Z",
   "posts": [
     {
       "slug": "Jianye PE驱动安装模块 3.0 重磅发布",
@@ -29,6 +29,33 @@
       },
       "coverThumb": "blog/thumbs/Jianye_PE驱动安装模块_3.0_重磅发布-cover.webp",
       "bgThumb": "blog/thumbs/Jianye_PE驱动安装模块_3.0_重磅发布-bg.webp"
+    },
+    {
+      "slug": "Windows 安全中心保护历史路径",
+      "md": "blog/Windows 安全中心保护历史路径/index.md",
+      "imgBase": "blog/Windows 安全中心保护历史路径/",
+      "title": "Windows 安全中心保护历史路径",
+      "desc": "将此文件夹内可以删除的文件删除，不可以的跳过 在安全中心保护运行中，此文件夹将进行保护，您可以使用安全中心管理工具关闭后查看 需要关闭安全中心或…",
+      "tags": [
+        "安全",
+        "记录"
+      ],
+      "date": "2026-10-31",
+      "minutes": 1,
+      "cover": "1745762684683.jpg",
+      "bg": "1745762684683.jpg",
+      "mdEn": "blog/Windows 安全中心保护历史路径/index.en.md",
+      "titleEn": "Windows Security Center protects historical paths",
+      "descEn": "Delete the files that can be deleted in this folder, and skip the ones that cannot. This folder will be protected while the Security Center protection is running. You can use the Security Center management tool to close it and view it. You need to close the Security Center or...",
+      "tagsEn": [
+        "Safety",
+        "Record"
+      ],
+      "imgs": {
+        "1745762684683.jpg": "blog/thumbs/Windows_安全中心保护历史路径-i0.webp"
+      },
+      "coverThumb": "blog/thumbs/Windows_安全中心保护历史路径-cover.webp",
+      "bgThumb": "blog/thumbs/Windows_安全中心保护历史路径-bg.webp"
     },
     {
       "slug": "拥有时不毁，失去时不悔",
