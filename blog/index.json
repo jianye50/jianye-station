@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-31T05:19:34.463Z",
+  "generated": "2026-10-31T09:27:21.501Z",
   "posts": [
     {
       "slug": "拥有时不毁，失去时不悔",
@@ -222,34 +222,6 @@
       },
       "coverThumb": "blog/thumbs/系统激活命令-cover.webp",
       "bgThumb": "blog/thumbs/系统激活命令-bg.webp"
-    },
-    {
-      "slug": "鉴业PE 维护系统介绍",
-      "md": "blog/鉴业PE 维护系统介绍/index.md",
-      "imgBase": "blog/鉴业PE 维护系统介绍/",
-      "title": "Jianye PE｜颜值与实力兼备的纯净Windows PE维护系统",
-      "desc": "电脑蓝屏无法开机？系统需要重装？重要数据需要抢救？遇到这些问题，一套好用的PE…",
-      "tags": [
-        "PE",
-        "维护系统"
-      ],
-      "date": "2026-10-18",
-      "minutes": 4,
-      "cover": "mmexport1786370573713.jpg",
-      "bg": "mmexport1786370573713.jpg",
-      "mdEn": "blog/鉴业PE 维护系统介绍/index.en.md",
-      "titleEn": "Jianye PE｜Pure Windows PE maintenance system with both good looks and strength",
-      "descEn": "The computer has a blue screen and cannot be turned on? System needs to be reinstalled? Important data needs to be rescued? When encountering these problems, a set of useful PE...",
-      "tagsEn": [
-        "PE",
-        "Maintain system"
-      ],
-      "imgs": {
-        "55b2278b-c468-4060-ae73-67cb0ff41192.png": "blog/thumbs/鉴业PE_维护系统介绍-i0.webp",
-        "mmexport1786370573713.jpg": "blog/thumbs/鉴业PE_维护系统介绍-i3.webp"
-      },
-      "coverThumb": "blog/thumbs/鉴业PE_维护系统介绍-cover.webp",
-      "bgThumb": "blog/thumbs/鉴业PE_维护系统介绍-bg.webp"
     },
     {
       "slug": "一键重装",
