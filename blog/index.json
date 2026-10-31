@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-31T10:58:59.558Z",
+  "generated": "2026-10-31T11:05:39.852Z",
   "posts": [
     {
       "slug": "Jianye PE驱动安装模块 3.0 重磅发布",
@@ -89,6 +89,25 @@
       },
       "coverThumb": "blog/thumbs/拥有时不毁，失去时不悔-cover.webp",
       "bgThumb": "blog/thumbs/拥有时不毁，失去时不悔-bg.webp"
+    },
+    {
+      "slug": "系统维护工具下载",
+      "md": "blog/系统维护工具下载/index.md",
+      "imgBase": "blog/系统维护工具下载/",
+      "title": "Windows系统维护工具",
+      "desc": "",
+      "tags": [],
+      "date": "2026-10-31",
+      "minutes": 1,
+      "cover": "1745835951277.jpg",
+      "bg": "1745835951277.jpg",
+      "mdEn": "blog/系统维护工具下载/index.en.md",
+      "titleEn": "Windows system maintenance tools",
+      "imgs": {
+        "1745835951277.jpg": "blog/thumbs/系统维护工具下载-i0.webp"
+      },
+      "coverThumb": "blog/thumbs/系统维护工具下载-cover.webp",
+      "bgThumb": "blog/thumbs/系统维护工具下载-bg.webp"
     },
     {
       "slug": "远程控制",
