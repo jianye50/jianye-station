@@ -1276,9 +1276,6 @@ footer .heart{color:#ff5d7a}
   <a class="nav-link" data-nav="about" href="#/about">About</a>
   <span class="nav-sep"></span>
   <button class="nav-icon" id="langBtn" title="切换到英文" aria-label="切换到英文">EN</button>
-  <a class="nav-icon" id="cloudBtn" href="/drop" target="_blank" rel="noopener" aria-label="文件传送" title="文件传送">
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-  </a>
   <!-- 音乐入口：点一下展开歌单面板（进度环画在按钮外圈） -->
   <button class="nav-icon mp-nav-btn" id="musicBtn" title="音乐（点击展开歌单）" aria-label="音乐"
           aria-haspopup="true" aria-expanded="false" aria-controls="mpWrap">
@@ -1700,7 +1697,6 @@ const I18N={
     brand:"",   /* 站名来自 profile.txt 的「站名」，读到后回填 */
     nav:{home:"首页",gallery:"相册",blog:"博客",about:"关于"},
     langTip:"切换到英文",
-    cloud:"文件传送",
     hero:{badge:"",sub:"",read:"浏览博客",aboutBtn:"关于我",hint:"向下浏览"},   /* 徽章/描述来自 profile.txt */
     home:{gallery:"相册",more:"查看全部照片",projects:"项目",moreProj:"查看全部项目"},
     gallery:{
@@ -1769,7 +1765,6 @@ const I18N={
     brand:"",   /* Site name from profile.txt */
     nav:{home:"Home",gallery:"Albums",blog:"Blog",about:"About"},
     langTip:"Switch to Chinese",
-    cloud:"File Transfer",
     hero:{badge:"",sub:"",read:"Browse Blog",aboutBtn:"About Me",hint:"Scroll down"},   /* badge/sub from profile.txt */
     home:{gallery:"Albums",more:"View all photos",projects:"Projects",moreProj:"View all projects"},
     gallery:{
@@ -1883,9 +1878,6 @@ function setLang(v,persist){
     const el=document.querySelector(`[data-nav="${k}"]`);
     if(el)el.textContent=T().nav[k];
   });
-  /* 导航栏云空间入口的提示文案也跟着语言走 */
-  const cb=$("#cloudBtn");
-  if(cb){ cb.title=T().cloud; cb.setAttribute("aria-label",T().cloud); }
   route(); // 重新渲染当前视图
 }
 
