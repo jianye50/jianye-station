@@ -23,4 +23,3 @@
 项目|鉴业文件传送|Jianye File Drop|手机与电脑之间点对点直传文件，不经过服务器，支持跨平台多语言。|Peer-to-peer file transfer between phone and computer — no server in between, cross-platform ready.|/drop|📮|linear-gradient(135deg,#40c8e0,#1f6fe0)
 项目|鉴业音乐|Jianye Music|自己的在线音乐播放器，自动同步酷狗「我喜欢的音乐」歌单。|My own online music player that keeps itself in sync with my Kugou favourites.|/music|🎵|linear-gradient(135deg,#ff5b6e,#e3122f)
 项目|博客编辑器|Blog Editor|拖入文章文件夹即可在浏览器里编辑 index.md，改完推送 GitHub 即上线。|Drop an article folder into the browser, edit index.md, push to GitHub — and it's live.|/blog/index.html|📝|linear-gradient(135deg,#66c0f4,#2b6cb0)
-项目|一键系统重装|One-Click OS Reinstall|让系统重装变得像点一下按钮那样简单的工具站。|A tool site that makes reinstalling your system as easy as one click.|/os|💽|linear-gradient(135deg,#5b8cff,#3a4fd6)
