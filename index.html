@@ -107,7 +107,14 @@
         desc:"Browser developer tools were detected. The page is paused to protect its content and will resume once the panel is closed.",
         hint:"Content protected"}
   };
-  function tx(){ return (window.__JY_LANG==="en")?TXT.en:TXT.zh; }
+  /* 语言跟随当前站点语言：<html lang> 会随右上角 EN/中 切换实时变化，
+     而 window.__JY_LANG 只在首次加载时赋值，切换后不会更新，不能用它。 */
+  function tx(){
+    var l="";
+    try{ l=document.documentElement.getAttribute("lang")||""; }catch(e){}
+    if(!l)l=(window.__JY_LANG==="en")?"en":"zh-CN";
+    return l.indexOf("zh")===0?TXT.zh:TXT.en;
+  }
 
   function build(){
     if(box)return box;
@@ -189,6 +196,12 @@
   document.addEventListener("DOMContentLoaded",watch);
   document.addEventListener("visibilitychange",watch);
   watch();
+
+  /* 语言切换的实时跟进：<html lang> 一变就重写遮罩文案（若正显示着） */
+  try{
+    new MutationObserver(function(){ if(on)paint(); })
+      .observe(document.documentElement,{attributes:true,attributeFilter:["lang"]});
+  }catch(e){}
 })();
 </script>
 <style>
