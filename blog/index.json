@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-31T11:05:39.852Z",
+  "generated": "2026-10-31T11:13:01.460Z",
   "posts": [
     {
       "slug": "Jianye PE驱动安装模块 3.0 重磅发布",
@@ -96,13 +96,20 @@
       "imgBase": "blog/系统维护工具下载/",
       "title": "Windows系统维护工具",
       "desc": "",
-      "tags": [],
+      "tags": [
+        "维护",
+        "工具"
+      ],
       "date": "2026-10-31",
       "minutes": 1,
       "cover": "1745835951277.jpg",
       "bg": "1745835951277.jpg",
       "mdEn": "blog/系统维护工具下载/index.en.md",
       "titleEn": "Windows system maintenance tools",
+      "tagsEn": [
+        "maintain",
+        "tool"
+      ],
       "imgs": {
         "1745835951277.jpg": "blog/thumbs/系统维护工具下载-i0.webp"
       },
