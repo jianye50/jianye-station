@@ -1,24 +1,29 @@
-# 博客文章变动时自动重新生成 blog/index.json（含缩略图）并提交，Cloudflare Pages 随之重新部署。
+# 博客索引 / 缩略图重建：blog/index.json + blog/thumbs/*.webp
 #
-# 加固点（2026-10-31）：
-#   1. concurrency 改用「blog-writer」，与 gen-blog-en 串行执行 —— 两边以前各用各的组名，
-#      会同时改 blog/index.json，后推的那次必被拒（仓库里 09:34:39 那次失败就是这么来的）；
-#   2. push 失败改成 pull --rebase 后重试 3 次，不再一次失败就整个 Action 变红。
+# ⚠️ 这个 workflow 故意「不监听 push」（2026-10-31 第二轮修改）：
+#    push 时的索引维护已经由 gen-blog-en 在提交前统一做掉（它会调用同一个脚本）。
+#    两个 workflow 都监听 push 的后果是：同一个 blog/index.json 被两边各写一遍，
+#    谁后推谁被拒，rebase 冲突还会把另一边的翻译成果一起拖死 ——
+#    症状就是「Actions 全绿、仓库里却什么都没变」。
+#    现在只剩一个写入者，冲突从根上没有了。
+#
+# 这里的触发时机只负责兜底：
+#   · 每 6 小时一次，修掉历史遗留的索引/缩略图不同步；
+#   · Actions 页面手动 Run workflow。
+#
+# 手动补跑：Actions → gen-blog-index → Run workflow
 name: gen-blog-index
 on:
-  push:
-    paths:
-      - "blog/**"
-      - "scripts/gen-blog-index.mjs"
-      - "!blog/index.json"       # 自己写出来的文件不再触发自己
+  schedule:
+    - cron: "40 */6 * * *"     # 与 gen-blog-en 错开 23 分钟，避免同一时刻排队
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: blog-writer
-  cancel-in-progress: false      # 不取消在跑的（中途取消会留下写了一半的缩略图）
+  group: blog-writer            # 与 gen-blog-en 同组，串行执行
+  cancel-in-progress: false     # 中途取消会留下写了一半的缩略图
 
 jobs:
   gen:
@@ -26,25 +31,51 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: node scripts/gen-blog-index.mjs
-      - name: Commit & Push
+
+      - name: 同步到最新 main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+
+      - run: node scripts/gen-blog-index.mjs
+
+      - name: Commit & Push
+        run: |
           git add -A blog/index.json blog/thumbs
           if git diff --cached --quiet; then
             echo "博客索引无变化，跳过提交"
             exit 0
           fi
           git commit -m "chore: 自动更新博客索引 blog/index.json"
+
           for i in 1 2 3; do
-            git pull --rebase --autostash origin "${GITHUB_REF_NAME}" >/dev/null 2>&1 || true
-            if git push; then echo "✓ 已推送"; break; fi
-            echo "push 失败，5 秒后重试（$i/3）"
-            git log --oneline -1
-            sleep 5
+            if git push; then
+              echo "✓ 已推送"
+              exit 0
+            fi
+            echo "push 被拒，同步远端后重试（$i/3）"
+            git rebase --abort 2>/dev/null || true
+            # 索引和缩略图都是纯生成物，合并失败就丢掉本地这份、按远端重算一遍
+            if ! git pull --rebase --autostash origin "${GITHUB_REF_NAME}"; then
+              git rebase --abort 2>/dev/null || true
+              git reset --hard "origin/${GITHUB_REF_NAME}"
+              node scripts/gen-blog-index.mjs
+              git add -A blog/index.json blog/thumbs
+              if git diff --cached --quiet; then
+                echo "按最新代码重算后无变化"
+                exit 0
+              fi
+              git commit -m "chore: 自动更新博客索引 blog/index.json"
+            fi
+            sleep 3
           done
+
+          echo "::error::推送失败 3 次，索引没有更新，下次定时任务会重来"
+          exit 1

@@ -19,7 +19,7 @@
  * Markdown 结构保护：代码块整块不送翻；行内代码 / 图片 / 链接地址 / HTML 标签 /
  * 裸链接先用 [[n]] 占位符摘出，译完再还原；标题 # 与列表符号在翻译后重新贴回。
  * ===================================================================== */
-import { readdirSync, readFileSync, writeFileSync, existsSync, statSync, unlinkSync, mkdirSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync, existsSync, statSync, unlinkSync, mkdirSync, appendFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
@@ -411,6 +411,26 @@ for (const a of articles) {
     for (const tg of tags) outTags.push(await trShort(tg));
     const enBody = await trBody(body);
 
+    /* 质量闸门（2026-10-31 新增）：
+       接口被限流 / 挂掉时，trText 会「保留原文」降级，整篇一个字都没翻，
+       但下面照样会写出一个格式完好的 index.en.md（只有 front matter 是英文的）。
+       这份文件一旦落库，srcHash 就和中文原文一致了 ——
+       以后每次运行都会「跳过（未改动）」，这篇永远不会再被重译，
+       线上英文页面一直显示中文，而 Actions 全程绿勾，查起来极其费劲。
+       所以：译后中文占比没有明显下降，就判定这次没翻成，宁可不写文件。 */
+    const zhRatio = s => {
+      const all = String(s || "").replace(/\s/g, "").length;
+      if (!all) return 0;
+      return (String(s).match(/[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g) || []).length / all;
+    };
+    const r0 = zhRatio(body), r1 = zhRatio(enBody);
+    if (r0 > 0.05 && r1 > r0 * 0.8) {
+      throw new Error(`译后正文中文仍占 ${(r1 * 100).toFixed(0)}%（原文 ${(r0 * 100).toFixed(0)}%），翻译没生效`);
+    }
+    if (hasCJK(title) && zhRatio(title) > 0.3) {
+      throw new Error("标题没翻成（仍是中文），不写文件");
+    }
+
     const fm = [
       "---",
       `title: ${yamlVal(title)}`,
@@ -440,6 +460,25 @@ for (const a of articles) {
 }
 
 console.log(`\n✓ 英文版：新增 ${added} / 更新 ${updated} / 跳过 ${skipped} / 删除 ${removed} / 失败 ${failed}${DRY ? "（dry-run，未写文件）" : ""}`);
+
+/* 结果写进 Actions 摘要：不点开日志也能一眼看到这次到底做了什么。
+   之前的痛点是「页面全绿、仓库没变化」，现在数字直接摆在运行页面上。 */
+const sumFile = process.env.GITHUB_STEP_SUMMARY;
+if (sumFile) {
+  const tbl = [
+    "### 博客英文版生成结果",
+    "",
+    "| 新增 | 更新 | 跳过 | 删除 | 失败 |",
+    "| --- | --- | --- | --- | --- |",
+    `| ${added} | ${updated} | ${skipped} | ${removed} | ${failed} |`,
+    "",
+    failed
+      ? `⚠️ 有 ${failed} 篇没翻成（不写文件，避免把中文固化成「英文版」）；已成功的部分照常提交，下次运行自动补翻。`
+      : "✅ 全部处理完毕。",
+    ""
+  ].join("\n");
+  try { appendFileSync(sumFile, tbl); } catch (e) { /* 摘要写失败不影响主流程 */ }
+}
 /* ---- 结局：只要有失败，就把这次运行标红 ----
    以前不管成败都退出 0，接口被限流时 Action 一片绿，实际一个文件都没更新，
    在页面上和「跳过」完全分不出来。现在失败可见：
