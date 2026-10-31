@@ -2578,10 +2578,9 @@ function renderHome(){
         <div class="proj-grid">
           ${projectsGridHTML(HOME_PROJECT_COUNT)}
         </div>
-        ${PROJECTS.length>HOME_PROJECT_COUNT?`
         <div class="section-more">
           <a class="link-more" href="#/about/projects">${esc(t.home.moreProj)} →</a>
-        </div>`:""}
+        </div>
       </section>`:""}
     </div>
   </section>`;
