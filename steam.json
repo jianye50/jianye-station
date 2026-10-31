@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-31T15:39:30.482Z",
+  "updated": "2026-10-31T19:49:30.764Z",
   "source": "api",
   "player": {
     "name": "鉴业",
@@ -7,26 +7,75 @@
     "url": "https://steamcommunity.com/id/aimjianye/"
   },
   "totalGames": 44,
-  "hours2weeks": 18.6,
+  "hours2weeks": 17.333333333333332,
   "friends": [
     {
       "name": "UxwxU",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
       "profile": "https://steamcommunity.com/profiles/76561198774453253/",
       "state": 1,
+      "playing": "Cake Bash"
+    },
+    {
+      "name": "shinglerdansbury6547",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561198689034491/",
+      "state": 1,
+      "playing": null
+    },
+    {
+      "name": "yaya",
+      "avatar": "https://avatars.steamstatic.com/443e8aae2dcccff76fecb2ae0fecbd051c9b9822_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199664593176/",
+      "state": 0,
       "playing": null
     },
     {
       "name": "刘海柱",
       "avatar": "https://avatars.steamstatic.com/5650a856c0bd7c678378e9895afec491786ce595_medium.jpg",
       "profile": "https://steamcommunity.com/profiles/76561199193111913/",
-      "state": 1,
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "chenchenwhr",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "HYJ",
+      "avatar": "https://avatars.steamstatic.com/6717ab4263dcfca8866a1d344f75e427acaf9a5b_medium.jpg",
+      "profile": "https://steamcommunity.com/id/JINGTIANHAOKUN123/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "lcyfdn",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199063272174/",
+      "state": 0,
       "playing": null
     },
     {
       "name": "wjiazheng2026",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
       "profile": "https://steamcommunity.com/profiles/76561198721612997/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "吻吻爱",
+      "avatar": "https://avatars.steamstatic.com/655d055db5b16899734d407e7c858cadde558703_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199376152675/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "hhhx",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
       "state": 0,
       "playing": null
     },
@@ -38,9 +87,23 @@
       "playing": null
     },
     {
+      "name": "绝世好人",
+      "avatar": "https://avatars.steamstatic.com/972f5af3d5b2fe6bcde047b47db3aef1ce942f40_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199767357806/",
+      "state": 0,
+      "playing": null
+    },
+    {
       "name": "Lu",
       "avatar": "https://avatars.steamstatic.com/b72e7a6487c6bd07eb5e95c24474fed86f320b93_medium.jpg",
       "profile": "https://steamcommunity.com/id/lunacult/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "仙阁小斑",
+      "avatar": "https://avatars.steamstatic.com/51bb78fd07a616dffa959c285ad0951a7ece4680_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199768600704/",
       "state": 0,
       "playing": null
     },
@@ -64,69 +127,6 @@
       "profile": "https://steamcommunity.com/profiles/76561199876617412/",
       "state": 0,
       "playing": null
-    },
-    {
-      "name": "吻吻爱",
-      "avatar": "https://avatars.steamstatic.com/655d055db5b16899734d407e7c858cadde558703_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199376152675/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "HYJ",
-      "avatar": "https://avatars.steamstatic.com/6717ab4263dcfca8866a1d344f75e427acaf9a5b_medium.jpg",
-      "profile": "https://steamcommunity.com/id/JINGTIANHAOKUN123/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "chenchenwhr",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "hhhx",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "yaya",
-      "avatar": "https://avatars.steamstatic.com/443e8aae2dcccff76fecb2ae0fecbd051c9b9822_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199664593176/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "绝世好人",
-      "avatar": "https://avatars.steamstatic.com/972f5af3d5b2fe6bcde047b47db3aef1ce942f40_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199767357806/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "仙阁小斑",
-      "avatar": "https://avatars.steamstatic.com/51bb78fd07a616dffa959c285ad0951a7ece4680_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199768600704/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "lcyfdn",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199063272174/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "shinglerdansbury6547",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198689034491/",
-      "state": 0,
-      "playing": null
     }
   ],
   "most": [
@@ -135,9 +135,9 @@
       "name": "猛兽派对",
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/library_600x900.jpg",
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/header.jpg",
-      "hoursTotal": 475.3,
-      "hours2weeks": 11.3,
-      "last": "10月30日"
+      "hoursTotal": 475.4,
+      "hours2weeks": 11.4,
+      "last": "10月31日"
     },
     {
       "appid": 728880,
@@ -219,8 +219,8 @@
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/library_600x900.jpg",
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/header.jpg",
       "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/1260320/capsule_184x69.jpg",
-      "hoursTotal": 475.3,
-      "hours2weeks": 11.3,
+      "hoursTotal": 475.4,
+      "hours2weeks": 11.4,
       "last": "",
       "achEarned": 116,
       "achTotal": 116
@@ -244,19 +244,7 @@
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/5354030/header.jpg",
       "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/5354030/capsule_184x69.jpg",
       "hoursTotal": 2.7,
-      "hours2weeks": 2.7,
-      "last": "",
-      "achEarned": null,
-      "achTotal": null
-    },
-    {
-      "appid": 945360,
-      "name": "Among Us",
-      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/945360/library_600x900.jpg",
-      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/945360/header.jpg",
-      "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/945360/capsule_184x69.jpg",
-      "hoursTotal": 2.6,
-      "hours2weeks": 0.1,
+      "hours2weeks": 1.4,
       "last": "",
       "achEarned": null,
       "achTotal": null
