@@ -2780,6 +2780,8 @@ async function grabPost(slug,mdURL,imgBase,found){
     const r=await fetch(mdURL,{cache:"no-cache"});
     if(!r.ok)return;
     raw=await r.text();
+    /* SPA 兜底把不存在的 md 也回 200 + index.html：跳过，别让站点源码混进文章列表 */
+    if(isHTMLFallbackText(raw))return;
   }catch(e){return;}
   const {meta,body}=parsePost(raw);
   const tags=Array.isArray(meta.tags)?meta.tags
@@ -2891,6 +2893,12 @@ function prefetchBlog(){
   manifestPosts().then(m=>{if(m&&m.length){blogCache=m;blogErr=false;}});
 }
 /* 解析 front matter（--- 包围的元信息）与正文 */
+/* SPA 兜底识别：静态托管常把不存在的路径也回 200 + index.html（_redirects / SPA 模式），
+   拿到这种响应时"正文"其实是一整份站点源码，绝不能当 Markdown 渲染。
+   特征：开头 120 字符内就是 <!DOCTYPE / <html / <head / <body（允许 BOM 与空白） */
+function isHTMLFallbackText(t){
+  return /^\s*(?:\ufeff)?\s*<(!doctype|html|head|body)/i.test(String(t).slice(0,120));
+}
 function parsePost(raw){
   const meta={};let body=raw;
   const m=raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
@@ -3565,18 +3573,27 @@ async function renderPost(slug,gen){
   const enURL=(lang==="en")?(post.mdURLEn||mdEnURL(post.mdURL)):"";
   let raw="",usedEn=false;
   try{
-    /* no-cache：文章更新靠 304 协商保证，部署环境不必每次全量回源 */
-    let r=null;
+    let r=null,text="";
     if(enURL){
       try{ r=await fetch(enURL,{cache:"no-cache"}); }catch(e){ r=null; }
-      if(!r||!r.ok)r=null;                       /* 英文版缺失/没生成：上一版或中文原文兜底 */
-      else usedEn=true;                          /* 真的拿到了静态英文版 */
+      if(r&&r.ok){
+        text=await r.text();
+        /* 关键防线：英文版还没生成时，SPA 兜底会返回 200 + index.html。
+           开头是 HTML 或 content-type 是 text/html 的一律当「英文版缺失」，
+           走下面的中文原文 + 后台机翻兜底，而不是把源码当正文渲染出来 */
+        if(isHTMLFallbackText(text)||
+           (r.headers.get("content-type")||"").toLowerCase().includes("text/html")){
+          r=null;text="";
+        }else usedEn=true;                       /* 真的拿到了静态英文版 */
+      }else r=null;                              /* 英文版缺失/没生成：中文原文兜底 */
     }
     if(!r){
       r=await fetch(post.mdURL,{cache:"no-cache"});
       if(!r.ok)throw new Error(r.status);
+      text=await r.text();
+      if(isHTMLFallbackText(text))throw new Error("html-fallback");
     }
-    raw=await r.text();
+    raw=text;
   }catch(e){fail(esc(t.blog.err));return;}
   if(stale())return;   /* 正文网络请求最慢，切走后回来绝不能覆盖新页面 */
   const {meta,body}=parsePost(raw);
