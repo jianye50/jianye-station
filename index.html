@@ -1371,26 +1371,57 @@ const PROJECTS=[
    dzh:"拖入文章文件夹即可在浏览器里编辑 index.md，改完推送 GitHub 即上线。",den:"Drop an article folder into the browser, edit index.md, push to GitHub — and it's live.",
    u:"/blog/index.html",ic:"📝",c:"linear-gradient(135deg,#66c0f4,#2b6cb0)"}
 ];
-/* ---------- 个人信息 ---------- */
-const EMAIL="aimjianye@outlook.com";
-const AVATAR="avatar.png";   /* 站点根目录的 avatar.png（首页已在根目录，直接同级引用） */
-const CHIPS=[
-  {i:"📍",zh:"中国",en:"China"},
-  {i:"💻",zh:"全栈开发",en:"Full-stack Dev"},
-  {i:"🎨",zh:"交互设计",en:"Interaction Design"},
-  {i:"📷",zh:"摄影",en:"Photography"},
-  {i:"🎮",zh:"游戏",en:"Gaming"},
-  {i:"🎸",zh:"音乐",en:"Music"}
-];
-const SOCIALS=[
-  {zh:"GitHub",en:"GitHub",u:"https://github.com/jianye50",c:"#8b949e"},
-  {zh:"哔哩哔哩",en:"Bilibili",u:"https://b23.tv/pel3LeM",c:"#ff7aa2"},
-  {zh:"抖音",en:"Douyin",u:"https://v.douyin.com/oW7O6rh_geg/",c:"#25f4ee"},
-  {zh:"微博",en:"Weibo",u:"https://weibo.com/u/7953312650",c:"#ff7a1a"},
-  {zh:"知乎",en:"Zhihu",u:"https://www.zhihu.com/people/5-84-88-98",c:"#0084ff"},
-  {zh:"Steam",en:"Steam",u:"https://steamcommunity.com/id/aimjianye/",c:"#66c0f4"},
-  {zh:"意见反馈",en:"Feedback",u:"https://my.feishu.cn/share/base/form/shrcnZomfA2kKrY311TeM2OaRpe",c:"#4d8dff"}
-];
+/* ---------- 个人信息：内容在站点根目录的 profile.txt 里配置 ----------
+   每行一项，字段用 | 隔开，支持的字段见 profile.txt 顶部注释。
+   这里不放任何个人信息，一切以 profile.txt 为准 —— 改信息只需改配置文件。
+   配置读不到（file:// 本地双击打开 / 离线 / 忘了上传 / 删了文件）时，
+   关于页的个人介绍卡整体隐藏，页面其余功能不受影响。 */
+let PROFILE=null;        /* 由 loadProfile() 从 profile.txt 读入 */
+
+/* 解析 profile.txt 的行式配置（键名不区分大小写，中文英文键名都认） */
+function parseProfileText(text){
+  const out={hello:null,tagline:null,bios:[],avatar:"",email:"",chips:[],socials:[]};
+  String(text||"").split(/\r?\n/).forEach(raw=>{
+    const line=raw.trim();
+    if(!line||line.charAt(0)==="#")return;
+    const p=line.split("|").map(s=>s.trim());
+    const k=p[0].toLowerCase();
+    if(k==="问候"||k==="hello"){ if(p[1]||p[2])out.hello={zh:p[1]||p[2],en:p[2]||p[1]}; }
+    else if(k==="签名"||k==="tagline"){ if(p[1]||p[2])out.tagline={zh:p[1]||p[2],en:p[2]||p[1]}; }
+    else if(k==="简介"||k==="bio"){ if(p[1]||p[2])out.bios.push({zh:p[1]||p[2],en:p[2]||p[1]}); }
+    else if(k==="头像"||k==="avatar"){ if(p[1])out.avatar=p[1]; }
+    else if(k==="邮箱"||k==="email"){ if(p[1])out.email=p[1]; }
+    else if(k==="标签"||k==="chip"){ if(p[2])out.chips.push({i:p[1]||"",zh:p[2]||p[3]||"",en:p[3]||p[2]||""}); }
+    else if(k==="社交"||k==="social"){ if(p[3])out.socials.push({zh:p[1]||p[2],en:p[2]||p[1],u:p[3],c:p[4]||"#8b949e"}); }
+  });
+  return out;
+}
+/* 读取个人信息配置：no-cache 保证改完配置刷新立即生效（没更新时走 304，不重复下载）。
+   文件读不到或整份是空的 → PROFILE 保持 null，关于页的个人介绍卡不渲染；
+   404 兜底页可能是 200 的 HTML，一并排除 */
+async function loadProfile(){
+  let j=null;
+  try{
+    const r=await fetch("profile.txt",{cache:"no-cache"});
+    if(r.ok){
+      const text=await r.text();
+      j=/^\s*</.test(text)?null:parseProfileText(text);
+    }
+  }catch(e){}
+  if(!j)return;
+  const valid=j.hello||j.tagline||j.bios.length||j.avatar||j.email||j.chips.length||j.socials.length;
+  if(!valid)return;
+  PROFILE=j;
+  /* 配置到达时正停在关于页 → 原地重绘（保住滚动位置，不打断浏览） */
+  if(/^#\/about/.test(location.hash)){
+    const root=document.documentElement,prev=root.style.scrollBehavior;
+    root.style.scrollBehavior="auto";
+    const y=window.scrollY;
+    renderAbout();
+    window.scrollTo(0,y);
+    root.style.scrollBehavior=prev;
+  }
+}
 /* ---------- 友情链接：内容在站点根目录的 friends.txt 里配置 ----------
    每行一位朋友，字段用 | 隔开，顺序固定：
      中文名|英文名|中文描述|英文描述|网址|图标地址
@@ -1649,10 +1680,7 @@ const I18N={
       trRetry:"重试"
     },
     about:{
-      title:"关于",hello:"你好，我是鉴业。",
-      tagline:"开发者 · 设计爱好者 · 生活记录者",
-      bio1:"喜欢写代码，也喜欢把东西做得好看又好用；白天在屏幕前构建数字世界，其余时间用照片、音乐和游戏给生活调色。",
-      bio2:"这个站点是我的数字空间——把项目、相册和喜欢的光影想法收进同一个地方，欢迎随便逛逛。",
+      title:"关于",
       contact:"想聊项目、交流技术，或者只是打个招呼：",
       socials:"找到我",
       projTitle:"项目",
@@ -1721,10 +1749,7 @@ const I18N={
       trRetry:"Retry"
     },
     about:{
-      title:"About",hello:"Hi, I'm Jianye.",
-      tagline:"Developer · Design lover · Life recorder",
-      bio1:"I love writing code and making things that look good and work well — building digital worlds by day, coloring life with photos, music and games the rest of the time.",
-      bio2:"This site is my digital space — projects, photos and ideas I like, all in one place. Feel free to look around.",
+      title:"About",
       contact:"For projects, tech chats, or just saying hi:",
       socials:"Find me",
       projTitle:"Projects",
@@ -2624,29 +2649,34 @@ document.addEventListener("keydown",e=>{
 
 function renderAbout(){
   const t=T();
+  /* 个人信息一律以 profile.txt 为准：没读到配置（文件不存在 / 被删 / 为空）时
+     个人介绍卡整体不渲染，只保留「关于」页标题和其余模块 */
+  const P=PROFILE;
+  const introHTML=P?`
+      <div class="about-card">
+        ${P.avatar?`<div class="avatar">J<img src="${esc(P.avatar)}" alt="${esc(lang==="zh"?"鉴业的头像":"Jianye's avatar")}" decoding="async" onerror="this.remove()"></div>`:""}
+        ${P.hello?`<h2>${esc(lang==="zh"?P.hello.zh:P.hello.en)}</h2>`:""}
+        ${P.tagline?`<p class="tagline">${esc(lang==="zh"?P.tagline.zh:P.tagline.en)}</p>`:""}
+        ${P.bios.map(b=>`<p>${esc(lang==="zh"?b.zh:b.en)}</p>`).join("")}
+        ${P.chips.length?`<div class="chips">${P.chips.map(c=>`<span>${c.i} ${esc(lang==="zh"?c.zh:c.en)}</span>`).join("")}</div>`:""}
+        ${P.email?`<p class="mail-line">${esc(t.about.contact)}<br>
+          <a class="read-more" href="mailto:${esc(P.email)}">${esc(P.email)}</a></p>`:""}
+        ${P.socials.length?`
+        <div class="section-label" style="margin-top:30px">${esc(t.about.socials)}</div>
+        <div class="socials">
+          ${P.socials.map(s=>`
+          <a href="${esc(s.u)}" target="_blank" rel="noopener">
+            <span class="dot" style="background:${esc(s.c)}"></span>${esc(lang==="zh"?s.zh:s.en)}
+          </a>`).join("")}
+        </div>`:""}
+      </div>`:"";
   app.innerHTML=`
   <section class="view">
     <div class="wrap">
       <div class="page-head">
         <h1>${esc(t.about.title)}</h1>
       </div>
-      <div class="about-card">
-        <div class="avatar">J<img src="${AVATAR}" alt="${esc(lang==="zh"?"鉴业的头像":"Jianye's avatar")}" decoding="async" onerror="this.remove()"></div>
-        <h2>${esc(t.about.hello)}</h2>
-        <p class="tagline">${esc(t.about.tagline)}</p>
-        <p>${esc(t.about.bio1)}</p>
-        <p>${esc(t.about.bio2)}</p>
-        <div class="chips">${CHIPS.map(c=>`<span>${c.i} ${esc(lang==="zh"?c.zh:c.en)}</span>`).join("")}</div>
-        <p class="mail-line">${esc(t.about.contact)}<br>
-          <a class="read-more" href="mailto:${EMAIL}">${EMAIL}</a></p>
-        <div class="section-label" style="margin-top:30px">${esc(t.about.socials)}</div>
-        <div class="socials">
-          ${SOCIALS.map(s=>`
-          <a href="${esc(s.u)}" target="_blank" rel="noopener">
-            <span class="dot" style="background:${s.c}"></span>${esc(lang==="zh"?s.zh:s.en)}
-          </a>`).join("")}
-        </div>
-      </div>
+      ${introHTML}
 
       <!-- 项目模块：从原「项目」页移入，位于个人介绍下方、友情链接上方；可点击标题行折叠 -->
       <div class="about-card collapsible" id="aboutProjects">
@@ -4069,6 +4099,7 @@ document.addEventListener("keydown",e=>{
 setLang(lang,false);     /* 统一走 setLang：品牌名、导航文案、语言按钮、云空间入口提示都按语言铺一遍
                             （persist=false：启动这次不写盘，首次访问继续跟随系统语言） */
 loadPhotos();
+loadProfile();     /* 异步读 profile.txt：个人信息配置，到达时如正停在关于页，原地重绘 */
 loadFriends();     /* 异步读 friends.txt：配置到达时如正停在关于页，原地重绘友链区 */
 loadSteam();       /* 异步读 steam.json：GitHub Actions 定时生成，到达时同理重绘游戏区 */
 /* 首屏与导航文案就绪 → 淡出启动加载屏（顺带移除 DOM）

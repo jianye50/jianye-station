@@ -1,0 +1,44 @@
+# ============================================================
+#  鉴业の小站 · 个人信息配置（profile.txt）
+#  「关于」页的所有个人信息都在这里改，改完保存、刷新页面即可生效，
+#  不用动 index.html。
+#
+#  书写规则：
+#  · 每行一项，字段用 | 隔开；行首带 # 的是注释，不生效
+#  · 内容里不要出现 | 字符
+#  · 每项都给「中文|英文」两份，只写中文时英文自动沿用中文
+#  · 文件必须是 UTF-8 编码（记事本 / VS Code 默认就是）
+# ============================================================
+
+# 问候|关于页大标题（如「你好，我是鉴业。」）
+问候|你好，我是鉴业。|Hi, I'm Jianye.
+
+# 签名|名字下面那行小字
+签名|开发者 · 设计爱好者 · 生活记录者|Developer · Design lover · Life recorder
+
+# 简介|自我介绍，可写多行，每行一段
+简介|喜欢写代码，也喜欢把东西做得好看又好用；白天在屏幕前构建数字世界，其余时间用照片、音乐和游戏给生活调色。|I love writing code and making things that look good and work well — building digital worlds by day, coloring life with photos, music and games the rest of the time.
+简介|这个站点是我的数字空间——把项目、相册和喜欢的光影想法收进同一个地方，欢迎随便逛逛。|This site is my digital space — projects, photos and ideas I like, all in one place. Feel free to look around.
+
+# 头像|图片地址（相对站点根目录，如 avatar.png）
+头像|avatar.png
+
+# 邮箱|联系邮箱（留空或删掉这一行可隐藏邮箱区域）
+邮箱|aimjianye@outlook.com
+
+# 标签|图标|中文|英文   （一行一个标签，图标用 emoji）
+标签|📍|中国|China
+标签|💻|全栈开发|Full-stack Dev
+标签|🎨|交互设计|Interaction Design
+标签|📷|摄影|Photography
+标签|🎮|游戏|Gaming
+标签|🎸|音乐|Music
+
+# 社交|中文名|英文名|网址|颜色(可省略，省略时用灰色)
+社交|GitHub|GitHub|https://github.com/jianye50|#8b949e
+社交|哔哩哔哩|Bilibili|https://b23.tv/pel3LeM|#ff7aa2
+社交|抖音|Douyin|https://v.douyin.com/oW7O6rh_geg/|#25f4ee
+社交|微博|Weibo|https://weibo.com/u/7953312650|#ff7a1a
+社交|知乎|Zhihu|https://www.zhihu.com/people/5-84-88-98|#0084ff
+社交|Steam|Steam|https://steamcommunity.com/id/aimjianye/|#66c0f4
+社交|意见反馈|Feedback|https://my.feishu.cn/share/base/form/shrcnZomfA2kKrY311TeM2OaRpe|#4d8dff
