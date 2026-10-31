@@ -1342,35 +1342,13 @@ footer .heart{color:#ff5d7a}
  *  单文件实现：hash 路由 / 明暗主题 / 中英切换 / 图库
  * ===================================================================== */
 
-/* ---------- 数据：项目 ---------- */
-/* 项目链接一律用根相对路径（如 "/os"），浏览器按当前访问的域名自动解析 ——
-   以后换自己的域名无需改这里；新增项目也请保持这个写法，别写死完整网址 */
-const PROJECTS=[
-  {zh:"一键系统重装",en:"One-Click OS Reinstall",
-   dzh:"让系统重装变得像点一下按钮那样简单的工具站。",den:"A tool site that makes reinstalling your system as easy as one click.",
-   u:"/os",ic:"💽",c:"linear-gradient(135deg,#5b8cff,#3a4fd6)"},
-  {zh:"Jianye File Encryptor",en:"Jianye File Encryptor",
-   dzh:"本地文件加密工具，保护你的重要文件安全。",den:"A local file encryption tool that keeps your important files safe.",
-   u:"/jye",ic:"🔐",c:"linear-gradient(135deg,#ffc24d,#ff8a1a)"},
-  {zh:"Jianye PE",en:"Jianye PE",
-   dzh:"自维护的 PE 系统，装机维护的好帮手。",den:"A self-maintained PE system — a handy companion for PC setup and repair.",
-   u:"/pe",ic:"🧰",c:"linear-gradient(135deg,#8e7bff,#4a36c4)"},
-  {zh:"鉴业浏览器主页",en:"Jianye Browser Homepage",
-   dzh:"摒弃弹窗与冗余推荐，打开即是搜索框的极简浏览器主页。",den:"A minimal browser homepage — no popups or clutter, just a search box the moment you open a tab.",
-   u:"/homepage/sharepage",ic:"🏠",c:"linear-gradient(135deg,#34d399,#0d9488)"},
-  {zh:"Jianye AI 智能助手",en:"Jianye AI Assistant",
-   dzh:"接入大模型的智能对话助手。",den:"A smart chat assistant powered by large language models.",
-   u:"/ai",ic:"🤖",c:"linear-gradient(135deg,#ff6a8e,#c01e52)"},
-  {zh:"鉴业文件传送",en:"Jianye File Drop",
-   dzh:"手机与电脑之间点对点直传文件，不经过服务器，支持跨平台多语言。",den:"Peer-to-peer file transfer between phone and computer — no server in between, cross-platform ready.",
-   u:"/drop",ic:"📮",c:"linear-gradient(135deg,#40c8e0,#1f6fe0)"},
-  {zh:"鉴业音乐",en:"Jianye Music",
-   dzh:"自己的在线音乐播放器，自动同步酷狗「我喜欢的音乐」歌单。",den:"My own online music player that keeps itself in sync with my Kugou favourites.",
-   u:"/music",ic:"🎵",c:"linear-gradient(135deg,#ff5b6e,#e3122f)"},
-  {zh:"博客编辑器",en:"Blog Editor",
-   dzh:"拖入文章文件夹即可在浏览器里编辑 index.md，改完推送 GitHub 即上线。",den:"Drop an article folder into the browser, edit index.md, push to GitHub — and it's live.",
-   u:"/blog/index.html",ic:"📝",c:"linear-gradient(135deg,#66c0f4,#2b6cb0)"}
-];
+/* ---------- 项目：内容在站点根目录的 projects.txt 里配置 ----------
+   每行一个项目，字段用 | 隔开，支持的字段见 projects.txt 顶部注释。
+   这里不放任何项目数据，一切以 projects.txt 为准 —— 增删改项目只需改配置文件。
+   配置读不到（file:// 本地双击打开 / 离线 / 忘了上传 / 删了文件）时，
+   首页与关于页的项目板块整体隐藏，页面其余功能不受影响。
+   注意：项目链接请用根相对路径（如 "/os"），换域名无需改配置 */
+let PROJECTS=[];         /* 由 loadProjects() 从 projects.txt 读入 */
 /* ---------- 个人信息：内容在站点根目录的 profile.txt 里配置 ----------
    每行一项，字段用 | 隔开，支持的字段见 profile.txt 顶部注释。
    这里不放任何个人信息，一切以 profile.txt 为准 —— 改信息只需改配置文件。
@@ -1418,6 +1396,47 @@ async function loadProfile(){
     root.style.scrollBehavior="auto";
     const y=window.scrollY;
     renderAbout();
+    window.scrollTo(0,y);
+    root.style.scrollBehavior=prev;
+  }
+}
+
+/* 解析 projects.txt 的行式配置（图标、渐变色可省略，省略时用默认值） */
+function parseProjectsText(text){
+  const out=[];
+  String(text||"").split(/\r?\n/).forEach(raw=>{
+    const line=raw.trim();
+    if(!line||line.charAt(0)==="#")return;
+    const p=line.split("|").map(s=>s.trim());
+    if(!p[5])return;   /* 网址是必填项 */
+    out.push({zh:p[1]||p[2],en:p[2]||p[1],
+      dzh:p[3]||p[4]||"",den:p[4]||p[3]||"",u:p[5],
+      ic:p[6]||"🧩",c:p[7]||"linear-gradient(135deg,#5b8cff,#3a4fd6)"});
+  });
+  return out;
+}
+/* 读取项目配置：no-cache 保证改完配置刷新立即生效（没更新时走 304，不重复下载）。
+   文件读不到或整份是空的 → PROJECTS 保持空数组，项目板块不渲染；
+   404 兜底页可能是 200 的 HTML，一并排除 */
+async function loadProjects(){
+  let j=null;
+  try{
+    const r=await fetch("projects.txt",{cache:"no-cache"});
+    if(r.ok){
+      const text=await r.text();
+      j=/^\s*</.test(text)?null:parseProjectsText(text);
+    }
+  }catch(e){}
+  if(!j||!j.length)return;
+  PROJECTS=j;
+  /* 配置到达时正停在首页 / 关于页 → 原地重绘（保住滚动位置，不打断浏览） */
+  const h=location.hash;
+  if(/^#\/about/.test(h)||h===""||h==="#/"||h==="#"){
+    const redraw=/^#\/about/.test(h)?renderAbout:renderHome;
+    const root=document.documentElement,prev=root.style.scrollBehavior;
+    root.style.scrollBehavior="auto";
+    const y=window.scrollY;
+    redraw();
     window.scrollTo(0,y);
     root.style.scrollBehavior=prev;
   }
@@ -2553,6 +2572,7 @@ function renderHome(){
         </div>
       </section>
 
+      ${PROJECTS.length?`
       <section class="section" id="homeProjects">
         <div class="section-label">${esc(t.home.projects)}</div>
         <div class="proj-grid">
@@ -2561,7 +2581,7 @@ function renderHome(){
         <div class="section-more">
           <a class="link-more" href="#/about/projects">${esc(t.home.moreProj)} →</a>
         </div>
-      </section>
+      </section>`:""}
     </div>
   </section>`;
   paintPhotoGrids();
@@ -2678,7 +2698,9 @@ function renderAbout(){
       </div>
       ${introHTML}
 
-      <!-- 项目模块：从原「项目」页移入，位于个人介绍下方、友情链接上方；可点击标题行折叠 -->
+      <!-- 项目模块：从原「项目」页移入，位于个人介绍下方、友情链接上方；可点击标题行折叠。
+           数据来自 projects.txt，读不到配置时整个板块隐藏 -->
+      ${PROJECTS.length?`
       <div class="about-card collapsible" id="aboutProjects">
         <div class="coll-head" role="button" tabindex="0" aria-label="${esc(t.about.projTitle)}">
           <div class="section-label" style="margin:0">${esc(t.about.projTitle)}</div>
@@ -2690,7 +2712,7 @@ function renderAbout(){
             ${projectsGridHTML()}
           </div>
         </div>
-      </div>
+      </div>`:""}
 
       ${(FRIENDS.length||FRIEND_FORM)?`
       <div class="about-card collapsible" id="aboutFriends">
@@ -4100,6 +4122,7 @@ setLang(lang,false);     /* 统一走 setLang：品牌名、导航文案、语�
                             （persist=false：启动这次不写盘，首次访问继续跟随系统语言） */
 loadPhotos();
 loadProfile();     /* 异步读 profile.txt：个人信息配置，到达时如正停在关于页，原地重绘 */
+loadProjects();    /* 异步读 projects.txt：项目配置，到达时如正停在首页/关于页，原地重绘 */
 loadFriends();     /* 异步读 friends.txt：配置到达时如正停在关于页，原地重绘友链区 */
 loadSteam();       /* 异步读 steam.json：GitHub Actions 定时生成，到达时同理重绘游戏区 */
 /* 首屏与导航文案就绪 → 淡出启动加载屏（顺带移除 DOM）
