@@ -52,11 +52,12 @@
 </script>
 <!-- ============ 开发者工具拦截 ============
      先把话说清楚：浏览器端没有任何办法真正「禁止」打开开发者工具。
-     用户仍可以通过浏览器菜单、禁用 JS、抓包代理等方式看到全部内容 ——
-     前端能做的只有提高门槛 + 发出信号。这段代码做三件事：
+     F12 能被拦——那是网页的键盘事件；但浏览器菜单里那项「开发者工具」
+     是浏览器自己的界面，网页碰不到，拦不了。所以思路改成「一开就发现」：
        1) 屏蔽 F12 / Ctrl+Shift+I·J·C·K / Ctrl+U·S 等快捷键与右键菜单；
        2) 静音 console，避免顺手翻看输出；
-       3) 定时比对视口尺寸，发现面板被拉出（停靠式）就用遮罩挡住页面并要求关闭，
+       3) 每 1.2 秒检测一次面板是否被打开 —— 停靠式量视口尺寸，
+          浮动窗口用 debugger 探针，命中就盖遮罩挡住页面并要求关闭，
           关闭后自动恢复，不需要刷新。
      站长自己调试：地址后加 ?dev=1，或控制台执行 localStorage.setItem("jy-dev","1")。 -->
 <script>
@@ -97,8 +98,7 @@
     });
   }catch(e){}
 
-  /* ---------- 4. 打开检测 + 遮罩 ---------- */
-  var on=false, box=null;
+  /* ---------- 4. 屏蔽层：文案 + 遮罩 DOM ---------- */
   var TXT={
     zh:{title:"请先关闭开发者工具",
         desc:"检测到浏览器开发者工具处于打开状态。为保护站点内容，页面暂时不可用；关闭面板后会自动恢复。",
@@ -152,21 +152,42 @@
     document.documentElement.classList.remove("jy-guard-on");
   }
 
-  /* 停靠式面板会把视口挤小：outer 与 inner 的差值会突然变大。
-     触屏设备基本打不开开发者工具，窄屏下直接跳过，免得误判。 */
+  /* ---------- 4. 打开检测 ----------
+     A. 停靠式面板：outer 与 inner 的尺寸差会突然变大，直接量出来；
+     B. 浮动窗口 / 独立窗口：视口尺寸不变，量不出来，
+        只能用 debugger 探针 —— 面板附着时 debugger 语句会让脚本停住
+        （浏览器会在页面顶部提示「Script execution paused」），
+        关掉面板后从那一行继续，耗时差就暴露了面板的存在。
+        副作用是面板开着时页面会周期性卡住，这正是要的效果。 */
+  var on=false, box=null, probing=false;
+
   function docked(){
-    if(window.innerWidth<820)return false;
-    if(!window.outerWidth)return false;
-    return (window.outerWidth-window.innerWidth>170)||(window.outerHeight-window.innerHeight>170);
+    if(window.innerWidth<820)return false;          /* 窄屏设备基本打不开，跳过免得误判 */
+    if(!window.outerWidth)return false;             /* headless / 沙箱环境 */
+    return (window.outerWidth-window.innerWidth>160)||
+           (window.outerHeight-window.innerHeight>160);
+  }
+  function probe(){
+    if(probing)return false;
+    probing=true;
+    var t0=performance.now();
+    debugger;                                       /* 面板开着 → 停在这里 */
+    var dt=performance.now()-t0;
+    probing=false;
+    return dt>90;                                   /* 正常执行只要零点几毫秒 */
   }
   function watch(){
+    if(!document.body)return;                       /* head 阶段还没 body，等下一轮 */
+    if(document.hidden)return;                      /* 切到后台就别做探针了 */
     var hit=docked();
+    if(!hit)hit=probe();
     if(hit&&!on)show();
     else if(!hit&&on)hide();
   }
-  setInterval(watch,700);
+  setInterval(watch,1200);
   window.addEventListener("resize",watch);
   document.addEventListener("DOMContentLoaded",watch);
+  document.addEventListener("visibilitychange",watch);
   watch();
 })();
 </script>
