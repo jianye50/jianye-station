@@ -2576,11 +2576,12 @@ function renderHome(){
       <section class="section" id="homeProjects">
         <div class="section-label">${esc(t.home.projects)}</div>
         <div class="proj-grid">
-          ${projectsGridHTML()}
+          ${projectsGridHTML(HOME_PROJECT_COUNT)}
         </div>
+        ${PROJECTS.length>HOME_PROJECT_COUNT?`
         <div class="section-more">
           <a class="link-more" href="#/about/projects">${esc(t.home.moreProj)} →</a>
-        </div>
+        </div>`:""}
       </section>`:""}
     </div>
   </section>`;
@@ -2769,15 +2770,19 @@ function renderAbout(){
   applyAboutCollapse();   /* 按上次的选择（或手机默认收起）应用折叠状态 */
 }
 
-/* ---------- 关于页里的项目模块（原独立「项目」页已并入此处） ---------- */
-function projectsGridHTML(){
-  return PROJECTS.map(p=>`
+/* ---------- 项目卡片网格 ----------
+   limit 可选：传了就只取前 N 个（首页用，多的去关于页看）；
+   不传则全部渲染（关于页用）。 */
+function projectsGridHTML(limit){
+  const list=limit?PROJECTS.slice(0,limit):PROJECTS;
+  return list.map(p=>`
   <a class="proj" href="${esc(p.u)}" target="_blank" rel="noopener">
     <div class="ic" style="background:${p.c}">${p.ic}</div>
     <h4>${esc(lang==="zh"?p.zh:p.en)}</h4>
     <p>${esc(lang==="zh"?p.dzh:p.den)}</p>
   </a>`).join("");
 }
+const HOME_PROJECT_COUNT=8;   /* 首页最多展示的项目数，想改这里调 */
 
 /* =====================================================================
  *  博客：文章就是 blog 文件夹里的内容本身，不需要任何清单文件
