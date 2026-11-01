@@ -1,6 +1,38 @@
 {
-  "generated": "2026-11-01T14:20:59.426Z",
+  "generated": "2026-11-01T14:44:52.237Z",
   "posts": [
+    {
+      "slug": "编辑器2.0更新",
+      "md": "blog/编辑器2.0更新/index.md",
+      "imgBase": "blog/编辑器2.0更新/",
+      "title": "博客编辑器 2.0：文章里终于装得下视频、动图和声音",
+      "desc": "把编辑器从一个 Markdown 输入框，重做成图文音视一体的写作台。附全部新组件的现场演示，以及这次挖出来的九个问题。",
+      "tags": [
+        "博客",
+        "编辑器",
+        "更新"
+      ],
+      "date": "2026-11-01",
+      "minutes": 8,
+      "cover": "cover.png",
+      "bg": "cover.png",
+      "mdEn": "blog/编辑器2.0更新/index.en.md",
+      "titleEn": "Blog Editor 2.0: Articles can finally contain videos, animations and sounds",
+      "descEn": "Rebuild the editor from a Markdown input box into a writing desk that integrates graphics, text, audio and video. Attached is a live demonstration of all new components, as well as nine problems discovered this time.",
+      "tagsEn": [
+        "blog",
+        "Editor",
+        "renew"
+      ],
+      "imgs": {
+        "cover.png": "blog/thumbs/编辑器2.0更新-i1.webp",
+        "shot-list.png": "blog/thumbs/编辑器2.0更新-i6.webp",
+        "shot-mobile.png": "blog/thumbs/编辑器2.0更新-i7.webp",
+        "shot-post.png": "blog/thumbs/编辑器2.0更新-i8.webp"
+      },
+      "coverThumb": "blog/thumbs/编辑器2.0更新-cover.webp",
+      "bgThumb": "blog/thumbs/编辑器2.0更新-bg.webp"
+    },
     {
       "slug": "Jianye PE驱动安装模块 3.0 重磅发布",
       "md": "blog/Jianye PE驱动安装模块 3.0 重磅发布/index.md",
