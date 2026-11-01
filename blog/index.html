@@ -157,7 +157,7 @@ img{display:block;max-width:100%}
   background:var(--bg-2);display:grid;place-items:center;color:var(--text-3);font-size:18px;
   border:1px dashed var(--card-border);
 }
-.cover-thumb img{width:100%;height:100%;object-fit:cover}
+.cover-thumb img,.cover-thumb video{width:100%;height:100%;object-fit:cover}
 .cover-thumb.sel{border:2px solid var(--accent)}
 .cover-info{font-size:12px;color:var(--text-3);line-height:1.7;min-width:0}
 .cover-info b{color:var(--text-2);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -179,21 +179,83 @@ img{display:block;max-width:100%}
 }
 .img-cell:hover .size{opacity:1}
 .img-cell .ops{
-  position:absolute;inset:auto 0 0 0;display:flex;
+  position:absolute;inset:auto 0 0 0;display:flex;flex-wrap:nowrap;
   background:linear-gradient(transparent,rgba(5,8,15,.92));
-  padding:16px 5px 5px;gap:4px;justify-content:center;
+  padding:14px 4px 4px;gap:3px;justify-content:center;
   opacity:0;transition:opacity .2s;
 }
 .img-cell:hover .ops{opacity:1}
+.img-cell:hover .kind,.img-cell:hover .vdur{opacity:0}
 .img-cell .ops button{
-  font-size:10.5px;font-weight:650;padding:4px 8px;border-radius:7px;
-  background:rgba(255,255,255,.14);color:#fff;backdrop-filter:blur(6px);
+  flex:1 1 0;min-width:0;text-align:center;
+  font-size:10px;font-weight:700;padding:3px 0;border-radius:6px;
+  background:rgba(255,255,255,.16);color:#fff;backdrop-filter:blur(6px);
 }
 .img-cell .ops button:hover{background:var(--accent)}
 .img-cell .ops button.rm:hover{background:var(--danger)}
 .img-empty{grid-column:1/-1;text-align:center;color:var(--text-3);font-size:12.5px;padding:18px 0;line-height:1.9}
 .upload-hint{font-size:11.5px;color:var(--text-3);margin-top:10px;line-height:1.85}
 .upload-hint b{color:var(--text-2)}
+
+/* ---------- 媒体库：图片 / 视频 / 动图 ---------- */
+.media-tabs{display:flex;gap:6px;margin:12px 0 10px;flex-wrap:wrap}
+.media-tabs button{
+  font-size:11.5px;font-weight:650;padding:5px 11px;border-radius:999px;
+  background:var(--chip);border:1px solid var(--card-border);color:var(--text-3);
+}
+.media-tabs button:hover{color:var(--text-1)}
+.media-tabs button.on{background:var(--accent-soft);border-color:rgba(77,141,255,.45);color:var(--accent)}
+.media-tabs .cnt{opacity:.65;font-weight:600;margin-left:3px}
+.img-cell video{width:100%;height:100%;object-fit:cover;display:block;background:#000;cursor:pointer}
+/* 视频格子：中间一个播放三角，右下角时长 */
+.img-cell .vplay,.ip-cell .vplay{
+  position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;
+  border-radius:50%;background:rgba(6,9,16,.62);border:1px solid rgba(255,255,255,.28);
+  display:grid;place-items:center;pointer-events:none;backdrop-filter:blur(4px);
+}
+.img-cell .vplay::after,.ip-cell .vplay::after{
+  content:"";width:0;height:0;margin-left:2px;
+  border-left:9px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;
+}
+.img-cell .vdur{
+  position:absolute;right:5px;top:5px;font-size:10px;font-weight:700;color:#fff;
+  background:rgba(5,8,15,.66);padding:1px 6px;border-radius:6px;
+  transition:opacity .2s;
+}
+.img-cell .kind{
+  position:absolute;left:5px;bottom:5px;font-size:9.5px;font-weight:800;letter-spacing:.04em;
+  padding:1px 6px;border-radius:6px;color:#0b0d12;background:#6ea8ff;transition:opacity .2s;
+}
+.img-cell .kind.gif{background:#ffb14d}
+.img-cell .kind.vid{background:#7af0c0}
+
+/* ---------- 站点预览（设备框） ---------- */
+.pv-mask{position:fixed;inset:0;z-index:120;display:none;background:rgba(5,7,12,.82);backdrop-filter:blur(6px)}
+.pv-mask.on{display:block}
+.pv-wrap{position:absolute;inset:0;display:flex;flex-direction:column}
+.pv-bar{
+  display:flex;align-items:center;gap:8px;padding:10px 14px;
+  background:rgba(16,19,26,.94);border-bottom:1px solid var(--card-border);
+}
+.pv-bar .sp{flex:1}
+.pv-bar .t{font-size:12.5px;color:var(--text-3)}
+.dev{
+  font-size:12px;font-weight:650;padding:6px 12px;border-radius:9px;
+  background:var(--chip);border:1px solid var(--card-border);color:var(--text-2);
+}
+.dev.on{background:var(--accent-soft);border-color:rgba(77,141,255,.5);color:var(--accent)}
+.pv-stage{flex:1;overflow:auto;display:flex;justify-content:center;padding:18px;background:
+  radial-gradient(900px 420px at 50% -10%,rgba(77,141,255,.14),transparent 70%)}
+.pv-frame{
+  width:100%;max-width:100%;height:100%;min-height:320px;background:#0b0d12;
+  border:1px solid rgba(255,255,255,.14);border-radius:14px;overflow:hidden;
+  box-shadow:0 24px 60px rgba(0,0,0,.5);transition:max-width .25s ease;
+}
+.pv-frame iframe{width:100%;height:100%;border:0;display:block;background:#0b0d12}
+@media (max-width:720px){
+  .pv-bar .t{display:none}
+  .pv-stage{padding:8px}
+}
 
 /* 编辑器主体 */
 .editor-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
@@ -258,6 +320,24 @@ img{display:block;max-width:100%}
 .tips{margin-top:12px;font-size:11.5px;color:var(--text-3);line-height:2}
 .tips .kbd{margin:0 2px}
 
+/* 正文语法小抄：默认收起，不占地方 */
+.md-help{margin-top:12px;border:1px solid var(--card-border);border-radius:12px;background:var(--bg-2)}
+.md-help summary{
+  cursor:pointer;padding:9px 13px;font-size:12px;font-weight:650;color:var(--text-2);
+  list-style:none;user-select:none;
+}
+.md-help summary::-webkit-details-marker{display:none}
+.md-help summary::after{content:"▾";float:right;color:var(--text-3);transition:transform .2s}
+.md-help[open] summary::after{transform:rotate(180deg)}
+.md-help summary:hover{color:var(--accent)}
+.md-help-body{padding:2px 13px 12px;font-size:12px;color:var(--text-3);line-height:1.9}
+.md-help-body p{margin:5px 0}
+.md-help-body code{
+  font-family:var(--mono);font-size:11.5px;background:var(--chip);
+  padding:1px 6px;border-radius:5px;color:var(--accent);
+}
+.md-help-body .dim{color:var(--text-3);opacity:.8;margin-top:9px}
+
 /* toast */
 .toast{
   position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(16px);
@@ -294,11 +374,16 @@ img{display:block;max-width:100%}
 /* 插图选择弹窗：缩略图网格 */
 .img-pick{width:min(640px,calc(100vw - 40px))}
 .ip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px;margin-bottom:18px;max-height:54vh;overflow:auto;padding:2px}
-.ip-cell{display:flex;flex-direction:column;align-items:center;gap:7px;padding:8px 8px 7px;
+.ip-cell{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;padding:8px 8px 7px;
   border:1px solid var(--card-border);border-radius:12px;background:var(--bg-2);
   cursor:pointer;font:inherit;color:var(--text-2)}
 .ip-cell:hover{border-color:rgba(77,141,255,.65);color:var(--text-1)}
-.ip-cell img{width:100%;height:76px;object-fit:cover;border-radius:7px;display:block}
+.ip-cell img,.ip-cell video{width:100%;height:76px;object-fit:cover;border-radius:7px;display:block;background:#000}
+/* 音频文件在媒体库里的样子（没有画面可抓） */
+.aud-ico{
+  width:100%;height:100%;display:grid;place-items:center;font-size:26px;line-height:1;
+  color:var(--accent);background:radial-gradient(circle at 50% 40%,rgba(77,141,255,.18),transparent 70%);
+}
 .ip-name{font-size:11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ip-upload{min-height:76px;justify-content:center;gap:8px}
 .ip-plus{font-size:20px;line-height:1}
@@ -379,13 +464,20 @@ img{display:block;max-width:100%}
       </div>
 
       <div class="panel">
-        <h5>图片库<span class="sp"></span><span class="big" id="imgCount"></span></h5>
+        <h5>媒体库<span class="sp"></span><span class="big" id="imgCount"></span></h5>
+        <div class="media-tabs" id="mediaTabs">
+          <button data-tab="all" class="on">全部<span class="cnt"></span></button>
+          <button data-tab="image">图片<span class="cnt"></span></button>
+          <button data-tab="video">视频<span class="cnt"></span></button>
+          <button data-tab="gif">动图<span class="cnt"></span></button>
+        </div>
         <div class="img-grid" id="imgGrid"></div>
-        <button class="btn mini" id="uploadBtn" style="margin-top:12px">⬆ 上传图片</button>
-        <input type="file" id="fileInput" accept="image/*" multiple hidden>
+        <button class="btn mini" id="uploadBtn" style="margin-top:12px">⬆ 上传图片 / 视频</button>
+        <input type="file" id="fileInput" accept="image/*,video/*" multiple hidden>
         <div class="upload-hint">
-          <b>直接粘贴 / 拖拽图片到右侧正文</b>，会自动存进本文章文件夹并插到光标处。<br>
-          鼠标悬停图片：<b style="color:#6ea8ff">封面</b> / <b style="color:var(--warn)">背景</b> / 插入正文 / 删除。
+          <b>直接粘贴 / 拖拽文件到右侧正文</b>，会自动存进本文章文件夹并插到光标处。<br>
+          视频（mp4 / webm / mov）与 GIF 一样放这个文件夹，正文里用文件名引用即可。<br>
+          鼠标悬停：<b style="color:#6ea8ff">封面</b> / <b style="color:var(--warn)">背景</b> / 插入 / 删除。
         </div>
       </div>
     </aside>
@@ -409,8 +501,10 @@ img{display:block;max-width:100%}
         <button data-act="ol" title="有序列表">1. 列表</button>
         <button data-act="link" title="链接">🔗 链接</button>
         <span class="sep"></span>
-        <button data-act="img" title="插入图片（从图片库选择，也可以上传新图片）">🖼 插图</button>
-        <button data-act="upload" title="上传新图片到图片文件夹">⬆ 传图</button>
+        <button data-act="img" title="插入图片（从媒体库选择，也可以上传新图片）">🖼 插图</button>
+        <button data-act="video" title="插入视频：从媒体库选，或直接上传 mp4 / webm">🎬 视频</button>
+        <button data-act="motion" title="插入动图：无声循环自动播放的视频或 GIF">🔁 动图</button>
+        <button data-act="upload" title="上传图片 / 视频到这个文章文件夹">⬆ 传文件</button>
         <button data-act="hr" title="分隔线">— 分隔线</button>
         <button data-act="callout" title="提示块">💡 提示</button>
         <button data-act="align-l" title="左对齐段落（|l ）">⇤ 左</button>
@@ -420,7 +514,7 @@ img{display:block;max-width:100%}
         <button data-act="preview" id="previewBtn" title="就地预览渲染效果">👁 预览</button>
       </div>
       <textarea class="md-box" id="mdBox" spellcheck="false"
-        placeholder="在这里写正文…… 支持 Markdown：标题、列表、引用、代码块、图片等。&#10;直接粘贴或拖拽图片即可自动保存并插入。"></textarea>
+        placeholder="在这里写正文…… 支持 Markdown：标题、列表、引用、代码块、图片、视频、动图等。&#10;直接粘贴或拖拽图片 / 视频即可自动保存并插入。&#10;&#10;视频：![说明](clip.mp4)　动图：@motion[说明](loop.mp4)　GIF：![说明](anim.gif)"></textarea>
       <div class="md-preview" id="mdPreview" style="display:none"></div>
       <div class="stat-bar">
         <span id="statWords">0 字</span>
@@ -435,16 +529,46 @@ img{display:block;max-width:100%}
         <button class="btn" id="histBtn" title="浏览并还原到历史版本">🕘 历史</button>
         <span class="save-state" id="saveState"></span>
       </div>
+      <details class="md-help">
+        <summary>📖 视频 / 动图 / 音频怎么写（点开看）</summary>
+        <div class="md-help-body">
+          <p><code>![说明](clip.mp4)</code> 普通视频：带进度条与全屏，点播放才开始。</p>
+          <p><code>![说明](clip.mp4 "cover.jpg")</code> 同一行末尾加引号就是自定义封面。</p>
+          <p><code>@motion[说明](loop.mp4)</code> 动图式：无声、自动循环、不用点，滚出屏幕自动暂停。</p>
+          <p><code>![说明](anim.gif)</code> GIF 原样插进来就动，左上角会挂 GIF 角标。</p>
+          <p><code>@audio[说明](voice.mp3)</code> 音频小卡片（mp3 / m4a / wav 等）。</p>
+          <p class="dim">文件要和 <code>index.md</code> 放在同一个文件夹里，名字大小写要一致；<br>
+             视频建议先用剪辑软件压到 10 MB 以内、分辨率 1280 宽，手机看更顺。</p>
+        </div>
+      </details>
       <div class="tips">
         快捷键：<span class="kbd">Ctrl/⌘ + S</span> 保存 · <span class="kbd">Ctrl + Enter</span> 保存 ·
         <span class="kbd">Ctrl + Z</span> 撤销 · <span class="kbd">Ctrl + Shift + Z</span> 重做 ·
         <span class="kbd">Ctrl + B</span> 加粗 · <span class="kbd">Ctrl + I</span> 斜体 ·
         <span class="kbd">Tab</span> 缩进 · <span class="kbd">Shift + Tab</span> 反缩进 ·
-        <span class="kbd">Ctrl + V</span> 粘贴图片自动保存
+        <span class="kbd">Ctrl + V</span> 粘贴图片 / 视频自动保存 ·
+        <span class="kbd">Ctrl + Shift + P</span> 站点预览
       </div>
     </div>
   </div>
 </section>
+
+<!-- 站点预览：设备框里用站点真实样式渲染这一篇，可切桌面 / 平板 / 手机 -->
+<div class="pv-mask" id="pvMask">
+  <div class="pv-wrap">
+    <div class="pv-bar">
+      <button class="dev on" data-w="100%">🖥 桌面</button>
+      <button class="dev" data-w="834px">📱 平板</button>
+      <button class="dev" data-w="390px">📱 手机</button>
+      <span class="sp"></span>
+      <span class="t" id="pvInfo">本地预览 · 未部署</span>
+      <button class="btn mini" id="pvReload">↻ 重新渲染</button>
+      <button class="btn mini" id="pvPopup">↗ 新窗口</button>
+      <button class="btn mini" id="pvClose">关闭</button>
+    </div>
+    <div class="pv-stage"><div class="pv-frame" id="pvFrame"><iframe id="pvIframe" title="站点预览"></iframe></div></div>
+  </div>
+</div>
 
 <!-- 拖放全屏提示 -->
 <div id="dropOverlay"><div class="box" id="dropOverlayBox"></div></div>
@@ -468,8 +592,8 @@ img{display:block;max-width:100%}
 <!-- 插图选择弹窗（缩略图点选） -->
 <div class="mask" id="imgPickMask">
   <div class="modal img-pick">
-    <h4>🖼 选择要插入的图片</h4>
-    <p>点击图片即插入到正文光标处 · 库里没有想要的就上传新图片</p>
+    <h4 id="ipTitle">🖼 选择要插入的图片</h4>
+    <p>点击即插入到正文光标处 · 库里没有想要的就上传新文件</p>
     <div class="ip-grid" id="ipGrid"></div>
     <div class="row">
       <button class="btn" id="ipCancel">取消</button>
@@ -493,7 +617,11 @@ const $$=s=>Array.from(document.querySelectorAll(s));
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const today=()=>new Date().toISOString().slice(0,10);
 const pad2=n=>String(n).padStart(2,"0");
-const IMG_RE=/\.(jpe?g|png|gif|webp|bmp|avif)$/i;
+const IMG_RE=/\.(jpe?g|png|gif|webp|bmp|avif|svg)$/i;
+const VID_RE=/\.(mp4|m4v|webm|ogv|ogg|mov|qt)$/i;
+const GIF_RE=/\.gif$/i;
+const AUD_RE=/\.(mp3|m4a|aac|wav|flac|oga|opus)$/i;
+const MEDIA_RE=/\.(jpe?g|png|gif|webp|bmp|avif|svg|mp4|m4v|webm|ogv|ogg|mov|qt|mp3|m4a|aac|wav|flac|opus)$/i;
 const MD_RE=/\.(md|markdown|txt)$/i;
 const MISSING_IMG="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="560" height="150">'+
@@ -508,7 +636,8 @@ let meta={};
 let mdText="";
 let dirty=false;
 let previewOn=false;
-let imgNames=[];
+let imgNames=[];          /* 本文章文件夹里的媒体文件名（图片 / 视频 / 音频），沿用旧名字免得改太多处 */
+let mediaTab="all";       /* 媒体库筛选：all / image / video / gif */
 const blobCache={};
 const fileCache={};   /* 同一张图不重复读盘：缩略图和体积共用一次读取 */
 
@@ -865,15 +994,15 @@ async function handleDrop(e){
   }
   const dirs=handles.filter(h=>h.kind==="directory");
   const files=handles.filter(h=>h.kind==="file");
-  const imgs=files.filter(h=>IMG_RE.test(h.name));
-  const others=files.filter(h=>!IMG_RE.test(h.name));
+  const imgs=files.filter(h=>MEDIA_RE.test(h.name));
+  const others=files.filter(h=>!MEDIA_RE.test(h.name));
 
-  /* ① 全是图片：直接存进当前文章文件夹，并插到光标处 */
+  /* ① 全是媒体文件（图片 / 视频 / GIF）：直接存进当前文章文件夹 */
   if(imgs.length&&!dirs.length&&!others.length&&editing()){
     const list=[];
     for(const h of imgs){try{list.push(await h.getFile());}catch(err){}}
-    if(!list.length){toast("读不到这些图片，请改用正文区的粘贴 / 拖拽","err");return;}
-    return uploadImages(list,{insert:false});   /* 拖到页面上 → 只进图片库 */
+    if(!list.length){toast("读不到这些文件，请改用正文区的粘贴 / 拖拽","err");return;}
+    return uploadImages(list,{insert:false});   /* 拖到页面上 → 只进媒体库 */
   }
   /* ② 拖进来的是散文件：编辑器只认文件夹，图片请拖到正文区或图片库里 */
   if(!dirs.length){
@@ -889,7 +1018,7 @@ let dragDepth=0;
 function dragHint(on){
   const el=$("#dropOverlay"),box=$("#dropOverlayBox");
   if(editing()){
-    box.innerHTML=`松手即可把这批图片存进图片库<small>想边存边插到正文，请把图片拖到右侧正文区</small>`;
+    box.innerHTML=`松手即可把这批文件存进媒体库<small>想边存边插到正文，请把文件拖到右侧正文区</small>`;
   }else{
     box.innerHTML=`松手即可打开这篇文章<small>把这一篇的文件夹拖进来</small>`;
   }
@@ -969,49 +1098,116 @@ async function primeImages(){
   if(!artHandle)return;
   await Promise.all(imgNames.map(n=>blobCache[n]?null:imgURL(n)));
 }
+/* 一个文件是什么：图片 / 动图(GIF) / 视频 / 音频 —— 决定缩略图怎么画、能插什么语法 */
+function mediaKind(name){
+  if(VID_RE.test(name))return "video";
+  if(GIF_RE.test(name))return "gif";
+  if(AUD_RE.test(name))return "audio";
+  return "image";
+}
+function mediaLabel(k){return k==="video"?"视频":k==="gif"?"动图":k==="audio"?"音频":"图片";}
+function fmtDur(sec){
+  sec=Math.round(sec||0);
+  if(!sec)return "";
+  const m=Math.floor(sec/60),s=sec%60;
+  return m?`${m}:${String(s).padStart(2,"0")}`:`0:${String(s).padStart(2,"0")}`;
+}
+function paintMediaCounts(){
+  const c={all:imgNames.length,image:0,video:0,gif:0};
+  imgNames.forEach(n=>{
+    const k=mediaKind(n);
+    if(k==="image")c.image++;
+    else if(k==="video")c.video++;
+    else if(k==="gif")c.gif++;
+  });
+  $$("#mediaTabs button").forEach(b=>{
+    const t=b.dataset.tab;
+    const s=b.querySelector(".cnt");
+    if(s)s.textContent=c[t]?`· ${c[t]}`:"";
+    b.classList.toggle("on",t===mediaTab);
+  });
+  $("#imgCount").textContent=imgNames.length?(imgNames.length+" 个"):"";
+}
 async function refreshImages(){
   imgNames=[];
   if(artHandle){
     try{
       for await(const [name,h] of artHandle.entries())
-        if(h.kind==="file"&&IMG_RE.test(name))imgNames.push(name);
+        if(h.kind==="file"&&MEDIA_RE.test(name))imgNames.push(name);
     }catch(e){}
   }
   imgNames.sort((a,b)=>a.localeCompare(b,"zh-Hans-CN",{numeric:true}));
-  $("#imgCount").textContent=imgNames.length?(imgNames.length+" 张"):"";
-  const grid=$("#imgGrid");
-  if(!imgNames.length){
-    grid.innerHTML=`<div class="img-empty">这个文件夹里还没有图片。<br>上传、粘贴或直接把图片拖进来都可以。</div>`;
+  paintMediaCounts();
+  const list=imgNames.filter(n=>{
+    if(mediaTab==="all")return true;
+    const k=mediaKind(n);
+    return mediaTab==="gif"?k==="gif":mediaTab==="image"?(k==="image"||k==="audio"):k===mediaTab;
+  });  const grid=$("#imgGrid");
+  if(!list.length){
+    grid.innerHTML=`<div class="img-empty">${imgNames.length
+      ?"这个分类下还没有文件，换个标签看看。"
+      :"这个文件夹里还没有图片或视频。<br>上传、粘贴或直接把文件拖进来都可以。"}</div>`;
     return;
   }
-  grid.innerHTML=imgNames.map(n=>`
-    <div class="img-cell" data-name="${esc(n)}">
-      <img alt="${esc(n)}" loading="lazy" data-src="${esc(n)}">
+  grid.innerHTML=list.map(n=>{
+    const k=mediaKind(n);
+    const isV=k==="video",isG=k==="gif",isA=k==="audio";
+    /* 视频：用 <video> 抓第 0.1 秒当封面；GIF 因为有动效，标签里单独标一下 */
+    const face=isV
+      ?`<video muted playsinline preload="metadata" data-src="${esc(n)}"></video><span class="vplay"></span>`
+      :isA?`<div class="aud-ico">♪</div>`
+      :`<img alt="${esc(n)}" loading="lazy" data-src="${esc(n)}">`;
+    return `
+    <div class="img-cell" data-name="${esc(n)}" data-kind="${k}">
+      ${face}
+      ${isV?`<span class="vdur" data-dur="${esc(n)}"></span>`:""}
       <div class="badges">
         ${meta.cover===n?`<span class="b-cover">封面</span>`:""}
         ${meta.background===n?`<span class="b-bg">背景</span>`:""}
       </div>
       <div class="ops">
-        <button data-op="cover">封面</button>
-        <button data-op="bg">背景</button>
-        <button data-op="insert">插入</button>
-        <button data-op="rm" class="rm">删</button>
+        ${isA?"":`<button data-op="cover" title="设为封面（列表页缩略图）">封</button><button data-op="bg" title="设为背景（文章页头图）">景</button>`}
+        <button data-op="insert" title="插入到正文光标处">插</button>
+        ${isV?`<button data-op="motion" title="以「动图」方式插入：无声自动循环">动</button>`:""}
+        <button data-op="rm" class="rm" title="从文件夹里删除">✕</button>
       </div>
-    </div>`).join("");
-  /* 并行加载：图片多时不再一张接一张排队（原来是串行 2 次读盘/张） */
-  await Promise.all(imgNames.map(async n=>{
-    const img=grid.querySelector(`img[data-src="${CSS.escape(n)}"]`);
-    if(!img)return;
+      ${isV?`<span class="kind vid">VIDEO</span>`:isG?`<span class="kind gif">GIF</span>`:""}
+    </div>`;
+  }).join("");
+  /* 并行加载：文件多时不再一个一个排队 */
+  await Promise.all(list.map(async n=>{
+    const cell=grid.querySelector(`.img-cell[data-name="${CSS.escape(n)}"]`);
+    if(!cell)return;
     const [u,f]=await Promise.all([imgURL(n),getFileCached(n)]);
-    if(u)img.src=u;
+    const v=cell.querySelector("video");
+    if(v){
+      if(u){
+        /* #t=0.1 让浏览器去抓这一帧当封面，只写 metadata 在部分浏览器上是一片黑 */
+        v.addEventListener("loadedmetadata",()=>{
+          const tag=cell.querySelector(".vdur");
+          if(tag)tag.textContent=fmtDur(v.duration);
+        },{once:true});
+        v.src=u+"#t=0.1";
+      }
+    }else{
+      const im=cell.querySelector("img");
+      if(im&&u)im.src=u;
+    }
     if(f){
       const tag=document.createElement("span");
-      tag.className="size";tag.textContent=fmtSize(f.size);
-      const cell=img.closest(".img-cell");
-      if(cell)cell.appendChild(tag);
+      tag.className="size";
+      tag.textContent=fmtSize(f.size);
+      cell.appendChild(tag);
     }
   }));
 }
+/* 媒体库分类切换 */
+$("#mediaTabs")&&$("#mediaTabs").addEventListener("click",async e=>{
+  const b=e.target.closest("button[data-tab]");
+  if(!b)return;
+  mediaTab=b.dataset.tab;
+  await refreshImages();
+});
 async function refreshCovers(){
   const set=async(thumbId,infoId,val,ph)=>{
     const th=$(thumbId),inf=$(infoId);
@@ -1019,15 +1215,18 @@ async function refreshCovers(){
       const u=await imgURL(val);
       if(u){
         th.classList.add("sel");
-        th.innerHTML=`<img src="${u}" alt="">`;
-        inf.innerHTML=`<b>${esc(val)}</b>已设置 · 点图片库里其他图片可更换`;
-      }else{   /* 元信息里写了、但文件夹里没这张图：明确提示，别假装设置成功 */
+        /* 封面 / 背景也可以是视频：那就在小方框里放个静音视频抓首帧 */
+        th.innerHTML=VID_RE.test(val)
+          ?`<video src="${u}#t=0.1" muted playsinline preload="metadata"></video>`
+          :`<img src="${u}" alt="">`;
+        inf.innerHTML=`<b>${esc(val)}</b>已设置 · 点媒体库里其他文件可更换`;
+      }else{   /* 元信息里写了、但文件夹里没这个文件：明确提示，别假装设置成功 */
         th.classList.remove("sel");th.innerHTML=ph;
-        inf.innerHTML=`<b>${esc(val)}</b>⚠ 这个文件夹里找不到这张图片，请重新选一张`;
+        inf.innerHTML=`<b>${esc(val)}</b>⚠ 这个文件夹里找不到这个文件，请重新选一个`;
       }
     }else{
       th.innerHTML=ph;th.classList.remove("sel");
-      inf.innerHTML="尚未设置<br>在下方图片库里点图片进行设置";
+      inf.innerHTML="尚未设置<br>在下方媒体库里点文件进行设置";
     }
   };
   await set("#coverThumb","#coverInfo",meta.cover,"🖼️");
@@ -1039,15 +1238,19 @@ $("#uploadBtn").addEventListener("click",()=>{
 });
 $("#fileInput").addEventListener("change",async e=>{
   const files=[...e.target.files];e.target.value="";
-  if(files.length)await uploadImages(files,{insert:false});   /* 上传按钮：只进图片库 */
+  if(files.length)await uploadImages(files,{insert:false});   /* 上传按钮：只进媒体库 */
 });
-/* 上传图片：写入本文章文件夹 → 刷新图片库。
-   opts.insert 为 false（点上传按钮 / 拖图到页面）时只入库，不自动插正文；
-   粘贴 / 拖图到正文时默认插入。 */
+/* 上传媒体：写入本文章文件夹 → 刷新媒体库。
+   图片 / 视频 / GIF 走同一套流程，只是插入正文时用的语法不同。
+   opts.insert 为 false（点上传按钮 / 拖文件到页面）时只入库，不自动插正文；
+   粘贴 / 拖文件到正文时默认插入；opts.motion=true 时按「动图」语法插入。 */
 async function uploadImages(files,opts){
   opts=opts||{};
-  const list=files.filter(f=>(f.type&&f.type.startsWith("image/"))||IMG_RE.test(f.name||""));
-  if(!list.length){toast("没有可用的图片文件","err");return;}
+  const list=files.filter(f=>{
+    const t=f.type||"";
+    return t.startsWith("image/")||t.startsWith("video/")||t.startsWith("audio/")||MEDIA_RE.test(f.name||"");
+  });
+  if(!list.length){toast("没有可用的图片 / 视频文件","err");return;}
   if(!artHandle){toast("先打开一篇文章","err");return;}
   const t=new Date();
   const pre=`img-${t.getFullYear()}${pad2(t.getMonth()+1)}${pad2(t.getDate())}-${pad2(t.getHours())}${pad2(t.getMinutes())}${pad2(t.getSeconds())}`;
@@ -1063,20 +1266,38 @@ async function uploadImages(files,opts){
         uniq=stem+ext;let seq=2;
         while(imgNames.includes(uniq)||inserted.includes(uniq))uniq=stem+"-"+seq+++ext;
       }else{
-        uniq=pre+(i?"-"+i:"")+".png";i++;
+        /* 剪贴板里粘来的视频没有文件名：按 MIME 给个像样的后缀 */
+        const mime=(f.type||"").toLowerCase();
+        const ext=mime.indexOf("video/mp4")>=0?".mp4"
+          :mime.indexOf("video/webm")>=0?".webm"
+          :mime.indexOf("image/gif")>=0?".gif"
+          :mime.indexOf("image/jpeg")>=0?".jpg"
+          :mime.indexOf("image/webp")>=0?".webp"
+          :mime.indexOf("audio/")===0?".mp3"
+          :".png";
+        uniq=pre+(i?"-"+i:"")+ext;i++;
       }
       await writeBlob(artHandle,uniq,f);
-      dropBlobCache(uniq);              /* 同名覆盖时别让缓存的旧图顶上来 */
+      dropBlobCache(uniq);              /* 同名覆盖时别让缓存的旧文件顶上来 */
       inserted.push(uniq);
     }
     await refreshImages();
     if(opts.insert===false){
-      toast(`已存入图片库（${inserted.length} 张）· 在库里点图片即可插入正文`,"ok");
+      toast(`已存入媒体库（${inserted.length} 个）· 在库里点一下即可插入正文`,"ok");
     }else{
-      insertAtCursor("\n"+inserted.map(n=>`![${n.replace(/\.[^.]+$/,"")}](${n})`).join("\n\n")+"\n");
-      toast(`已保存 ${inserted.length} 张图片并插入正文`,"ok");
+      insertAtCursor("\n"+inserted.map(n=>mediaSyntax(n,opts.motion)).join("\n\n")+"\n");
+      toast(`已保存 ${inserted.length} 个文件并插入正文`,"ok");
     }
-  }catch(err){toast("保存图片失败："+err.message,"err");}
+  }catch(err){toast("保存失败："+err.message,"err");}
+}
+/* 生成正文语法：普通图片![..](..)、动图@gif/[@motion]、视频![..](clip.mp4) */
+function mediaSyntax(name,motion){
+  const stem=name.replace(/\.[^.]+$/,"");
+  const k=mediaKind(name);
+  if(k==="video")return (motion?`@motion[${stem}](${name})`:`![${stem}](${name})`);
+  if(k==="gif")return `![${stem}](${name})`;
+  if(k==="audio")return `@audio[${stem}](${name})`;
+  return `![${stem}](${name})`;
 }
 $("#imgGrid").addEventListener("click",async e=>{
   const btn=e.target.closest("button[data-op]");
@@ -1093,44 +1314,68 @@ $("#imgGrid").addEventListener("click",async e=>{
     await refreshImages();await refreshCovers();
   }else if(op==="insert"){
     insertImage(name);
+  }else if(op==="motion"){
+    insertImage(name,{motion:true});
   }else if(op==="rm"){
-    if(!await ask({title:"删除图片",text:`确定删除「${name}」吗？（正文里如果引用了它，会显示不出来）`}))return;
+    const k=mediaKind(name);
+    if(!await ask({title:"删除"+mediaLabel(k),text:`确定删除「${name}」吗？（正文里如果引用了它，会显示不出来）`}))return;
     if(meta.cover===name)meta.cover="";
     if(meta.background===name)meta.background="";
     try{
       await artHandle.removeEntry(name);dropBlobCache(name);
       setDirty(true);markDirtySoon();
-      toast("已删除图片","ok");
+      toast("已删除"+mediaLabel(k),"ok");
     }catch(err){toast("删除失败："+err.message,"err");}
     await refreshImages();await refreshCovers();
   }
 });
-async function insertImage(name){
-  await primeImages();                 /* 确保预览能立刻显示这张图 */
+async function insertImage(name,opt){
+  await primeImages();                 /* 确保预览能立刻显示这个文件 */
   const wasPrev=previewOn;
   previewOn=false;                     /* 避免 taSet 把预览切回源码视图 */
-  insertAtCursor(`\n![${name.replace(/\.[^.]+$/,"")}](${name})\n`);
-  if(wasPrev){previewOn=true;setPreviewUI();}   /* 原本在预览 → 留在预览，立刻看到图 */
-  toast("已插入到正文光标处","ok");
+  insertAtCursor(`\n${mediaSyntax(name,opt&&opt.motion)}\n`);
+  if(wasPrev){previewOn=true;setPreviewUI();}   /* 原本在预览 → 留在预览，立刻看到效果 */
+  toast(`已插入${mediaLabel(mediaKind(name))}到正文光标处`,"ok");
 }
 
-/* ---------- 插图选择弹窗：缩略图点选，可顺便上传新图 ---------- */
-async function openImgPick(){
+/* ---------- 媒体选择弹窗：缩略图点选，可顺便上传新文件 ---------- */
+let ipMode="image";      /* image / video / motion：决定列出什么、点了插什么 */
+async function openImgPick(mode){
   if(!artHandle){toast("先打开一篇文章","err");return;}
   if(!editing()){toast("先打开一篇文章","err");return;}
+  ipMode=mode||"image";
   await refreshImages();
-  if(!imgNames.length){$("#uploadBtn").click();return;}
+  const want=ipMode==="image"?["image","gif","audio"]:["video"];
+  const list=imgNames.filter(n=>want.indexOf(mediaKind(n))>=0);
+  if(!list.length){
+    /* 库里没有视频 → 直接打开上传，别让人对着空弹窗发呆 */
+    toast(ipMode==="image"?"库里还没有图片，先选一张上传":"库里还没有视频，先上传一个（mp4 / webm / mov）","err");
+    $("#uploadBtn").click();return;
+  }
+  const title=$("#ipTitle");
+  if(title)title.textContent=ipMode==="image"?"🖼 选择要插入的图片":"🎬 选择要插入的视频";
   const grid=$("#ipGrid");
   grid.innerHTML=
-    `<button class="ip-cell ip-upload" id="ipUpload" type="button"><span class="ip-plus">⬆</span><span class="ip-name">上传新图片</span></button>`+
-    imgNames.map(n=>`
-      <button class="ip-cell" data-name="${esc(n)}" type="button">
-        <img alt="${esc(n)}" data-src="${esc(n)}">
+    `<button class="ip-cell ip-upload" id="ipUpload" type="button"><span class="ip-plus">⬆</span><span class="ip-name">上传新文件</span></button>`+
+    list.map(n=>{
+      const k=mediaKind(n);
+      const face=k==="video"
+        ?`<video muted playsinline preload="metadata" data-src="${esc(n)}"></video>`
+        :`<img alt="${esc(n)}" data-src="${esc(n)}">`;
+      return `
+      <button class="ip-cell" data-name="${esc(n)}" data-kind="${k}" type="button">
+        ${face}${k==="video"?`<span class="vplay"></span>`:""}
         <span class="ip-name">${esc(n)}</span>
-      </button>`).join("");
-  for(const n of imgNames){
-    const im=grid.querySelector(`img[data-src="${CSS.escape(n)}"]`);
-    if(im)im.src=await imgURL(n);
+      </button>`;
+    }).join("");
+  for(const n of list){
+    const cell=grid.querySelector(`[data-name="${CSS.escape(n)}"]`);
+    if(!cell)continue;
+    const u=await imgURL(n);
+    if(!u)continue;
+    const v=cell.querySelector("video"),im=cell.querySelector("img");
+    if(v)v.src=u+"#t=0.1";
+    else if(im)im.src=u;
   }
   $("#imgPickMask").classList.add("on");
 }
@@ -1145,17 +1390,67 @@ $("#ipGrid").addEventListener("click",async e=>{
   const c=e.target.closest(".ip-cell[data-name]");
   if(!c)return;
   closeImgPick();
-  await insertImage(c.dataset.name);
+  await insertImage(c.dataset.name,{motion:ipMode==="motion"});
 });
 
 /* =====================================================================
- *  Markdown 渲染（与站点主页 mdToHTML 保持一致）
+ *  Markdown 渲染（与站点主页 mdToHTML 保持一致，含视频 / 动图 / 音频）
  * ===================================================================== */
 function resolveImg(src,extra){
   if(/^(https?:|data:|blob:|\/)/.test(src))return src;
   const name=src.split("/").pop();
   const hit=(extra&&(extra[src]||extra[name]))||blobCache[src]||blobCache[name];
   return hit||MISSING_IMG;
+}
+/* 视频 / 音频走 blob（本地文件还没上传也能预览）；找不到就留原路径，
+   浏览器报错时由下面的兜底提示接手，而不是显示成一张坏图 */
+function resolveMedia(src){
+  if(/^(https?:|data:|blob:|\/)/.test(src))return src;
+  const name=src.split("/").pop();
+  return blobCache[src]||blobCache[name]||src;
+}
+function mediaHTML(alt,kind,src,poster){
+  alt=alt||"";
+  const cap=alt?`<figcaption>${esc(alt)}</figcaption>`:"";
+  const u=esc(resolveMedia(src));
+  if(kind==="audio")
+    return `<div class="md-media md-audio">`+(alt?`<div class="md-audio-cap"><span>AUDIO</span>${esc(alt)}</div>`:"")+
+      `<audio src="${u}" controls preload="metadata"></audio></div>`;
+  if(kind==="gif")
+    return `<figure class="md-media md-gif"><img src="${u}" alt="${esc(alt)}" loading="lazy" decoding="async">`+
+      `<span class="md-badge">GIF</span>${cap}</figure>`;
+  const p=poster?` poster="${esc(resolveMedia(poster))}"`:"";
+  if(kind==="motion")
+    return `<figure class="md-media md-motion"><video src="${u}"${p} autoplay muted loop playsinline preload="metadata" data-mdmotion></video>`+
+      `<span class="md-badge live">动图</span>${cap}</figure>`;
+  return `<figure class="md-media md-video"><video src="${u}"${p} controls playsinline preload="metadata"></video>`+
+    `<span class="md-badge">视频</span>${cap}</figure>`;
+}
+/* 整行只有一个媒体标记 → 按块渲染（与站点规则一致） */
+function parseMediaLine(line){
+  const m=String(line).match(/^\s*(?:@([A-Za-z]+)\s*)?(!?\[([^\]]*)\])\s*\(\s*((?:[^()]|\([^()]*\))+)\s*\)\s*$/);
+  if(!m)return null;
+  const tag=(m[1]||"").toLowerCase();
+  const alt=m[3]||"";
+  let inner=(m[4]||"").trim(),poster="";
+  const q=inner.match(/^(.*?)\s+["']([^"']+)["']$/);
+  if(q&&q[1].trim()){inner=q[1].trim();poster=q[2].trim();}
+  if(!inner)return null;
+  const LOOP_RE=/([?#&])loop(?:=1|=\d+)?(?=&|$)/i;
+  const loop=LOOP_RE.test(inner);
+  const src=inner.replace(LOOP_RE,"$1").replace(/[?#&]$/,"");
+  let kind="";
+  if(tag==="video"||tag==="audio"||tag==="motion"||tag==="loop"||tag==="gif")
+    kind=(tag==="loop")?"motion":tag;
+  else if(tag)return null;
+  if(!kind){
+    if(VID_RE.test(src))kind=loop?"motion":"video";
+    else if(AUD_RE.test(src))kind="audio";
+    else if(GIF_RE.test(src))kind="gif";
+    else return null;
+  }
+  if(kind==="motion"&&GIF_RE.test(src))kind="gif";
+  return {kind,alt,src,poster};
 }
 function mdToHTML(md,imgBase){
   const pick=v=>typeof imgBase==="function"?imgBase(v):resolveImg(v,null);
@@ -1164,7 +1459,14 @@ function mdToHTML(md,imgBase){
     /* 图片/链接路径允许空格与一层括号（Windows 截图等文件名常带空格/括号） */
     s=s.replace(/!\[([^\]]*)\]\(((?:[^()]|\([^()]*\))+)\)/g,(m,alt,src)=>{
       src=src.trim();
-      return `<img src="${pick(src)}" alt="${alt}" loading="lazy" decoding="async">`;
+      /* 「地址 "标题"」：标题只作提示，混进地址会让图片直接坏掉。
+         此时文本已被 esc() 处理，引号是 &quot; / &#39; */
+      let tip="";
+      const qt=src.match(/^(.*?)\s+(&quot;|&#39;|["'])([\s\S]*?)\2$/);
+      if(qt&&qt[1].trim()){src=qt[1].trim();tip=qt[3].trim();}
+      if(VID_RE.test(src))
+        return `<video class="md-video-inline" src="${esc(resolveMedia(src))}" controls playsinline preload="metadata"></video>`;
+      return `<img src="${pick(src)}" alt="${alt}"${tip?` title="${esc(tip)}"`:""} loading="lazy" decoding="async">`;
     });
     s=s.replace(/\[([^\]]+)\]\(((?:[^()]|\([^()]*\))+)\)/g,(m,txt,href)=>
       `<a href="${href.trim()}" target="_blank" rel="noopener">${txt}</a>`);
@@ -1174,7 +1476,7 @@ function mdToHTML(md,imgBase){
     return s;
   };
   const lines=md.split(/\r?\n/),out=[];let i=0;
-  const BLOCK=/^(#{1,4})\s+|^```|^\s*>|^\s*[-*+]\s+|^\s*\d+[.)]\s+|^\s*(---+|\*\*\*+)\s*$|^\|[lcr]\s/;
+  const BLOCK=/^(#{1,4})\s+|^```|^\s*>|^\s*[-*+]\s+|^\s*\d+[.)]\s+|^\s*(---+|\*\*\*+)\s*$|^\|[lcr]\s|^@(?:video|motion|audio|gif|loop)\s*\[/i;
   const ALIGN={l:"left",c:"center",r:"right"};
   while(i<lines.length){
     const L=lines[i];
@@ -1183,6 +1485,9 @@ function mdToHTML(md,imgBase){
       while(i<lines.length&&!/^```/.test(lines[i])){buf.push(lines[i]);i++;}
       i++;out.push(`<pre><code>${esc(buf.join("\n"))}</code></pre>`);continue;
     }
+    /* 独立成行的视频 / 动图 / 音频：整行渲染成媒体块 */
+    const mt=parseMediaLine(L);
+    if(mt){out.push(mediaHTML(mt.alt,mt.kind,mt.src,mt.poster));i++;continue;}
     /* 对齐段落：|l 文字 / |c 文字 / |r 文字（连续几行算一段），与站点渲染规则一致 */
     const am=L.match(/^\|([lcr])\s+(.*)/);
     if(am){
@@ -1321,12 +1626,34 @@ function fmtDate(d){
   return currentLang()==="zh"?`${m[1]} 年 ${+m[2]} 月 ${+m[3]} 日`
                               :`${MONTHS[+m[2]-1]} ${+m[3]}, ${m[1]}`;
 }
-async function openPagePreview(){
-  if(!artHandle)return;
+/* 站点预览里的媒体样式兜底：正常会用站点 CSS（已经带这些），
+   抓不到站点样式时才靠这一份，不至于视频 / 动图裸奔 */
+const MEDIA_CSS=`
+.post-body .md-media{position:relative;margin:20px auto;border-radius:16px;overflow:hidden;border:1px solid var(--card-border);background:#0d1017;line-height:0}
+.post-body .md-media video,.post-body .md-media img{width:100%;max-width:100%;display:block;margin:0;border:0;border-radius:0;background:#000}
+.post-body .md-media video{aspect-ratio:16/9;height:auto;object-fit:contain}
+.post-body .md-media.md-gif img{background:none}
+.post-body .md-media figcaption{line-height:1.6;font-size:12.5px;color:var(--text-3);padding:9px 14px 11px;border-top:1px solid var(--card-border);background:rgba(255,255,255,.015)}
+.post-body .md-badge{position:absolute;left:10px;top:10px;z-index:2;display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:10.5px;font-weight:750;letter-spacing:.06em;line-height:1;color:#fff;background:rgba(8,10,16,.62);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(10px) saturate(160%);pointer-events:none}
+.post-body .md-badge.live::before{content:"";width:5px;height:5px;border-radius:50%;background:#ff6b8a;box-shadow:0 0 0 3px rgba(255,107,138,.22)}
+.post-body .md-badge.md-dur{left:auto;right:10px}
+.post-body .md-motion video{cursor:pointer}
+.post-body .md-motion.paused::after{content:"";position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:rgba(8,10,16,.6) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E") center/24px no-repeat;border:1px solid rgba(255,255,255,.22)}
+.post-body .md-media.md-audio{padding:14px 16px;background:var(--bg-2);line-height:normal}
+.post-body .md-media.md-audio audio{width:100%;display:block;height:38px}
+.post-body .md-media.md-audio .md-audio-cap{display:flex;align-items:center;gap:8px;margin-bottom:9px;font-size:13px;font-weight:650;color:var(--text-1)}
+.post-body .md-media.md-audio .md-audio-cap span{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:2px 8px}
+.post-body video.md-video-inline{display:block;width:100%;max-width:100%;margin:18px auto;border-radius:14px;border:1px solid var(--card-border);background:#000}
+.post-hero video.post-bg{width:100%;height:100%;object-fit:cover;display:block}
+`;
+
+/* 组装预览页（一篇完整文章页，样式取自站点主页） */
+async function buildPreviewDoc(){
   syncMetaFromForm();
   const info=await siteInfo();
   await primeImages();
   const bg=meta.background?await imgURL(meta.background):"";
+  const bgIsVideo=!!(meta.background&&VID_RE.test(meta.background));
   const tags=Array.isArray(meta.tags)?meta.tags:[];
   const minutes=+meta.minutes||countStats(mdText).minutes;
   const body=mdToHTML(mdText,null);
@@ -1337,23 +1664,29 @@ async function openPagePreview(){
     const text=label.split("|")[zh?0:1];
     return `<a class="nav-link${k==="blog"?" active":""}" tabindex="-1" style="cursor:default">${text}</a>`;
   }).join("");
+  const hero=bg
+    ?(bgIsVideo
+      ?`<video class="post-bg" src="${esc(bg)}" autoplay muted loop playsinline preload="metadata"></video>`
+      :`<img class="post-bg" src="${esc(bg)}" alt="">`)
+    :"";
   const doc=`<!DOCTYPE html><html lang="zh-CN"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>效果预览 · ${esc(meta.title||slug)}</title><meta name="color-scheme" content="dark">
 <style>${info.css}</style>
-<style>
+<style>${MEDIA_CSS}
 .jy-note{position:fixed;right:16px;bottom:16px;z-index:999;display:flex;gap:7px;align-items:center;
  font:600 12px/1.4 -apple-system,"PingFang SC",sans-serif;padding:9px 14px;border-radius:999px;
  background:rgba(21,25,35,.92);border:1px solid rgba(77,141,255,.45);color:#a8c6ff;
  box-shadow:0 10px 30px rgba(0,0,0,.45);backdrop-filter:blur(10px)}
 .jy-note em{font-style:normal;color:rgba(244,245,247,.42);font-weight:500}
+.jy-note b{color:#fff}
 </style></head><body>
 <nav class="nav">
   <span class="nav-brand"><span class="dot"></span><span>鉴业の小站</span></span>
   ${navHtml}
 </nav>
 <section class="view">
-  <div class="post-hero">${bg?`<img class="post-bg" src="${bg}" alt="">`:""}</div>
+  <div class="post-hero">${hero}</div>
   <div class="wrap">
     <a class="post-back" href="#" id="jyBack">← 返回编辑器</a>
     <header class="post-head">
@@ -1368,12 +1701,76 @@ async function openPagePreview(){
 </section>
 <div class="jy-note">本地预览 <em>· 未部署 · ${info.from?"样式取自站点主页":"使用内置样式"}</em></div>
 <script>
+/* 动图：点一下暂停 / 继续（和站点线上行为一致） */
+document.addEventListener("click",function(e){
+  var fig=e.target.closest?e.target.closest(".md-motion"):null;
+  if(!fig)return;
+  var v=fig.querySelector("video");
+  if(!v)return;
+  if(v.paused){v.classList.remove("user-paused");fig.classList.remove("paused");v.play().catch(function(){});}
+  else{v.classList.add("user-paused");fig.classList.add("paused");v.pause();}
+},true);
+/* 阅读时看到的视频时长角标 */
+document.querySelectorAll(".md-media video").forEach(function(v){
+  v.addEventListener("loadedmetadata",function(){
+    if(v.videoWidth&&v.videoHeight)v.style.aspectRatio=v.videoWidth+" / "+v.videoHeight;
+    var box=v.closest(".md-media");if(!box||!v.duration||!isFinite(v.duration))return;
+    var m=Math.floor(v.duration/60),s=Math.round(v.duration%60);
+    var tag=document.createElement("span");tag.className="md-badge md-dur";
+    tag.textContent=m+":"+String(s).padStart(2,"0");box.appendChild(tag);
+  },{once:true});
+});
 document.getElementById("jyBack").addEventListener("click",function(e){
-  e.preventDefault();window.close();
-  setTimeout(function(){document.title="已返回失败？直接关闭这个标签页即可";},300);
+  e.preventDefault();
+  try{ if(window.parent!==window){window.parent.postMessage("jy-close-preview","*");return;} }catch(err){}
+  window.close();
 });
 <\/script>
 </body></html>`;
+  return doc;
+}
+
+/* ---------- 站点预览：两种打开方式 ---------- */
+let pvBusy=false;
+async function pvRender(){
+  const ifr=$("#pvIframe");
+  if(!ifr||pvBusy)return;
+  pvBusy=true;
+  const info=$("#pvInfo");
+  if(info)info.textContent="正在渲染……";
+  try{
+    const doc=await buildPreviewDoc();
+    const d=ifr.contentDocument||ifr.contentWindow.document;
+    d.open();d.write(doc);d.close();
+    if(info)info.textContent=`已渲染 · ${new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})} · 未部署`;
+  }catch(e){
+    if(info)info.textContent="渲染失败："+e.message;
+    toast("预览失败："+e.message,"err");
+  }finally{ pvBusy=false; }
+}
+async function openPreviewPanel(){
+  if(!artHandle){toast("先打开一篇文章","err");return;}
+  let w="100%";
+  try{ w=localStorage.getItem("jy-pv-dev")||"100%"; }catch(e){}
+  applyPvDevice(w,false);
+  $("#pvMask").classList.add("on");
+  await pvRender();
+}
+function closePreviewPanel(){$("#pvMask").classList.remove("on");}
+/* 设备宽度：100% / 834px / 390px，选过就记住 */
+function applyPvDevice(w,persist){
+  $$("#pvMask .dev").forEach(b=>b.classList.toggle("on",b.dataset.w===w));
+  const f=$("#pvFrame");
+  if(f){
+    f.style.width=w;
+    f.style.maxWidth=w;
+  }
+  if(persist!==false){ try{localStorage.setItem("jy-pv-dev",w);}catch(e){} }
+}
+/* 新窗口打开（老路子，适合放到第二个屏幕上慢慢看） */
+async function openPagePreview(){
+  if(!artHandle)return;
+  const doc=await buildPreviewDoc();
   const w=window.open("","_blank");
   if(!w){toast("浏览器拦截了新窗口，请允许本页弹出窗口","err");return;}
   w.document.open();w.document.write(doc);w.document.close();
@@ -1381,7 +1778,25 @@ document.getElementById("jyBack").addEventListener("click",function(e){
 }
 $("#previewPageBtn").addEventListener("click",()=>{
   if(!artHandle){toast("先打开一篇文章","err");return;}
-  openPagePreview().catch(e=>toast("预览失败："+e.message,"err"));
+  openPreviewPanel().catch(e=>toast("预览失败："+e.message,"err"));
+});
+/* 预览面板上的按钮：设备宽度 / 重新渲染 / 新窗口 / 关闭 */
+$("#pvMask").addEventListener("click",async e=>{
+  if(e.target.id==="pvMask"){closePreviewPanel();return;}
+  const dev=e.target.closest(".dev");
+  if(dev){ applyPvDevice(dev.dataset.w,true); return; }
+  if(e.target.closest("#pvClose")){closePreviewPanel();return;}
+  if(e.target.closest("#pvReload")){await pvRender();return;}
+  if(e.target.closest("#pvPopup")){await openPagePreview();return;}
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&$("#pvMask").classList.contains("on"))closePreviewPanel();
+  if((e.ctrlKey||e.metaKey)&&e.shiftKey&&(e.key||"").toLowerCase()==="p"){
+    if(editing()){e.preventDefault();openPreviewPanel();}
+  }
+});
+window.addEventListener("message",e=>{
+  if(e.data==="jy-close-preview")closePreviewPanel();
 });
 
 /* =====================================================================
@@ -1435,10 +1850,14 @@ function syncMetaFromForm(){
 }
 function updateStats(){
   const st=countStats(mdText);
-  const imgs=(mdText.match(/!\[[^\]]*\]\([^)]+\)/g)||[]).length;
+  const imgs=(mdText.match(/!\[[^\]]*\]\([^)]+\)/g)||[]);
+  /* 视频统计：写成 ![..](clip.mp4) 的 + 写成 @video / @motion 的 */
+  const vids=imgs.filter(s=>VID_RE.test(s.slice(s.lastIndexOf("](")+2)))
+    .length+(mdText.match(/@(?:video|motion|loop)\s*\[/gi)||[]).length;
+  const picN=imgs.length-imgs.filter(s=>VID_RE.test(s.slice(s.lastIndexOf("](")+2))).length;
   $("#statWords").textContent=st.words?`${st.cjk} 字 + ${st.words} 词`:`${st.cjk} 字`;
   $("#statRead").textContent=`约 ${meta.minutes||st.minutes} 分钟读完`;
-  $("#statImgs").textContent=`正文 ${imgs} 张图`;
+  $("#statImgs").textContent=`正文 ${picN} 图`+(vids?` · ${vids} 视频`:"");
 }
 /* 正文工具 */
 function mdBox(){return $("#mdBox");}
@@ -1639,7 +2058,9 @@ $("#toolbar").addEventListener("click",async e=>{
   else if(act==="callout")smartCallout();
   else if(act&&act.indexOf("align-")===0)toggleAlign(act.slice(6));
   else if(act==="upload")$("#uploadBtn").click();
-  else if(act==="img")openImgPick();
+  else if(act==="img")openImgPick("image");
+  else if(act==="video")openImgPick("video");
+  else if(act==="motion")openImgPick("motion");
 });
 /* 输入 */
 let draftTimer=null;
@@ -1700,10 +2121,13 @@ $("#mdBox").addEventListener("keydown",e=>{
   }
   if(e.key==="Tab"){e.preventDefault();indentSelection(e.shiftKey);return;}
 });
-/* 粘贴 / 拖拽图片自动保存 */
+/* 粘贴 / 拖拽文件自动保存：图片、GIF、视频都认 */
 $("#mdBox").addEventListener("paste",async e=>{
   const items=Array.from((e.clipboardData&&e.clipboardData.items)||[]);
-  const files=items.filter(i=>i.kind==="file"&&i.type.startsWith("image/")).map(i=>i.getAsFile()).filter(Boolean);
+  const files=items.filter(i=>{
+    const t=i.type||"";
+    return i.kind==="file"&&(t.startsWith("image/")||t.startsWith("video/"));
+  }).map(i=>i.getAsFile()).filter(Boolean);
   if(!files.length)return;
   e.preventDefault();
   await uploadImages(files);

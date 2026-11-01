@@ -1132,7 +1132,7 @@ body.lb-lock{overflow:hidden}
 }
 .post-card:hover{transform:translateY(-2px);border-color:rgba(77,141,255,.4);box-shadow:var(--shadow)}
 .post-thumb{flex:none;width:104px;height:66px;border-radius:10px;overflow:hidden;background:var(--chip);display:grid;place-items:center;color:var(--text-3)}
-.post-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.post-thumb img,.post-thumb video{width:100%;height:100%;object-fit:cover;display:block}
 .post-mid{min-width:0;flex:1}
 .post-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
 .tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
@@ -1244,6 +1244,78 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 .post-body thead th{color:var(--text-1);font-weight:600;background:var(--chip);white-space:nowrap}
 .post-body tbody tr:last-child td{border-bottom:none}
 .post-body li{margin-bottom:6px}
+/* ---------- 正文里的视频 / 动图 / 音频 ----------
+   统一装进 .md-media 这个圆角容器：视频、GIF、循环动图、音频都长一个样，
+   角标（▶ 视频 / GIF / 动图）压在左上角，避免与正文图片样式互相打架 */
+.post-body .md-media{
+  position:relative;margin:20px auto;border-radius:16px;overflow:hidden;
+  border:1px solid var(--card-border);background:#0d1017;line-height:0;
+}
+.post-body .md-media video,
+.post-body .md-media img{
+  width:100%;max-width:100%;display:block;margin:0;border:0;border-radius:0;background:#000;
+}
+/* 视频还没读到元数据时先按 16:9 占位，避免加载时整篇文章往下跳；
+   JS 读到真实宽高后会写成行内 aspect-ratio，竖屏视频也不会被裁 */
+.post-body .md-media video{aspect-ratio:16/9;height:auto;object-fit:contain}
+.post-body .md-media.md-video video{max-height:78vh}
+/* 夹在句子中间的视频（少见）：维持行内图片那种观感 */
+.post-body video.md-video-inline{
+  display:block;width:100%;max-width:100%;margin:18px auto;border-radius:14px;
+  border:1px solid var(--card-border);background:#000;
+}
+.post-body .md-media.md-gif img{background:#0b0d12;max-height:82vh;object-fit:contain}
+.post-body .md-media figcaption{
+  line-height:1.6;font-size:12.5px;color:var(--text-3);padding:9px 14px 11px;
+  border-top:1px solid var(--card-border);background:rgba(255,255,255,.015);
+}
+.post-body .md-badge{
+  position:absolute;left:10px;top:10px;z-index:2;
+  display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;
+  border-radius:999px;font-size:10.5px;font-weight:750;letter-spacing:.06em;line-height:1;
+  color:#fff;background:rgba(8,10,16,.62);border:1px solid rgba(255,255,255,.22);
+  backdrop-filter:blur(10px) saturate(160%);
+  pointer-events:none;   /* 别挡住播放键与进度条 */
+}
+.post-body .md-badge.live::before{
+  content:"";width:5px;height:5px;border-radius:50%;background:#ff6b8a;
+  box-shadow:0 0 0 3px rgba(255,107,138,.22);animation:mdPulse 2s ease-in-out infinite;
+}
+/* 时长角标：挂在右上角，不与左上角的类型角标、底部的播放控件打架 */
+.post-body .md-badge.md-dur{left:auto;right:10px;letter-spacing:.02em;font-weight:700}
+@keyframes mdPulse{0%,100%{opacity:1}50%{opacity:.35}}
+/* 循环动图：默认不显示控件，点一下暂停/继续；暂停时中间浮一个 ▶ */
+.post-body .md-motion video{cursor:pointer}
+.post-body .md-motion.paused video{opacity:.86}
+.post-body .md-motion.paused::after{
+  content:"";position:absolute;left:50%;top:50%;width:58px;height:58px;
+  margin:-29px 0 0 -29px;border-radius:50%;pointer-events:none;
+  background:rgba(8,10,16,.6) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E") center/24px no-repeat;
+  border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px);
+}
+/* 音频：小卡片，别占满整行 */
+.post-body .md-media.md-audio{
+  padding:14px 16px;background:var(--bg-2);line-height:normal;
+}
+.post-body .md-media.md-audio audio{width:100%;display:block;height:38px}
+.post-body .md-media.md-audio .md-audio-cap{
+  display:flex;align-items:center;gap:8px;margin-bottom:9px;font-size:13px;font-weight:650;color:var(--text-1);
+}
+.post-body .md-media.md-audio .md-audio-cap span{
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--accent);
+  background:var(--accent-soft);border-radius:999px;padding:2px 8px;
+}
+/* 加载失败时的兜底提示（脚本把视频换成这段文字） */
+.post-body .md-media-fail{
+  display:block;padding:26px 18px;text-align:center;font-size:13px;color:var(--text-3);
+  background:var(--bg-2);border:1px dashed var(--card-border);border-radius:16px;margin:20px 0;line-height:1.8;
+}
+.post-body .md-media-fail b{color:var(--text-2);font-weight:650;word-break:break-all}
+/* 头图用视频：与图片头图完全一致的裁切方式 */
+.post-hero video.post-bg{width:100%;height:100%;object-fit:cover;display:block}
+@media (prefers-reduced-motion:reduce){
+  .post-body .md-badge.live::before{animation:none}
+}
 .post-end{display:flex;align-items:center;gap:14px;margin:44px auto 0;max-width:760px;color:var(--text-3);font-size:12.5px}
 .post-end::before,.post-end::after{content:"";flex:1;height:1px;background:var(--card-border)}
 .mail-line{margin-top:18px}
@@ -2276,8 +2348,10 @@ function photoTilesHtml(list,limit){
     const more=(limit>0 && limit<list.length && i===limit-1);
     /* 动态照片 = 已配对的 Live Photo，或构建期判定为内嵌视频的 Motion Photo */
     const isLive=p.type==="live"||p.motion;
+    const isGif=p.type==="image"&&isGifFile(p.thumb||p.src);
     const badge=isLive?`<span class="ph-badge">${esc(T().gallery.liveTag)}</span>`
-      :p.type==="video"?`<span class="ph-badge">${esc(T().gallery.videoTag)}</span>`:"";
+      :p.type==="video"?`<span class="ph-badge">${esc(T().gallery.videoTag)}</span>`
+      :isGif?`<span class="ph-badge">GIF</span>`:"";
     return `<div class="ph-tile${isLive?" is-live":""}" data-idx="${i}" role="button" tabindex="0" aria-label="${esc(p.name)}">
       ${mediaTileTag(p,i)}${badge}
       <span class="ph-cap">${esc(p.name)}</span>
@@ -3164,6 +3238,20 @@ function parsePost(raw){
   }
   return {meta,body};
 }
+/* ---------- 正文媒体：视频 / 动图 / 音频 ----------
+   站点是纯静态的，视频文件就和图片一样放在文章文件夹里，正文用相对文件名引用即可：
+     ![说明](clip.mp4)                → 视频播放器（点播放，带进度条与全屏）
+     ![说明](clip.mp4 "封面.jpg")      → 同上，自定义封面
+     @motion[说明](clip.mp4)          → 动图式播放：无声、自动循环、不需要点
+     ![说明](anim.gif)                → GIF 原图直接动起来，左上角挂 GIF 角标
+     @audio[说明](voice.mp3)          → 音频小卡片
+   视频不会被构建脚本压成 WebP（那会变成静止画面），也不会去查 imgMap 缩略图映射。 */
+const VIDEO_FILE_RE=/\.(mp4|m4v|webm|ogv|ogg|mov|qt)(?=$|[?#])/i;
+const AUDIO_FILE_RE=/\.(mp3|m4a|aac|wav|flac|oga|opus)(?=$|[?#])/i;
+const GIF_FILE_RE=/\.gif(?=$|[?#])/i;
+const isVideoFile=u=>VIDEO_FILE_RE.test(String(u||""));
+const isAudioFile=u=>AUDIO_FILE_RE.test(String(u||""));
+const isGifFile=u=>GIF_FILE_RE.test(String(u||""));
 /* 极简 Markdown 渲染：标题/引用/代码块/列表/图片/链接/加粗/斜体/行内码/分隔线 */
 function mdToHTML(md,imgBase,imgMap){
   /* 正文图片缩略图映射：文件名 → 构建时压缩的 WebP 版本 */
@@ -3178,6 +3266,72 @@ function mdToHTML(md,imgBase,imgMap){
     if(imgMap[t])return imgMap[t];
     try{ return imgMap[decodeURIComponent(t)]||null; }catch(e){ return null; }
   };
+  /* 媒体地址：视频 / GIF / 音频一律走原文件，不查 imgMap ——
+     构建脚本生成的 WebP 只会留下静帧，GIF 变不动、视频直接打不开 */
+  const mediaURL=(src,useMap)=>{
+    src=String(src||"").trim();
+    if(/^(https?:|data:|blob:|file:|\/)/i.test(src))return unesc(src);
+    if(useMap){
+      const hit=imgHit(src);
+      if(hit)return encodeURI(hit);
+    }
+    return (imgBase||"")+unesc(src);
+  };
+  const badgeMotion=lang==="zh"?"动图":"LOOP";
+  const badgeVideo=lang==="zh"?"视频":"VIDEO";
+  /* 统一容器：视频 / GIF / 循环动图 / 音频都套 .md-media，样式一致 */
+  const mediaHTML=(kind,alt,src,poster)=>{
+    alt=alt||"";
+    const cap=alt?`<figcaption>${esc(alt)}</figcaption>`:"";
+    if(kind==="audio"){
+      const u=mediaURL(src,false);
+      return `<div class="md-media md-audio">`+
+        (alt?`<div class="md-audio-cap"><span>AUDIO</span>${esc(alt)}</div>`:"")+
+        `<audio src="${esc(u)}" controls preload="metadata"></audio></div>`;
+    }
+    const u=mediaURL(src,false);
+    if(kind==="gif"){
+      return `<figure class="md-media md-gif"><img src="${esc(u)}" alt="${esc(alt)}" loading="lazy" decoding="async">`+
+        `<span class="md-badge">GIF</span>${cap}</figure>`;
+    }
+    const p=poster?mediaURL(poster,true):"";
+    const pAttr=p?` poster="${esc(p)}"`:"";
+    if(kind==="motion"){
+      return `<figure class="md-media md-motion"><video src="${esc(u)}"${pAttr} autoplay muted loop playsinline preload="metadata" data-mdmotion></video>`+
+        `<span class="md-badge live">${esc(badgeMotion)}</span>${cap}</figure>`;
+    }
+    return `<figure class="md-media md-video"><video src="${esc(u)}"${pAttr} controls playsinline preload="metadata" data-mdvideo></video>`+
+      `<span class="md-badge">${esc(badgeVideo)}</span>${cap}</figure>`;
+  };
+  /* 整行只有一个媒体标记 → 按「块」渲染；返回 null 表示这行不是媒体块，
+     仍按普通段落处理（行内的图片不受影响） */
+  const parseMediaLine=line=>{
+    const m=String(line).match(/^\s*(?:@([A-Za-z]+)\s*)?(!?\[([^\]]*)\])\s*\(\s*((?:[^()]|\([^()]*\))+)\s*\)\s*$/);
+    if(!m)return null;
+    const tag=(m[1]||"").toLowerCase();
+    const alt=m[3]||"";
+    let inner=(m[4]||"").trim(),poster="";
+    /* 「地址 "封面图"」：文件名可能带空格，所以只在结尾是引号串时才拆开 */
+    const q=inner.match(/^(.*?)\s+["']([^"']+)["']$/);
+    if(q&&q[1].trim()){inner=q[1].trim();poster=q[2].trim();}
+    if(!inner)return null;
+    /* ?loop 后缀 = 当动图循环播放（作者不用记 @motion 也行） */
+    const LOOP_RE=/([?#&])loop(?:=1|=\d+)?(?=&|$)/i;
+    const loop=LOOP_RE.test(inner);
+    const src=inner.replace(LOOP_RE,"$1").replace(/[?#&]$/,"");
+    let kind="";
+    if(tag==="video"||tag==="audio"||tag==="motion"||tag==="loop"||tag==="gif")
+      kind=(tag==="loop")?"motion":tag;
+    else if(tag)return null;                      /* 不认识的 @标签：交回普通段落，别乱吃内容 */
+    if(!kind){
+      if(isVideoFile(src))kind=loop?"motion":"video";
+      else if(isAudioFile(src))kind="audio";
+      else if(isGifFile(src))kind="gif";
+      else return null;                           /* 普通图片：走原来的图片逻辑 */
+    }
+    if(kind==="motion"&&isGifFile(src))kind="gif";   /* GIF 本身就是动的，不必套视频 */
+    return {kind,alt,src,poster};
+  };
   const inline=s=>{
     s=esc(s);
     /* 行内代码先摘成占位符：否则里面的 * _ 会被下面的强调规则当成标记，
@@ -3187,13 +3341,21 @@ function mdToHTML(md,imgBase,imgMap){
     /* 图片/链接路径允许空格与一层括号（Windows 截图等文件名常带空格/括号） */
     s=s.replace(/!\[([^\]]*)\]\(((?:[^()]|\([^()]*\))+)\)/g,(m,alt,src)=>{
       src=src.trim();
+      /* 「地址 "标题"」这种写法很常见：标题只是提示，不能混进地址里（否则图片直接坏掉）。
+         注意此时文本已经过 esc()，引号变成了 &quot; / &#39;，两种都要认 */
+      let tip="";
+      const qt=src.match(/^(.*?)\s+(&quot;|&#39;|["'])([\s\S]*?)\2$/);
+      if(qt&&qt[1].trim()){src=qt[1].trim();tip=qt[3].trim();}
+      /* 夹在句子中间的视频：给个小的内联播放器，不至于渲染成坏图 */
+      if(isVideoFile(src))
+        return `<video class="md-video-inline" src="${esc(mediaURL(src,false))}" controls playsinline preload="metadata"></video>`;
       let u;
       if(/^(https?:|data:|\/)/.test(src))u=unesc(src);
       else{
         const hit=imgHit(src);
         u=hit?encodeURI(hit):imgBase+unesc(src);
       }
-      return `<img src="${esc(u)}" alt="${alt}" loading="lazy" decoding="async">`;
+      return `<img src="${esc(u)}" alt="${alt}"${tip?` title="${esc(tip)}"`:""} loading="lazy" decoding="async">`;
     });
     s=s.replace(/\[([^\]]+)\]\(((?:[^()]|\([^()]*\))+)\)/g,(m,txt,href)=>{
       const u=href.trim();
@@ -3210,7 +3372,7 @@ function mdToHTML(md,imgBase,imgMap){
     return s;
   };
   const lines=md.split(/\r?\n/),out=[];let i=0;
-  const BLOCK=/^(#{1,4})\s+|^```|^\s*>|^\s*[-*+]\s+|^\s*\d+[.)]\s+|^\s*(---+|\*\*\*+)\s*$|^\s*\|/;
+  const BLOCK=/^(#{1,4})\s+|^```|^\s*>|^\s*[-*+]\s+|^\s*\d+[.)]\s+|^\s*(---+|\*\*\*+)\s*$|^\s*\||^@(?:video|motion|audio|gif|loop)\s*\[/i;
   const ALIGN={l:"left",c:"center",r:"right"};
   while(i<lines.length){
     const L=lines[i];
@@ -3220,6 +3382,9 @@ function mdToHTML(md,imgBase,imgMap){
       i++;
       out.push(`<pre><code>${esc(buf.join("\n"))}</code></pre>`);continue;
     }
+    /* 独立成行的视频 / 动图 / 音频：整行渲染成媒体块 */
+    const mt=parseMediaLine(L);
+    if(mt){ out.push(mediaHTML(mt.kind,mt.alt,mt.src,mt.poster)); i++; continue; }
     /* 表格：连续以 | 开头的行，且第二行是分隔行（|---|---| / |:--:|）才认。
        行尾竖线可省略（GFM 允许）；不是标准表格的竖线行照旧按普通段落渲染，
        避免把「|l 文字」这类对齐段误判 */
@@ -3360,9 +3525,16 @@ function blogListHTML(list,q,stagger){
     const cTitle=useEn&&p.titleEn?p.titleEn:(p.title||t.blog.untitled);
     const cDesc=useEn&&p.descEn?p.descEn:(p.desc||"");
     const cTags=(useEn&&(p.tagsEn||[]).length)?p.tagsEn:(p.tags||[]);
+    /* 封面也可以是视频：抓第 0.1 秒当缩略图（纯 <img> 会直接坏掉） */
+    const coverSrc=p.coverThumb||postSrc(p,p.cover);
+    const thumbHTML=(!p.coverThumb&&isVideoFile(p.cover))
+      ?`<video src="${esc(coverSrc+(coverSrc.indexOf("#")<0?"#t=0.1":""))}" preload="metadata" muted playsinline onerror="this.onerror=null;this.parentNode.innerHTML='🎬'"></video>`
+      :(p.coverThumb||p.cover)
+        ?`<img src="${esc(coverSrc)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.parentNode.innerHTML='🖼️'">`
+        :"🖼️";
     html+=`
     <a class="post-card ${stagger?"rv":"rvf"}"${dly} href="#/blog/${encodeURIComponent(p.slug)}" data-slug="${esc(p.slug)}">
-      <span class="post-thumb">${(p.coverThumb||p.cover)?`<img src="${esc(p.coverThumb||postSrc(p,p.cover))}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.parentNode.innerHTML='🖼️'">`:"🖼️"}</span>
+      <span class="post-thumb">${thumbHTML}</span>
       <span class="post-mid">
         <span class="post-tags">${cTags.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</span>
         <span class="post-title">${hiText(cTitle,q)}</span>
@@ -3906,6 +4078,89 @@ function translateBlogList(list){
   });
 }
 
+/* ---------- 正文媒体：播放与兜底 ----------
+   动图式视频（data-mdmotion）一篇里可能有十几个：全部强行自动播放，
+   手机发热、流量也扛不住。所以只在「进入视口」时播放，滚走立刻暂停；
+   点一下画面可以暂停 / 继续（暂停时中间浮一个 ▶）。
+   普通视频（data-mdvideo）用原生控件，只额外做一件事：源文件缺失时
+   换成一句人话，而不是留一个点不动的黑框。 */
+let mdMotionIO=null;
+function wirePostMedia(){
+  const root=document.querySelector(".post-body");
+  const reduce=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const motion=root?Array.from(root.querySelectorAll("video[data-mdmotion]")):[];
+  if(reduce){
+    /* 系统开了「减少动态效果」：不自动播放，改成带控件的播放器，想看再点 */
+    motion.forEach(v=>{
+      v.autoplay=false;v.removeAttribute("data-mdmotion");
+      v.controls=true;
+    });
+  }else if(motion.length){
+    if(!mdMotionIO&&"IntersectionObserver" in window){
+      mdMotionIO=new IntersectionObserver(entries=>{
+        entries.forEach(en=>{
+          const v=en.target;
+          if(en.isIntersecting){
+            if(!v.dataset.userPaused)v.play().catch(()=>{});
+          }else v.pause();
+        });
+      },{rootMargin:"160px 0px",threshold:0.01});
+    }
+    motion.forEach(v=>{ if(mdMotionIO)mdMotionIO.observe(v); });
+  }
+  const hero=document.querySelector(".post-hero video.post-bg");
+  if(hero&&reduce){hero.autoplay=false;hero.pause();}
+  /* 读到真实宽高后修正占位比例（竖屏手机视频尤其需要），顺便挂上时长角标 */
+  if(root){
+    root.querySelectorAll("video").forEach(v=>{
+      const fix=()=>{
+        if(v.videoWidth&&v.videoHeight)v.style.aspectRatio=v.videoWidth+" / "+v.videoHeight;
+        const box=v.closest(".md-media");
+        if(!box||!v.duration||!isFinite(v.duration)||box.querySelector(".md-dur"))return;
+        const m=Math.floor(v.duration/60),s=Math.round(v.duration%60);
+        const tag=document.createElement("span");
+        tag.className="md-badge md-dur";
+        tag.textContent=m+":"+String(s).padStart(2,"0");
+        box.appendChild(tag);
+      };
+      if(v.readyState>=1)fix(); else v.addEventListener("loadedmetadata",fix,{once:true});
+    });
+  }
+}
+/* 动图：点一下暂停 / 继续（capture 阶段接，避免被别的委托处理吞掉） */
+document.addEventListener("click",e=>{
+  const fig=e.target&&e.target.closest?e.target.closest(".md-motion"):null;
+  if(!fig)return;
+  const v=fig.querySelector("video");
+  if(!v)return;
+  if(v.paused){
+    delete v.dataset.userPaused;
+    v.classList.remove("user-paused");fig.classList.remove("paused");
+    v.play().catch(()=>{});
+  }else{
+    v.dataset.userPaused="1";
+    v.classList.add("user-paused");fig.classList.add("paused");
+    v.pause();
+  }
+},true);
+/* 视频读不到（文件没传 / 名字写错 / 格式浏览器不认）→ 换成可读的提示 */
+document.addEventListener("error",e=>{
+  const t=e.target;
+  if(!t||t.tagName!=="VIDEO")return;
+  /* 头图视频读不到：直接撤掉，让 .post-hero 的渐变兜底露出来，别留一块死黑 */
+  if(t.classList&&t.classList.contains("post-bg")){t.remove();return;}
+  const fig=t.closest?t.closest(".md-media"):null;
+  if(!fig||!fig.parentNode)return;
+  const src=t.getAttribute("src")||"";
+  let nm="";
+  try{ nm=decodeURIComponent(String(src).split("/").pop().split(/[?#]/)[0]); }catch(err){ nm=nameOf(src); }
+  const d=document.createElement("div");
+  d.className="md-media-fail";
+  d.innerHTML=`视频没能加载：<b>${esc(nm||"未知文件")}</b><br>`+
+    `<span>${lang==="zh"?"确认这个文件已经和 index.md 一起上传（同名同目录、大小写一致），且是 mp4 / webm 这类浏览器认的格式":"Make sure the file was uploaded next to index.md (same name, same case) and is in a browser-friendly format such as mp4 or webm."}</span>`;
+  fig.parentNode.replaceChild(d,fig);
+},true);
+
 async function renderPost(slug,gen){
   const t=T();
   app.innerHTML=`<section class="view">
@@ -3963,9 +4218,14 @@ async function renderPost(slug,gen){
   /* 文章页头图优先用构建时压缩的 1600px WebP 版（bgThumb 是站点相对路径，不要再拼前缀） */
   const bgThumb=(post.bgThumb||meta.bgThumb||"");
   const bgImg=bgThumb?esc(bgThumb):(bg?esc(postSrc(post,bg)):"");
+  /* 头图也可以是视频（front matter 写 background: clip.mp4）：
+     无声循环自动播放，和图片头图用同一套裁切；尊重「减少动态效果」设置 */
+  const bgVideo=(!bgThumb&&bg&&isVideoFile(bg))
+    ?`<video class="post-bg" src="${esc(postSrc(post,bg))}" autoplay muted loop playsinline preload="metadata"></video>`
+    :"";
   app.innerHTML=`
   <section class="view">
-    <div class="post-hero">${bgImg?`<img class="post-bg" src="${bgImg}" alt="" decoding="async" onerror="this.remove()">`:""}</div>
+    <div class="post-hero">${bgVideo||(bgImg?`<img class="post-bg" src="${bgImg}" alt="" decoding="async" onerror="this.remove()">`:"")}</div>
     <div class="wrap">
       <a class="post-back" href="#/blog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>${esc(t.blog.back)}</a>
       <header class="post-head">
@@ -3978,6 +4238,7 @@ async function renderPost(slug,gen){
       <div class="post-end">${esc(t.blog.end)}</div>
     </div>
   </section>`;
+  wirePostMedia();
   /* 英文界面 + 中文文章：正文先按原文秒出，后台机器翻译，完成后无感替换（失败保留原文）
      已经拿到静态英文版（index.en.md）就绝不再机翻——那份就是权威译文，
      里面残留的中文只是图片文件名、代码注释之类不该翻的内容 */
@@ -4023,6 +4284,7 @@ async function renderPost(slug,gen){
         if(r.b&&r.b!==body){
           /* 正文翻成了：整体替换 */
           if(art)art.innerHTML=mdToHTML(r.b,post.imgBase,post.imgMap);
+          wirePostMedia();   /* 整块换成新 DOM 了：动图视频要重新接上播放控制 */
           if(meta)meta.insertAdjacentHTML("beforeend",`<span class="tr-mt">${esc(t.blog.machineTrans)}</span>`);
         }else if(art&&hasCJKText(body)){
           /* 正文一行都没翻成（限流/网络问题），标题标签却翻好了：
