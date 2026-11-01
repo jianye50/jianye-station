@@ -751,6 +751,18 @@ body.lb-lock{overflow:hidden}
 }
 .lightbox.lb-busy .lb-spin{opacity:1;transition-delay:.15s}
 @keyframes lbSpin{to{transform:rotate(360deg)}}
+/* 放大查看：点图片在「适应屏幕」与「原始尺寸」之间切换。
+   放大后容器变成可滚动，按钮固定在视口上，随时能关掉 / 翻页。 */
+.lightbox img{cursor:zoom-in}
+.lightbox.lb-zoom{display:block;overflow:auto;padding:26px;text-align:center}
+.lightbox.lb-zoom img{
+  max-width:none;max-height:none;width:auto!important;height:auto!important;
+  margin:0;display:inline-block;cursor:zoom-out;animation:none;
+}
+.lightbox.lb-zoom .lb-btn,.lightbox.lb-zoom .lb-count{position:fixed}
+.lightbox.lb-zoom .lb-spin{position:fixed;left:50%;top:50%;margin:-18px 0 0 -18px}
+/* 只有一张时没有「上一张 / 下一张」可翻，箭头直接藏掉 */
+.lightbox.lb-single .lb-prev,.lightbox.lb-single .lb-next{display:none}
 @media (max-width:640px){
   .lb-prev{left:8px}.lb-next{right:8px}
   .lb-btn{width:42px;height:42px}
@@ -1284,14 +1296,25 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 /* 时长角标：挂在右上角，不与左上角的类型角标、底部的播放控件打架 */
 .post-body .md-badge.md-dur{left:auto;right:10px;letter-spacing:.02em;font-weight:700}
 @keyframes mdPulse{0%,100%{opacity:1}50%{opacity:.35}}
-/* 循环动图：默认不显示控件，点一下暂停/继续；暂停时中间浮一个 ▶ */
-.post-body .md-motion video{cursor:pointer}
-.post-body .md-motion.paused video{opacity:.86}
-.post-body .md-motion.paused::after{
-  content:"";position:absolute;left:50%;top:50%;width:58px;height:58px;
-  margin:-29px 0 0 -29px;border-radius:50%;pointer-events:none;
-  background:rgba(8,10,16,.6) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E") center/24px no-repeat;
-  border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px);
+/* 循环动图：只是「会动的画」，不提供暂停 —— 点一下是放大查看，和图片一致。
+   所以这里用 zoom-in 光标，不再有点击暂停的 ▶ 蒙层。 */
+.post-body .md-motion video{cursor:zoom-in}
+/* 正文里的图片 / GIF / 图集：都能点开看大图 */
+.post-body img,
+.post-body .md-gallery img,
+.post-body .md-media.md-gif img{cursor:zoom-in}
+/* 视频右上角的「放大」按钮：原生控件占了底部，按钮放右上不打架 */
+.post-body .md-expand{
+  position:absolute;right:10px;top:38px;z-index:3;
+  width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+  color:#fff;background:rgba(8,10,16,.55);border:1px solid rgba(255,255,255,.24);
+  backdrop-filter:blur(10px) saturate(160%);
+  opacity:.72;transition:opacity .18s,background .18s,transform .18s;
+}
+.post-body .md-expand:hover{opacity:1;background:rgba(77,141,255,.55);transform:translateY(-1px)}
+.post-body .md-expand svg{width:15px;height:15px}
+@media (hover:hover){
+  .post-body .md-media.md-video:hover .md-expand{opacity:1}
 }
 /* 音频：小卡片，别占满整行 */
 .post-body .md-media.md-audio{
@@ -1410,8 +1433,11 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 .post-body .md-task li{display:flex;gap:10px;align-items:flex-start;margin-bottom:7px;line-height:1.8}
 .post-body .md-task input{
   margin-top:7px;width:15px;height:15px;flex:none;accent-color:var(--accent);
-  pointer-events:none;
+  cursor:pointer;   /* 可以打勾：勾选状态记在浏览器本地，不改文章文件 */
+  color-scheme:dark;/* 否则未勾选时是「白底方块」，在深色正文里很刺眼 */
 }
+.post-body .md-task li>span{cursor:pointer}
+.post-body .md-task li>span:hover{color:var(--text-1)}
 .post-body .md-task li.done span{text-decoration:line-through;color:var(--text-3)}
 .post-body .md-task li.done input{opacity:.65}
 @media (max-width:600px){
@@ -2751,6 +2777,8 @@ function setLbMedia(p){
   const img=$("#lbImg"), vid=$("#lbVideo"), bar=$("#lbMotionBar");
   lbMotionOn=false;
   bar.style.display="none";
+  /* 换图时退出「原始尺寸」放大态：否则下一张会以 100% 尺寸溢出屏幕 */
+  $("#lightbox").classList.remove("lb-zoom");
   /* 先停掉上一条的动态视频，防止切换后还在放 */
   try{ vid.pause(); }catch(e){}
   vid.removeAttribute("src"); vid.load();
@@ -2769,7 +2797,12 @@ function setLbMedia(p){
     img.style.display="none";
     vid.style.display="";
     applyLbSlide(vid);
-    vid.controls=true; vid.muted=false; vid.loop=false;   /* 只播一遍，播完停在结尾 */
+    if(p.loop){
+      /* 动图：无声循环、不给控件 —— 它只是「会动的画」，不该能暂停 */
+      vid.controls=false; vid.muted=true; vid.loop=true;
+    }else{
+      vid.controls=true; vid.muted=false; vid.loop=false;   /* 只播一遍，播完停在结尾 */
+    }
     lbWaitMedia(vid);             /* 转圈直到视频真正出画面（loadeddata），加载中不装作已就绪 */
     vid.src=p.src;
     /* 打开视频默认自动播放一遍；带声播放被浏览器拦时先静音播起来 */
@@ -2817,6 +2850,7 @@ function openLb(items,i,grid){
      就保留最初记下的那个，别把焦点目标覆盖成灯箱里的按钮 */
   if(!$("#lightbox").contains(document.activeElement))lbFocus=document.activeElement;
   $("#lightbox").classList.add("open");
+  $("#lightbox").classList.toggle("lb-single",lbItems.length<2);
   document.body.classList.add("lb-lock");         /* 锁住背景滚动 */
   try{ $("#lbClose").focus(); }catch(e){}
 }
@@ -2839,7 +2873,7 @@ function showLb(){
 }
 function closeLb(){
   lbImgToken++;                                   /* 作废还没回来的取图回调 */
-  $("#lightbox").classList.remove("lb-busy");
+  $("#lightbox").classList.remove("lb-busy","lb-zoom");
   try{ $("#lbVideo").pause(); }catch(e){}
   $("#lightbox").classList.remove("open");
   document.body.classList.remove("lb-lock");
@@ -3475,7 +3509,10 @@ function mdToHTML(md,imgBase,imgMap){
   /* 整行只有一个媒体 / 链接 / 嵌入 / 附件标记 → 按「块」渲染；返回 null 表示这行不是块，
      仍按普通段落处理（行内的图片不受影响） */
   const parseMediaLine=line=>{
-    const m=String(line).match(/^\s*(?:@([A-Za-z]+)\s*)?(!?\[([^\]]*)\])\s*\(\s*((?:[^()]|\([^()]*\))+)\s*\)\s*$/);
+    const m=String(line).match(/^\s*(?:@([A-Za-z]+)\s*)?(!?\[([^\]]*)\])\s*\(\s*((?:[^()]|\([^()]*\))+)\s*\)\s*$/)
+      /* 宽容版：标题里带 ] 、网址里嵌套两层以上括号时，严格版认不出来，
+         退一步用「最后的 ] 后跟 ( …… 最后一个 )」再试一次，别把卡片丢成原文 */
+      ||String(line).match(/^\s*(?:@([A-Za-z]+)\s*)?(!?\[([\s\S]*)\]\s*\(\s*([\s\S]+)\s*\))\s*$/);
     if(!m)return null;
     const tag=(m[1]||"").toLowerCase();
     const alt=m[3]||"";
@@ -3559,10 +3596,13 @@ function mdToHTML(md,imgBase,imgMap){
     });
     return s;
   };
-  const lines=md.split(/\r?\n/),out=[];let i=0;
+  const lines=md.split(/\r?\n/),out=[];let i=0,hops=0;
   const BLOCK=/^(#{1,4})\s+|^```|^\s*>|^\s*[-*+]\s+|^\s*\d+[.)]\s+|^\s*(---+|\*\*\*+)\s*$|^\s*\||^@(?:video|motion|audio|gif|loop|link|embed|file|gallery)\s*[\[(]/i;
   const ALIGN={l:"left",c:"center",r:"right"};
   while(i<lines.length){
+    /* 前进上限：行的 4 倍 + 兜底余量。正常渲染永远碰不到，纯粹防住
+       「某个分支忘了 i++」把整页卡死——文章页卡死比排版错误严重得多 */
+    if(++hops>lines.length*4+64)break;
     const L=lines[i];
     if(/^```/.test(L)){
       const buf=[];i++;
@@ -3656,7 +3696,7 @@ function mdToHTML(md,imgBase,imgMap){
         i++;
       }
       out.push('<ul class="md-task">'+rows.map(r=>
-        `<li class="${r.done?"done":""}"><input type="checkbox" disabled${r.done?" checked":""}><span>${inline(r.text)}</span></li>`).join("")+'</ul>');
+        `<li class="${r.done?"done":""}"><input type="checkbox"${r.done?" checked":""}><span>${inline(r.text)}</span></li>`).join("")+'</ul>');
       continue;
     }
     if(/^\s*[-*+]\s+/.test(L)){
@@ -3672,6 +3712,10 @@ function mdToHTML(md,imgBase,imgMap){
     if(/^\s*$/.test(L)){i++;continue;}
     const buf=[];
     while(i<lines.length&&!/^\s*$/.test(lines[i])&&!BLOCK.test(lines[i])){buf.push(lines[i]);i++;}
+    /* 兜底：这一行命中了「块起始」规则，却没有分支真正消费它（未闭合的 @link、
+       孤立的 |、写错的 @gallery 等）。必须在这里吃掉它并前进，否则 i 永远不动，
+       循环空转，整个页面直接卡死。 */
+    if(!buf.length){buf.push(L);i++;}
     out.push(`<p>${inline(buf.join(" "))}</p>`);
   }
   return out.join("");
@@ -4314,15 +4358,49 @@ function translateBlogList(list){
 
 /* ---------- 正文媒体：播放与兜底 ----------
    动图式视频（data-mdmotion）一篇里可能有十几个：全部强行自动播放，
-   手机发热、流量也扛不住。所以只在「进入视口」时播放，滚走立刻暂停；
-   点一下画面可以暂停 / 继续（暂停时中间浮一个 ▶）。
-   普通视频（data-mdvideo）用原生控件，只额外做一件事：源文件缺失时
-   换成一句人话，而不是留一个点不动的黑框。 */
+   手机发热、流量也扛不住。所以只在「进入视口」时播放，滚走立刻暂停。
+   动图就是「会动的画」：不提供暂停，点一下和图片一样放大查看。
+   普通视频（data-mdvideo）用原生控件，额外给一个右上角的放大按钮；
+   源文件缺失时换成一句人话，而不是留一个点不动的黑框。 */
 let mdMotionIO=null;
-function wirePostMedia(){
+/* 把正文里所有能看大的东西按 DOM 顺序收成一个列表：
+   图片 / GIF / 图集 / 视频 / 循环动图。点任何一个都用同一个灯箱看。 */
+function collectPostMedia(root){
+  const items=[];
+  root.querySelectorAll("img,video").forEach(el=>{
+    if(el.closest("a"))return;                       /* 包在链接里的图：点它应该跳转 */
+    if(el.tagName==="IMG"){
+      const src=el.currentSrc||el.src||"";
+      if(!src||/^data:/.test(src))return;            /* 占位图 / 缺图不参与 */
+      const alt=el.getAttribute("alt")||"";
+      items.push({el,type:"image",motion:false,name:alt||nameOf(src),src,view:src});
+    }else{
+      const src=el.currentSrc||el.src||"";
+      if(!src)return;
+      const loop=!!el.closest(".md-motion");
+      items.push({el,type:"video",loop,name:el.getAttribute("title")||nameOf(src),src});
+    }
+  });
+  return items;
+}
+/* 给普通视频补一个「放大」按钮：原生控件已经占了底部，按钮放右上角 */
+function addExpandButtons(root){
+  root.querySelectorAll(".md-media.md-video, video.md-video-inline").forEach(box=>{
+    const host=box.classList.contains("md-media")?box:box.parentElement;
+    if(!host||host.querySelector(".md-expand"))return;
+    const b=document.createElement("button");
+    b.type="button";b.className="md-expand";
+    b.title=lang==="zh"?"放大查看":"View larger";
+    b.setAttribute("aria-label",b.title);
+    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>';
+    host.appendChild(b);
+  });
+}
+function wirePostMedia(postSlug){
   const root=document.querySelector(".post-body");
+  if(!root)return;
   const reduce=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);
-  const motion=root?Array.from(root.querySelectorAll("video[data-mdmotion]")):[];
+  const motion=Array.from(root.querySelectorAll("video[data-mdmotion]"));
   if(reduce){
     /* 系统开了「减少动态效果」：不自动播放，改成带控件的播放器，想看再点 */
     motion.forEach(v=>{
@@ -4359,24 +4437,60 @@ function wirePostMedia(){
       };
       if(v.readyState>=1)fix(); else v.addEventListener("loadedmetadata",fix,{once:true});
     });
+    /* 图片 / GIF / 图集 / 视频 / 动图 → 点开看大图（同一个灯箱，可左右翻页） */
+    const items=collectPostMedia(root);
+    items.forEach((p,i)=>{
+      const open=e=>{
+        if(e){ e.preventDefault(); e.stopPropagation(); }
+        openLb(items,i,null);
+      };
+      if(p.type==="image"){
+        p.el.addEventListener("click",open);
+        p.el.setAttribute("role","button");
+        p.el.setAttribute("tabindex","0");
+        p.el.addEventListener("keydown",e=>{
+          if(e.key==="Enter"||e.key===" "){e.preventDefault();open(e);}
+        });
+      }else if(p.loop){
+        p.el.addEventListener("click",open);   /* 动图：点一下是放大，不是暂停 */
+      }
+    });
+    addExpandButtons(root);
+    root.querySelectorAll(".md-expand").forEach(b=>{
+      b.addEventListener("click",e=>{
+        e.preventDefault();e.stopPropagation();
+        const box=b.closest(".md-media")||b.parentElement;
+        const idx=items.findIndex(x=>x.el===box.querySelector("video"));
+        if(idx>=0)openLb(items,idx,null);
+      });
+    });
   }
+  wireTaskLists(root,postSlug);
 }
-/* 动图：点一下暂停 / 继续（capture 阶段接，避免被别的委托处理吞掉） */
-document.addEventListener("click",e=>{
-  const fig=e.target&&e.target.closest?e.target.closest(".md-motion"):null;
-  if(!fig)return;
-  const v=fig.querySelector("video");
-  if(!v)return;
-  if(v.paused){
-    delete v.dataset.userPaused;
-    v.classList.remove("user-paused");fig.classList.remove("paused");
-    v.play().catch(()=>{});
-  }else{
-    v.dataset.userPaused="1";
-    v.classList.add("user-paused");fig.classList.add("paused");
-    v.pause();
-  }
-},true);
+/* 待办清单：可以打勾，勾选状态记在浏览器本地（不改文章文件本身）。
+   同一个 slug 下次打开还是上次勾的样子。 */
+function wireTaskLists(root,slug){
+  if(!root)return;
+  const boxes=Array.from(root.querySelectorAll("ul.md-task input[type=checkbox]"));
+  if(!boxes.length)return;
+  let saved=null;
+  try{ saved=JSON.parse(localStorage.getItem("jy-task:"+(slug||""))||"null"); }catch(e){}
+  const paint=(b,on)=>{
+    b.checked=on;b.disabled=false;
+    const li=b.closest("li");
+    if(li)li.classList.toggle("done",on);
+  };
+  const persist=()=>{
+    try{localStorage.setItem("jy-task:"+(slug||""),JSON.stringify(boxes.map(b=>!!b.checked)));}catch(e){}
+  };
+  boxes.forEach((b,i)=>{
+    b.removeAttribute("disabled");
+    paint(b,Array.isArray(saved)&&typeof saved[i]==="boolean"?saved[i]:b.checked);
+    b.addEventListener("change",()=>{paint(b,b.checked);persist();});
+    const span=b.nextElementSibling;
+    if(span&&span.tagName==="SPAN")span.addEventListener("click",()=>{paint(b,!b.checked);persist();});
+  });
+}
 /* 视频读不到（文件没传 / 名字写错 / 格式浏览器不认）→ 换成可读的提示 */
 document.addEventListener("error",e=>{
   const t=e.target;
@@ -4472,7 +4586,7 @@ async function renderPost(slug,gen){
       <div class="post-end">${esc(t.blog.end)}</div>
     </div>
   </section>`;
-  wirePostMedia();
+  wirePostMedia(slug);
   /* 英文界面 + 中文文章：正文先按原文秒出，后台机器翻译，完成后无感替换（失败保留原文）
      已经拿到静态英文版（index.en.md）就绝不再机翻——那份就是权威译文，
      里面残留的中文只是图片文件名、代码注释之类不该翻的内容 */
@@ -4518,7 +4632,7 @@ async function renderPost(slug,gen){
         if(r.b&&r.b!==body){
           /* 正文翻成了：整体替换 */
           if(art)art.innerHTML=mdToHTML(r.b,post.imgBase,post.imgMap);
-          wirePostMedia();   /* 整块换成新 DOM 了：动图视频要重新接上播放控制 */
+          wirePostMedia(slug);   /* 整块换成新 DOM 了：动图视频要重新接上播放控制 */
           if(meta)meta.insertAdjacentHTML("beforeend",`<span class="tr-mt">${esc(t.blog.machineTrans)}</span>`);
         }else if(art&&hasCJKText(body)){
           /* 正文一行都没翻成（限流/网络问题），标题标签却翻好了：
@@ -4650,6 +4764,13 @@ $("#lbVideo").addEventListener("ended",()=>{
   if(lbMotionOn){ lbMotionOn=false; applyLbMotion(); }
 });
 $("#lightbox").addEventListener("click",e=>{if(e.target.id==="lightbox")closeLb()});
+/* 点图片 = 在「适应屏幕」与「原始尺寸」之间切换；放大后容器可滚动，
+   想看哪一块就拖/滚到哪一块（手机上直接双指缩放也行） */
+$("#lbImg").addEventListener("click",e=>{
+  if(!$("#lightbox").classList.contains("open"))return;
+  e.stopPropagation();
+  $("#lightbox").classList.toggle("lb-zoom");
+});
 /* 移动端：灯箱里左右滑动切上一张/下一张。
    垂直位移过大不触发；手势落在箭头/控制条/视频上时不抢（视频可能是在拖进度） */
 let lbTouch=null;
@@ -4665,6 +4786,7 @@ $("#lightbox").addEventListener("touchend",e=>{
   lbTouch=null;
   if(Math.abs(dx)<48||Math.abs(dx)<Math.abs(dy)*1.5)return;
   if(e.target.closest(".lb-btn,.lb-motion,video"))return;
+  if($("#lightbox").classList.contains("lb-zoom"))return;   /* 放大态：滑动是在看局部，别翻页 */
   stepLb(dx<0?1:-1);
 },{passive:true});
 $("#lightbox").addEventListener("touchcancel",()=>{lbTouch=null;},{passive:true});

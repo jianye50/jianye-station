@@ -336,6 +336,9 @@ input,textarea,select{font-family:inherit}
 .toolbar button.accent{color:#fff;background:var(--accent);border-color:transparent}
 .toolbar button.accent:hover{background:#3f7ff5}
 .toolbar .sep{width:1px;height:18px;background:var(--card-border);margin:auto 3px;flex:none}
+/* 对齐按钮：图标比文字窄，单个固定宽度，三个连在一起看得出是一组 */
+.toolbar button.ico{width:34px;padding:0;display:grid;place-items:center}
+.toolbar button.ico svg{width:16px;height:16px;display:block}
 .md-box{
   width:100%;min-height:56vh;padding:18px 20px;border-radius:14px;
   border:1px solid var(--card-border);background:rgba(9,11,17,.72);
@@ -446,7 +449,7 @@ input,textarea,select{font-family:inherit}
 /* 任务清单 */
 .md-preview ul.md-task{list-style:none;padding-left:0}
 .md-task li{display:flex;gap:9px;align-items:flex-start;margin-bottom:6px}
-.md-task input{margin-top:6px;accent-color:var(--accent);width:14px;height:14px;flex:none}
+.md-task input{margin-top:6px;accent-color:var(--accent);width:14px;height:14px;flex:none;cursor:pointer;color-scheme:dark}
 .md-task li.done span{text-decoration:line-through;opacity:.55}
 /* 表格 */
 .md-table{margin:18px 0;overflow-x:auto;border:1px solid var(--card-border);border-radius:13px;-webkit-overflow-scrolling:touch}
@@ -714,7 +717,7 @@ input,textarea,select{font-family:inherit}
     <div class="err-banner" id="gateErr"></div>
     <div class="gate">
       <h1 data-t="博客编辑器|Blog Editor">博客编辑器</h1>
-      <p data-t="每次只编辑一篇文章：把这一篇的文件夹拖进来就行。&#10;编辑器只读写这一个文件夹，写完推送到 GitHub 即可。|Edit one post at a time — just drop its folder in. The editor only touches that folder; push to GitHub when you are done.">每次只编辑一篇文章：把这一篇的文件夹拖进来就行。<br>编辑器只读写这一个文件夹，写完推送到 GitHub 即可。</p>
+      <p data-th="每次只编辑一篇文章：把这一篇的文件夹拖进来就行。<br>编辑器只读写这一个文件夹，写完推送到 GitHub 即可。|Edit one post at a time — just drop its folder in.<br>The editor only touches that folder; push to GitHub when you are done.">每次只编辑一篇文章：把这一篇的文件夹拖进来就行。<br>编辑器只读写这一个文件夹，写完推送到 GitHub 即可。</p>
 
       <div class="drop-zone" id="dropZone">
         <div class="dz-icon">📥</div>
@@ -809,6 +812,10 @@ input,textarea,select{font-family:inherit}
             <button data-act="h3" data-tt="三级标题|Heading 3">H3</button>
             <button data-act="bold" data-tt="加粗 Ctrl+B|Bold Ctrl+B"><b>B</b></button>
             <button data-act="italic" data-tt="斜体 Ctrl+I|Italic Ctrl+I"><i>I</i></button>
+            <button data-act="align-l" class="ico" data-tt="左对齐|Align left" data-ta="左对齐|Align left" aria-label="左对齐"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16"/><path d="M4 10.5h10"/><path d="M4 15h16"/><path d="M4 19.5h10"/></svg></button>
+            <button data-act="align-c" class="ico" data-tt="居中|Align center" data-ta="居中|Align center" aria-label="居中"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16"/><path d="M7 10.5h10"/><path d="M4 15h16"/><path d="M7 19.5h10"/></svg></button>
+            <button data-act="align-r" class="ico" data-tt="右对齐|Align right" data-ta="右对齐|Align right" aria-label="右对齐"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16"/><path d="M10 10.5h10"/><path d="M4 15h16"/><path d="M10 19.5h10"/></svg></button>
+            <span class="sep"></span>
             <button data-act="quote" data-t="❝ 引用|❝ Quote" data-tt="引用|Blockquote">❝ 引用</button>
             <button data-act="code" data-t="&lt;/&gt; 代码|&lt;/&gt; Code" data-tt="代码块|Code block">&lt;/&gt; 代码</button>
             <button data-act="ul" data-t="•• 列表|•• List" data-tt="无序列表|Bullet list">•• 列表</button>
@@ -844,14 +851,16 @@ input,textarea,select{font-family:inherit}
             <div class="md-help-body">
               <p><code>![说明](clip.mp4)</code> <span data-t="普通视频，带进度条与全屏|Video with controls">普通视频，带进度条与全屏</span></p>
               <p><code>![说明](clip.mp4 "cover.jpg")</code> <span data-t="同一行末尾加引号就是自定义封面|Quoted name at the end = custom poster">同一行末尾加引号就是自定义封面</span></p>
-              <p><code>@motion[说明](loop.mp4)</code> <span data-t="动图式：无声循环，滚出屏幕自动暂停|Looping, muted, pauses off-screen">动图式：无声循环，滚出屏幕自动暂停</span></p>
+              <p><code>@motion[说明](loop.mp4)</code> <span data-t="动图式：无声循环，滚出屏幕自动暂停，点一下放大看|Looping and muted; pauses off-screen, click to enlarge">动图式：无声循环，滚出屏幕自动暂停，点一下放大看</span></p>
               <p><code>@audio[说明](voice.mp3)</code> <span data-t="音频卡片|Audio card">音频卡片</span></p>
               <p><code>@link[标题](https://a.com "描述")</code> <span data-t="链接卡片：标题、描述、域名|Link card with title, description, host">链接卡片：标题、描述、域名</span></p>
               <p><code>@embed[标题](https://www.bilibili.com/video/BV...)</code> <span data-t="嵌入 B 站 / YouTube 播放器|Embed Bilibili / YouTube player">嵌入 B 站 / YouTube 播放器</span></p>
               <p><code>@file[说明书](manual.pdf)</code> <span data-t="附件下载卡片|File download card">附件下载卡片</span></p>
               <p><code>@gallery[a.jpg, b.jpg, c.jpg]</code> <span data-t="并排图集|Image grid">并排图集</span></p>
               <p><code>&gt; [!TIP]</code> <span data-t="下一行写内容 = 提示块（NOTE / TIP / IMPORTANT / WARNING / CAUTION）|next line = callout (NOTE / TIP / IMPORTANT / WARNING / CAUTION)">下一行写内容 = 提示块</span></p>
-              <p class="dim" data-t="文件要和 index.md 放在同一个文件夹里，名字大小写要一致。视频建议压到 10 MB 以内、1280 宽。|Files must sit next to index.md with matching case. Keep videos under about 10 MB and 1280 px wide.">文件要和 <code>index.md</code> 放在同一个文件夹里，名字大小写要一致；视频建议压到 10 MB 以内、宽度 1280。</p>
+              <p><code>- [ ] / - [x]</code> <span data-t="待办清单：读者可以直接点勾，勾选状态记在读者自己的浏览器里|Checklist: readers can tick items; ticks are remembered in their browser">待办清单：读者可以直接点勾</span></p>
+              <p class="dim" data-t="文章里的图片 / GIF / 视频都能点开看大图：图片再点一下在原尺寸与适应屏幕之间切换。|Images, GIFs and videos open in a viewer; click an image again to toggle 1:1 vs. fit.">文章里的图片 / GIF / 视频都能点开看大图</p>
+              <p class="dim" data-th="文件要和 <code>index.md</code> 放在同一个文件夹里，名字大小写要一致。视频建议压到 10 MB 以内、1280 宽。|Files must sit next to <code>index.md</code> with matching case. Keep videos under about 10 MB and 1280 px wide.">文件要和 <code>index.md</code> 放在同一个文件夹里，名字大小写要一致；视频建议压到 10 MB 以内、宽度 1280。</p>
             </div>
           </details>
           <div class="tips">
@@ -867,12 +876,12 @@ input,textarea,select{font-family:inherit}
 
   <!-- 手机 / 平板底部操作条 -->
   <div class="mbar" id="mbar">
-    <button data-act="undo" id="mUndo" title="撤销">↶</button>
-    <button data-act="redo" id="mRedo" title="重做">↷</button>
-    <button data-act="bold" title="加粗"><b>B</b></button>
-    <button data-act="h2" title="标题">H2</button>
-    <button data-act="link" title="链接">🔗</button>
-    <button data-act="preview" id="mPrev" title="预览">👁</button>
+    <button data-act="undo" id="mUndo" data-tt="撤销|Undo" title="撤销">↶</button>
+    <button data-act="redo" id="mRedo" data-tt="重做|Redo" title="重做">↷</button>
+    <button data-act="bold" data-tt="加粗|Bold" title="加粗"><b>B</b></button>
+    <button data-act="h2" data-tt="二级标题|Heading 2" title="标题">H2</button>
+    <button data-act="link" data-tt="插入链接|Insert link" title="链接">🔗</button>
+    <button data-act="preview" id="mPrev" data-tt="预览|Preview" title="预览">👁</button>
     <button class="primary" id="mSave" data-t="💾 保存|💾 Save">💾 保存</button>
   </div>
 </section>
@@ -1497,7 +1506,15 @@ function mediaPassesTab(n){
   if(mediaTab==="all")return true;
   return k===mediaTab;
 }
-async function refreshImages(){
+/* 串行化：applyLang / 开关弹窗 / 上传都会各自触发一次刷新（都不 await），
+   原来两次并发会各跑一遍目录遍历、把同一批文件重复塞进 imgNames
+   （表现为媒体库突然变成两份、计数翻倍）。用一条链串起来，永远只有一次在跑。 */
+let refreshChain=Promise.resolve();
+function refreshImages(){
+  refreshChain=refreshChain.then(doRefreshImages).catch(()=>{});
+  return refreshChain;
+}
+async function doRefreshImages(){
   imgNames=[];
   if(artHandle){
     try{
@@ -1712,7 +1729,7 @@ let ipSel=new Set();
 const IP_MODES={
   image:{kinds:["image"],title:"🖼 选择图片|🖼 Choose an image",hint:"点击即插入到正文光标处。|Tap an image to insert it."},
   video:{kinds:["video"],title:"🎬 选择视频|🎬 Choose a video",hint:"视频会带进度条与全屏，点播放才开始。|Videos get controls and a fullscreen button."},
-  motion:{kinds:["video","gif"],title:"🔁 选择动图素材|🔁 Choose a loop",hint:"插入后无声自动循环，滚出屏幕自动暂停。|Inserts as a muted loop that pauses off-screen."},
+  motion:{kinds:["video","gif"],title:"🔁 选择动图素材|🔁 Choose a loop",hint:"插入后无声循环，滚出屏幕自动暂停；点一下放大看。|Muted loop that pauses off-screen; click to enlarge."},
   gif:{kinds:["gif"],title:"🌀 选择 GIF|🌀 Choose a GIF",hint:"GIF 会原样动起来。|The GIF keeps animating."},
   audio:{kinds:["audio"],title:"🎵 选择音频|🎵 Choose audio",hint:"插入成一张音频卡片。|Inserts as an audio card."},
   file:{kinds:["file"],title:"📎 选择附件|📎 Choose a file",hint:"插入成下载卡片（pdf / zip / 文档等）。|Inserts as a download card."},
@@ -1798,8 +1815,7 @@ const INS_ITEMS=[
   {act:"task",icon:"✅",label:"待办清单|Checklist"},
   {act:"code",icon:"⌨️",label:"代码块|Code"},
   {act:"quote",icon:"❝",label:"引用|Quote"},
-  {act:"hr",icon:"➖",label:"分隔线|Divider"},
-  {act:"align-c",icon:"⇔",label:"居中|Center"}
+  {act:"hr",icon:"➖",label:"分隔线|Divider"}
 ];
 function buildInsGrid(){
   const g=$("#insGrid");
@@ -2212,7 +2228,7 @@ function mdToHTML(md){
         i++;
       }
       out.push('<ul class="md-task">'+rows.map(r=>
-        `<li class="${r.done?"done":""}"><input type="checkbox" disabled${r.done?" checked":""}><span>${inline(r.text)}</span></li>`).join("")+'</ul>');
+        `<li class="${r.done?"done":""}"><input type="checkbox"${r.done?" checked":""}><span>${inline(r.text)}</span></li>`).join("")+'</ul>');
       continue;
     }
     if(/^\s*[-*+]\s+/.test(L)){
@@ -2245,6 +2261,35 @@ function setPreviewUI(){
   if(btn)btn.textContent=previewOn?T("✏ 继续编辑|✏ Edit"):T("👁 预览|👁 Preview");
   if(previewOn)pv.innerHTML=mdToHTML(mdText);
 }
+/* 预览里的待办：点一下就直接改正文里的 - [ ] / - [x]
+   （预览就是正文的另一种看法，在这里打勾 = 在正文里打勾，保存后同步） */
+function toggleTaskAt(idx){
+  const lines=mdText.split(/\r?\n/);
+  let n=-1;
+  for(let i=0;i<lines.length;i++){
+    const m=lines[i].match(/^\s*[-*+]\s+\[([ xX])\]\s+/);
+    if(!m)continue;
+    if(++n!==idx)continue;
+    lines[i]=lines[i].replace(/\[([ xX])\]/,m[1].toLowerCase()==="x"?"[ ]":"[x]");
+    mdText=lines.join("\n");
+    mdBox().value=mdText;
+    setDirty(true);updateStats();markDirtySoon();bakNote(false);
+    return;
+  }
+}
+$("#mdPreview").addEventListener("click",e=>{
+  const li=e.target.closest("ul.md-task li");
+  if(!li)return;
+  const b=li.querySelector("input[type=checkbox]");
+  if(!b)return;
+  /* 直接点勾选框时，checked 已经被浏览器翻转；点文字则手动翻一次 */
+  if(e.target!==b){e.preventDefault();b.checked=!b.checked;}
+  const all=$$("#mdPreview ul.md-task input[type=checkbox]");
+  const idx=all.indexOf(b);
+  if(idx<0)return;
+  toggleTaskAt(idx);
+  li.classList.toggle("done",b.checked);   /* 就地更新，不重渲染：别把滚动位置甩掉 */
+});
 
 /* =====================================================================
  *  「看效果」：用站点真实样式在本地渲染整篇文章
@@ -2345,12 +2390,12 @@ const MEDIA_CSS=`
 .post-body .md-media video,.post-body .md-media img{width:100%;max-width:100%;display:block;margin:0;border:0;border-radius:0;background:#000}
 .post-body .md-media video{aspect-ratio:16/9;height:auto;object-fit:contain}
 .post-body .md-media.md-gif img{background:#0b0d12}
+.post-body .md-expand{position:absolute;right:10px;top:38px;z-index:3;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#fff;background:rgba(8,10,16,.55);border:1px solid rgba(255,255,255,.24);font-size:14px;line-height:1}
 .post-body .md-media figcaption{line-height:1.6;font-size:12.5px;color:var(--text-3);padding:9px 14px 11px;border-top:1px solid var(--card-border);background:rgba(255,255,255,.015)}
 .post-body .md-badge{position:absolute;left:10px;top:10px;z-index:2;display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:10.5px;font-weight:750;letter-spacing:.06em;line-height:1;color:#fff;background:rgba(8,10,16,.62);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(10px) saturate(160%);pointer-events:none}
 .post-body .md-badge.live::before{content:"";width:5px;height:5px;border-radius:50%;background:#ff6b8a;box-shadow:0 0 0 3px rgba(255,107,138,.22)}
 .post-body .md-badge.md-dur{left:auto;right:10px}
-.post-body .md-motion video{cursor:pointer}
-.post-body .md-motion.paused::after{content:"";position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:rgba(8,10,16,.6) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E") center/24px no-repeat;border:1px solid rgba(255,255,255,.22)}
+.post-body .md-motion video{cursor:zoom-in}
 .post-body .md-media.md-audio{padding:14px 16px;background:var(--bg-2);line-height:normal}
 .post-body .md-media.md-audio audio{width:100%;display:block;height:38px}
 .post-body .md-media.md-audio .md-audio-cap{display:flex;align-items:center;gap:8px;margin-bottom:9px;font-size:13px;font-weight:650;color:var(--text-1)}
@@ -2394,7 +2439,7 @@ const MEDIA_CSS=`
 .post-body .md-callout.caution .mc-t{color:#ff8fa4}
 .post-body ul.md-task{list-style:none;padding-left:0;margin:16px 0}
 .post-body .md-task li{display:flex;gap:10px;align-items:flex-start;margin-bottom:7px;line-height:1.8}
-.post-body .md-task input{margin-top:7px;width:15px;height:15px;flex:none;accent-color:var(--accent);pointer-events:none}
+.post-body .md-task input{margin-top:7px;width:15px;height:15px;flex:none;accent-color:var(--accent);cursor:pointer;color-scheme:dark}
 .post-body .md-task li.done span{text-decoration:line-through;color:var(--text-3)}
 .post-body .md-table{margin:20px 0;overflow-x:auto;border:1px solid var(--card-border);border-radius:14px;text-decoration:none}
 .post-body .md-table table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.7}
@@ -2402,6 +2447,24 @@ const MEDIA_CSS=`
 .post-body .md-table th{background:rgba(255,255,255,.045);font-weight:700;color:var(--text-1)}
 .post-body .md-table tr:last-child td{border-bottom:0}
 @media(max-width:560px){.post-body .md-gallery.g4,.post-body .md-gallery.g3{grid-template-columns:1fr 1fr}}
+/* 「看效果」里的看图器：和站点同款（点图在原尺寸 / 适应屏幕之间切换） */
+.pv-mv{position:fixed;inset:0;z-index:9999;display:none;background:rgba(3,7,20,.94);
+  backdrop-filter:blur(18px) saturate(150%);padding:26px;overflow:auto;text-align:center}
+.pv-mv.on{display:block}
+.pv-mv>img,.pv-mv>video{margin:auto;max-width:92vw;max-height:82vh;border-radius:14px;
+  box-shadow:0 34px 90px rgba(0,0,0,.62);display:block}
+.pv-mv>img{cursor:zoom-out}
+.pv-mv.zoom>img{max-width:none;max-height:none;width:auto;height:auto}
+.pv-mv-bar{position:fixed;left:0;right:0;top:0;display:flex;align-items:center;gap:12px;
+  padding:12px 16px;font-size:13px;color:rgba(255,255,255,.75);pointer-events:none}
+.pv-mv-name{max-width:60vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-mv-count{margin-left:auto}
+.pv-mv-x{pointer-events:auto;width:40px;height:40px;border-radius:50%;border:0;
+  background:rgba(255,255,255,.1);color:#fff;font-size:16px}
+.pv-mv-nav{position:fixed;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;
+  border:0;background:rgba(255,255,255,.1);color:#fff;font-size:26px;line-height:1;display:grid;place-items:center}
+.pv-mv-nav.prev{left:14px}.pv-mv-nav.next{right:14px}
+.pv-mv.single .pv-mv-nav{display:none}
 `;
 async function buildPreviewDoc(){
   syncMetaFromForm();
@@ -2454,14 +2517,78 @@ async function buildPreviewDoc(){
 </section>
 <div class="jy-note">${T("本地预览","Local preview")} <em>· ${T("未部署","not deployed")} · ${info.from?T("样式取自站点主页","styles from the site"):T("使用内置样式","built-in styles")}</em></div>
 <script>
-document.addEventListener("click",function(e){
-  var fig=e.target.closest?e.target.closest(".md-motion"):null;
-  if(!fig)return;
-  var v=fig.querySelector("video");
-  if(!v)return;
-  if(v.paused){v.classList.remove("user-paused");fig.classList.remove("paused");v.play().catch(function(){});}
-  else{v.classList.add("user-paused");fig.classList.add("paused");v.pause();}
-},true);
+(function(){
+  var items=[],cur=0,mv=null,mimg=null,mvid=null;
+  function build(){
+    mv=document.createElement("div");mv.className="pv-mv";
+    mv.innerHTML='<div class="pv-mv-bar"><span class="pv-mv-name"></span><span class="pv-mv-count"></span>'+
+      '<button type="button" class="pv-mv-x">✕</button></div><img alt=""><video playsinline></video>'+
+      '<button type="button" class="pv-mv-nav prev">‹</button><button type="button" class="pv-mv-nav next">›</button>';
+    document.body.appendChild(mv);
+    mimg=mv.querySelector("img");mvid=mv.querySelector("video");
+    mv.querySelector(".pv-mv-x").addEventListener("click",close);
+    mv.querySelector(".prev").addEventListener("click",function(e){e.stopPropagation();step(-1);});
+    mv.querySelector(".next").addEventListener("click",function(e){e.stopPropagation();step(1);});
+    mv.addEventListener("click",function(e){if(e.target===mv)close();});
+    mimg.addEventListener("click",function(e){e.stopPropagation();mv.classList.toggle("zoom");});
+    document.addEventListener("keydown",function(e){
+      if(!mv.classList.contains("on"))return;
+      if(e.key==="Escape")close();
+      else if(e.key==="ArrowLeft")step(-1);
+      else if(e.key==="ArrowRight")step(1);
+    });
+  }
+  function show(){
+    var p=items[cur];if(!p)return;
+    if(!mv)build();
+    mv.classList.add("on");mv.classList.toggle("single",items.length<2);
+    mv.querySelector(".pv-mv-name").textContent=p.name||"";
+    mv.querySelector(".pv-mv-count").textContent=(cur+1)+" / "+items.length;
+    mv.classList.remove("zoom");
+    if(p.type==="video"){
+      mimg.style.display="none";mvid.style.display="";
+      /* 动图：循环、静音、不给控件 —— 它不该能暂停 */
+      mvid.controls=!p.loop;mvid.loop=!!p.loop;mvid.muted=!!p.loop;
+      mvid.src=p.src;mvid.play().catch(function(){});
+    }else{
+      try{mvid.pause();}catch(e2){}
+      mvid.removeAttribute("src");mvid.style.display="none";
+      mimg.style.display="";mimg.src=p.src;
+    }
+  }
+  function step(d){cur=(cur+d+items.length)%items.length;show();}
+  function close(){if(!mv)return;mv.classList.remove("on");try{mvid.pause();}catch(e){}}
+  items=[];
+  Array.prototype.forEach.call(document.querySelectorAll(".post-body img,.post-body video"),function(el){
+    if(el.closest("a"))return;
+    if(el.tagName==="IMG"){
+      var s=el.currentSrc||el.src;if(!s||/^data:/.test(s))return;
+      items.push({el:el,type:"image",name:el.alt||"",src:s});
+    }else{
+      var v=el.currentSrc||el.src;if(!v)return;
+      items.push({el:el,type:"video",loop:!!el.closest(".md-motion"),name:"",src:v});
+    }
+  });
+  items.forEach(function(p,i){
+    var open=function(e){e.preventDefault();e.stopPropagation();cur=i;show();};
+    if(p.type==="image"){p.el.style.cursor="zoom-in";p.el.addEventListener("click",open);}
+    else if(p.loop){p.el.style.cursor="zoom-in";p.el.addEventListener("click",open);}
+    else{
+      /* 普通视频：控件继续用原生的，右上角加一个「放大」 */
+      var host=p.el.closest(".md-media")||p.el.parentElement;
+      var btn=document.createElement("button");
+      btn.type="button";btn.className="md-expand";btn.title="放大查看";btn.textContent="⤢";
+      btn.addEventListener("click",open);host.appendChild(btn);
+    }
+  });
+  /* 待办：预览里也能打勾（只影响当前预览，不改文章文件） */
+  Array.prototype.forEach.call(document.querySelectorAll("ul.md-task input[type=checkbox]"),function(b){
+    b.removeAttribute("disabled");
+    b.addEventListener("change",function(){
+      var li=b.closest("li");if(li)li.classList.toggle("done",b.checked);
+    });
+  });
+})();
 document.querySelectorAll(".md-media video").forEach(function(v){
   v.addEventListener("loadedmetadata",function(){
     if(v.videoWidth&&v.videoHeight)v.style.aspectRatio=v.videoWidth+" / "+v.videoHeight;
@@ -2863,6 +2990,8 @@ $("#mbar").addEventListener("click",e=>{
   doAct(b.dataset.act);
 });
 $("#mSave").addEventListener("click",()=>saveArticle());
+/* 「💾 保存到本地」按钮：之前只绑了手机底部条和 Ctrl+S，桌面这个大按钮点了没反应 */
+$("#saveBtn").addEventListener("click",()=>saveArticle());
 
 /* ---------- 输入 ---------- */
 let draftTimer=null;
@@ -3002,11 +3131,20 @@ async function maybeRestoreDraft(){
  *  保存
  * ===================================================================== */
 async function saveArticle(){
-  if(!artHandle)return;
+  if(!artHandle){toast(T("先打开一篇文章再保存|Open a post before saving"),"err");return;}
   syncMetaFromForm();
   if(!meta.title){toast(T("请先填写文章标题","Add a title first"),"err");$("#fTitle").focus();return;}
   const st=$("#saveState");
   st.className="save-state";st.textContent=T("正在保存……","Saving…");
+  /* 浏览器重启 / 久置之后，之前拿到的文件夹权限可能已经失效：
+     直接 createWritable 会抛 NotAllowedError，看起来就是「点了保存没反应」。
+     这里先确认权限，必要时重新弹一次授权，再写文件。 */
+  if(!await ensurePerm(artHandle,"readwrite")){
+    st.className="save-state err";st.textContent=T("没有写入权限","No write permission");
+    toast(T("没有拿到这个文件夹的写入权限。请重新点「📂 选择文章文件夹」选一次同一篇（内容不会丢，会先从本地草稿恢复）。",
+      "No write permission for this folder. Re-open the same post with “Choose post folder” — your text is kept in the local draft."),"err");
+    return;
+  }
   try{
     const fh=await artHandle.getFileHandle(bodyName,{create:true});
     const w=await fh.createWritable();
@@ -3014,7 +3152,7 @@ async function saveArticle(){
     await w.close();
   }catch(err){
     st.className="save-state err";st.textContent=T("保存失败","Save failed");
-    toast(T("保存失败：","Save failed: ")+err.message,"err");
+    toast(T("保存失败：","Save failed: ")+(err&&err.message?err.message:err),"err");
     return;
   }
   setDirty(false);clearDraft();updateStats();
@@ -3078,6 +3216,7 @@ function applyLang(persist){
   $$("[data-tp]").forEach(el=>el.setAttribute("placeholder",T(el.dataset.tp)));
   $$("[data-th]").forEach(el=>{el.innerHTML=T(el.dataset.th);});
   $$("[data-tt]").forEach(el=>el.setAttribute("title",T(el.dataset.tt)));
+  $$("[data-ta]").forEach(el=>el.setAttribute("aria-label",T(el.dataset.ta)));
   const lb=$("#langBtn");
   if(lb){
     lb.textContent=lang==="zh"?"EN":"中";
