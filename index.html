@@ -4,37 +4,99 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
-<title>鉴业の小站 · Jianye's Corner</title>
-<meta name="description" content="鉴业の小站（Jianye's Corner）—— 个人网站，收录作品、博客、相册与实用工具。">
-<meta name="baidu-site-verification" content="codeva-Lyahi7xWwF" />
+<title></title>
+<meta name="description" content="">
 <!-- 站名 / 描述 / 图标（favicon）都由 profile.txt 配置，JS 启动后填到这里 -->
-<link rel="icon" href="/icon.ico" sizes="any">
-<link rel="icon" type="image/png" href="/icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <!-- 移动端地址栏配色（站点固定深色） -->
 <meta name="theme-color" content="#0b0d12">
+<!-- ============ 强制站点域名 ============
+     访客用「不是正式域名」的地址打开时（比如 xxx.pages.dev、旧域名、备用 CDN 域名），
+     自动跳到 profile.txt 里「域名」那一行配置的正式网址，保证大家都停在同一个地方。
+       · 路径 / ?参数 / #锚点 全部原样带过去，hash 路由的页面不会丢；
+       · 只比域名（忽略大小写与 www.），同域名绝不跳，不会死循环；
+       · 用 replace 跳转，不会在浏览器后退历史里留下那个错误域名；
+       · file:// 打开、localhost / 127.0.0.1 本地预览 一律不跳；
+       · 地址后加 ?dev=1 或控制台执行 localStorage.setItem("jy-dev","1") 也不跳（站长自测用）；
+       · profile.txt 读不到、或「域名」那行留空 / 删掉 → 功能整体关闭，绝不影响正常访问。
+     这段放在 <head> 最前面执行，尽量在页面渲染前就跳走；顺手把这次 profile.txt
+     请求存到 window.__JY_PROFILE_TEXT，主脚本直接复用，不会重复下载一次。 -->
+<script>
+(function(){
+  var p;
+  try{ p=fetch("profile.txt",{cache:"no-cache"}).then(function(r){ return r.ok?r.text():""; }); }
+  catch(e){ return; }
+  window.__JY_PROFILE_TEXT=p;      /* 主脚本 loadProfile() 复用这次请求 */
+
+  /* 站长自测开关 / 本地环境：不跳 */
+  var skip=false;
+  try{
+    if(/[?&]dev=1(?:&|$)/.test(location.search))skip=true;
+    if(localStorage.getItem("jy-dev")==="1")skip=true;
+  }catch(e){}
+  if(location.protocol==="file:")skip=true;
+  if(/^(localhost|127\.0\.0\.1|::1|0\.0\.0\.0)$/.test(String(location.hostname).toLowerCase()))skip=true;
+  if(skip)return;
+
+  p.then(function(t){
+    if(!t||/^\s*</.test(t))return;                       /* 读到的不是配置（404 兜底页等）→ 放弃 */
+    var lines=String(t).split(/\r?\n/), target="", i;
+    for(i=0;i<lines.length;i++){
+      var line=lines[i].trim();
+      if(!line||line.charAt(0)==="#")continue;
+      var f=line.split("|"), k=(f[0]||"").trim().toLowerCase(), v=(f[1]||"").trim();
+      if(!v)continue;
+      if(k==="域名"||k==="主域名"||k==="站点地址"||k==="domain"||k==="siteurl"||k==="url"){ target=v; break; }
+    }
+    if(!target)return;                                    /* 没配置 → 不跳 */
+    var u;
+    try{ u=new URL(/^[a-z][a-z0-9+.\-]*:\/\//i.test(target)?target:"https://"+target); }
+    catch(e){ return; }                                   /* 配置写错 → 悄悄放弃，别把站点跳坏 */
+    var want=u.hostname.toLowerCase().replace(/^www\./,""),
+        now=String(location.hostname).toLowerCase().replace(/^www\./,"");
+    if(!want||want===now)return;                          /* 域名本来就对 → 不跳 */
+    /* 配置写歪了（少点、有怪字符）就一律不跳，宁可不动也不能把人带到坏地址 */
+    if(!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(want))return;
+    var base=u.origin+(u.pathname&&u.pathname!=="/"?u.pathname.replace(/\/+$/,""):"");
+    var path=location.pathname||"/";
+    var dest=base+(path.charAt(0)==="/"?path:"/"+path)+(location.search||"")+(location.hash||"");
+    try{ location.replace(dest); }catch(e){ location.href=dest; }
+  },function(){});
+})();
+</script>
 <!-- 分享卡片预览（og 内容同样由 profile.txt 配置后回填） -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="鉴业の小站">
-<meta property="og:title" content="鉴业の小站 · Jianye's Corner">
-<meta property="og:description" content="鉴业の小站（Jianye's Corner）—— 个人网站，收录作品、博客、相册与实用工具。">
+<meta property="og:site_name" content="">
+<meta property="og:title" content="">
+<meta property="og:description" content="">
 <meta property="og:url" content="https://aimjianye.top/">
 <meta property="og:image" content="">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
-<!-- 规范地址：hash 路由的 #/xxx 都是同一个文档，统一指向站点根 -->
+<!-- 规范地址：hash 路由的 #/xxx 都是同一个文档，统一指向站点根。
+     这里写的是「默认值」，实际会按 profile.txt 的「域名」再对齐一次 -->
 <link rel="canonical" href="https://aimjianye.top/">
 <!-- 首屏大图所在的图床，提前建连 -->
 <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
 <!-- 相册的 GitHub API 兜底通道，提前建连 -->
 <link rel="preconnect" href="https://api.github.com" crossorigin>
-<!-- 语言：首次访问默认中文（搜索引擎抓取时读到的也是中文标题与描述），
-     手动切换过的（中文 / 英文）以本地保存为准，右上角仍可随时切换。 -->
+<!-- 语言：首次访问先按系统语言定好（中文→中文，其它语言→英文），
+     免得英文用户先看到一闪而过的中文标题 / 语言标记。手动切换过的以本地保存为准。 -->
 <script>
 (function(){
   var s=null; try{ s=localStorage.getItem("jy-lang"); }catch(e){}
-  if(s!=="zh"&&s!=="en") s="zh";            /* 默认中文 */
+  if(s!=="zh"&&s!=="en"){
+    var list=[], i;
+    try{ list=(navigator.languages&&navigator.languages.length)?navigator.languages:[navigator.language||""]; }
+    catch(e){ list=[""]; }
+    s="en";                                   /* 默认英文：非中文一律英文 */
+    for(i=0;i<list.length;i++){
+      var l=String(list[i]||"").replace(/_/g,"-").toLowerCase();
+      if(l.indexOf("zh")===0){ s="zh"; break; }   /* zh / zh-CN / zh-TW / zh-HK… 都算中文 */
+      if(l.indexOf("en")===0){ s="en"; break; }
+    }
+  }
   window.__JY_LANG=s;
   document.documentElement.lang=(s==="zh")?"zh-CN":"en";
   if(s!=="zh") document.title="Jianye's Corner";
@@ -1342,12 +1404,12 @@ let PROJECTS=[];         /* 由 loadProjects() 从 projects.txt 读入 */
    配置读不到（file:// 本地双击打开 / 离线 / 忘了上传 / 删了文件）时，
    关于页的个人介绍卡整体隐藏，页面其余功能不受影响。 */
 let PROFILE=null;        /* 由 loadProfile() 从 profile.txt 读入 */
-let SITE={name:null,icon:"",bg:"",badge:null,desc:null};   /* 站点级配置：站名/图标/背景/徽章/描述 */
+let SITE={name:null,icon:"",bg:"",badge:null,desc:null,domain:""};   /* 站点级配置：站名/图标/背景/徽章/描述/域名 */
 
 /* 解析 profile.txt 的行式配置（键名不区分大小写，中文英文键名都认） */
 function parseProfileText(text){
   const out={hello:null,tagline:null,bios:[],avatar:"",email:"",chips:[],socials:[],
-             name:null,icon:"",bg:"",badge:null,desc:null};
+             name:null,icon:"",bg:"",badge:null,desc:null,domain:""};
   String(text||"").split(/\r?\n/).forEach(raw=>{
     const line=raw.trim();
     if(!line||line.charAt(0)==="#")return;
@@ -1365,6 +1427,7 @@ function parseProfileText(text){
     else if(k==="背景"||k==="bg"||k==="background"){ if(p[1])out.bg=p[1]; }
     else if(k==="徽章"||k==="badge"){ if(p[1]||p[2])out.badge={zh:p[1]||p[2],en:p[2]||p[1]}; }
     else if(k==="描述"||k==="desc"||k==="description"){ if(p[1]||p[2])out.desc={zh:p[1]||p[2],en:p[2]||p[1]}; }
+    else if(k==="域名"||k==="主域名"||k==="站点地址"||k==="domain"||k==="siteurl"||k==="url"){ if(p[1])out.domain=p[1]; }
   });
   return out;
 }
@@ -1399,6 +1462,20 @@ function applySiteConfig(){
   if(ogt)ogt.content=brand;
   if(ogd)ogd.content=d;
   if(ogi&&SITE.bg)ogi.content=SITE.bg;
+  /* 站点域名：canonical 与 og:url 跟着 profile.txt 的「域名」走（跳转本身在 <head> 里先做过） */
+  if(SITE.domain){
+    let origin="";
+    try{
+      const raw=/^[a-z][a-z0-9+.\-]*:\/\//i.test(SITE.domain)?SITE.domain:"https://"+SITE.domain;
+      origin=new URL(raw).origin;
+    }catch(e){}
+    if(origin){
+      const cn=document.querySelector("link[rel='canonical']");
+      if(cn)cn.href=origin+"/";
+      const ogu=document.querySelector("meta[property='og:url']");
+      if(ogu)ogu.content=origin+"/";
+    }
+  }
 }
 /* 读取个人信息配置：no-cache 保证改完配置刷新立即生效（没更新时走 304，不重复下载）。
    文件读不到或整份是空的 → PROFILE 保持 null，关于页的个人介绍卡不渲染；
@@ -1406,19 +1483,23 @@ function applySiteConfig(){
 async function loadProfile(){
   let j=null;
   try{
-    const r=await fetch("profile.txt",{cache:"no-cache"});
-    if(r.ok){
-      const text=await r.text();
-      j=/^\s*</.test(text)?null:parseProfileText(text);
+    let text="";
+    if(window.__JY_PROFILE_TEXT){
+      /* <head> 里为了做域名跳转已经下过一次，这里直接复用，不重复请求 */
+      text=(await window.__JY_PROFILE_TEXT)||"";
+    }else{
+      const r=await fetch("profile.txt",{cache:"no-cache"});
+      if(r.ok)text=await r.text();
     }
+    j=/^\s*</.test(String(text))?null:parseProfileText(text);
   }catch(e){}
   if(!j)return;
   const valid=j.hello||j.tagline||j.bios.length||j.avatar||j.email||j.chips.length||j.socials.length
-             ||j.name||j.icon||j.bg||j.badge||j.desc;
+             ||j.name||j.icon||j.bg||j.badge||j.desc||j.domain;
   if(!valid)return;
   PROFILE=j;
   /* 站点级字段单独存一份，回填到标题 / 图标 / meta / 首屏 */
-  SITE={name:j.name,icon:j.icon,bg:j.bg,badge:j.badge,desc:j.desc};
+  SITE={name:j.name,icon:j.icon,bg:j.bg,badge:j.badge,desc:j.desc,domain:j.domain||""};
   applySiteConfig();
   /* 配置到达时正停在首页 / 关于页 → 原地重绘（保住滚动位置，不打断浏览） */
   const h=location.hash;
