@@ -1301,19 +1301,17 @@ footer .heart{color:#ff5d7a}
   </div>
 </div>
 <script>
-/* 兜底：初始化意外变慢时，启动屏也要能自己淡出，别让人对着黑屏。
-   但不能太急 —— 主脚本在 body 末尾，慢网下 HTML 还没下载完它就不会执行，
-   这时若把启动屏撤了，#app 里那份「静态 SEO 兜底首屏」就会裸露出来，
-   看起来像打开了另一个网站。所以：等页面真正加载完（或最多 15 秒）再揭幕，
-   并且主脚本一旦接管（window.__JY_READY）就立刻让位。 */
+/* 兜底：主脚本出了意外（初始化卡死 / 脚本报错）时，启动屏也要能自己淡出，
+   别让人对着黑屏。但不能太急 —— 加载屏的职责就是盖住「配置未到 / 背景未加载」
+   的中间状态，主脚本会等 配置就绪 + 首屏渲染 + 背景大图加载完 才揭幕；
+   只有主脚本 12 秒还没接管（window.__JY_READY 一直没出现）才在这里强行揭开。 */
 (function(){
   var t0=Date.now();
   function tick(){
     var b=document.getElementById("boot");
     if(!b||window.__JY_READY)return;                 /* 已接管 / 已移除 */
-    var waited=Date.now()-t0;
-    if(document.readyState!=="complete"&&waited<15000)return setTimeout(tick,300);
-    if(waited<5000)return setTimeout(tick,300);
+    if(document.readyState!=="complete"&&Date.now()-t0<15000)return setTimeout(tick,300);
+    if(Date.now()-t0<12000)return setTimeout(tick,300);
     b.classList.add("off");
   }
   setTimeout(tick,300);
@@ -1501,9 +1499,11 @@ async function loadProfile(){
   /* 站点级字段单独存一份，回填到标题 / 图标 / meta / 首屏 */
   SITE={name:j.name,icon:j.icon,bg:j.bg,badge:j.badge,desc:j.desc,domain:j.domain||""};
   applySiteConfig();
-  /* 配置到达时正停在首页 / 关于页 → 原地重绘（保住滚动位置，不打断浏览） */
+  /* 配置到达时正停在首页 / 关于页 → 原地重绘（保住滚动位置，不打断浏览）。
+     __JY_STARTED：启动流程自己会等本配置到位后再做第一次渲染，
+     那之前不要抢着重绘 —— 否则首页会被画两遍，背景图跟着加载两遍（闪两下） */
   const h=location.hash;
-  if(/^#\/about/.test(h)||h===""||h==="#"||h==="#/"){
+  if(window.__JY_STARTED&&(/^#\/about/.test(h)||h===""||h==="#"||h==="#/")){
     const redraw=/^#\/about/.test(h)?renderAbout:renderHome;
     const root=document.documentElement,prev=root.style.scrollBehavior;
     root.style.scrollBehavior="auto";
@@ -1542,9 +1542,9 @@ async function loadProjects(){
   }catch(e){}
   if(!j||!j.length)return;
   PROJECTS=j;
-  /* 配置到达时正停在首页 / 关于页 → 原地重绘（保住滚动位置，不打断浏览） */
+  /* 配置到达时正停在首页 / 关于页 → 原地重绘（同上：启动完成前不抢渲染） */
   const h=location.hash;
-  if(/^#\/about/.test(h)||h===""||h==="#/"||h==="#"){
+  if(window.__JY_STARTED&&(/^#\/about/.test(h)||h===""||h==="#/"||h==="#")){
     const redraw=/^#\/about/.test(h)?renderAbout:renderHome;
     const root=document.documentElement,prev=root.style.scrollBehavior;
     root.style.scrollBehavior="auto";
@@ -1591,8 +1591,8 @@ async function loadFriends(){
   if(!j)return;
   if(typeof j.form==="string"&&j.form)FRIEND_FORM=j.form;
   if(Array.isArray(j.friends)&&j.friends.length)FRIENDS=j.friends;
-  /* 配置到达时正停在关于页 → 原地重绘友链区（保住滚动位置，不打断浏览） */
-  if(/^#\/about/.test(location.hash)){
+  /* 配置到达时正停在关于页 → 原地重绘友链区（保住滚动位置，不打断浏览；启动完成前不抢渲染） */
+  if(window.__JY_STARTED&&/^#\/about/.test(location.hash)){
     const root=document.documentElement,prev=root.style.scrollBehavior;
     root.style.scrollBehavior="auto";
     const y=window.scrollY;
@@ -1625,10 +1625,10 @@ async function fetchSteam(){
   }
   return null;
 }
-/* 数据到达时如正停在关于页 → 原地重绘游戏区（保住滚动位置，不打断浏览） */
+/* 数据到达时如正停在关于页 → 原地重绘游戏区（保住滚动位置，不打断浏览；启动完成前不抢渲染） */
 function applySteam(j){
   STEAM=j;
-  if(/^#\/about/.test(location.hash)){
+  if(window.__JY_STARTED&&/^#\/about/.test(location.hash)){
     const root=document.documentElement,prev=root.style.scrollBehavior;
     root.style.scrollBehavior="auto";
     const y=window.scrollY;
@@ -4037,6 +4037,7 @@ function glideTo(y,dur){
 }
 function route(){
   const gen=++routeGen;
+  window.__JY_RENDERED=true;   /* 标记：首屏已经真正渲染过（启动流程靠它判断要不要补渲染） */
   const hash=location.hash.replace(/^#\/?/,"");
   const parts=hash.split("/").filter(Boolean);
   let active="home";
@@ -4226,17 +4227,45 @@ document.addEventListener("keydown",e=>{
   }
 });
 
-/* ---------- 启动 ---------- */
-setLang(lang,false);     /* 统一走 setLang：品牌名、导航文案、语言按钮、云空间入口提示都按语言铺一遍
-                            （persist=false：启动这次不写盘，首次访问继续跟随系统语言） */
-loadPhotos();
-loadProfile();     /* 异步读 profile.txt：个人信息配置，到达时如正停在关于页，原地重绘 */
-loadProjects();    /* 异步读 projects.txt：项目配置，到达时如正停在首页/关于页，原地重绘 */
-loadFriends();     /* 异步读 friends.txt：配置到达时如正停在关于页，原地重绘友链区 */
-loadSteam();       /* 异步读 steam.json：GitHub Actions 定时生成，到达时同理重绘游戏区 */
-/* 首屏与导航文案就绪 → 淡出启动加载屏（顺带移除 DOM）
-   先打标记：上面的兜底计时器靠它判断「主脚本已经接管」，不会再抢着揭幕 */
-(function(){
+/* ---------- 启动 ----------
+   顺序是刻意的：先等 profile.txt 到位（站名 / 背景 / 正式域名都在里面），
+   再做第一次真正的渲染 —— 否则会先画一版没有背景的首页，
+   配置到了又整页重绘一遍、背景图重新加载，看起来就是「背景闪两下」。
+   域名检测在 <head> 里最早执行：需要跳转时页面根本走不到这里，
+   能往下走就说明域名检测已放行（或无需跳转）。 */
+loadPhotos();     /* 相册清单：往 [data-photo-grid] 里填格子，首屏渲染前后到达都没关系 */
+window.__JY_PROFILE_DONE=loadProfile();   /* 存下承诺：揭幕要等它（配置就绪 = 域名检测也已完成） */
+loadProjects();   /* 下面几个异步配置各自到位后按需重绘（都有 __JY_STARTED 保护） */
+loadFriends();
+loadSteam();
+/* 揭幕：等 首屏渲染完 + 首页背景大图真正加载完（加载失败也算完，别卡死） */
+function heroBgReady(){
+  return new Promise(res=>{
+    const img=document.querySelector("#app img.hero-img");
+    if(!img||img.complete)return res();          /* 没配背景图 / 已经加载好 / 加载失败 */
+    let done=false;
+    const fin=()=>{ if(!done){done=true;res();} };
+    img.addEventListener("load",fin,{once:true});
+    img.addEventListener("error",fin,{once:true});
+    setTimeout(fin,8000);                        /* 图太慢也别把人永远关在加载屏里 */
+  });
+}
+(async function(){
+  try{
+    /* 最多等 3 秒配置：慢网 / 配置文件丢了也照样开工，不让人干等 */
+    await Promise.race([window.__JY_PROFILE_DONE,new Promise(r=>setTimeout(r,3000))]);
+  }catch(e){}
+  if(!window.__JY_RENDERED){
+    /* 还没人渲染过（配置没抢先渲染）→ 现在做第一次、也是唯一一次首屏渲染 */
+    window.__JY_STARTED=true;
+    setLang(lang,false);   /* 统一走 setLang：品牌名、导航文案、语言按钮、首屏一次到位 */
+  }else{
+    /* 配置到位时已经抢先渲染好了（含背景）→ 只补标记，不再重画一遍 */
+    window.__JY_STARTED=true;
+  }
+  try{ await heroBgReady(); }catch(e){}
+  /* 首屏与背景大图就绪 → 淡出启动加载屏（顺带移除 DOM）
+     先打标记：上面的兜底计时器靠它判断「主脚本已经接管」，不会再抢着揭幕 */
   window.__JY_READY=true;
   const b=document.getElementById("boot");
   if(!b)return;
