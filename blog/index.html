@@ -2259,7 +2259,38 @@ function setPreviewUI(){
   pv.style.display=previewOn?"block":"none";
   ta.style.display=previewOn?"none":"block";
   if(btn)btn.textContent=previewOn?T("✏ 继续编辑|✏ Edit"):T("👁 预览|👁 Preview");
-  if(previewOn)pv.innerHTML=mdToHTML(mdText);
+  if(previewOn){pv.innerHTML=mdToHTML(mdText);wireSeekFix(pv);}
+}
+/* 服务器不返回 Accept-Ranges 时，浏览器 seekable 是 0~0 —— 进度条点不动也拖不动。
+   等用户真要听/要拖了，把整段取成 blob 挂回去（数据本来就在缓存里，不额外花流量）。 */
+function wireSeekFix(root){
+  if(!root||typeof fetch!=="function")return;
+  const MAX=80*1024*1024;
+  const canSeek=el=>{try{const s=el.seekable;return !!(s&&s.length&&s.end(s.length-1)-s.start(0)>0.5);}catch(e){return false;}};
+  const fix=el=>{
+    if(el.dataset.seekfix||canSeek(el))return;
+    const src=el.currentSrc||el.getAttribute("src")||"";
+    if(!src||/^(blob|data):/i.test(src))return;
+    el.dataset.seekfix="1";
+    fetch(src,{cache:"force-cache"}).then(r=>{
+      if(!r.ok)throw 0;
+      if((Number(r.headers.get("content-length"))||0)>MAX)throw 0;
+      return r.blob();
+    }).then(b=>{
+      const t=el.currentTime||0,playing=!el.paused,u=URL.createObjectURL(b);
+      el.addEventListener("loadedmetadata",()=>{
+        try{if(t>0.2)el.currentTime=t;}catch(e){}
+        if(playing)el.play().catch(()=>{});
+      },{once:true});
+      el.src=u;el.load();
+    }).catch(()=>{delete el.dataset.seekfix;});
+  };
+  $$("audio,video",root).forEach(el=>{
+    if(el.hasAttribute("data-mdmotion"))return;
+    el.addEventListener("play",()=>fix(el));
+    el.addEventListener("pointerdown",()=>{if(!canSeek(el))fix(el);});
+    if(el.tagName==="AUDIO")setTimeout(()=>{if(!canSeek(el))fix(el);},1500);
+  });
 }
 /* 预览里的待办：点一下就直接改正文里的 - [ ] / - [x]
    （预览就是正文的另一种看法，在这里打勾 = 在正文里打勾，保存后同步） */
@@ -2598,6 +2629,39 @@ document.querySelectorAll(".md-media video").forEach(function(v){
     tag.textContent=m+":"+String(s).padStart(2,"0");box.appendChild(tag);
   },{once:true});
 });
+/* 进度条拖不动：服务器不给 Accept-Ranges 时浏览器 seekable 是 0~0，
+   整段 fetch 成 blob 再挂回去就能随便拖（数据本来就在缓存里） */
+(function(){
+  var MAX=80*1024*1024;
+  function canSeek(el){
+    try{var s=el.seekable;return !!(s&&s.length&&s.end(s.length-1)-s.start(0)>0.5);}catch(e){return false;}
+  }
+  function fix(el){
+    if(el.dataset.seekfix||canSeek(el))return;
+    var src=el.currentSrc||el.getAttribute("src")||"";
+    if(!src||/^(blob|data):/i.test(src))return;
+    el.dataset.seekfix="1";
+    fetch(src,{cache:"force-cache"}).then(function(r){
+      if(!r.ok)throw 0;
+      var len=Number(r.headers.get("content-length"))||0;
+      if(len>MAX)throw 0;
+      return r.blob();
+    }).then(function(b){
+      var t=el.currentTime||0,playing=!el.paused,u=URL.createObjectURL(b);
+      el.addEventListener("loadedmetadata",function(){
+        try{if(t>0.2)el.currentTime=t;}catch(e){}
+        if(playing)el.play().catch(function(){});
+      },{once:true});
+      el.src=u;el.load();
+    }).catch(function(){delete el.dataset.seekfix;});
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".post-body audio,.post-body video"),function(el){
+    if(el.hasAttribute("data-mdmotion")||el.classList.contains("post-bg"))return;
+    el.addEventListener("play",function(){fix(el);});
+    el.addEventListener("pointerdown",function(){if(!canSeek(el))fix(el);});
+    if(el.tagName==="AUDIO")setTimeout(function(){if(!canSeek(el))fix(el);},1500);
+  });
+})();
 document.getElementById("jyBack").addEventListener("click",function(e){
   e.preventDefault();
   try{ if(window.parent!==window){window.parent.postMessage("jy-close-preview","*");return;} }catch(err){}

@@ -4396,6 +4396,60 @@ function addExpandButtons(root){
     host.appendChild(b);
   });
 }
+/* ---------- 进度条拖不动 / 点了不回位：把「不可寻址」的媒体换成 blob ----------
+   原因不在样式：有的托管线路不返回 Accept-Ranges（带 Range 的请求照样回 200 整包），
+   浏览器于是判定这段媒体只能从头播 —— seekable 范围是 0~0，
+   进度条点了、拖了都没反应，鼠标一松又弹回去（文件其实早就整份下完了）。
+   检测到这种情况就把整段数据 fetch 成 Blob 再挂回同一个 <audio>/<video>：
+   blob 一定能随意拖，而且数据本来就在 HTTP 缓存里，几乎不额外走流量。 */
+const SEEK_FIX_MAX=80*1024*1024;      /* 超过这个体积就别整包读了，保持原样 */
+function mediaSeekable(el){
+  try{
+    const s=el.seekable;
+    if(!s||!s.length)return false;
+    return s.end(s.length-1)-s.start(0)>0.5;
+  }catch(e){ return false; }
+}
+function fixMediaSeek(el,limit){
+  if(!el||!el.isConnected)return;
+  if(el.dataset.seekfix)return;
+  if(mediaSeekable(el))return;                    /* 本来就能拖，什么都不做 */
+  const src=el.currentSrc||el.getAttribute("src")||"";
+  if(!src||/^(blob|data):/i.test(src))return;
+  el.dataset.seekfix="1";
+  fetch(src,{cache:"force-cache"}).then(r=>{
+    if(!r.ok)throw new Error("http "+r.status);
+    const len=Number(r.headers.get("content-length"))||0;
+    if(len>(limit||SEEK_FIX_MAX))throw new Error("too big");
+    return r.blob();
+  }).then(blob=>{
+    const t=el.currentTime||0, playing=!el.paused, u=URL.createObjectURL(blob);
+    el.addEventListener("loadedmetadata",()=>{
+      try{ if(t>0.2)el.currentTime=t; }catch(e){}
+      if(playing)el.play().catch(()=>{});
+    },{once:true});
+    el.src=u;
+    el.load();
+  }).catch(()=>{ delete el.dataset.seekfix; });   /* 拿不到就保持原样，至少还能从头播 */
+}
+function autoFixSeek(root){
+  if(!root)return;
+  if(navigator.connection&&navigator.connection.saveData)return;   /* 开了省流量模式就别偷偷整包取 */
+  root.querySelectorAll("audio,video").forEach(el=>{
+    if(el.classList.contains("post-bg"))return;                 /* 头图背景不需要拖 */
+    if(el.hasAttribute("data-mdmotion"))return;                 /* 无声循环动图：没有进度条 */
+    /* 用户真的开始听了 / 去点进度条了，才去整包取 —— 没人听就不替人下载 */
+    el.addEventListener("play",()=>fixMediaSeek(el));
+    el.addEventListener("pointerdown",()=>{ if(!mediaSeekable(el))fixMediaSeek(el); });
+    /* 音频体积小，进文章 1.5s 后先悄悄修好：这样第一次点进度条就是有效的，
+       不会出现「点一下没反应、要再点一次」 */
+    if(el.tagName==="AUDIO"){
+      setTimeout(()=>{
+        if(!mediaSeekable(el))fixMediaSeek(el,12*1024*1024);
+      },1500);
+    }
+  });
+}
 function wirePostMedia(postSlug){
   const root=document.querySelector(".post-body");
   if(!root)return;
@@ -4465,6 +4519,7 @@ function wirePostMedia(postSlug){
       });
     });
   }
+  autoFixSeek(root);
   wireTaskLists(root,postSlug);
 }
 /* 待办清单：可以打勾，勾选状态记在浏览器本地（不改文章文件本身）。
