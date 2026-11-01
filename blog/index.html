@@ -498,6 +498,14 @@ input,textarea,select{font-family:inherit}
 .pv-bar::-webkit-scrollbar{display:none}
 .pv-bar .sp{flex:1;min-width:8px}
 .pv-bar .t{font-size:12.5px;color:var(--text-3);white-space:nowrap}
+.devs{display:flex;align-items:center;gap:6px;flex:none}
+/* 手机端专用：三个档位按钮被藏起来，换成一行说明当前就是手机视图 */
+.pv-tag{
+  display:none;align-items:center;gap:5px;flex:none;
+  font-size:11.5px;font-weight:650;color:var(--accent);
+  background:var(--accent-soft);border:1px solid rgba(77,141,255,.4);
+  border-radius:999px;padding:5px 11px;white-space:nowrap;
+}
 .dev{
   font-size:12px;font-weight:650;padding:7px 12px;border-radius:9px;flex:none;
   background:var(--chip);border:1px solid var(--card-border);color:var(--text-2);
@@ -518,6 +526,19 @@ input,textarea,select{font-family:inherit}
 }
 .pv-frame.no-anim{transition:none}
 .pv-frame iframe{width:100%;height:100%;border:0;display:block;background:#0b0d12}
+/* 窄屏（手机）：这一屏本身就是「手机视图」，桌面 / 平板两个档位在这里毫无意义 ——
+   面板再宽也超不过手机屏幕，三个档位算出来的宽度是同一个数，点了自然什么都不变。
+   所以干脆把三个按钮收起来，换一行提示，预览直接拉满整个面板。 */
+@media (max-width:760px){
+  .pv-bar .devs{display:none}
+  .pv-bar .pv-tag{display:inline-flex}
+  /* 不做横向滚动条：按钮排不下就换行，总比藏在屏幕外点不到强 */
+  .pv-bar{flex-wrap:wrap;row-gap:6px;gap:5px;padding:8px 10px;overflow-x:visible}
+  .pv-bar .sp{display:none}
+  .pv-bar .t{display:none}
+  .pv-bar .btn.sm{padding:6px 10px;font-size:11.5px}
+  .pv-stage{padding:8px}
+}
 
 /* ===================== 弹窗 / 面板 ===================== */
 .mask{
@@ -890,9 +911,12 @@ input,textarea,select{font-family:inherit}
 <div class="pv-mask" id="pvMask">
   <div class="pv-wrap">
     <div class="pv-bar">
-      <button class="dev on" data-w="100%" data-t="🖥 桌面|🖥 Desktop">🖥 桌面</button>
-      <button class="dev" data-w="834px" data-t="📱 平板|📱 Tablet">📱 平板</button>
-      <button class="dev" data-w="390px" data-t="📱 手机|📱 Phone">📱 手机</button>
+      <span class="devs">
+        <button class="dev on" data-w="100%" data-t="🖥 桌面|🖥 Desktop">🖥 桌面</button>
+        <button class="dev" data-w="834px" data-t="📱 平板|📱 Tablet">📱 平板</button>
+        <button class="dev" data-w="390px" data-t="📱 手机|📱 Phone">📱 手机</button>
+      </span>
+      <span class="pv-tag" id="pvDevTag"></span>
       <span class="sp"></span>
       <span class="t" id="pvInfo"></span>
       <button class="btn sm" id="pvReload" data-t="↻ 重新渲染|↻ Reload">↻ 重新渲染</button>
@@ -2704,6 +2728,9 @@ function closePreviewPanel(){$("#pvMask").classList.remove("on");}
 /* 面板宽度：把「桌面 100%」也换算成 px，这样三个档位都是同一个可插值的单位，
    放大缩小两个方向都有过渡，不会出现一边顺滑一边硬切。 */
 let pvDevW="100%";
+/* 手机屏幕放不下别的档位：834 / 1378 都会被面板宽度夹住，三个按钮算出来同一个数。
+   这个宽度以下就只留「手机视图」，别让人点了个寂寞。 */
+const PV_NARROW=()=>window.innerWidth<=760;
 function pvFrameWidth(w){
   const f=$("#pvFrame"),stage=f&&f.parentElement;
   const cs=stage?getComputedStyle(stage):null;
@@ -2714,17 +2741,21 @@ function pvFrameWidth(w){
   return w==="100%"?avail:Math.min(parseInt(w,10)||avail,avail);
 }
 function applyPvDevice(w,persist,silent){
+  if(PV_NARROW())w="100%";                      /* 窄屏一律铺满，档位不生效 */
   pvDevW=w;
   $$("#pvMask .dev").forEach(b=>b.classList.toggle("on",b.dataset.w===w));
   const f=$("#pvFrame");
+  let px=0;
   if(f){
-    const px=pvFrameWidth(w);
+    px=pvFrameWidth(w);
     if(silent)f.classList.add("no-anim");          /* 打开面板/窗口缩放时不要播动画 */
     f.style.width=px+"px";
     f.style.maxWidth="100%";
     if(silent){ void f.offsetWidth; f.classList.remove("no-anim"); }
   }
-  if(persist!==false){ try{localStorage.setItem("jy-pv-dev",w);}catch(e){} }
+  const tag=$("#pvDevTag");
+  if(tag)tag.textContent=T("📱 手机视图 · ","📱 Phone view · ")+Math.round(px)+"px";
+  if(persist!==false&&!PV_NARROW()){ try{localStorage.setItem("jy-pv-dev",w);}catch(e){} }
 }
 window.addEventListener("resize",()=>{
   const m=$("#pvMask");
