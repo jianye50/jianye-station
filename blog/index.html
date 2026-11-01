@@ -507,8 +507,13 @@ input,textarea,select{font-family:inherit}
 .pv-frame{
   width:100%;max-width:100%;height:100%;min-height:320px;background:#0b0d12;
   border:1px solid rgba(255,255,255,.14);border-radius:14px;overflow:hidden;
-  box-shadow:0 24px 60px rgba(0,0,0,.5);transition:max-width .25s ease;
+  box-shadow:0 24px 60px rgba(0,0,0,.5);
+  /* 只让 width 参与动画：宽度一律用 px 写死，max-width 恒为 100% 不参与 clamp。
+     若 max-width 也动画、width 硬跳，缩小方向会被 min(width,max-width) 瞬间夹住，
+     看起来就是「桌面→平板→手机」硬切，而放大方向却是顺滑的。 */
+  transition:width .26s cubic-bezier(.4,0,.2,1);
 }
+.pv-frame.no-anim{transition:none}
 .pv-frame iframe{width:100%;height:100%;border:0;display:block;background:#0b0d12}
 
 /* ===================== 弹窗 / 面板 ===================== */
@@ -2043,7 +2048,10 @@ function mediaHTML(alt,kind,src,poster){
 }
 /* 整行只有一个媒体 / 链接 / 嵌入 / 附件标记 → 按块渲染 */
 function parseMediaLine(line){
-  const m=String(line).match(/^\s*(?:@([A-Za-z]+)\s*)?(!?\[([^\]]*)\])\s*\(\s*((?:[^()]|\([^()]*\))+)\s*\)\s*$/);
+  const m=String(line).match(/^\s*(?:@([A-Za-z]+)\s*)?(!?\[([^\]]*)\])\s*\(\s*((?:[^()]|\([^()]*\))+)\s*\)\s*$/)
+    /* 宽容版：标题里带 ] 、网址里嵌套两层以上括号时，严格版认不出来，
+       退一步用「最后的 ] 后跟 ( …… 最后一个 )」再试一次，别把卡片丢成原文 */
+    ||String(line).match(/^\s*(?:@([A-Za-z]+)\s*)?(!?\[([\s\S]*)\]\s*\(\s*([\s\S]+)\s*\))\s*$/);
   if(!m)return null;
   const tag=(m[1]||"").toLowerCase();
   const alt=m[3]||"";
@@ -2116,10 +2124,13 @@ function mdToHTML(md){
     });
     return s;
   };
-  const lines=String(md||"").split(/\r?\n/),out=[];let i=0;
+  const lines=String(md||"").split(/\r?\n/),out=[];let i=0,hops=0;
   const BLOCK=/^(#{1,4})\s+|^```|^\s*>|^\s*[-*+]\s+|^\s*\d+[.)]\s+|^\s*(---+|\*\*\*+)\s*$|^\s*\||^@(?:video|motion|audio|gif|loop|link|embed|file|gallery)\s*[\[(]/i;
   const ALIGN={l:"left",c:"center",r:"right"};
   while(i<lines.length){
+    /* 前进上限：行的 4 倍 + 兜底余量。正常渲染永远碰不到，纯粹防住
+       「某个分支忘了 i++」把整页卡死——编辑器里卡死意味着未保存的稿子全丢 */
+    if(++hops>lines.length*4+64)break;
     const L=lines[i];
     if(/^```/.test(L)){
       const buf=[];i++;
@@ -2217,6 +2228,10 @@ function mdToHTML(md){
     if(/^\s*$/.test(L)){i++;continue;}
     const buf=[];
     while(i<lines.length&&!/^\s*$/.test(lines[i])&&!BLOCK.test(lines[i])){buf.push(lines[i]);i++;}
+    /* 兜底：这一行命中了「块起始」规则，却没有分支真正消费它（未闭合的 @link、
+       孤立的 |、写错的 @gallery 等）。必须在这里吃掉它并前进，否则 i 永远不动，
+       循环空转，整个页面直接卡死。 */
+    if(!buf.length){buf.push(L);i++;}
     out.push(`<p>${inline(buf.join(" "))}</p>`);
   }
   return out.join("");
@@ -2488,17 +2503,42 @@ async function openPreviewPanel(){
   if(!artHandle){toast(T("先打开一篇文章","Open a post first"),"err");return;}
   let w="100%";
   try{ w=localStorage.getItem("jy-pv-dev")||"100%"; }catch(e){}
-  applyPvDevice(w,false);
+  /* 先显示面板再算宽度：面板 display:none 时 clientWidth 是 0，
+     算出来的宽度会错，打开瞬间会看到一段莫名其妙的缩放 */
   $("#pvMask").classList.add("on");
+  applyPvDevice(w,false,true);
   await pvRender();
 }
 function closePreviewPanel(){$("#pvMask").classList.remove("on");}
-function applyPvDevice(w,persist){
+/* 面板宽度：把「桌面 100%」也换算成 px，这样三个档位都是同一个可插值的单位，
+   放大缩小两个方向都有过渡，不会出现一边顺滑一边硬切。 */
+let pvDevW="100%";
+function pvFrameWidth(w){
+  const f=$("#pvFrame"),stage=f&&f.parentElement;
+  const cs=stage?getComputedStyle(stage):null;
+  let avail=stage&&cs
+    ? stage.clientWidth-parseFloat(cs.paddingLeft||0)-parseFloat(cs.paddingRight||0)
+    : 0;
+  if(!(avail>0))avail=Math.max(240,window.innerWidth-32);   /* 面板还没显示时兜底 */
+  return w==="100%"?avail:Math.min(parseInt(w,10)||avail,avail);
+}
+function applyPvDevice(w,persist,silent){
+  pvDevW=w;
   $$("#pvMask .dev").forEach(b=>b.classList.toggle("on",b.dataset.w===w));
   const f=$("#pvFrame");
-  if(f){ f.style.width=w; f.style.maxWidth=w; }
+  if(f){
+    const px=pvFrameWidth(w);
+    if(silent)f.classList.add("no-anim");          /* 打开面板/窗口缩放时不要播动画 */
+    f.style.width=px+"px";
+    f.style.maxWidth="100%";
+    if(silent){ void f.offsetWidth; f.classList.remove("no-anim"); }
+  }
   if(persist!==false){ try{localStorage.setItem("jy-pv-dev",w);}catch(e){} }
 }
+window.addEventListener("resize",()=>{
+  const m=$("#pvMask");
+  if(m&&m.classList.contains("on"))applyPvDevice(pvDevW,false,true);
+});
 async function openPagePreview(){
   if(!artHandle)return;
   const doc=await buildPreviewDoc();
