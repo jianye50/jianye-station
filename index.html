@@ -447,7 +447,9 @@ img{display:block;max-width:100%}
   object-fit:cover;
   animation:heroIn 1.6s cubic-bezier(.2,.7,.2,1) both;
 }
-@keyframes heroIn{from{transform:scale(1.08);opacity:.4}to{transform:none;opacity:1}}
+/* 首屏背景：缓缓推近。起始透明度不能太低（原来是 .4）——
+   揭幕那一刻如果背景从 40% 透明度开始，视觉上就是"暗一下再亮"的闪。.92 几乎看不出跳变 */
+@keyframes heroIn{from{transform:scale(1.08);opacity:.92}to{transform:none;opacity:1}}
 .hero::after{
   content:"";position:absolute;inset:0;
   background:linear-gradient(100deg,rgba(8,12,24,.62) 0%,rgba(8,12,24,.34) 46%,rgba(8,12,24,.14) 100%),
@@ -1274,18 +1276,19 @@ footer{
 footer .heart{color:#ff5d7a}
 
 /* ===================== 启动加载屏 ===================== */
-/* 揭幕前先按住首屏的入场动画（背景放大淡入 heroIn / 文字上浮 fadeUp）：
-   这两个动画一渲染就开始跑，等加载屏淡出时早演完了，揭开只能看到静止画面。
-   加了 html.jy-go 才放行 —— 由揭幕代码加上，之后一直保留（切页回来照样有动画） */
+/* 加载屏还盖着的时候，首屏（背景图 + 文字）提前渲染好、按最终样子摆在那儿，
+   但**不播入场动画**（animation:none 比 paused 干净：不给浏览器留任何"演到一半"的机会）。
+   揭幕那一下才加 html.jy-go，两条动画从 0 帧开始播 —— 动画永远看得见，也不会缺失。
+   加过之后一直保留，切页回首页照样有动画。 */
 html:not(.jy-go) .hero-img,
-html:not(.jy-go) .hero-inner{animation-play-state:paused}
+html:not(.jy-go) .hero-inner{animation:none}
 /* 配置晚到导致的「静默重绘」：不播入场动画，否则背景与文字会再演一遍（看着像闪） */
 .hero.quiet .hero-img,
 .hero.quiet .hero-inner{animation:none}
 /* 盖住初始化期间的一切闪烁（导航语言未统一、首屏未渲染），
    站点就绪后由 JS 淡出移除 */
 #boot{position:fixed;inset:0;z-index:9999;background:var(--bg);
-  display:grid;place-items:center;transition:opacity .5s ease}
+  display:grid;place-items:center;transition:opacity .28s ease}
 #boot.off{opacity:0;pointer-events:none}
 .boot-inner{display:flex;flex-direction:column;align-items:center;gap:24px}
 .boot-dot{width:14px;height:14px;border-radius:50%;background:var(--accent);
@@ -2719,12 +2722,12 @@ function renderHome(){
       </section>`:""}
     </div>
   </section>`;
-  /* 把旧背景图节点装回去（src 没变才换）：省掉重新解码；
-     节点一旦离开过文档，CSS 动画会重启 —— 用内联 animation:none 按住，
-     不让它再演一遍放大（揭幕前除外：那时本来就靠 jy-go 卡着，等揭幕再放） */
+  /* 把旧背景图节点装回去（src 没变才换）：省掉重新解码。
+     注意这里绝不能给它写内联 animation:none —— 内联样式优先于样式表，
+     写上去以后揭幕时 html.jy-go 也唤不回动画，就是"动画经常没有"的元凶。
+     要不要播动画，统一交给 html.jy-go / .hero.quiet 两条样式规则决定 */
   const nowImg=app.querySelector("img.hero-img");
   if(prevImg&&nowImg&&prevImg.getAttribute("src")===nowImg.getAttribute("src")){
-    if(quiet||document.documentElement.classList.contains("jy-go"))prevImg.style.animation="none";
     nowImg.replaceWith(prevImg);
   }
   paintPhotoGrids();
@@ -4266,29 +4269,39 @@ document.addEventListener("keydown",e=>{
 });
 
 /* ---------- 启动 ----------
-   顺序是刻意的，每一步都是为了「加载屏揭开时，画面已经是最终样子」：
-     1) 先在 <head> 里做域名检测（__JY_DOMAIN_CHECK）：判定要跳转就立刻跳，
-        此时加载屏还盖着，用户看不到半成品首页；
-     2) 等 profile.txt 到位（站名 / 背景 / 正式域名都在里面）再做第一次渲染，
-        否则会先画一版没背景的首页，配置到了又重绘、背景重载 —— 就是「背景闪两下」；
-     3) 等首页背景大图真正解码完成 + 页面资源加载完（load 事件），
-        才淡出加载屏，并把首屏文字 / 背景的入场动画放出来。 */
-loadPhotos();     /* 相册清单：往 [data-photo-grid] 里填格子，首屏渲染前后到达都没关系 */
-window.__JY_PROFILE_DONE=loadProfile();   /* 存下承诺：揭幕要等它 */
-loadProjects();   /* 下面几个异步配置各自到位后按需重绘（都有 __JY_STARTED 保护） */
-loadFriends();
-loadSteam();
+   思路就一句话：加载屏掀开之前，把该准备的全准备好，页面已经是最终样子。
+     1) <head> 里先做域名检测（__JY_DOMAIN_CHECK）：判定要跳转就立刻跳，
+        加载屏原地转圈，绝不让人看到半成品首页；
+     2) 所有配置与数据一起拉（profile / 项目 / 友链 / 游戏 / 相册清单），
+        统一等它们到位（最多 3.5 秒）—— 全在加载屏后面读完；
+     3) 配置齐了才做第一次、也是唯一一次渲染：站名、背景、板块一次到位；
+     4) 等背景大图解码完成 + 页面 load 完成；
+     5) 揭幕：加 html.jy-go 让「背景推近 + 文字上浮」两条动画从 0 帧开始播，
+        同时极短地淡出加载屏 —— 动画一定看得见。 */
+window.__JY_PROFILE_DONE=loadProfile();   /* 站名 / 背景 / 域名 / 个人信息 */
+const bootLoads=[                          /* 揭幕前要一起等齐的几路数据 */
+  window.__JY_PROFILE_DONE,
+  loadPhotos(),      /* 相册清单：首屏图墙要用 */
+  loadProjects(),    /* 项目板块 */
+  loadFriends(),     /* 友链 */
+  loadSteam()        /* 游戏模块 */
+];
 /* 等首页背景大图真正加载完（加载失败也算完，别卡死） */
 function heroBgReady(){
   return new Promise(res=>{
     const img=document.querySelector("#app img.hero-img");
     if(!img)return res();                        /* 没配背景图 / 当前页不是首页 */
-    if(img.complete)return res();                /* 已加载完 / 已失败：都不必再等 */
     let done=false;
-    const fin=()=>{ if(!done){done=true;res();} };
-    img.addEventListener("load",fin,{once:true});
-    img.addEventListener("error",fin,{once:true});
-    setTimeout(fin,6000);                        /* 图太慢也别把人永远关在加载屏里 */
+    const finish=()=>{
+      if(done)return;
+      done=true;
+      /* 下载完 ≠ 解码完：再等一次 decode，免得揭幕那一瞬背景"先糊后清"闪一下 */
+      if(typeof img.decode==="function")img.decode().then(res,res); else res();
+    };
+    if(img.complete)return finish();             /* 已加载完 / 已失败：都不必再等 */
+    img.addEventListener("load",finish,{once:true});
+    img.addEventListener("error",finish,{once:true});
+    setTimeout(finish,6000);                     /* 图太慢也别把人永远关在加载屏里 */
   });
 }
 /* 等页面资源加载完（样式、字体、首屏图都在 load 里），最多等 6 秒 */
@@ -4301,34 +4314,35 @@ function pageLoaded(){
     setTimeout(fin,6000);
   });
 }
-/* 揭幕：放行首屏动画 → 淡出加载屏 */
+/* 揭幕：放行动画 → 淡出加载屏 */
 function revealSite(){
   if(window.__JY_READY)return;
   window.__JY_READY=true;
-  document.documentElement.classList.add("jy-go");   /* 放行 heroIn / fadeUp，动画在真容露出来之后才演 */
+  /* 关键一步：加上 jy-go，两条入场动画此刻从 0 帧开始（之前一直是 animation:none，
+     所以不存在"在加载屏后面偷偷演完"或"演到一半被掐断"） */
+  document.documentElement.classList.add("jy-go");
   const b=document.getElementById("boot");
   if(!b)return;
   b.classList.add("off");
-  setTimeout(()=>{const x=document.getElementById("boot");if(x)x.remove();},600);
+  setTimeout(()=>{const x=document.getElementById("boot");if(x)x.remove();},450);
 }
 (async function(){
-  /* 1+2. 域名检测与配置就位一起等（两者用的是同一次 profile.txt 请求，耗时不叠加）。
-          判定要跳转 → 不渲染、不揭幕，加载屏保持转圈，页面直接跳走。
-          最多等 3.5 秒：慢网 / 配置文件丢了也照样开工，不让人干等。 */
+  /* 1+2. 域名检测 + 所有配置数据一起等（最多 3.5 秒，慢网也不把人晾着）。
+          判定要跳转 → 不渲染、不揭幕，加载屏保持转圈，页面直接跳走。 */
   try{
-    await Promise.race([
-      Promise.all([window.__JY_DOMAIN_CHECK||Promise.resolve("ok"),
-                   window.__JY_PROFILE_DONE||Promise.resolve()]),
-      new Promise(r=>setTimeout(r,3500))
-    ]);
+    const waits=[window.__JY_DOMAIN_CHECK||Promise.resolve("ok")]
+      .concat(bootLoads)
+      .map(p=>Promise.resolve(p).catch(()=>{}));
+    await Promise.race([Promise.all(waits),new Promise(r=>setTimeout(r,3500))]);
   }catch(e){}
   if(window.__JY_REDIRECTING)return;
-  /* 3. 第一次、也是唯一一次首屏渲染（配置到位时若已抢先渲染过，就不重画） */
+  /* 3. 第一次、也是唯一一次首屏渲染（配置齐了，一次画到位） */
   window.__JY_STARTED=true;
   if(!window.__JY_RENDERED)setLang(lang,false);
-  /* 4. 等背景大图解码完成 + 页面 load 完成，再揭幕 */
+  /* 4. 等背景大图解码完成 + 页面 load 完成 */
   try{ await Promise.all([heroBgReady(),pageLoaded()]); }catch(e){}
   if(window.__JY_REDIRECTING)return;
+  /* 5. 揭幕 */
   revealSite();
 })();
 </script>
