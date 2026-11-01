@@ -36,10 +36,12 @@
   }catch(e){}
   if(location.protocol==="file:")skip=true;
   if(/^(localhost|127\.0\.0\.1|::1|0\.0\.0\.0)$/.test(String(location.hostname).toLowerCase()))skip=true;
-  if(skip)return;
+  if(skip){ window.__JY_DOMAIN_CHECK=Promise.resolve("skip"); return; }
 
-  p.then(function(t){
-    if(!t||/^\s*</.test(t))return;                       /* 读到的不是配置（404 兜底页等）→ 放弃 */
+  /* 域名检测的结果承诺：主脚本揭幕前会等它 ——
+     判定要跳转就既不渲染也不揭幕，加载屏原地留着，直接跳走，绝不让人先看到半成品首页 */
+  window.__JY_DOMAIN_CHECK=p.then(function(t){
+    if(!t||/^\s*</.test(t))return "ok";                  /* 读到的不是配置（404 兜底页等）→ 放弃 */
     var lines=String(t).split(/\r?\n/), target="", i;
     for(i=0;i<lines.length;i++){
       var line=lines[i].trim();
@@ -48,20 +50,23 @@
       if(!v)continue;
       if(k==="域名"||k==="主域名"||k==="站点地址"||k==="domain"||k==="siteurl"||k==="url"){ target=v; break; }
     }
-    if(!target)return;                                    /* 没配置 → 不跳 */
+    if(!target)return "ok";                              /* 没配置 → 不跳 */
     var u;
     try{ u=new URL(/^[a-z][a-z0-9+.\-]*:\/\//i.test(target)?target:"https://"+target); }
-    catch(e){ return; }                                   /* 配置写错 → 悄悄放弃，别把站点跳坏 */
+    catch(e){ return "ok"; }                             /* 配置写错 → 悄悄放弃，别把站点跳坏 */
     var want=u.hostname.toLowerCase().replace(/^www\./,""),
         now=String(location.hostname).toLowerCase().replace(/^www\./,"");
-    if(!want||want===now)return;                          /* 域名本来就对 → 不跳 */
+    if(!want||want===now)return "ok";                    /* 域名本来就对 → 不跳 */
     /* 配置写歪了（少点、有怪字符）就一律不跳，宁可不动也不能把人带到坏地址 */
-    if(!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(want))return;
+    if(!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(want))return "ok";
     var base=u.origin+(u.pathname&&u.pathname!=="/"?u.pathname.replace(/\/+$/,""):"");
     var path=location.pathname||"/";
     var dest=base+(path.charAt(0)==="/"?path:"/"+path)+(location.search||"")+(location.hash||"");
+    /* 先打标记 → 主脚本看到就停止渲染/揭幕，加载屏保持转圈，然后立刻跳 */
+    window.__JY_REDIRECTING=true;
     try{ location.replace(dest); }catch(e){ location.href=dest; }
-  },function(){});
+    return "redirect";
+  },function(){ return "ok"; });
 })();
 </script>
 <!-- 分享卡片预览（og 内容同样由 profile.txt 配置后回填） -->
@@ -1269,6 +1274,14 @@ footer{
 footer .heart{color:#ff5d7a}
 
 /* ===================== 启动加载屏 ===================== */
+/* 揭幕前先按住首屏的入场动画（背景放大淡入 heroIn / 文字上浮 fadeUp）：
+   这两个动画一渲染就开始跑，等加载屏淡出时早演完了，揭开只能看到静止画面。
+   加了 html.jy-go 才放行 —— 由揭幕代码加上，之后一直保留（切页回来照样有动画） */
+html:not(.jy-go) .hero-img,
+html:not(.jy-go) .hero-inner{animation-play-state:paused}
+/* 配置晚到导致的「静默重绘」：不播入场动画，否则背景与文字会再演一遍（看着像闪） */
+.hero.quiet .hero-img,
+.hero.quiet .hero-inner{animation:none}
 /* 盖住初始化期间的一切闪烁（导航语言未统一、首屏未渲染），
    站点就绪后由 JS 淡出移除 */
 #boot{position:fixed;inset:0;z-index:9999;background:var(--bg);
@@ -1310,8 +1323,10 @@ footer .heart{color:#ff5d7a}
   function tick(){
     var b=document.getElementById("boot");
     if(!b||window.__JY_READY)return;                 /* 已接管 / 已移除 */
+    if(window.__JY_REDIRECTING)return;               /* 正在跳转到正式域名：加载屏留着，别揭开 */
     if(document.readyState!=="complete"&&Date.now()-t0<15000)return setTimeout(tick,300);
     if(Date.now()-t0<12000)return setTimeout(tick,300);
+    document.documentElement.classList.add("jy-go"); /* 顺手放行首屏入场动画，别留着空画面 */
     b.classList.add("off");
   }
   setTimeout(tick,300);
@@ -1402,6 +1417,7 @@ let PROJECTS=[];         /* 由 loadProjects() 从 projects.txt 读入 */
    配置读不到（file:// 本地双击打开 / 离线 / 忘了上传 / 删了文件）时，
    关于页的个人介绍卡整体隐藏，页面其余功能不受影响。 */
 let PROFILE=null;        /* 由 loadProfile() 从 profile.txt 读入 */
+let quietRender=false;   /* 配置晚到触发的「静默重绘」：不播首屏入场动画，避免又闪一下 */
 let SITE={name:null,icon:"",bg:"",badge:null,desc:null,domain:""};   /* 站点级配置：站名/图标/背景/徽章/描述/域名 */
 
 /* 解析 profile.txt 的行式配置（键名不区分大小写，中文英文键名都认） */
@@ -1432,10 +1448,19 @@ function parseProfileText(text){
 /* 站点级配置（站名/徽章/描述/图标/背景）回填到页面各处：
    站名进语言表后，浏览器标签页标题、导航品牌名、文章页标题等原有逻辑自动跟上 */
 function applySiteConfig(){
+  /* 已经判定要跳转到正式域名了 → 什么都别干：不渲染、不改标题，
+     加载屏原地转圈，页面马上就走，用户不会看到半成品首页 */
+  if(window.__JY_REDIRECTING)return;
   if(SITE.name){I18N.zh.brand=SITE.name.zh;I18N.en.brand=SITE.name.en;}
   if(SITE.badge){I18N.zh.hero.badge=SITE.badge.zh;I18N.en.hero.badge=SITE.badge.en;}
   if(SITE.desc){I18N.zh.hero.sub=SITE.desc.zh;I18N.en.hero.sub=SITE.desc.en;}
-  setLang(lang,false);   /* 重铺浏览器标签标题 / 导航品牌名（不写盘） */
+  /* 启动流程完成前不在这里触发渲染：启动流程会等配置到位后统一渲染一次，
+     否则首页会被画两遍、背景图重新解码（闪两下）。
+     启动流程已经揭幕后（配置晚到）→ 这里的重绘走静默模式，不重播入场动画 */
+  if(window.__JY_STARTED){
+    quietRender=true;
+    try{ setLang(lang,false); } finally{ quietRender=false; }   /* 重铺标签标题 / 导航品牌名（不写盘） */
+  }
   const brand=T().brand||"";
   /* 浏览器标签页图标（favicon）：删掉旧的再按配置插一张 */
   if(SITE.icon){
@@ -1508,7 +1533,7 @@ async function loadProfile(){
     const root=document.documentElement,prev=root.style.scrollBehavior;
     root.style.scrollBehavior="auto";
     const y=window.scrollY;
-    redraw();
+    quietRender=true; try{ redraw(); } finally{ quietRender=false; }
     window.scrollTo(0,y);
     root.style.scrollBehavior=prev;
   }
@@ -1549,7 +1574,7 @@ async function loadProjects(){
     const root=document.documentElement,prev=root.style.scrollBehavior;
     root.style.scrollBehavior="auto";
     const y=window.scrollY;
-    redraw();
+    quietRender=true; try{ redraw(); } finally{ quietRender=false; }
     window.scrollTo(0,y);
     root.style.scrollBehavior=prev;
   }
@@ -2642,9 +2667,14 @@ function stepLb(d){
 /* ---------- 视图渲染 ---------- */
 function renderHome(){
   const t=T();
+  /* 重绘前先留住旧的背景图节点：配置陆续到达会重绘几次，
+     每次新建 <img> 都要重新解码、重播 heroIn 放大动画 —— 那就是「背景闪一下」的来源。
+     同一个 src 时把旧节点搬回去，浏览器沿用已解码的画面，稳如泰山 */
+  const prevImg=app.querySelector("img.hero-img");
+  const quiet=quietRender;   /* 静默重绘：不再演入场动画 */
   app.innerHTML=`
   <section class="view">
-    <header class="hero">
+    <header class="hero${quiet?" quiet":""}">
       ${SITE.bg?`<img class="hero-img" src="${esc(SITE.bg)}"
            sizes="100vw"
            alt="" fetchpriority="high" decoding="async" onerror="this.remove()">`:/* 没配背景 → 用 CSS 里的 --hero-fallback 渐变兜底 */""}
@@ -2689,6 +2719,14 @@ function renderHome(){
       </section>`:""}
     </div>
   </section>`;
+  /* 把旧背景图节点装回去（src 没变才换）：省掉重新解码；
+     节点一旦离开过文档，CSS 动画会重启 —— 用内联 animation:none 按住，
+     不让它再演一遍放大（揭幕前除外：那时本来就靠 jy-go 卡着，等揭幕再放） */
+  const nowImg=app.querySelector("img.hero-img");
+  if(prevImg&&nowImg&&prevImg.getAttribute("src")===nowImg.getAttribute("src")){
+    if(quiet||document.documentElement.classList.contains("jy-go"))prevImg.style.animation="none";
+    nowImg.replaceWith(prevImg);
+  }
   paintPhotoGrids();
   setTimeout(prefetchBlog,600);   /* 闲时预取博客清单：点进博客秒开 */
 }
@@ -4228,49 +4266,70 @@ document.addEventListener("keydown",e=>{
 });
 
 /* ---------- 启动 ----------
-   顺序是刻意的：先等 profile.txt 到位（站名 / 背景 / 正式域名都在里面），
-   再做第一次真正的渲染 —— 否则会先画一版没有背景的首页，
-   配置到了又整页重绘一遍、背景图重新加载，看起来就是「背景闪两下」。
-   域名检测在 <head> 里最早执行：需要跳转时页面根本走不到这里，
-   能往下走就说明域名检测已放行（或无需跳转）。 */
+   顺序是刻意的，每一步都是为了「加载屏揭开时，画面已经是最终样子」：
+     1) 先在 <head> 里做域名检测（__JY_DOMAIN_CHECK）：判定要跳转就立刻跳，
+        此时加载屏还盖着，用户看不到半成品首页；
+     2) 等 profile.txt 到位（站名 / 背景 / 正式域名都在里面）再做第一次渲染，
+        否则会先画一版没背景的首页，配置到了又重绘、背景重载 —— 就是「背景闪两下」；
+     3) 等首页背景大图真正解码完成 + 页面资源加载完（load 事件），
+        才淡出加载屏，并把首屏文字 / 背景的入场动画放出来。 */
 loadPhotos();     /* 相册清单：往 [data-photo-grid] 里填格子，首屏渲染前后到达都没关系 */
-window.__JY_PROFILE_DONE=loadProfile();   /* 存下承诺：揭幕要等它（配置就绪 = 域名检测也已完成） */
+window.__JY_PROFILE_DONE=loadProfile();   /* 存下承诺：揭幕要等它 */
 loadProjects();   /* 下面几个异步配置各自到位后按需重绘（都有 __JY_STARTED 保护） */
 loadFriends();
 loadSteam();
-/* 揭幕：等 首屏渲染完 + 首页背景大图真正加载完（加载失败也算完，别卡死） */
+/* 等首页背景大图真正加载完（加载失败也算完，别卡死） */
 function heroBgReady(){
   return new Promise(res=>{
     const img=document.querySelector("#app img.hero-img");
-    if(!img||img.complete)return res();          /* 没配背景图 / 已经加载好 / 加载失败 */
+    if(!img)return res();                        /* 没配背景图 / 当前页不是首页 */
+    if(img.complete)return res();                /* 已加载完 / 已失败：都不必再等 */
     let done=false;
     const fin=()=>{ if(!done){done=true;res();} };
     img.addEventListener("load",fin,{once:true});
     img.addEventListener("error",fin,{once:true});
-    setTimeout(fin,8000);                        /* 图太慢也别把人永远关在加载屏里 */
+    setTimeout(fin,6000);                        /* 图太慢也别把人永远关在加载屏里 */
   });
 }
-(async function(){
-  try{
-    /* 最多等 3 秒配置：慢网 / 配置文件丢了也照样开工，不让人干等 */
-    await Promise.race([window.__JY_PROFILE_DONE,new Promise(r=>setTimeout(r,3000))]);
-  }catch(e){}
-  if(!window.__JY_RENDERED){
-    /* 还没人渲染过（配置没抢先渲染）→ 现在做第一次、也是唯一一次首屏渲染 */
-    window.__JY_STARTED=true;
-    setLang(lang,false);   /* 统一走 setLang：品牌名、导航文案、语言按钮、首屏一次到位 */
-  }else{
-    /* 配置到位时已经抢先渲染好了（含背景）→ 只补标记，不再重画一遍 */
-    window.__JY_STARTED=true;
-  }
-  try{ await heroBgReady(); }catch(e){}
-  /* 首屏与背景大图就绪 → 淡出启动加载屏（顺带移除 DOM）
-     先打标记：上面的兜底计时器靠它判断「主脚本已经接管」，不会再抢着揭幕 */
+/* 等页面资源加载完（样式、字体、首屏图都在 load 里），最多等 6 秒 */
+function pageLoaded(){
+  return new Promise(res=>{
+    if(document.readyState==="complete")return res();
+    let done=false;
+    const fin=()=>{ if(!done){done=true;res();} };
+    window.addEventListener("load",fin,{once:true});
+    setTimeout(fin,6000);
+  });
+}
+/* 揭幕：放行首屏动画 → 淡出加载屏 */
+function revealSite(){
+  if(window.__JY_READY)return;
   window.__JY_READY=true;
+  document.documentElement.classList.add("jy-go");   /* 放行 heroIn / fadeUp，动画在真容露出来之后才演 */
   const b=document.getElementById("boot");
   if(!b)return;
   b.classList.add("off");
   setTimeout(()=>{const x=document.getElementById("boot");if(x)x.remove();},600);
+}
+(async function(){
+  /* 1+2. 域名检测与配置就位一起等（两者用的是同一次 profile.txt 请求，耗时不叠加）。
+          判定要跳转 → 不渲染、不揭幕，加载屏保持转圈，页面直接跳走。
+          最多等 3.5 秒：慢网 / 配置文件丢了也照样开工，不让人干等。 */
+  try{
+    await Promise.race([
+      Promise.all([window.__JY_DOMAIN_CHECK||Promise.resolve("ok"),
+                   window.__JY_PROFILE_DONE||Promise.resolve()]),
+      new Promise(r=>setTimeout(r,3500))
+    ]);
+  }catch(e){}
+  if(window.__JY_REDIRECTING)return;
+  /* 3. 第一次、也是唯一一次首屏渲染（配置到位时若已抢先渲染过，就不重画） */
+  window.__JY_STARTED=true;
+  if(!window.__JY_RENDERED)setLang(lang,false);
+  /* 4. 等背景大图解码完成 + 页面 load 完成，再揭幕 */
+  try{ await Promise.all([heroBgReady(),pageLoaded()]); }catch(e){}
+  if(window.__JY_REDIRECTING)return;
+  revealSite();
 })();
 </script>
 
