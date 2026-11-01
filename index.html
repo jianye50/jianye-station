@@ -1311,6 +1311,116 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
   background:var(--bg-2);border:1px dashed var(--card-border);border-radius:16px;margin:20px 0;line-height:1.8;
 }
 .post-body .md-media-fail b{color:var(--text-2);font-weight:650;word-break:break-all}
+/* ---------- 链接卡片 ----------
+   @link[标题](地址 "描述")、或者正文里单独一行的裸地址。
+   左边一块按域名色相染色的字母块，右边标题 / 描述 / 域名三段，
+   点击整块跳转 —— 比一行裸链接好看，也不占版面 */
+.post-body .md-linkcard{
+  display:flex;align-items:center;gap:13px;margin:20px 0;padding:13px 16px;
+  border:1px solid var(--card-border);border-radius:16px;
+  background:linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.012));
+  text-decoration:none;color:var(--text-1);line-height:1.45;
+  transition:border-color .2s,background .2s,transform .2s,box-shadow .2s;
+}
+.post-body .md-linkcard:hover{
+  border-color:rgba(77,141,255,.48);transform:translateY(-1px);
+  background:linear-gradient(135deg,rgba(77,141,255,.14),rgba(255,255,255,.02));
+  box-shadow:0 10px 26px rgba(0,0,0,.3);
+}
+.post-body .lc-mark{
+  flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  font-weight:800;font-size:17px;color:#fff;line-height:1;
+  background:hsl(var(--h,215) 58% 46%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);
+}
+.post-body .lc-body{flex:1;min-width:0}
+.post-body .lc-title{
+  display:block;font-weight:650;font-size:15px;color:var(--text-1);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.post-body .lc-desc{
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  font-size:13px;color:var(--text-3);margin-top:3px;line-height:1.6;
+}
+.post-body .lc-host{
+  display:block;font-size:11.5px;color:var(--accent-2);margin-top:5px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.01em;
+}
+.post-body .lc-arrow{flex:none;color:var(--text-3);font-size:16px;line-height:1}
+.post-body .md-linkcard:hover .lc-arrow{color:var(--accent-2)}
+/* ---------- 嵌入播放器：@embed[标题](B 站 / YouTube / Vimeo) ---------- */
+.post-body .md-embed{
+  margin:20px 0;border-radius:16px;overflow:hidden;
+  border:1px solid var(--card-border);background:#0d1017;
+}
+.post-body .md-embed .me-bar{
+  display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12.5px;
+  color:var(--text-3);border-bottom:1px solid var(--card-border);line-height:1.4;
+}
+.post-body .md-embed .me-ratio{position:relative;padding-top:56.25%}
+.post-body .md-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+/* ---------- 附件下载卡：@file[说明书](manual.pdf) ---------- */
+.post-body .md-file{
+  display:flex;align-items:center;gap:13px;margin:20px 0;padding:12px 16px;
+  border:1px solid var(--card-border);border-radius:16px;background:var(--bg-2);
+  color:var(--text-1);text-decoration:none;line-height:1.45;
+  transition:border-color .2s,background .2s;
+}
+.post-body .md-file:hover{border-color:rgba(77,141,255,.45);background:rgba(77,141,255,.08)}
+.post-body .mf-ico{
+  flex:none;width:40px;height:40px;border-radius:11px;display:grid;place-items:center;
+  font-size:10.5px;font-weight:800;letter-spacing:.02em;line-height:1;
+  background:rgba(159,176,201,.16);color:#c8d6ea;
+}
+.post-body .mf-name{flex:1;min-width:0;font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.post-body .mf-sub{
+  display:block;font-size:11.5px;color:var(--text-3);margin-top:3px;font-weight:400;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+/* ---------- 图集：@gallery[a.jpg, b.jpg, c.jpg] ---------- */
+.post-body .md-gallery{display:grid;gap:9px;margin:20px 0}
+.post-body .md-gallery.g2{grid-template-columns:1fr 1fr}
+.post-body .md-gallery.g3{grid-template-columns:repeat(3,1fr)}
+.post-body .md-gallery.g4{grid-template-columns:repeat(4,1fr)}
+.post-body .md-gallery img{
+  width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;margin:0;
+  border-radius:14px;border:1px solid var(--card-border);background:var(--img-placeholder);
+}
+/* ---------- 提示块：> [!TIP] ---------- */
+.post-body .md-callout{
+  display:flex;gap:11px;margin:20px 0;padding:14px 16px;border-radius:16px;
+  border:1px solid rgba(77,141,255,.34);background:rgba(77,141,255,.09);
+}
+.post-body .md-callout .mc-ico{flex:none;font-size:15px;line-height:1.6}
+.post-body .md-callout .mc-body{min-width:0;flex:1}
+.post-body .md-callout .mc-t{
+  font-size:12.5px;font-weight:750;letter-spacing:.03em;color:var(--accent-2);margin-bottom:4px;
+}
+.post-body .md-callout p{margin:0;font-size:15px;color:var(--text-1);line-height:1.85}
+.post-body .md-callout.tip{border-color:rgba(53,208,127,.34);background:rgba(53,208,127,.085)}
+.post-body .md-callout.tip .mc-t{color:#5fe0a0}
+.post-body .md-callout.important{border-color:rgba(180,109,255,.36);background:rgba(180,109,255,.09)}
+.post-body .md-callout.important .mc-t{color:#c79bff}
+.post-body .md-callout.warning{border-color:rgba(255,177,77,.36);background:rgba(255,177,77,.09)}
+.post-body .md-callout.warning .mc-t{color:#ffc873}
+.post-body .md-callout.caution{border-color:rgba(255,93,122,.36);background:rgba(255,93,122,.09)}
+.post-body .md-callout.caution .mc-t{color:#ff8fa4}
+/* ---------- 任务清单：- [ ] / - [x] ---------- */
+.post-body ul.md-task{list-style:none;padding-left:0;margin:16px 0}
+.post-body .md-task li{display:flex;gap:10px;align-items:flex-start;margin-bottom:7px;line-height:1.8}
+.post-body .md-task input{
+  margin-top:7px;width:15px;height:15px;flex:none;accent-color:var(--accent);
+  pointer-events:none;
+}
+.post-body .md-task li.done span{text-decoration:line-through;color:var(--text-3)}
+.post-body .md-task li.done input{opacity:.65}
+@media (max-width:600px){
+  .post-body .md-gallery.g3,.post-body .md-gallery.g4{grid-template-columns:1fr 1fr}
+  .post-body .md-linkcard{padding:11px 13px;gap:11px}
+  .post-body .lc-mark{width:34px;height:34px;font-size:14px;border-radius:10px}
+  .post-body .lc-title{font-size:14px}
+  .post-body .md-callout{padding:12px 13px}
+}
 /* 头图用视频：与图片头图完全一致的裁切方式 */
 .post-hero video.post-bg{width:100%;height:100%;object-fit:cover;display:block}
 @media (prefers-reduced-motion:reduce){
@@ -3252,6 +3362,9 @@ const GIF_FILE_RE=/\.gif(?=$|[?#])/i;
 const isVideoFile=u=>VIDEO_FILE_RE.test(String(u||""));
 const isAudioFile=u=>AUDIO_FILE_RE.test(String(u||""));
 const isGifFile=u=>GIF_FILE_RE.test(String(u||""));
+/* 附件（pdf / 压缩包 / 办公文档 …）：独立成行时渲染成下载卡 */
+const FILE_FILE_RE=/\.(pdf|zip|rar|7z|docx?|xlsx?|pptx?|txt|csv|epub|psd|ai|sketch|fig|ttf|otf|woff2?)(?=$|[?#])/i;
+const isAttachFile=u=>FILE_FILE_RE.test(String(u||""));
 /* 极简 Markdown 渲染：标题/引用/代码块/列表/图片/链接/加粗/斜体/行内码/分隔线 */
 function mdToHTML(md,imgBase,imgMap){
   /* 正文图片缩略图映射：文件名 → 构建时压缩的 WebP 版本 */
@@ -3279,6 +3392,62 @@ function mdToHTML(md,imgBase,imgMap){
   };
   const badgeMotion=lang==="zh"?"动图":"LOOP";
   const badgeVideo=lang==="zh"?"视频":"VIDEO";
+  /* ---------- 链接卡 / 嵌入 / 提示块的公共小工具 ---------- */
+  const linkHost=u=>{
+    if(/^mailto:/i.test(u))return String(u).replace(/^mailto:/i,"");
+    try{return new URL(u).host.replace(/^www\./,"");}
+    catch(e){return String(u||"").replace(/^[a-z]+:\/\//i,"").split("/")[0];}
+  };
+  /* 域名 → 稳定色相：同一个站点永远是同一个颜色，看着像有记忆 */
+  const hueOf=s=>{let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h;};
+  /* 只放行 http(s)：javascript: / vbscript: / data: 一律不生成卡片，防止正文里藏 XSS */
+  const safeURL=u=>{
+    u=String(u||"").trim();
+    if(!u)return "";
+    if(/^\/\//.test(u))return "https:"+u;
+    return /^(https?:\/\/|mailto:)/i.test(u)?u:"";
+  };
+  const linkCardHTML=(url,title,desc)=>{
+    const host=linkHost(url)||url, t=title||host;
+    return `<a class="md-linkcard" href="${esc(url)}" target="_blank" rel="noopener nofollow" style="--h:${hueOf(host)}">`+
+      `<span class="lc-mark">${esc((host[0]||"?").toUpperCase())}</span>`+
+      `<span class="lc-body"><span class="lc-title">${esc(t)}</span>`+
+      (desc?`<span class="lc-desc">${esc(desc)}</span>`:"")+
+      `<span class="lc-host">${esc(host)}</span></span>`+
+      `<span class="lc-arrow">↗</span></a>`;
+  };
+  /* B 站 / YouTube / Vimeo 的常规分享地址 → 可直接 iframe 的播放器地址 */
+  const embedSrc=u=>{
+    u=String(u||"").trim();
+    let m=u.match(/bilibili\.com\/video\/(BV[0-9A-Za-z]+)/);
+    if(m)return "https://player.bilibili.com/player.html?bvid="+m[1]+"&autoplay=0&high_quality=1";
+    m=u.match(/(?:youtube\.com\/watch\?[^#]*v=|youtu\.be\/)([\w-]{6,})/);
+    if(m)return "https://www.youtube.com/embed/"+m[1];
+    m=u.match(/vimeo\.com\/(\d+)/);
+    if(m)return "https://player.vimeo.com/video/"+m[1];
+    return "";
+  };
+  const CALLOUT_META={
+    note:{icon:"ℹ️",zh:"说明",en:"NOTE"},
+    tip:{icon:"💡",zh:"提示",en:"TIP"},
+    important:{icon:"❗",zh:"重要",en:"IMPORTANT"},
+    warning:{icon:"⚠️",zh:"警告",en:"WARNING"},
+    caution:{icon:"🚫",zh:"小心",en:"CAUTION"}
+  };
+  /* 附件下载卡：左边是扩展名色块，右边文件名 + 原始路径 */
+  const fileHTML=(name,src)=>{
+    const ext=(String(src).match(/\.([a-z0-9]+)(?=$|[?#])/i)||["","FILE"])[1].toUpperCase().slice(0,4);
+    return `<a class="md-file" href="${esc(mediaURL(src,false))}" download target="_blank" rel="noopener">`+
+      `<span class="mf-ico">${esc(ext)}</span>`+
+      `<span class="mf-name">${esc(name||src)}<span class="mf-sub">${esc(src)}</span></span>`+
+      `<span class="lc-arrow">⬇</span></a>`;
+  };
+  const embedHTML=(title,url)=>{
+    const e=embedSrc(url);
+    if(!e)return linkCardHTML(url,title,"");     /* 认不出的站点：退化成链接卡，不留白框 */
+    return `<div class="md-embed"><div class="me-bar">📺 ${esc(title||linkHost(url))}</div>`+
+      `<div class="me-ratio"><iframe src="${esc(e)}" loading="lazy" allowfullscreen referrerpolicy="no-referrer"></iframe></div></div>`;
+  };
   /* 统一容器：视频 / GIF / 循环动图 / 音频都套 .md-media，样式一致 */
   const mediaHTML=(kind,alt,src,poster)=>{
     alt=alt||"";
@@ -3303,18 +3472,21 @@ function mdToHTML(md,imgBase,imgMap){
     return `<figure class="md-media md-video"><video src="${esc(u)}"${pAttr} controls playsinline preload="metadata" data-mdvideo></video>`+
       `<span class="md-badge">${esc(badgeVideo)}</span>${cap}</figure>`;
   };
-  /* 整行只有一个媒体标记 → 按「块」渲染；返回 null 表示这行不是媒体块，
+  /* 整行只有一个媒体 / 链接 / 嵌入 / 附件标记 → 按「块」渲染；返回 null 表示这行不是块，
      仍按普通段落处理（行内的图片不受影响） */
   const parseMediaLine=line=>{
     const m=String(line).match(/^\s*(?:@([A-Za-z]+)\s*)?(!?\[([^\]]*)\])\s*\(\s*((?:[^()]|\([^()]*\))+)\s*\)\s*$/);
     if(!m)return null;
     const tag=(m[1]||"").toLowerCase();
     const alt=m[3]||"";
-    let inner=(m[4]||"").trim(),poster="";
-    /* 「地址 "封面图"」：文件名可能带空格，所以只在结尾是引号串时才拆开 */
+    let inner=(m[4]||"").trim(),extra="";
+    /* 「地址 "补充信息"」：文件名可能带空格，所以只在结尾是引号串时才拆开。
+       链接块里这串是「描述」，媒体块里是「封面图」 */
     const q=inner.match(/^(.*?)\s+["']([^"']+)["']$/);
-    if(q&&q[1].trim()){inner=q[1].trim();poster=q[2].trim();}
+    if(q&&q[1].trim()){inner=q[1].trim();extra=q[2].trim();}
     if(!inner)return null;
+    /* 链接 / 嵌入 / 附件：后面跟的不是本地文件，直接当块处理 */
+    if(tag==="link"||tag==="embed"||tag==="file")return {kind:tag,alt,src:inner,extra};
     /* ?loop 后缀 = 当动图循环播放（作者不用记 @motion 也行） */
     const LOOP_RE=/([?#&])loop(?:=1|=\d+)?(?=&|$)/i;
     const loop=LOOP_RE.test(inner);
@@ -3327,10 +3499,26 @@ function mdToHTML(md,imgBase,imgMap){
       if(isVideoFile(src))kind=loop?"motion":"video";
       else if(isAudioFile(src))kind="audio";
       else if(isGifFile(src))kind="gif";
+      else if(isAttachFile(src))kind="file";      /* 单独一行的说明书 / 压缩包 */
       else return null;                           /* 普通图片：走原来的图片逻辑 */
     }
     if(kind==="motion"&&isGifFile(src))kind="gif";   /* GIF 本身就是动的，不必套视频 */
-    return {kind,alt,src,poster};
+    return {kind,alt,src,poster:extra,extra};
+  };
+  /* 块级分派：链接卡 / 嵌入 / 附件卡 / 媒体 */
+  const blockHTML=mt=>{
+    const kind=mt.kind,alt=mt.alt||"",src=mt.src,extra=mt.extra||"";
+    if(kind==="link"){
+      const u=safeURL(src);
+      /* 地址不合法（比如 javascript:）就别做成卡片，退回纯文字，连可点的壳都不给 */
+      return u?linkCardHTML(u,alt,extra):`<p>${inline(alt||src)}</p>`;
+    }
+    if(kind==="file")return fileHTML(alt,src);
+    if(kind==="embed"){
+      const u=safeURL(src);
+      return u?embedHTML(alt,u):`<p>${inline(alt||src)}</p>`;
+    }
+    return mediaHTML(kind,alt,src,mt.poster);
   };
   const inline=s=>{
     s=esc(s);
@@ -3372,7 +3560,7 @@ function mdToHTML(md,imgBase,imgMap){
     return s;
   };
   const lines=md.split(/\r?\n/),out=[];let i=0;
-  const BLOCK=/^(#{1,4})\s+|^```|^\s*>|^\s*[-*+]\s+|^\s*\d+[.)]\s+|^\s*(---+|\*\*\*+)\s*$|^\s*\||^@(?:video|motion|audio|gif|loop)\s*\[/i;
+  const BLOCK=/^(#{1,4})\s+|^```|^\s*>|^\s*[-*+]\s+|^\s*\d+[.)]\s+|^\s*(---+|\*\*\*+)\s*$|^\s*\||^@(?:video|motion|audio|gif|loop|link|embed|file|gallery)\s*[\[(]/i;
   const ALIGN={l:"left",c:"center",r:"right"};
   while(i<lines.length){
     const L=lines[i];
@@ -3382,9 +3570,33 @@ function mdToHTML(md,imgBase,imgMap){
       i++;
       out.push(`<pre><code>${esc(buf.join("\n"))}</code></pre>`);continue;
     }
-    /* 独立成行的视频 / 动图 / 音频：整行渲染成媒体块 */
+    /* 独占一行的裸地址 → 链接卡片。要求前后都是空行，
+       免得把正文句子中间贴的地址也变成卡片把段落劈开 */
+    const tL=L.trim();
+    if(/^https?:\/\/\S+$/i.test(tL)
+       &&(i===0||!lines[i-1].trim())
+       &&(i+1>=lines.length||!lines[i+1].trim())){
+      out.push(linkCardHTML(tL,"",""));i++;continue;
+    }
+    /* 图集：@gallery[a.jpg, b.jpg, c.jpg] —— 2~4 张并排 */
+    const gm=L.match(/^\s*@gallery\[(.+)\]\s*$/i);
+    if(gm){
+      const items=gm[1].split(/[,，]/).map(x=>x.trim().replace(/^["']|["']$/g,"")).filter(Boolean);
+      if(items.length){
+        const n=Math.min(4,Math.max(2,items.length));
+        out.push(`<div class="md-gallery g${n}">`+
+          items.map(x=>{
+            const hit=imgHit(x);
+            const u=/^(https?:|data:|\/)/.test(x)?x:(hit?encodeURI(hit):imgBase+x);
+            return `<img src="${esc(u)}" alt="${esc(x.replace(/^.*\//,"").replace(/\.[^.]+$/,""))}" loading="lazy" decoding="async">`;
+          }).join("")+
+          `</div>`);
+        i++;continue;
+      }
+    }
+    /* 独立成行的视频 / 动图 / 音频 / 链接 / 嵌入 / 附件：整行渲染成块 */
     const mt=parseMediaLine(L);
-    if(mt){ out.push(mediaHTML(mt.kind,mt.alt,mt.src,mt.poster)); i++; continue; }
+    if(mt){ out.push(blockHTML(mt)); i++; continue; }
     /* 表格：连续以 | 开头的行，且第二行是分隔行（|---|---| / |:--:|）才认。
        行尾竖线可省略（GFM 允许）；不是标准表格的竖线行照旧按普通段落渲染，
        避免把「|l 文字」这类对齐段误判 */
@@ -3423,7 +3635,29 @@ function mdToHTML(md,imgBase,imgMap){
     if(/^\s*>\s?/.test(L)){
       const buf=[];
       while(i<lines.length&&/^\s*>\s?/.test(lines[i])){buf.push(lines[i].replace(/^\s*>\s?/,""));i++;}
+      /* GitHub 风格提示块：> [!TIP] 换行写内容 */
+      const cm=buf.length?buf[0].trim().match(/^\[!(\w+)\]\s*$/):null;
+      if(cm&&CALLOUT_META[cm[1].toLowerCase()]){
+        const k=cm[1].toLowerCase(),meta=CALLOUT_META[k];
+        const txt=buf.slice(1).join(" ").trim();
+        out.push(`<div class="md-callout ${k}"><span class="mc-ico">${meta.icon}</span>`+
+          `<div class="mc-body"><div class="mc-t">${lang==="zh"?meta.zh:meta.en}</div>`+
+          `<p>${inline(txt)}</p></div></div>`);
+        continue;
+      }
       out.push(`<blockquote>${inline(buf.join(" "))}</blockquote>`);continue;
+    }
+    /* 任务清单：- [ ] / - [x]（必须排在普通无序列表之前判断） */
+    if(/^\s*[-*+]\s+\[[ xX]\]\s+/.test(L)){
+      const rows=[];
+      while(i<lines.length&&/^\s*[-*+]\s+\[[ xX]\]\s+/.test(lines[i])){
+        const m=lines[i].match(/^\s*[-*+]\s+\[([ xX])\]\s+(.*)$/);
+        rows.push({done:m[1].toLowerCase()==="x",text:m[2]});
+        i++;
+      }
+      out.push('<ul class="md-task">'+rows.map(r=>
+        `<li class="${r.done?"done":""}"><input type="checkbox" disabled${r.done?" checked":""}><span>${inline(r.text)}</span></li>`).join("")+'</ul>');
+      continue;
     }
     if(/^\s*[-*+]\s+/.test(L)){
       const buf=[];
