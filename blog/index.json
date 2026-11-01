@@ -1,30 +1,6 @@
 {
-  "generated": "2026-11-01T13:47:24.701Z",
+  "generated": "2026-11-01T14:20:59.426Z",
   "posts": [
-    {
-      "slug": "测试",
-      "md": "blog/测试/index.md",
-      "imgBase": "blog/测试/",
-      "title": "测试",
-      "desc": "",
-      "tags": [
-        "测试"
-      ],
-      "date": "2026-11-01",
-      "minutes": 2,
-      "cover": "",
-      "bg": "",
-      "mdEn": "blog/测试/index.en.md",
-      "titleEn": "test",
-      "tagsEn": [
-        "test"
-      ],
-      "imgs": {
-        "1762053613046.png": "blog/thumbs/测试-i0.webp",
-        "WallpaperEngineOverride_randomCWEMLR.jpg": "blog/thumbs/测试-i1.webp",
-        "WallpaperEngineOverride_randomODPJMN.jpg": "blog/thumbs/测试-i2.webp"
-      }
-    },
     {
       "slug": "Jianye PE驱动安装模块 3.0 重磅发布",
       "md": "blog/Jianye PE驱动安装模块 3.0 重磅发布/index.md",
