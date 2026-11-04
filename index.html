@@ -4,9 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
-<title></title>
-<meta name="description" content="">
+<title>鉴业の小站</title>
+<meta name="description" content="鉴业の小站——愿我们拥有的时候不要毁，失去的时候不要悔。个人网站，收录作品、博客与实用工具。">
 <!-- 站名 / 描述 / 图标（favicon）都由 profile.txt 配置，JS 启动后填到这里 -->
+<link rel="icon" href="/icon.ico" sizes="any">
+<link rel="icon" type="image/png" href="/icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <!-- 移动端地址栏配色（站点固定深色） -->
 <meta name="theme-color" content="#0b0d12">
@@ -86,22 +88,13 @@
 <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
 <!-- 相册的 GitHub API 兜底通道，提前建连 -->
 <link rel="preconnect" href="https://api.github.com" crossorigin>
-<!-- 语言：首次访问先按系统语言定好（中文→中文，其它语言→英文），
-     免得英文用户先看到一闪而过的中文标题 / 语言标记。手动切换过的以本地保存为准。 -->
+<!-- 语言：首次访问默认中文（搜索引擎抓取到的标题与描述也是中文），
+     手动切换过的（中文 / 英文）以本地保存为准，右上角仍可随时切换。 -->
 <script>
 (function(){
   var s=null; try{ s=localStorage.getItem("jy-lang"); }catch(e){}
-  if(s!=="zh"&&s!=="en"){
-    var list=[], i;
-    try{ list=(navigator.languages&&navigator.languages.length)?navigator.languages:[navigator.language||""]; }
-    catch(e){ list=[""]; }
-    s="en";                                   /* 默认英文：非中文一律英文 */
-    for(i=0;i<list.length;i++){
-      var l=String(list[i]||"").replace(/_/g,"-").toLowerCase();
-      if(l.indexOf("zh")===0){ s="zh"; break; }   /* zh / zh-CN / zh-TW / zh-HK… 都算中文 */
-      if(l.indexOf("en")===0){ s="en"; break; }
-    }
-  }
+  /* 首次访问默认中文：搜索引擎抓取时读到的标题与描述也是中文，界面上仍可手动切英文 */
+  if(s!=="zh"&&s!=="en") s="zh";
   window.__JY_LANG=s;
   document.documentElement.lang=(s==="zh")?"zh-CN":"en";
   if(s!=="zh") document.title="Jianye's Corner";
