@@ -296,6 +296,11 @@ async function handle(request, env) {
 
 export async function onRequest(context) {
   const { request, env } = context
+  const u = new URL(request.url)
+  // 旧域名整站 301 到新域名，保留路径、查询参数
+  if (u.hostname === 'aimjianye.top' || u.hostname === 'www.aimjianye.top') {
+    return Response.redirect('https://jype.top' + u.pathname + u.search, 301)
+  }
   if (request.method === 'OPTIONS') return new Response(null, { headers: cors() })
   try {
     const resp = await handle(request, env)

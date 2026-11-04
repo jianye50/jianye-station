@@ -2276,12 +2276,12 @@ let wpStatus = 'loading';
 let wpChosen = '';      // 当前选中的背景文件名，'' = 还没选（开关打开也不会铺图）
 
 const PROJECTS = [
-  {t:'一键系统重装',d:'让系统重装变得像点一下按钮那样简单的工具站。',tags:['系统工具','Windows'],u:'https://aimjianye.top/os',ic:'drive',c1:'#5b8cff',c2:'#3a4fd6'},
-  {t:'Jianye File Encryptor',d:'本地文件加密工具，保护你的重要文件安全。',tags:['文件加密','安全工具'],u:'https://aimjianye.top/jye',ic:'fav',c1:'#ffc24d',c2:'#ff8a1a'},
-  {t:'Jianye PE',d:'自维护的 PE 系统，装机维护的好帮手。',tags:['PE 系统','装机维护'],u:'https://aimjianye.top/pe',ic:'settings',c1:'#8e7bff',c2:'#4a36c4'},
-  {t:'鉴业浏览器主页',d:'「鉴业主页」——摒弃弹窗与冗余推荐，打开即是搜索框的极简浏览器主页。',tags:['浏览器主页','极简'],u:'https://aimjianye.top/homepage/sharepage',ic:'home',c1:'#34d399',c2:'#0d9488'},
-  {t:'Jianye AI 智能助手',d:'接入大模型的智能对话助手。',tags:['AI','智能助手'],u:'https://aimjianye.top/ai',ic:'games',c1:'#ff6a8e',c2:'#c01e52'},
-  {t:'鉴业文件传送',d:'手机与电脑之间点对点直传文件，不经过服务器，支持跨平台多语言。',tags:['文件传送','P2P 直连'],u:'https://aimjianye.top/drop',ic:'drop',c1:'#40c8e0',c2:'#1f6fe0'}
+  {t:'一键系统重装',d:'让系统重装变得像点一下按钮那样简单的工具站。',tags:['系统工具','Windows'],u:'https://jype.top/os',ic:'drive',c1:'#5b8cff',c2:'#3a4fd6'},
+  {t:'Jianye File Encryptor',d:'本地文件加密工具，保护你的重要文件安全。',tags:['文件加密','安全工具'],u:'https://jype.top/jye',ic:'fav',c1:'#ffc24d',c2:'#ff8a1a'},
+  {t:'Jianye PE',d:'自维护的 PE 系统，装机维护的好帮手。',tags:['PE 系统','装机维护'],u:'https://jype.top/pe',ic:'settings',c1:'#8e7bff',c2:'#4a36c4'},
+  {t:'鉴业浏览器主页',d:'「鉴业主页」——摒弃弹窗与冗余推荐，打开即是搜索框的极简浏览器主页。',tags:['浏览器主页','极简'],u:'https://jype.top/homepage/sharepage',ic:'home',c1:'#34d399',c2:'#0d9488'},
+  {t:'Jianye AI 智能助手',d:'接入大模型的智能对话助手。',tags:['AI','智能助手'],u:'https://jype.top/ai',ic:'games',c1:'#ff6a8e',c2:'#c01e52'},
+  {t:'鉴业文件传送',d:'手机与电脑之间点对点直传文件，不经过服务器，支持跨平台多语言。',tags:['文件传送','P2P 直连'],u:'https://jype.top/drop',ic:'drop',c1:'#40c8e0',c2:'#1f6fe0'}
 ];
 
 /* 备忘录来自「备忘录」文件夹内的 .txt 文件（Markdown 语法排版），
@@ -4309,8 +4309,8 @@ function openApp(id){
     <div class="win-hd">
       <span class="app-ic ${m[1]}">${ICONS[m[2]]}</span>
       <div><h3 id="winTitle">${m[0]}</h3><p>${m[3]}</p></div>
-      ${id==='drop'?`<a class="win-ext" href="https://aimjianye.top/drop" target="_blank" rel="noopener" title="打开独立版文件传送（新标签页）"><span class="win-ext-tx">独立版</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M19 14v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/></svg></a>`:''}
-      ${id==='music'?`<a class="win-ext" href="https://aimjianye.top/music" target="_blank" rel="noopener" title="打开独立版音乐（新标签页）"><span class="win-ext-tx">独立版</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M19 14v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/></svg></a>`:''}
+      ${id==='drop'?`<a class="win-ext" href="https://jype.top/drop" target="_blank" rel="noopener" title="打开独立版文件传送（新标签页）"><span class="win-ext-tx">独立版</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M19 14v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/></svg></a>`:''}
+      ${id==='music'?`<a class="win-ext" href="https://jype.top/music" target="_blank" rel="noopener" title="打开独立版音乐（新标签页）"><span class="win-ext-tx">独立版</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M19 14v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/></svg></a>`:''}
       <button class="win-close" id="winClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
     <div class="win-body">${T[id]()}</div>`;
@@ -6507,8 +6507,8 @@ $('#popover').addEventListener('click',e=>{
   if(a==='mail')location.href='mailto:'+EMAIL;
   if(a==='copy')copyEmail();
   if(a==='feedback')window.open('https://my.feishu.cn/share/base/form/shrcnZomfA2kKrY311TeM2OaRpe','_blank','noopener'); // 飞书反馈表单
-  if(a==='search')window.open('https://aimjianye.top/homepage/sharepage','_blank','noopener');
-  if(a==='drop')window.open('https://aimjianye.top/drop','_blank','noopener'); // 文件传送独立版
+  if(a==='search')window.open('https://jype.top/homepage/sharepage','_blank','noopener');
+  if(a==='drop')window.open('https://jype.top/drop','_blank','noopener'); // 文件传送独立版
   if(a==='top')window.scrollTo({top:0,behavior:'smooth'});
   closePopover();
 });

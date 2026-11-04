@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://aimjianye.top/sitemap.xml
+Sitemap: https://jype.top/sitemap.xml
