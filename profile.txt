@@ -17,7 +17,7 @@
 #     · 只写域名就行，不用带结尾的 /；写了 https:// 也可以
 #     · 留空或删掉这一行 = 关闭跳转，所有域名都能正常访问
 #     · 站长自己在本地调试：地址后加 ?dev=1，或在控制台执行 localStorage.setItem("jy-dev","1")
-域名|https://aimjianye.top
+域名|https://jype.top
 
 # ———————— 站点信息 ————————
 
