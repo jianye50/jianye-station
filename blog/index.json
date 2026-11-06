@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-06T12:16:59.402Z",
+  "generated": "2026-11-06T12:26:12.462Z",
   "posts": [
     {
       "slug": "BetterGI 更好的原神",
@@ -80,6 +80,43 @@
       "bgThumb": "blog/thumbs/Pages_建站指南-bg.webp"
     },
     {
+      "slug": "one-file-357918-characters",
+      "md": "blog/one-file-357918-characters/index.md",
+      "imgBase": "blog/one-file-357918-characters/",
+      "title": "One file, 357,918 characters",
+      "desc": "This blog is a single HTML file with no build step, no framework and no dependencies. It started as laziness and turned into a constraint that made every decision easier. Here is what it buys, what it costs, and where I would stop doing it.",
+      "tags": [
+        "Web",
+        "Writing",
+        "Craft"
+      ],
+      "date": "2026-11-06",
+      "minutes": 6,
+      "cover": "cover.png",
+      "bg": "cover.png",
+      "mdEn": "blog/one-file-357918-characters/index.en.md",
+      "titleEn": "One file, 357,918 characters",
+      "descEn": "This blog is a single HTML file with no build step, no framework and no dependencies. It started as laziness and turned into a constraint that made every decision easier. Here is what it buys, what it costs, and where I would stop doing it.",
+      "tagsEn": [
+        "Web",
+        "Writing",
+        "Craft"
+      ],
+      "mdZh": "blog/one-file-357918-characters/index.zh.md",
+      "titleZh": "一个文件，357,918 个字符",
+      "descZh": "该博客是一个单一的 HTML 文件，没有构建步骤、没有框架、也没有依赖项。一开始是因为懒惰，后来变成了一种约束，让每个决定都变得更容易。以下是它的购买内容、成本以及我将停止这样做的地方。",
+      "tagsZh": [
+        "网络",
+        "写作",
+        "工艺"
+      ],
+      "imgs": {
+        "cover.png": "blog/thumbs/one-file-357918-characters-i0.webp"
+      },
+      "coverThumb": "blog/thumbs/one-file-357918-characters-cover.webp",
+      "bgThumb": "blog/thumbs/one-file-357918-characters-bg.webp"
+    },
+    {
       "slug": "one-post-two-languages",
       "md": "blog/one-post-two-languages/index.md",
       "imgBase": "blog/one-post-two-languages/",
@@ -115,6 +152,43 @@
       },
       "coverThumb": "blog/thumbs/one-post-two-languages-cover.webp",
       "bgThumb": "blog/thumbs/one-post-two-languages-bg.webp"
+    },
+    {
+      "slug": "边缘运行时不是服务器",
+      "md": "blog/边缘运行时不是服务器/index.md",
+      "imgBase": "blog/边缘运行时不是服务器/",
+      "title": "边缘运行时不是服务器：Workers 能接住什么，接不住什么",
+      "desc": "把一台服务器塞进 CDN 节点，听起来像白捡。真实情况是：它只接得住「请求进来、数据出去」这一类活，接不住任何需要「一直醒着」的东西。这篇讲清那条分界线在哪，以及我为什么把 OpenList 搬了上去、却把 Home Assistant 留在了壁橱里。",
+      "tags": [
+        "Cloudflare",
+        "架构",
+        "随笔"
+      ],
+      "date": "2026-11-06",
+      "minutes": 6,
+      "cover": "cover.png",
+      "bg": "cover.png",
+      "mdEn": "blog/边缘运行时不是服务器/index.en.md",
+      "titleEn": "Edge runtimes are not servers: what Workers can and cannot catch",
+      "descEn": "Stuffing a server into a CDN node sounds like a free pick. The real situation is: it can only handle tasks such as \\\"requests coming in and data going out\\\", and it cannot handle anything that needs to be \\\"always awake\\\". This article explains where that dividing line is, and why I moved OpenList up but left Home Assistant in the closet.",
+      "tagsEn": [
+        "Cloudflare",
+        "Architecture",
+        "Essay"
+      ],
+      "mdZh": "blog/边缘运行时不是服务器/index.zh.md",
+      "titleZh": "边缘运行时不是服务器：Workers 能接住什么，接不住什么",
+      "descZh": "把一台服务器塞进 CDN 节点，听起来像白捡。真实情况是：它只接得住「请求进来、数据出去」这一类活，接不住任何需要「一直醒着」的东西。这篇讲清那条分界线在哪，以及我为什么把 OpenList 搬了上去、却把 Home Assistant 留在了壁橱里。",
+      "tagsZh": [
+        "Cloudflare",
+        "架构",
+        "随笔"
+      ],
+      "imgs": {
+        "cover.png": "blog/thumbs/边缘运行时不是服务器-i0.webp"
+      },
+      "coverThumb": "blog/thumbs/边缘运行时不是服务器-cover.webp",
+      "bgThumb": "blog/thumbs/边缘运行时不是服务器-bg.webp"
     },
     {
       "slug": "编辑器2.0更新",
