@@ -130,6 +130,22 @@ function foreignParas(body, fromLang) {
     return fromLang === "en" ? lat / (cjk + lat) > 0.85 : cjk / (cjk + lat) > 0.85;
   }).length;
 }
+/* 「另一种语言的段落」占正文文字的多少 —— 决定这篇到底算不算双语稿。
+   只知道段落数是不够的：一篇正常的中文文章里，域名、命令、产品列表
+   常常单独成段，三四段加起来不到全文的 5%，却被 foreignParas 数成 3 段，
+   于是这篇的中文版也要「翻译」，接口一限流就什么文件都没有。 */
+function foreignParaShare(body, fromLang) {
+  let all = 0, foreign = 0;
+  for (const p of String(body).split(/\n{2,}/)) {
+    if (!p.trim() || isMediaPara(p)) continue;
+    const { cjk, lat } = counts(p);
+    if (cjk + lat < 4) continue;
+    all += cjk + lat;
+    const isForeign = fromLang === "en" ? lat / (cjk + lat) > 0.85 : cjk / (cjk + lat) > 0.85;
+    if (isForeign) foreign += cjk + lat;
+  }
+  return all ? foreign / all : 0;
+}
 
 /* ---------- 翻译接口：Google 免费公开接口，双域名 + 指数退避 ---------- */
 const HOSTS = ["https://translate.googleapis.com", "https://translate.google.com"];
@@ -460,10 +476,15 @@ for (const a of articles) {
     /* 这个方向要「翻掉」的语言 */
     const fromLang = target === "en" ? "zh" : "en";
     const fromFrac = langFrac(body, fromLang);
-    /* 这一份要翻的「外语段落」有几段（段落级判定，行内术语不算） */
+    /* 这一份要翻的「外语段落」有几段、占多少字（段落级判定，行内术语不算） */
     const fromParas = foreignParas(body, fromLang);
-    /* 原文语言那一份、且没有任何外语段落 → 直接落副本，一次接口都不用打 */
-    const isCopy = target === srcLang && fromParas === 0;
+    const fromShare = foreignParaShare(body, fromLang);
+    /* 原文语言那一份 → 直接落副本，一次接口都不用打。
+       判据是「另一种语言占了多少字」而不是「有几个段落」：
+       中文文章里的域名列表、命令、英文产品名经常单独成段，占比不到 5%，
+       按段落数算会被当成双语稿去翻，接口一限流反而什么文件都生成不出来，
+       网站只能退回原文 → 中文界面上看中文文章却显示「正在翻译成中文…」 */
+    const isCopy = target === srcLang && fromShare < 0.5;
     const relDst = dst.slice(root.length + 1);
 
     /* 已有译文：人工写的别动，自动生成的看哈希与语言体检 */
@@ -487,11 +508,11 @@ for (const a of articles) {
           console.log(`::warning::${msg}${FORCE ? " —— 即使加 --force 也不覆盖；确实要重译就删掉这个文件，或补一行 auto: true" : ""}`);
           skipped++; continue;
         }
-        /* 语言体检：文件在、哈希也对，但「该翻掉的段落」一段都没少 →
+        /* 语言体检：文件在、哈希也对，但「该翻掉的内容」一成都沒少 →
            上一次翻译其实失败了（旧脚本会写出这种半成品）。必须重翻，
            否则网站会把原文当译文用，而且永远不再更新。
-           副本文件（原文语言那份）没有外语段落，天然不触发 */
-        const badLang = fromParas > 0 && foreignParas(prevBody, fromLang) >= fromParas;
+           副本文件（原文语言那份）本身就允许夹外语段落，不参与这个判定 */
+        const badLang = fromShare >= 0.5 && foreignParaShare(prevBody, fromLang) >= fromShare * 0.9;
         if (!FORCE && prev.srchash === hash && !badLang && sameImgs(body, prevBody)) {
           console.log(`= 跳过（未改动）${relDst}`);
           skipped++; continue;

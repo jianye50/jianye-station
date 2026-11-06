@@ -3822,8 +3822,17 @@ function mdZhURL(u){
    这种文件必须当它不存在，否则界面永远显示另一种语言、也不再走兜底。
    want = 这份文件「应该」是什么语言：中文文件的中文占比要高，英文文件的几乎不能有中文 */
 function altLangOk(text,want){
-  const cjkShare=trShare(text,"zen");
-  return want==="zh" ? cjkShare>0.25 : cjkShare<0.15;
+  /* want = 这份文件「应该」是什么语言，判据是「需要被翻掉的行」占了多少。
+     半成品（front matter 换了语言、正文还是原文）的外来行占比接近 1，
+     正常译文即使夹着术语也远低于 0.75 */
+  return trShare(text,want==="zh"?"ezh":"zen")<0.75;
+}
+/* 正文本身就像访客要读的语言吗？
+   中文界面看中文文章、英文界面看英文文章 —— 这种情况根本不存在「翻译」，
+   不该去找静态度、更不该挂「正在翻译成…」。外来行不到一半就算「已经是这个语言」，
+   留出余量给「中文段落里夹英文术语」和「整段英文引用」这类正常写法 */
+function isLikelyLang(text,want){
+  return trShare(text,want==="zh"?"ezh":"zen")<0.5;
 }
 
 /* 博客列表骨架屏：形状/尺寸与真实卡片一致（缩略图块、标签条、标题条、摘要条、日期条） */
@@ -4065,19 +4074,24 @@ function trNeed(s,dir){
   if(dir==="ezh")return !hasCJK(t)&&/[A-Za-z]/.test(t);   /* 纯数字/符号不用翻 */
   return hasCJK(t);
 }
-/* 整篇判定：目标语言之外的语言，占「正文字符」的比例。
-   以前是「只要有一行外文就翻」——中文文章里夹一个 BetterGI、一句英文命令，
-   就会去请求翻译接口；接口一限流，整页挂上「自动翻译暂不可用」，
-   中文文章在中文界面里也顶着这个标记（就是这个 bug）。
-   现在按比例判断：外来语言不足 12% 视为「这篇文章本来就是访客要读的语言」。 */
+/* 整篇判定：**按行**算「另一种语言」占了多少正文字符。
+   以前是整篇数拉丁字母：一篇讲建站的中文文章，光 GitHub / Cloudflare Pages / git push
+   这些词就能把拉丁字母堆到四成，中文界面下也被判成「需要翻成中文」，
+   整页顶着「正在翻译成中文…」（这就是用户反复看到的那条 bug）。
+   现在逐行问 trNeed：这一行还有没有中文？有中文的一行就是一个字都不算外来，
+   中文段落里夹的术语、命令、产品名因此完全不计入。 */
 function trShare(s,dir){
-  const t=mdBare(s).replace(/\s+/g,"");
-  if(!t)return 0;
-  const cjk=(t.match(/[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g)||[]).length;
-  const lat=(t.match(/[A-Za-z]/g)||[]).length;
-  return dir==="ezh" ? lat/t.length : cjk/t.length;
+  const lines=String(s==null?"":s).split("\n");
+  let all=0,foreign=0;
+  for(const ln of lines){
+    const t=mdBare(ln).replace(/\s+/g,"");
+    if(t.length<4)continue;          /* 空行 / 纯符号 / 图片行 */
+    all+=t.length;
+    if(trNeed(ln,dir))foreign+=t.length;
+  }
+  return all?foreign/all:0;
 }
-const TR_MIN_SHARE=0.12;
+const TR_MIN_SHARE=0.2;
 /* 整篇要不要翻：中英混排的稿子占比过半时照样翻（逐行判定只动另一种语言的段落），
    纯中文夹几个英文术语则完全不碰 */
 function trNeedDoc(s,dir){ return trShare(s,dir)>=TR_MIN_SHARE; }
@@ -4822,6 +4836,15 @@ async function renderPost(slug,gen){
   const {meta,body}=parsePost(raw);
   const title=meta.title||post.title||t.blog.untitled;
   const desc=meta.desc||post.desc||"";
+  /* 最后一道防线：正文本身就已经是访客要读的语言（中文界面看中文文章、
+     英文界面看英文文章），那就没有「翻译」这回事。
+     index.zh.md 还没生成时，中文文章会先命中上面「静态版缺失 → 原文兜底」，
+     如果这里不拦一道，就会掉进机翻分支、顶着「正在翻译成中文…」——
+     中文文章在中文界面被翻译成中文，正是这条 bug。
+     usedAlt 在这里代表「正文已经是界面语言」，后面就不再机翻、也不挂任何角标。
+     只看正文，不看 front matter（title:/tags:/srcHash: 这些行天然是拉丁字母，
+     短文会被它们拉高「外语占比」，误判成需要翻译） */
+  if(!usedAlt&&isLikelyLang(body,want))usedAlt=true;
   document.title=title+" · "+t.brand;   /* 浏览器标签页 / 历史记录显示文章标题 */
   /* 标签归一化：front matter 里「tags: a, b」这种逗号写法解析出来是字符串，
      直接 .map 会抛 TypeError 导致整篇文章页渲染失败 —— 列表页已归一化，这里补上 */
@@ -4861,14 +4884,14 @@ async function renderPost(slug,gen){
      英文界面下方向变 zen，英文段落又被 trNeed 判为「已是目标语言」跳过。
      现在按段落跑 trNeed：已经是访客语言的段落原样保留，另一种语言的段落才送翻，
      中英混排的稿子因此能各自翻成访客要读的那一半。
-     整篇要不要翻用 trNeedDoc 判（按外来语言占比，而不是「有一行外文就翻」）——
+     整篇要不要翻用 trNeedDoc 判（按外来行占比，而不是「有一行外文就翻」）——
      否则中文文章里夹一句英文命令，就足以让整页挂上「自动翻译暂不可用」。 */
   const trDir=lang==="en"?"zen":"ezh";
   const needTr=trNeedDoc([title,desc,body].join("\n"),trDir);
   /* 界面语言与原文不同 + 没拿到静态另一语言版：正文先按原文秒出，
      后台机器翻译，完成后无感替换（失败保留原文）。
-     已经拿到静态版就绝不再机翻——那份就是权威译文，
-     里面残留的另一种语言只是图片文件名、代码注释之类不该翻的内容 */
+     usedAlt 为真 = 正文已经是界面语言（静态版命中，或原文本身就是这个语言），
+     这种情况绝不机翻，也不挂任何翻译角标 */
   if(!usedAlt&&needTr&&(title||desc||body.trim())){
     const trLabel=trDir==="ezh"?t.blog.translatingZh:t.blog.translating;
     const curGen=gen;
