@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-06T10:12:03.966Z",
+  "generated": "2026-11-06T11:01:43.954Z",
   "posts": [
     {
       "slug": "BetterGI 更好的原神",
@@ -24,10 +24,18 @@
         "tool",
         "recommend"
       ],
+      "mdZh": "blog/BetterGI 更好的原神/index.zh.md",
+      "titleZh": "BetterGI · 更好的原神：把每天那半小时删掉",
+      "descZh": "一个开源免费、只靠截图识别和模拟键鼠工作的原神自动化工具。它怎么「看」游戏、能替你做什么、下载哪个包、第一次要调哪几项设置，以及那句必须先说的话——风险它替不了你承担。",
+      "tagsZh": [
+        "原神",
+        "工具",
+        "推荐"
+      ],
       "imgs": {
         "cover.png": "blog/thumbs/BetterGI_更好的原神-i0.webp",
-        "site-download.png": "blog/thumbs/BetterGI_更好的原神-i3.webp",
-        "site-home.png": "blog/thumbs/BetterGI_更好的原神-i4.webp"
+        "site-download.png": "blog/thumbs/BetterGI_更好的原神-i4.webp",
+        "site-home.png": "blog/thumbs/BetterGI_更好的原神-i5.webp"
       },
       "coverThumb": "blog/thumbs/BetterGI_更好的原神-cover.webp",
       "bgThumb": "blog/thumbs/BetterGI_更好的原神-bg.webp"
@@ -78,6 +86,14 @@
       "minutes": 7,
       "cover": "cover.png",
       "bg": "cover.png",
+      "mdEn": "blog/one-post-two-languages/index.en.md",
+      "titleEn": "One Post, Two Languages",
+      "descEn": "Write in the language you think in, and let the page meet the reader wherever they are. How this blog decides what to translate, which of three engines does the work, and why a cache key with a direction suffix is the difference between a feature and a nuisance.",
+      "tagsEn": [
+        "Writing",
+        "Translation",
+        "Web"
+      ],
       "mdZh": "blog/one-post-two-languages/index.zh.md",
       "titleZh": "一篇文章，两种语言",
       "descZh": "用您思考的语言进行写作，让页面与读者见面，无论他们身在何处。这个博客如何决定翻译什么，三个引擎中的哪一个执行工作，以及为什么带有方向后缀的缓存键是功能和麻烦之间的区别。",
@@ -147,6 +163,14 @@
         "renew",
         "drive"
       ],
+      "mdZh": "blog/Jianye PE驱动安装模块 3.0 重磅发布/index.zh.md",
+      "titleZh": "Jianye PE驱动安装模块 3.0 重磅发布",
+      "descZh": "鉴业 PE 驱动安装模块 3.0 核心优势对比表 在当今数字化时代，计算机系统维护面临着日益复杂的挑战，硬件设备的多样性与更新速度不断提升，对 …",
+      "tagsZh": [
+        "PE",
+        "更新",
+        "驱动"
+      ],
       "imgs": {
         "1745835951264.jpg": "blog/thumbs/Jianye_PE驱动安装模块_3.0_重磅发布-i0.webp"
       },
@@ -173,6 +197,13 @@
       "tagsEn": [
         "Safety",
         "Record"
+      ],
+      "mdZh": "blog/Windows 安全中心保护历史路径/index.zh.md",
+      "titleZh": "Windows 安全中心保护历史路径",
+      "descZh": "将此文件夹内可以删除的文件删除，不可以的跳过 在安全中心保护运行中，此文件夹将进行保护，您可以使用安全中心管理工具关闭后查看 需要关闭安全中心或…",
+      "tagsZh": [
+        "安全",
+        "记录"
       ],
       "imgs": {
         "1745762684683.jpg": "blog/thumbs/Windows_安全中心保护历史路径-i0.webp"
@@ -207,6 +238,16 @@
         "Life",
         "introspection"
       ],
+      "mdZh": "blog/拥有时不毁，失去时不悔/index.zh.md",
+      "titleZh": "拥有时不毁，失去时不悔",
+      "descZh": "愿我们拥有的时候不要毁，失去的时候不要悔。 常常在某个安静的夜晚停下来想，人大部分的遗憾，都源于两种状态：身在其中时肆意消耗，等到走远之后反复回…",
+      "tagsZh": [
+        "感悟",
+        "得失",
+        "随想",
+        "人生",
+        "自省"
+      ],
       "imgs": {
         "1745762684722.jpg": "blog/thumbs/拥有时不毁，失去时不悔-i0.webp"
       },
@@ -233,6 +274,12 @@
         "maintain",
         "tool"
       ],
+      "mdZh": "blog/系统维护工具下载/index.zh.md",
+      "titleZh": "Windows系统维护工具",
+      "tagsZh": [
+        "维护",
+        "工具"
+      ],
       "imgs": {
         "1745835951277.jpg": "blog/thumbs/系统维护工具下载-i0.webp"
       },
@@ -257,6 +304,12 @@
       "descEn": "Foreword Remote control software, which we often call remote desktop tools, is a very practical tool whether it is to help family and friends remotely repair computers, work remotely from home, operate servers, or remotely control computers with mobile phones...",
       "tagsEn": [
         "remote control"
+      ],
+      "mdZh": "blog/远程控制/index.zh.md",
+      "titleZh": "主流远程控制软件整理｜远程协助、运维、跨设备远程桌面工具推荐",
+      "descZh": "前言 远程控制软件，也就是我们常说的远程桌面工具，不管是帮家人朋友远程修电脑、居家远程办公、服务器运维，还是手机远程操控电脑，都是非常实用的工具…",
+      "tagsZh": [
+        "远程控制"
       ],
       "imgs": {
         "1738905943819.jpeg": "blog/thumbs/远程控制-i0.webp"
@@ -284,6 +337,13 @@
       "tagsEn": [
         "3D",
         "Leisure"
+      ],
+      "mdZh": "blog/3D咖啡店/index.zh.md",
+      "titleZh": "鉴业的咖啡店：在浏览器里，走进一间深夜亮灯的3D街角小店",
+      "descZh": "项目在线地址：https://jianye.pages.dev/coffee-shop-3d 一间深夜亮着灯的咖啡小店，不用下载客户端，打开浏览…",
+      "tagsZh": [
+        "3D",
+        "休闲"
       ],
       "imgs": {
         "1738905943689.jpg": "blog/thumbs/3D咖啡店-i0.webp",
@@ -313,6 +373,13 @@
         "AD",
         "ad blocking"
       ],
+      "mdZh": "blog/Adguard推荐/index.zh.md",
+      "titleZh": "AdGuard",
+      "descZh": "AdGuard是一款功能强大的广告拦截与隐私保护工具，适用于多种平台 公司背景：AdGuard软件有限公司成立于2009年，总部设在塞浦路斯。公…",
+      "tagsZh": [
+        "AD",
+        "广告拦截"
+      ],
       "imgs": {
         "1745835951308.jpg": "blog/thumbs/Adguard推荐-i0.webp",
         "AdBlocker_banner_EN_728х90_2x.png": "blog/thumbs/Adguard推荐-i1.webp"
@@ -337,6 +404,12 @@
       "titleEn": "🎧Jianye Music｜My homemade web music player",
       "descEn": "Project address: https://jianye.pages.dev/music I have always wanted to have a listening page that is entirely my own, without being disturbed by client ads or pop-up windows, so...",
       "tagsEn": [
+        "music"
+      ],
+      "mdZh": "blog/鉴业音乐/index.zh.md",
+      "titleZh": "🎧鉴业音乐｜我的自制网页音乐播放器",
+      "descZh": "项目地址：https://jianye.pages.dev/music 一直想拥有一个完全属于自己的听歌页面，不受客户端广告、开屏弹窗打扰，于是…",
+      "tagsZh": [
         "music"
       ],
       "imgs": {
@@ -421,6 +494,13 @@
         "System activation",
         "Win"
       ],
+      "mdZh": "blog/系统激活命令/index.zh.md",
+      "titleZh": "系统激活命令",
+      "descZh": "Windows PowerShell内执行： irm https://get.activated.win | iex",
+      "tagsZh": [
+        "系统激活",
+        "赢"
+      ],
       "imgs": {
         "ScreenShot_2026-10-24_032114_583.png": "blog/thumbs/系统激活命令-i0.webp",
         "dTTcmJH0.jpeg": "blog/thumbs/系统激活命令-i1.webp"
@@ -449,13 +529,20 @@
         "PE",
         "Maintain system"
       ],
+      "mdZh": "blog/鉴业PE 维护系统介绍/index.zh.md",
+      "titleZh": "Jianye PE｜颜值与实力兼备的纯净Windows PE维护系统",
+      "descZh": "电脑蓝屏无法开机？系统需要重装？重要数据需要抢救？遇到这些问题，一套好用的PE…",
+      "tagsZh": [
+        "PE",
+        "维护系统"
+      ],
       "imgs": {
         "55b2278b-c468-4060-ae73-67cb0ff41192.png": "blog/thumbs/鉴业PE_维护系统介绍-i0.webp",
         "Jianye-PE-2026-04-18-12-56-22-2.png": "blog/thumbs/鉴业PE_维护系统介绍-i1.webp",
-        "mmexport1786370573713.jpg": "blog/thumbs/鉴业PE_维护系统介绍-i4.webp",
-        "品牌常用启动热键.png": "blog/thumbs/鉴业PE_维护系统介绍-i5.webp",
-        "鉴业PE-维护系统-2025-07-07-21-33-38.png": "blog/thumbs/鉴业PE_维护系统介绍-i6.webp",
-        "鉴业PE-维护系统-2026-01-02-23-18-20.png": "blog/thumbs/鉴业PE_维护系统介绍-i7.webp"
+        "mmexport1786370573713.jpg": "blog/thumbs/鉴业PE_维护系统介绍-i5.webp",
+        "品牌常用启动热键.png": "blog/thumbs/鉴业PE_维护系统介绍-i6.webp",
+        "鉴业PE-维护系统-2025-07-07-21-33-38.png": "blog/thumbs/鉴业PE_维护系统介绍-i7.webp",
+        "鉴业PE-维护系统-2026-01-02-23-18-20.png": "blog/thumbs/鉴业PE_维护系统介绍-i8.webp"
       },
       "coverThumb": "blog/thumbs/鉴业PE_维护系统介绍-cover.webp",
       "bgThumb": "blog/thumbs/鉴业PE_维护系统介绍-bg.webp"
@@ -478,6 +565,12 @@
       "descEn": "Have you ever encountered these computer problems: the system gets laggy the more you use it, and you have to wait 5 minutes to boot up; you install software by mistake, resulting in pop-up ads that cannot be closed; you want to reinstall the system, but are stuck with \\\"BIOS Settings\\\" and \\\"Partition Format\\\"...",
       "tagsEn": [
         "System reinstallation"
+      ],
+      "mdZh": "blog/一键重装/index.zh.md",
+      "titleZh": "系统重装太难？这款工具把 “技术活” 变成 “点几下”！",
+      "descZh": "你是不是也遇到过这些电脑难题：系统越用越卡，开机要等 5 分钟；误装软件导致弹窗广告关不完；想重装系统，却被 “BIOS 设置”“分区格式” 这…",
+      "tagsZh": [
+        "系统重装"
       ],
       "imgs": {
         "330.png": "blog/thumbs/一键重装-i0.webp",
@@ -513,6 +606,14 @@
         "encryption software",
         "File security"
       ],
+      "mdZh": "blog/加密软件/index.zh.md",
+      "titleZh": "简单安全的本地文件保护工具：Jianye File Encryptor 鉴业文件加密器",
+      "descZh": "在数字时代，个人照片、私密文档、工作涉密资料随时面临泄露风险。很多普通用户想要保护文件，却对复杂密码学望而却步，命令行加密工具门槛太高，商业加密…",
+      "tagsZh": [
+        "文件加密",
+        "加密软件",
+        "文件安全"
+      ],
       "imgs": {
         "391.png": "blog/thumbs/加密软件-i0.webp",
         "FoCnobLdHNSDkR6Y77fkqanhUFYt.png": "blog/thumbs/加密软件-i1.webp"
@@ -541,11 +642,18 @@
         "Website building record",
         "About me"
       ],
+      "mdZh": "blog/建站记录/index.zh.md",
+      "titleZh": "关于我，关于这个小站",
+      "descZh": "终于，我的个人小站博客正式落成。 在这里，我想简单聊聊自己，也记录这个站点存在的意义。 我是鉴业，一个热爱折腾、喜欢创造、享受从零搭建一切的人。…",
+      "tagsZh": [
+        "建站记录",
+        "关于我"
+      ],
       "imgs": {
         "Moon Cat Under theMoonlight (Day - Night)月光下的月猫(昼夜).png": "blog/thumbs/建站记录-i0.webp",
         "Windows 12 概念.jpg": "blog/thumbs/建站记录-i1.webp",
-        "luna-final-2-frame-001-00-00-00-000.png": "blog/thumbs/建站记录-i4.webp",
-        "头像.png": "blog/thumbs/建站记录-i5.webp"
+        "luna-final-2-frame-001-00-00-00-000.png": "blog/thumbs/建站记录-i5.webp",
+        "头像.png": "blog/thumbs/建站记录-i6.webp"
       },
       "coverThumb": "blog/thumbs/建站记录-cover.webp",
       "bgThumb": "blog/thumbs/建站记录-bg.webp"
@@ -571,9 +679,16 @@
         "file transfer",
         "transmission"
       ],
+      "mdZh": "blog/文件传送/index.zh.md",
+      "titleZh": "鉴业文件传送：网页版P2P点对点文件互传工具｜无需下载，打开网页直接传文件",
+      "descZh": "平时在电脑、手机之间互相传递文件，总会遇到各种各样的痛点：社交软件有严格的…",
+      "tagsZh": [
+        "文件传送",
+        "传输"
+      ],
       "imgs": {
         "1745762721370.jpg": "blog/thumbs/文件传送-i0.webp",
-        "屏幕截图_17-10-2026_134242_jianye.pages.dev.jpg": "blog/thumbs/文件传送-i3.webp"
+        "屏幕截图_17-10-2026_134242_jianye.pages.dev.jpg": "blog/thumbs/文件传送-i4.webp"
       },
       "coverThumb": "blog/thumbs/文件传送-cover.webp",
       "bgThumb": "blog/thumbs/文件传送-bg.webp"
@@ -599,9 +714,16 @@
         "Browser home page",
         "concise"
       ],
+      "mdZh": "blog/浏览器主页/index.zh.md",
+      "titleZh": "我做了一个极简浏览器主页，告别广告与信息轰炸",
+      "descZh": "每次打开浏览器新建标签页，你会看到什么？满屏推送新闻、弹窗广告、五花八门的内容推荐。很多起始页不断堆砌功能，把新标签页变成信息流广场，我们本只想快速搜索，却被各种信息裹挟，注意力被不断切碎。",
+      "tagsZh": [
+        "浏览器主页",
+        "简洁"
+      ],
       "imgs": {
-        "屏幕截图_17-10-2026_13579_jianye.pages.dev.jpg": "blog/thumbs/浏览器主页-i2.webp",
-        "微信图片_20260614030832_13646_1032.jpg": "blog/thumbs/浏览器主页-i3.webp"
+        "屏幕截图_17-10-2026_13579_jianye.pages.dev.jpg": "blog/thumbs/浏览器主页-i3.webp",
+        "微信图片_20260614030832_13646_1032.jpg": "blog/thumbs/浏览器主页-i4.webp"
       },
       "coverThumb": "blog/thumbs/浏览器主页-cover.webp",
       "bgThumb": "blog/thumbs/浏览器主页-bg.webp"
