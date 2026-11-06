@@ -3817,13 +3817,13 @@ function mdZhURL(u){
   if(/\.md$/i.test(u))return u.replace(/\.md$/i,".zh.md");
   return "";
 }
-/* 静态另一语言版的「语言体检」：文件存在 ≠ 内容是译文。
-   自动翻译被限流时会写出「front matter 是英文、正文还是中文」的半成品，
-   这种文件必须当它不存在，否则英文界面永远显示中文、也不再走兜底。
-   src="zh" 的英文版：中文占比应低于 15%；src="en" 的中文版：中文占比应高于 25% */
-function altLangOk(text,src){
+/* 静态语言版的「语言体检」：文件存在 ≠ 内容是这个语言。
+   自动翻译被限流时会写出「front matter 换了语言、正文还是原文」的半成品，
+   这种文件必须当它不存在，否则界面永远显示另一种语言、也不再走兜底。
+   want = 这份文件「应该」是什么语言：中文文件的中文占比要高，英文文件的几乎不能有中文 */
+function altLangOk(text,want){
   const cjkShare=trShare(text,"zen");
-  return src==="zh" ? cjkShare<0.15 : cjkShare>0.25;
+  return want==="zh" ? cjkShare>0.25 : cjkShare<0.15;
 }
 
 /* 博客列表骨架屏：形状/尺寸与真实卡片一致（缩略图块、标签条、标题条、摘要条、日期条） */
@@ -4778,16 +4778,14 @@ async function renderPost(slug,gen){
     <div style="text-align:center"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a></div>
   </div></section>`;};
   if(!post){fail(t.blog.err);return;}
-  /* 双向翻译：文章原文是中文、界面是英文 → 找静态英文版（index.en.md）；
-     原文是英文、界面是中文 → 找静态中文版（index.zh.md）。
-     原文语言先用清单里的标题/摘要猜（决定要不要去找静态另一语言版），
-     正文真正到手后再按内容确认（决定要不要机器翻译兜底） */
-  const guessSrc=hasCJKText((post.title||"")+" "+(post.desc||""))?"zh":"en";
-  const altURL=(lang!==guessSrc)
-    ?(guessSrc==="zh"
-        ?(post.mdURLEn||mdEnURL(post.mdURL))
-        :(post.mdURLZh||mdZhURL(post.mdURL)))
-    :"";
+  /* 语言版本只看「界面语言」：界面是英文就读 index.en.md，界面是中文就读 index.zh.md。
+     每篇文章都由 CI 预先产出中英两份（原文是哪种语言都产两份），所以正常情况下
+     永远命中静态文件，页面从一开始就是访客要的语言——没有「先出原文、再等机翻」的跳变。
+     命不中（还没生成 / 体检不合格）才退回原文，必要时后台机翻兜底。 */
+  const want=lang==="en"?"en":"zh";
+  const altURL=want==="en"
+    ?(post.mdURLEn||mdEnURL(post.mdURL))
+    :(post.mdURLZh||mdZhURL(post.mdURL));
   let raw="",usedAlt=false;
   try{
     let r=null,text="";
@@ -4806,10 +4804,10 @@ async function renderPost(slug,gen){
            是英文、正文还全是中文」的半成品）。这种文件一旦当成译文用，
            英文界面就会一直显示中文，而且再也不会触发兜底。
            英文版应该几乎没有中文；中文版应该以中文为主。 */
-        else if(!altLangOk(text,guessSrc)){
+        else if(!altLangOk(text,want)){
           r=null;text="";
         }
-        else usedAlt=true;                        /* 真的拿到了静态另一语言版 */
+        else usedAlt=true;                        /* 真的拿到了界面语言对应的静态版 */
       }else r=null;                              /* 静态版缺失/没生成：原文兜底 */
     }
     if(!r){

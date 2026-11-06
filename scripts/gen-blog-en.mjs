@@ -5,9 +5,11 @@
  *   blog/<文章>/index.md      →  index.en.md  +  index.zh.md
  *   blog/<名字>.md            →  <名字>.en.md +  <名字>.zh.md
  *
- * 规则只有一条：**每篇文章最后都要有三种文件**——原文、中文版、英文版。
- * 作者用中文写，就补英文；用英文写，就补中文；中英混排也补另一边。
- * 网站因此永远读静态译文，不再依赖浏览器临时机翻。
+ * 规则只有一条：**每篇文章都要有 index.en.md 和 index.zh.md 两份**，
+ * 不管原文是什么语言 —— 中文写的也生成中文版，英文写的也生成英文版。
+ * 原文语言那一份没有外语段落时直接落副本（零接口请求），
+ * 中英混排时把夹着的另一种语言也翻掉，保证两份各自纯净。
+ * 网站按访客界面语言直接读对应文件，任何语言组合都不再走临时机翻。
  *
  * 触发：.github/workflows/gen-blog-en.yml（push blog/**、定时兜底、手动 workflow_dispatch）
  * 手动：node scripts/gen-blog-en.mjs [--force] [--dry-run] [--only=slug] [--target=en|zh]
@@ -114,6 +116,19 @@ function needsTr(s, target) {
   if (!t.trim()) return false;
   if (target === "en") return CJK_ONE.test(t);
   return !CJK_ONE.test(t) && /[A-Za-z]/.test(t);
+}
+/* 「整段都是另一种语言」的段落数 —— 这些段落必须翻掉。
+   判断依据是段落级的文字占比：中文句子里夹一个 Cloudflare 不算外语段落，
+   但整段英文写成的段落，中文版里就必须变成中文。
+   用它代替原来的「整篇字符占比」闸门：行内术语本来就该保留，
+   拿整篇比例去卡会把正常的中文文章误判成「没翻成」 */
+function foreignParas(body, fromLang) {
+  return String(body).split(/\n{2,}/).filter(p => {
+    if (!p.trim() || isMediaPara(p)) return false;
+    const { cjk, lat } = counts(p);
+    if (cjk + lat < 4) return false;               /* 纯数字 / 符号 / 图片行 */
+    return fromLang === "en" ? lat / (cjk + lat) > 0.85 : cjk / (cjk + lat) > 0.85;
+  }).length;
 }
 
 /* ---------- 翻译接口：Google 免费公开接口，双域名 + 指数退避 ---------- */
@@ -429,15 +444,15 @@ for (const a of articles) {
   const { meta, body } = parseFM(rawSrc);
   const hash = sha1(rawSrc);
   const srcLang = detectLang(meta, body);
-  const otherLang = srcLang === "zh" ? "en" : "zh";
-  /* 中英混排：另一种语言在正文里占到 15% 以上。
-     这种稿子两个版本都要生成 —— 中文界面读 index.zh.md（英文段落已翻），
-     英文界面读 index.en.md（中文段落已翻），谁都不用等浏览器机翻。
-     纯中文/纯英文则不重复生成「自己这个语言」的版本，避免一堆同义文件 */
-  const mixed = langFrac(body, otherLang) >= 0.15;
-  let targets = ONLY_TARGET ? [ONLY_TARGET] : [otherLang];
-  if (mixed && (!ONLY_TARGET || ONLY_TARGET === srcLang)) targets.push(srcLang);
-  targets = [...new Set(targets)].filter(t => t !== srcLang || mixed);
+  const srcTags = Array.isArray(meta.tags) ? meta.tags
+    : (meta.tags ? String(meta.tags).split(/[,，]/).map(x => x.trim()).filter(Boolean) : []);
+  /* 不管原文是什么语言，每篇都产出 index.en.md + index.zh.md 两份：
+     - 另一种语言的版本：整篇翻过去；
+     - 原文语言那一份：纯中文 / 纯英文时直接落成规范副本（不花接口额度），
+       中英混排时把夹着的另一种语言也翻掉。
+     访客切到哪个语言，读的都是已经翻好的那一份，不会再出现「原文兜底 + 临时机翻」 */
+  let targets = ONLY_TARGET ? [ONLY_TARGET] : ["en", "zh"];
+  targets = [...new Set(targets)].filter(t => t === "en" || t === "zh");
   if (!targets.length) continue;
 
   for (const target of targets) {
@@ -445,6 +460,10 @@ for (const a of articles) {
     /* 这个方向要「翻掉」的语言 */
     const fromLang = target === "en" ? "zh" : "en";
     const fromFrac = langFrac(body, fromLang);
+    /* 这一份要翻的「外语段落」有几段（段落级判定，行内术语不算） */
+    const fromParas = foreignParas(body, fromLang);
+    /* 原文语言那一份、且没有任何外语段落 → 直接落副本，一次接口都不用打 */
+    const isCopy = target === srcLang && fromParas === 0;
     const relDst = dst.slice(root.length + 1);
 
     /* 已有译文：人工写的别动，自动生成的看哈希与语言体检 */
@@ -468,11 +487,11 @@ for (const a of articles) {
           console.log(`::warning::${msg}${FORCE ? " —— 即使加 --force 也不覆盖；确实要重译就删掉这个文件，或补一行 auto: true" : ""}`);
           skipped++; continue;
         }
-        /* 语言体检：文件在、哈希也对，但正文里「该翻掉的语言」还占大头 →
+        /* 语言体检：文件在、哈希也对，但「该翻掉的段落」一段都没少 →
            上一次翻译其实失败了（旧脚本会写出这种半成品）。必须重翻，
-           否则网站会把中文当英文版用，而且永远不再更新。 */
-        const badLang = target !== srcLang && fromFrac >= 0.15
-          && langFrac(prevBody, fromLang) > Math.max(0.06, fromFrac * 0.5);
+           否则网站会把原文当译文用，而且永远不再更新。
+           副本文件（原文语言那份）没有外语段落，天然不触发 */
+        const badLang = fromParas > 0 && foreignParas(prevBody, fromLang) >= fromParas;
         if (!FORCE && prev.srchash === hash && !badLang && sameImgs(body, prevBody)) {
           console.log(`= 跳过（未改动）${relDst}`);
           skipped++; continue;
@@ -482,27 +501,35 @@ for (const a of articles) {
       }
     }
 
-    process.stdout.write(`→ 翻译 ${rel}  [${fromLang} → ${target}] ... `);
+    process.stdout.write(`→ ${isCopy ? "落库" : "翻译"} ${rel}  [${isCopy ? "原文" : fromLang + " → " + target}] ... `);
     const t0 = Date.now();
     try {
-      const title = await trShort(meta.title || a.slug, target);
-      const desc = meta.desc ? await trShort(meta.desc, target) : "";
-      const tags = Array.isArray(meta.tags) ? meta.tags
-        : (meta.tags ? String(meta.tags).split(/[,，]/).map(x => x.trim()).filter(Boolean) : []);
-      const outTags = [];
-      for (const tg of tags) outTags.push(await trShort(tg, target));
-      const outBody = await trBody(body, target);
+      let title, desc, outTags, outBody;
+      if (isCopy) {
+        /* 原文语言那一份：内容已经是目标语言，不需要任何翻译请求，
+           直接落一份带 auto/srcHash 的规范文件，让两个语言都「有文件可读」 */
+        title = meta.title || a.slug;
+        desc = meta.desc || "";
+        outTags = srcTags;
+        outBody = body;
+      } else {
+        title = await trShort(meta.title || a.slug, target);
+        desc = meta.desc ? await trShort(meta.desc, target) : "";
+        outTags = [];
+        for (const tg of srcTags) outTags.push(await trShort(tg, target));
+        outBody = await trBody(body, target);
 
-      /* 质量闸门：接口被限流时 trText 会「保留原文」降级，整篇一个字都没翻，
-         但下面照样会写出一个格式完好的译文文件 —— 那份文件一旦落库就会
-         永远「跳过（未改动）」，线上一直显示原文。所以先体检再落盘。
-         判据是「该翻掉的语言」有没有真的变少（en 版看中文残留，zh 版看英文残留） */
-      const outFrac = langFrac(outBody, fromLang);
-      if (fromFrac >= 0.15 && outFrac > Math.max(0.06, fromFrac * 0.5)) {
-        throw new Error(`译后正文仍有 ${(outFrac * 100).toFixed(0)}% 是 ${fromLang}（原文 ${(fromFrac * 100).toFixed(0)}%），翻译没生效`);
-      }
-      if (needsTr(meta.title || "", target) && langFrac(title, fromLang) > Math.max(0.15, fromFrac * 0.6)) {
-        throw new Error("标题没翻成，不写文件");
+        /* 质量闸门：接口被限流时 trText 会「保留原文」降级，整篇一个字都没翻，
+           但下面照样会写出一个格式完好的译文文件 —— 那份文件一旦落库就会
+           永远「跳过（未改动）」，线上一直显示原文。所以先体检再落盘。
+           判据是「整段都是另一种语言」的段落有没有翻掉（行内术语保留属正常） */
+        const outParas = foreignParas(outBody, fromLang);
+        if (outParas > 0) {
+          throw new Error(`译后仍有 ${outParas} 段是 ${fromLang}（原文 ${fromParas} 段），翻译没生效`);
+        }
+        if (needsTr(meta.title || "", target) && langFrac(title, fromLang) > Math.max(0.15, fromFrac * 0.6)) {
+          throw new Error("标题没翻成，不写文件");
+        }
       }
 
       const fm = [
