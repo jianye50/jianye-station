@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-06T09:16:42.491Z",
+  "generated": "2026-11-06T10:07:35.483Z",
   "posts": [
     {
       "slug": "BetterGI 更好的原神",
@@ -78,6 +78,14 @@
       "minutes": 7,
       "cover": "cover.png",
       "bg": "cover.png",
+      "mdZh": "blog/one-post-two-languages/index.zh.md",
+      "titleZh": "一篇文章，两种语言",
+      "descZh": "用您思考的语言进行写作，让页面与读者见面，无论他们身在何处。这个博客如何决定翻译什么，三个引擎中的哪一个执行工作，以及为什么带有方向后缀的缓存键是功能和麻烦之间的区别。",
+      "tagsZh": [
+        "写作",
+        "翻译",
+        "网络"
+      ],
       "imgs": {
         "cover.png": "blog/thumbs/one-post-two-languages-i0.webp"
       },
