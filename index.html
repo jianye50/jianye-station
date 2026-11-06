@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
-<title></title>
-<meta name="description" content="">
+<title>鉴业の小站 · Jianye's Corner</title>
+<!-- 默认文案兜底：profile.txt 里的站名/描述读到后会覆盖这些值；
+     配置缺失或未到达时，标签页标题与 SEO/分享卡片也不会是空白 -->
+<meta name="description" content="记录拍过的照片、写下的文字，以及正在做的小东西。Photos, words, and little things I build.">
 <!-- 站名 / 描述 / 图标（favicon）都由 profile.txt 配置，JS 启动后填到这里 -->
 <link rel="apple-touch-icon" href="icon.png">
 <!-- 移动端地址栏配色（站点固定深色） -->
@@ -71,9 +73,9 @@
 </script>
 <!-- 分享卡片预览（og 内容同样由 profile.txt 配置后回填） -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="">
-<meta property="og:title" content="">
-<meta property="og:description" content="">
+<meta property="og:site_name" content="鉴业の小站 · Jianye's Corner">
+<meta property="og:title" content="鉴业の小站 · Jianye's Corner">
+<meta property="og:description" content="记录拍过的照片、写下的文字，以及正在做的小东西。">
 <meta property="og:url" content="https://aimjianye.top/">
 <meta property="og:image" content="">
 <meta property="og:locale" content="zh_CN">
@@ -1445,7 +1447,7 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 .post-body .md-gallery.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .post-body .md-gallery.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .post-body .md-gallery img{
-  width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;margin:0;overflow:hidden;min-width:0;overflow:hidden;min-width:0;
+  width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;margin:0;overflow:hidden;min-width:0;
   border-radius:14px;border:1px solid var(--card-border);background:var(--img-placeholder);
 }
 /* ---------- 提示块：> [!TIP] ---------- */
@@ -1506,6 +1508,7 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 .proj .ic{
   width:42px;height:42px;border-radius:12px;margin-bottom:14px;
   display:grid;place-items:center;font-size:19px;color:#fff;
+  overflow:hidden;   /* 配置里的图标列写歪了（塞了长文本）也别把卡片撑破 */
 }
 .proj h4{font-size:15.5px;font-weight:700;margin-bottom:6px}
 .proj p{font-size:13px;color:var(--text-2);line-height:1.65;margin:0}
@@ -1624,6 +1627,9 @@ html:not(.jy-go) .hero-inner{animation:none}
     </header>
   </section>
 </main>
+
+<!-- 页脚：文案由 JS 按当前语言写入（见 route 里的 paintFooter）；这里是默认中文兜底 -->
+<footer id="siteFooter">© 2026 Jianye · 用心血手写</footer>
 
 <!-- ============ 灯箱 ============ -->
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lbCount">
@@ -2043,7 +2049,7 @@ let photosStatus="loading"; // loading | ready | error
 /* ---------- 国际化 ---------- */
 const I18N={
   zh:{
-    brand:"",   /* 站名来自 profile.txt 的「站名」，读到后回填 */
+    brand:"鉴业の小站",   /* 默认站名；profile.txt 的「站名」读到后覆盖，配置缺失时也有像样的标题 */
     nav:{home:"首页",gallery:"相册",blog:"博客",about:"关于"},
     langTip:"切换到英文",
     hero:{badge:"",sub:"",read:"浏览博客",aboutBtn:"关于我",hint:"向下浏览"},   /* 徽章/描述来自 profile.txt */
@@ -2112,7 +2118,7 @@ const I18N={
     footer:"© 2026 Jianye · 用心血手写"
   },
   en:{
-    brand:"",   /* Site name from profile.txt */
+    brand:"Jianye's Corner",
     nav:{home:"Home",gallery:"Albums",blog:"Blog",about:"About"},
     langTip:"Switch to Chinese",
     hero:{badge:"",sub:"",read:"Browse Blog",aboutBtn:"About Me",hint:"Scroll down"},   /* badge/sub from profile.txt */
@@ -2494,10 +2500,13 @@ function promoteMotion(p,tile,autoplay){
 function mediaTileTag(p,i){
   if(p.type==="video"){
     /* #t=0.1：让浏览器去抓第 0.1 秒的画面当封面。
-       只写 preload="metadata" 时，不少浏览器（尤其 iOS Safari）只显示一片黑 */
-    const vsrc=p.thumb||p.src;
+       只写 preload="metadata" 时，不少浏览器（尤其 iOS Safari）只显示一片黑。
+       thumb 若是图片（构建期生成的海报帧），只能当 poster 用 —— 拼进 src 会让
+       <video> 去加载一张图片，直接触发 onerror 黑块 */
+    const vsrc=p.src;
     const src=vsrc.indexOf("#")<0?vsrc+"#t=0.1":vsrc;
-    return `<video src="${esc(src)}" preload="metadata" muted playsinline
+    const poster=(p.thumb&&!VID_RE.test(p.thumb))?` poster="${esc(p.thumb)}"`:"";
+    return `<video src="${esc(src)}"${poster} preload="metadata" muted playsinline
       onerror="this.style.display='none'"></video>`;
   }
   const src=p.thumb||p.src;
@@ -2939,6 +2948,9 @@ function closeLb(){
   lbFocus=null;
 }
 function stepLb(d){
+  /* 只有一张时没有别的可切：箭头已隐藏，但键盘左右键还是会到这里 ——
+     不拦住的话每次按键都整张重载（视频尤其会从头黑一下） */
+  if(lbItems.length<2)return;
   lbAnimDir=d;                       /* 记下切换方向，setLbMedia 里据此播「从左/右滑入」过渡 */
   openLb(lbItems,lbIndex+d,lbGrid);
 }
@@ -2955,7 +2967,6 @@ function renderHome(){
   <section class="view">
     <header class="hero${quiet?" quiet":""}">
       ${SITE.bg?`<img class="hero-img" src="${esc(SITE.bg)}"
-           sizes="100vw"
            alt="" fetchpriority="high" decoding="async" onerror="this.remove()">`:/* 没配背景 → 用 CSS 里的 --hero-fallback 渐变兜底 */""}
       <div class="wrap hero-inner">
         ${t.hero.badge?`<span class="hero-badge"><span class="pulse"></span>${esc(t.hero.badge)}</span>`:""}
@@ -4152,7 +4163,11 @@ async function trViaProxy(text,dir){
       await new Promise(s=>setTimeout(s,700+Math.random()*500));
       r=await once();
     }
-    if(r.status===404){trProxyDead=true;const e=new Error("no proxy");e.skip=true;throw e;}
+    if(r.status===404||r.status===405||r.status===501){
+      /* 404/405/501 = 这个环境根本没部署翻译函数（纯静态托管 / 本地预览）：
+         永久跳过这条通道，别每次渲染都白撞一遍 */
+      trProxyDead=true;const e=new Error("no proxy");e.skip=true;throw e;
+    }
     if(!r.ok)throw new Error("proxy "+r.status);
     const j=await r.json();
     if(!j||typeof j.text!=="string"||!j.text.trim())throw new Error("proxy bad");
@@ -4990,6 +5005,11 @@ function glideTo(y,dur){
   })(t0);
 }
 function route(){
+  /* 切换路由（含浏览器后退 / 前进）时灯箱还开着 → 先关掉。
+     实测复现：在图库开灯箱后按浏览器返回键，背景已换成上一页，
+     灯箱却浮在新页面之上，还锁着滚动。 */
+  const lbNow=$("#lightbox");
+  if(lbNow&&lbNow.classList.contains("open"))closeLb();
   const gen=++routeGen;
   window.__JY_RENDERED=true;   /* 标记：首屏已经真正渲染过（启动流程靠它判断要不要补渲染） */
   const hash=location.hash.replace(/^#\/?/,"");
@@ -5027,6 +5047,9 @@ function route(){
     el.classList.toggle("active",on);
     if(on)el.setAttribute("aria-current","page"); else el.removeAttribute("aria-current");
   });
+  /* 页脚文案跟随语言（#siteFooter 在所有视图之外，静态默认中文兜底） */
+  const ft=$("#siteFooter");
+  if(ft)ft.textContent=T().footer;
   /* 每页一个独立标题：浏览器历史记录能区分「博客 / 相册 / 关于」
      （文章页等正文加载后会覆盖成文章标题，见 renderPost） */
   document.title=(active==="home")?T().brand:(T().nav[active]+" · "+T().brand);
@@ -5167,9 +5190,11 @@ document.addEventListener("keydown",e=>{
     else if(e.key==="ArrowLeft")stepLb(-1);
     else if(e.key==="ArrowRight")stepLb(1);
     else if(e.key==="Tab"){
-      /* 焦点圈定：Tab 只在灯箱内可见的按钮间循环，别跑到被遮住的背景页面里 */
+      /* 焦点圈定：Tab 只在灯箱内可见的按钮间循环，别跑到被遮住的背景页面里。
+         不能用 offsetParent 判断 —— 放大态（lb-zoom）下按钮是 position:fixed，
+         offsetParent 恒为 null，会把所有按钮误判成不可见、焦点圈定整个失效 */
       const btns=Array.from($("#lightbox").querySelectorAll("button"))
-        .filter(b=>b.offsetParent!==null);
+        .filter(b=>(typeof b.getClientRects==="function")?b.getClientRects().length>0:b.offsetParent!==null);
       if(btns.length){
         const first=btns[0],last=btns[btns.length-1];
         if(!$("#lightbox").contains(document.activeElement)){e.preventDefault();first.focus();}
@@ -6237,6 +6262,10 @@ input[type=range].mp-range::-moz-range-thumb{
     else if(st.kind==="search")tab="search";
     if(!modeUserSet&&typeof st.mode==="number"&&st.mode>=0&&st.mode<=2)mode=st.mode;
     paintMode();
+    /* 分类不管恢复得成不成，标签高亮与搜索栏提示都得跟上：
+       之前只在「有上次播放的曲目」分支里才调 setTabUI，没曲目时界面停在默认
+       「酷狗歌单」高亮，实际 tab 已是 search，点列表现象对不上 */
+    setTabUI();
     if(typeof st.vol==="number"&&st.vol>=0&&st.vol<=1){ audio.volume=st.vol; volEl.value=String(Math.round(st.vol*100)); }
     if(!st.track||!st.track.name){ restored=true; renderList(); paintSub(); return; }
     /* 对应的列表还没读好（酷狗要读云端/快照）就先挂起，读好了再恢复 */
@@ -6381,10 +6410,12 @@ input[type=range].mp-range::-moz-range-thumb{
     setPanel(false);
   },true);
   document.addEventListener("keydown",e=>{
-    if(e.key==="Escape"&&wrap.classList.contains("open")){
-      setPanel(false);
-      try{ musicBtn.focus(); }catch(err){}   /* 焦点还给触发按钮，键盘用户不迷路 */
-    }
+    if(e.key!=="Escape"||!wrap.classList.contains("open"))return;
+    /* 灯箱还开着时 Esc 是灯箱的快捷键，别把歌单面板也顺手关掉 */
+    const lbNow=document.getElementById("lightbox");
+    if(lbNow&&lbNow.classList.contains("open"))return;
+    setPanel(false);
+    try{ musicBtn.focus(); }catch(err){}   /* 焦点还给触发按钮，键盘用户不迷路 */
   });
   ppBtn.addEventListener("click",toggle);
   nextBtn.addEventListener("click",()=>step(1));
