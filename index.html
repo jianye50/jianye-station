@@ -2042,6 +2042,7 @@ const I18N={
       clearTip:"清空搜索",
       kbdTip:"按 / 快速搜索",
       translating:"正在翻译成英文…",
+      translatingZh:"正在翻译成中文…",
       machineTrans:"机器翻译",
       trFail:"自动翻译暂不可用",
       trRetry:"重试"
@@ -2109,7 +2110,8 @@ const I18N={
       noResult:q=>`No posts match “${q}”. Try another keyword.`,
       clearTip:"Clear search",
       kbdTip:"Press / to search",
-      translating:"Translating…",
+      translating:"Translating into English…",
+      translatingZh:"Translating into Chinese…",
       machineTrans:"Machine-translated",
       trFail:"Auto-translation unavailable",
       trRetry:"Retry"
@@ -4212,15 +4214,17 @@ async function translateMarkdown(md,dir){
   const lines=String(md).split(/\r?\n/);
   const out=lines.slice();
   const jobs=[];
+  const tableRows=[];      /* 表格行：整行送翻会把竖线结构弄坏，得按格拆开翻 */
   let inCode=false;
   for(let i=0;i<lines.length;i++){
     const line=lines[i];
     if(/^\s*(```|~~~)/.test(line)){inCode=!inCode;out[i]=line;continue;}
     if(inCode){out[i]=line;continue;}
     if(!line.trim()
-      ||/^\s*(<|<!--|\||!\[)/.test(line)
+      ||/^\s*(<|<!--|!\[)/.test(line)
       ||/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)
       ||!trNeed(line,dir)){ out[i]=line; continue; }
+    if(/^\s*\|/.test(line)){ tableRows.push({i,line}); continue; }
     jobs.push({i,line});
   }
   /* 先按行分类再分组：只有「连续的纯段落行」才打包合翻；
@@ -4258,10 +4262,29 @@ async function translateMarkdown(md,dir){
       await byLine(g);
     }
   });
+  await trPool(tableRows,2,async r=>{ out[r.i]=await translateTableRow(r.line,dir); });
   return out.join("\n");
 }
-/* 翻译标签数组：带中文的标签先合并成一次请求（换行分隔、按行对齐），
-   行数对不上（不同引擎对换行的处理不一样）就逐个翻，保证标签不会整组卡在中文 */
+/* 表格行翻译：把 `| a | b |` 拆成格子逐格翻，再按原顺序拼回去。
+   整行送翻最省事，但竖线在译文里会被吞掉或重复，表格直接塌；
+   分隔行（| --- | :--: |）没有可翻文字，trNeed 已在上游挡掉。
+   单格译文里若冒出竖线，这一格保留原文 —— 宁可一格是原文，不能让整行错列。 */
+async function translateTableRow(line,dir){
+  const m=String(line).match(/^(\s*\|)([\s\S]*)(\|\s*)$/);
+  if(!m)return line;
+  const cells=m[2].split("|");
+  const idxs=[];
+  cells.forEach((c,i)=>{ if(trNeed(c,dir))idxs.push(i); });
+  if(!idxs.length)return line;
+  await trPool(idxs,3,async i=>{
+    const pad=cells[i].match(/^(\s*)([\s\S]*?)(\s*)$/);
+    if(!pad)return;
+    const t=await translateLine(pad[2],dir);
+    if(!t||t.includes("|"))return;              /* 译坏了就留原文，保住列结构 */
+    cells[i]=pad[1]+t+pad[3];
+  });
+  return m[1]+cells.join("|")+m[3];
+}
 /* 翻译标签数组：目标语言里「待翻」的标签先合并成一次请求（换行分隔、按行对齐），
    行数对不上（不同引擎对换行的处理不一样）就逐个翻，保证标签不会整组卡在原文 */
 async function translateTags(tags,dir){
@@ -4699,23 +4722,31 @@ async function renderPost(slug,gen){
     </div>
   </section>`;
   wirePostMedia(slug);
-  /* 原文语言按真实内容判定（标题/摘要/正文里有没有 CJK），翻译方向随之确定 */
-  const srcLang=(hasCJKText(body)||hasCJKText(title)||hasCJKText(desc))?"zh":"en";
+  /* 翻译方向只由「访客界面语言」决定，不再看文章整体是什么语言。
+     以前是「正文里出现过中文就当整篇是中文」，中英混排的文章会被判成 zh：
+     中文界面下 lang===srcLang，整篇一次都不翻，英文段落永远留在英文界面里；
+     英文界面下方向变 zen，英文段落又被 trNeed 判为「已是目标语言」跳过。
+     现在按段落跑 trNeed：已经是访客语言的段落原样保留，另一种语言的段落才送翻，
+     中英混排的稿子因此能各自翻成访客要读的那一半。 */
+  const trDir=lang==="en"?"zen":"ezh";
+  const needTr=trNeed(title,trDir)||trNeed(desc,trDir)
+    ||(tags||[]).some(x=>trNeed(x,trDir))
+    ||String(body).split(/\r?\n/).some(l=>trNeed(l,trDir));
   /* 界面语言与原文不同 + 没拿到静态另一语言版：正文先按原文秒出，
      后台机器翻译，完成后无感替换（失败保留原文）。
      已经拿到静态版就绝不再机翻——那份就是权威译文，
      里面残留的另一种语言只是图片文件名、代码注释之类不该翻的内容 */
-  if(!usedAlt&&lang!==srcLang&&(title||desc||body.trim())){
-    const trDir=srcLang==="zh"?"zen":"ezh";
+  if(!usedAlt&&needTr&&(title||desc||body.trim())){
+    const trLabel=trDir==="ezh"?t.blog.translatingZh:t.blog.translating;
     const curGen=gen;
     /* 失败后可点「重试」：同一个 run 复用，不必刷新页面 */
     const run=()=>{
       const old=document.getElementById("trNote");
-      if(old)old.innerHTML=`<span class="tr-spin"></span>${esc(t.blog.translating)}`;
+      if(old)old.innerHTML=`<span class="tr-spin"></span>${esc(trLabel)}`;
       else{
         const pm=document.querySelector(".post-meta");
         if(pm)pm.insertAdjacentHTML("beforeend",
-          `<span class="tr-note" id="trNote"><span class="tr-spin"></span>${esc(t.blog.translating)}</span>`);
+          `<span class="tr-note" id="trNote"><span class="tr-spin"></span>${esc(trLabel)}</span>`);
       }
       /* 兜底：翻译接口被墙 / 限流时请求可能长时间挂着不回，
          15 秒还没结果就给「重试」，别让人一直对着 Translating… 干等 */
