@@ -1,6 +1,6 @@
 ---
 title: "Put your blog into git: GitHub + Cloudflare Pages combination"
-desc: The code is stored on GitHub, construction and distribution are handed over to Cloudflare, and it goes online with one push. Each link of this link, the real boundaries of the free quota, the four most common pitfalls of static sites, and when it will be insufficient.
+desc: The code is stored on GitHub, construction and distribution are handed over to Cloudflare, and it goes online with one push. Each link of this link, the real boundaries of the free quota, the four most common pitfalls of static sites, and when it will not be enough.
 tags: ["Build a website","Cloudflare","Tutorial"]
 date: 2026-11-06
 minutes: 9
@@ -9,7 +9,7 @@ background: 1745835951378.jpg
 lang: en
 auto: true
 srcHash: 083bbf02ea00c33e
-translatedAt: 2026-11-06T11:32:31.412Z
+translatedAt: 2026-11-06T11:38:04.614Z
 ---
 The page you are reading is the product of a `git push`.
 
@@ -109,7 +109,7 @@ Writing down the number is more useful than just saying "free":
 | --- | --- |
 | Number of builds | 500 times per month, only running 1 at a time |
 | Single build timeout | 20 minutes |
-| Number of site files | 20,000 |
+| Number of site files | 20,000 pieces |
 | Single file size | 25 MiB |
 | bandwidth/request | No limit |
 | Custom domain name | 100 pcs per item |
@@ -118,7 +118,7 @@ Writing down the number is more useful than just saying "free":
 500 times spreads out to 16 times per day, which is more than enough for a blogger - unless you submit once every time you press save. What you really need to pay attention to is the **single file size of 25 MiB**: this upper limit determines that it cannot be used as a picture bed or video site. A ten-minute screen recording can be enough.
 
 > [!WARNING]
-> If a single file exceeds 25 MiB, the build will directly fail. The same applies if the total number of files exceeds 20,000. Videos and large compressed files should be placed in R2 or object storage, and only links should be left on the page.
+> If a single file exceeds 25 MiB, the build will fail directly. The same applies if the total number of files exceeds 20,000. Videos and large compressed files should be placed in R2 or object storage, and only links should be left on the page.
 
 ## Six or four pits, almost everyone has stepped on them
 
@@ -141,7 +141,7 @@ While native Windows does not differentiate between `Logo.PNG` and `logo.png`, C
 The Chinese path can be used, but the encoding must be consistent before and after. Written locally `我的图.png`, it may become URL-encoded after construction, and the reference will not change accordingly, resulting in 404. The easiest way to save trouble is to always use lowercase English letters and hyphens in the file names.
 
 > [!IMPORTANT]
-> If the build fails, don’t rush to change the code. Look at the last twenty lines in the deployment log. Most of the time it's because the Node version is wrong, or `package-lock.json` and `package.json` are out of sync.
+> If the build fails, don’t rush to change the code. Check the last twenty lines in the deployment log. Most of the time it's because the Node version is wrong, or `package-lock.json` and `package.json` are out of sync.
 
 ## 7. Three underrated functions
 

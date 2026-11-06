@@ -9,7 +9,7 @@ background: 1738905943689.jpg
 lang: zh
 auto: true
 srcHash: 87e0b6d3de797469
-translatedAt: 2026-11-06T11:32:02.971Z
+translatedAt: 2026-11-06T11:35:59.890Z
 ---
 ![ScreenShot_2026-10-24_145824_539](ScreenShot_2026-10-24_145824_539.png)
 项目在线地址：[https://jianye.pages.dev/coffee-shop-3d](https://jianye.pages.dev/coffee-shop-3d)

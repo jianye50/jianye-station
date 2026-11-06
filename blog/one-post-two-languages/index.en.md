@@ -9,7 +9,7 @@ background: cover.png
 lang: en
 auto: true
 srcHash: f9499b92528d3d0a
-translatedAt: 2026-11-06T11:32:34.501Z
+translatedAt: 2026-11-06T11:38:13.110Z
 ---
 I write in Chinese. Most of what I read about the things I write about is in English. For years that mismatch lived in my head and never reached the page — I would publish an article, a friend abroad would open it, see a wall of characters, and close the tab politely.
 

@@ -9,7 +9,7 @@ background: 1745762684683.jpg
 lang: en
 auto: true
 srcHash: 32e1ceb6aacd30d7
-translatedAt: 2026-11-06T11:32:33.461Z
+translatedAt: 2026-11-06T11:38:09.974Z
 ---
 ```
 C:\ProgramData\Microsoft\Windows Defender\Scans\History

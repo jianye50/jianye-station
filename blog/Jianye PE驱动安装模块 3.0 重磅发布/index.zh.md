@@ -9,7 +9,7 @@ background: 1745835951264.jpg
 lang: zh
 auto: true
 srcHash: 9aa06873f3699a1e
-translatedAt: 2026-11-06T11:32:22.192Z
+translatedAt: 2026-11-06T11:37:28.912Z
 ---
 ### 鉴业 PE 驱动安装模块 3.0 核心优势对比表
 

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-06T11:33:23.015Z",
+  "generated": "2026-11-06T11:39:12.760Z",
   "posts": [
     {
       "slug": "BetterGI 更好的原神",
@@ -57,7 +57,7 @@
       "bg": "1745835951378.jpg",
       "mdEn": "blog/Pages 建站指南/index.en.md",
       "titleEn": "Put your blog into git: GitHub + Cloudflare Pages combination",
-      "descEn": "The code is stored on GitHub, construction and distribution are handed over to Cloudflare, and it goes online with one push. Each link of this link, the real boundaries of the free quota, the four most common pitfalls of static sites, and when it will be insufficient.",
+      "descEn": "The code is stored on GitHub, construction and distribution are handed over to Cloudflare, and it goes online with one push. Each link of this link, the real boundaries of the free quota, the four most common pitfalls of static sites, and when it will not be enough.",
       "tagsEn": [
         "Build a website",
         "Cloudflare",

@@ -9,12 +9,12 @@ background: cover.png
 lang: en
 auto: true
 srcHash: b6821864b656ad23
-translatedAt: 2026-11-06T11:32:20.920Z
+translatedAt: 2026-11-06T11:37:24.138Z
 ---
 
 The most tiring part of Genshin Impact is not in the abyss, but in the actions that must be done every day without any fun: walking over, pressing F, clicking dialogue, collecting food, and handing in tasks. It adds up to less than half an hour, but you have to spend that half hour every day.
 
-It is this segment that BetterGI wants to solve. It does not modify the game, nor does it draw cards for you. It just sits in front of the screen, looks at the screen, and then presses the keys for you.
+It is this segment that BetterGI wants to solve. It doesn't modify the game, nor does it draw cards for you. It just sits in front of the screen, looks at the screen, and then presses the keys for you.
 
 ## 1. How does it "see" the game?
 
@@ -24,26 +24,26 @@ This determines what it can do and why it sometimes fails, so let’s be clear:
 - **Recognition only** - built-in ONNXRuntime, uses YOLOv8 to recognize icons, and uses OCR to recognize text;
 - **Keyboard and mouse only** - Send operations through simulated input.
 
-No processes are injected, game files are not modified, and game memory is not read. This boundary is not only the foundation for it to confidently say "I'm just watching a screen", but it is also its fragile point: **if the picture changes, it becomes blind**. If the resolution is wrong, the filter is turned on, the brightness is adjusted, or the FPS overlay blocks a corner, the recognition will fail.
+No processes are injected, game files are not modified, and game memory is not read. This boundary is not only the foundation for it to confidently say "I'm just watching a screen", but also its vulnerability: **if the picture changes, it becomes blind**. If the resolution is wrong, the filter is on, the brightness is adjusted, or the FPS overlay blocks a corner, the recognition will fail.
 
 > [!NOTE]
 > This is also its character - do it if you understand it, stop if you don't understand it. So don’t expect it to be as “absolutely accurate” as a plug-in. It is essentially an assistant with fast hands and good eyesight.
 
 ## 2. What can it do for you?
 
-The number of functions is a bit exaggerated. Let’s pick the ones that are really used every day:
+There are so many functions that it’s a bit exaggerated. Let’s pick the ones that are really used every day:
 
 | Function | what to do | premise |
 | --- | --- | --- |
 | automatic picking | Identify the name of the dropped object, press F automatically, and set the black and white list | OCR is normal, don’t talk to NPC by mistake |
 | automatic plot | Quickly click on the conversation, automatically select options, and skip the black screen | Simplified Chinese |
-| automatic fishing | Fully automatic bait cutting, rod throwing, rod lifting and rod pulling | AI recognition, need to stabilize the picture |
+| Automatic fishing | Fully automatic bait cutting, rod throwing, rod lifting and rod pulling | AI recognition, need to stabilize the picture |
 | Automatic Summoning of the Seven Saints | Character invitations, weekly guests, etc., customizable card decks | Requires player level and deck |
 | Auto battle/secret realm | Identify the team and automatically play according to the strategy | Secret Realm is based on Zhongli |
 | Automatic logging | Hang up after equipping "Wang Shu Ruiyou" | Need to equip props first |
 | Map tracking | Rely on mini-map for positioning, automatic collection and hoeing | route file |
 | Daily finishing | Receive daily commission rewards and re-dispatch | Triggered when talking to Catherine |
-| Quick transfer/automatic cooking/one-click enhancement | Automatic confirmation of teleport points; perfect area for cooking cards; one-click enhancement of holy relics | — |
+| Quick transfer/automatic cooking/one-click enhancement | Teleportation point is automatically confirmed; cooking card perfect area; holy relics are strengthened with one click | — |
 | Keyboard and mouse recording | Record an operation and play it back | — |
 
 There are basically two ways to use it: one is the "hang-up type", such as fishing, brushing, and logging, and you can do other things when you click it; the other is the "hand-saving type", such as picking up, plotting, and teleporting. You are still playing, but you don't have to press a bunch of repeated keys.
@@ -67,7 +67,7 @@ There are generally two types of packages available on GitHub, and there is no d
 | `BetterGI.Install.0.66.0.exe` | Offline installation version, it will be updated automatically after installation. | Most people are too lazy to decompress |
 | `BetterGI_v0.66.0.7z` | Portable version, unzip and run `BetterGI.exe` | Don’t want to install anything, or want to insert a USB flash drive |
 
-0.66 is the version released on September 26, 2026. The installation package is about 481 MB and the portable package is about 444 MB - the size mainly comes from the built-in recognition model. It is in a period of high-frequency iteration. If you can release new ones, don’t release the old ones.
+0.66 is the version released on September 26, 2026. The installation package is about 481 MB and the portable package is about 444 MB - the size mainly comes from the built-in recognition model. It is in a period of high-frequency iteration. If you can release new ones, don’t release old ones.
 
 The download page of the official website also has several domestic images (Small Aircraft Network Disk, Feishu, Tencent CDN, Cloudflare CDN), as well as an online installation package `BetterGI.OnlineInst.exe`. When GitHub cannot be pulled, it is easier to use these.
 
@@ -91,7 +91,7 @@ The recommended configuration threshold is "medium image quality and stable 60 f
 
 **The first step is to adjust the game settings correctly. ** The language must be Simplified Chinese (other languages ​​are currently not supported), the resolution is 1920×1080, a full-screen window is acceptable, the brightness remains at default, and all filters are turned off.
 
-**The second step is to click Start. ** Open the BetterGI main interface, click "Start", and it will automatically activate the Genshin Impact window. If you are using **Cloud Genshin Impact**, have multiple Genshin Impact in your computer, or are accustomed to using other launchers, remember to turn off "Start Genshin Impact at the same time" first.
+**The second step is to click Start. ** Open the BetterGI main interface, click "Start", and it will automatically activate the Genshin Impact window. If you are using **Yunshin**, have multiple Genshin Impact on your computer, or are accustomed to using other launchers, remember to turn off "Start Genshin Impact simultaneously" first.
 
 **The third step is to use automatic pickup verification. **Don’t skip this step. Automatic pickup is turned on by default in its "Real-time Mission". Just find a collection station and see if it can press F on its own and see if there is an "Interaction or Pickup" log in the lower left corner. **If it passes, it means that the recognition and analog input are normal, and then turn on other functions. **
 
@@ -115,19 +115,19 @@ There are four ways to take screenshots, all of which are taken on the "Startup"
 
 Someone in the official website FAQ directly asked "Will my account be banned?", and the answer was this:
 
-> Theoretically it will not be blocked. **BetterGI will not make any modifications to game files, read or write game memory, or any other behavior that harms the game itself. It relies solely on visual algorithms and simulation operations. ** But mhy is free, and the user terms clearly state that third-party software/simulation operations are one of the reasons for account ban. The current solution still has the possibility of being detected. I can only say that please use it in a low-key manner and please don’t jump in the face of the official website.
+> Theoretically it will not be blocked. **BetterGI will not make any modifications to game files, read or write game memory, or any other behavior that harms the game itself. It relies solely on visual algorithms and simulation operations. ** But mhy is free, and the user terms clearly state that third-party software/simulation operations are one of the reasons for account ban. The current solution still has the possibility of being detected. I can only say that please use it in a low-key manner and please don’t jump into official circles.
 
 This is a very honest statement, and I don’t intend to tell you the truth. My understanding is: it does not touch the game itself, so the probability of being "technically judged as cheating" is relatively low; but it cannot get around the user agreement, and the final interpretation is not in your hands.
 
-Therefore, it is your own judgment whether to use it and to what extent. If your account is of high value, don’t use it to do anything conspicuous; and don’t post screenshots or tutorials in the official community.
+Therefore, it is your own judgment whether to use it and to what extent. If your account is of high value, don't use it to do anything conspicuous; and don't post screenshots or tutorials in the official community.
 
 ## 8. Is it worth it?
 
 At the time of writing this article, this project has more than 17,000 stars and more than 1,300 forks on GitHub. It is written in C# and is GPL-3.0. If one person maintains it to this scale, it can be said that he is quite capable.
 
-What it really gives is not to "play more content", but to eliminate repetitive work from the game. When you open Genshin Impact, you want to finish the game, watch the plot, and visit Teyvat, instead of going through the daily routine first. Whether it's worth it or not depends on how annoying you are for that half hour every day.
+What it really gives is not to "play more content", but to remove repetitive work from the game. When you open Genshin Impact, you want to finish the game, watch the plot, and visit Teyvat, instead of going through the daily routine first. Whether it's worth it or not depends on how annoying you are for that half hour every day.
 
 > [!TIP]
-> If you encounter problems, first read [Documentation](https://www.bettergi.com/doc.html) and [FAQ](https://www.bettergi.com/faq.html), and then check GitHub Issues. The biggest fear of this kind of project is not bugs, but that no one will ask questions without reading the documentation.
+> If you encounter problems, first read [Documentation](https://www.bettergi.com/doc.html) and [FAQ](https://www.bettergi.com/faq.html), and then check GitHub Issues. The biggest fear in this type of project is not bugs, but the fact that no one will ask questions without reading the documentation.
 
 It's open source, free, and powered by love. If you find it useful, go to GitHub and give it a star, which is more practical than anything else.
