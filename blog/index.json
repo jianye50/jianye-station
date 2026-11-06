@@ -1,6 +1,37 @@
 {
-  "generated": "2026-11-01T14:44:52.237Z",
+  "generated": "2026-11-06T06:40:49.241Z",
   "posts": [
+    {
+      "slug": "BetterGI 更好的原神",
+      "md": "blog/BetterGI 更好的原神/index.md",
+      "imgBase": "blog/BetterGI 更好的原神/",
+      "title": "BetterGI · 更好的原神：把每天那半小时删掉",
+      "desc": "一个开源免费、只靠截图识别和模拟键鼠工作的原神自动化工具。它怎么「看」游戏、能替你做什么、下载哪个包、第一次要调哪几项设置，以及那句必须先说的话——风险它替不了你承担。",
+      "tags": [
+        "原神",
+        "工具",
+        "推荐"
+      ],
+      "date": "2026-11-06",
+      "minutes": 10,
+      "cover": "cover.png",
+      "bg": "cover.png",
+      "mdEn": "blog/BetterGI 更好的原神/index.en.md",
+      "titleEn": "BetterGI · Better Genshin Impact: Delete that half hour every day",
+      "descEn": "An open source and free Genshin Impact automation tool that only relies on screenshot recognition and simulated keyboard and mouse work. How does it \"see\" the game, what can it do for you, which package to download, which settings need to be adjusted for the first time, and what must be said first - it cannot bear the risk for you.",
+      "tagsEn": [
+        "Genshin Impact",
+        "tool",
+        "recommend"
+      ],
+      "imgs": {
+        "cover.png": "blog/thumbs/BetterGI_更好的原神-i0.webp",
+        "site-download.png": "blog/thumbs/BetterGI_更好的原神-i3.webp",
+        "site-home.png": "blog/thumbs/BetterGI_更好的原神-i4.webp"
+      },
+      "coverThumb": "blog/thumbs/BetterGI_更好的原神-cover.webp",
+      "bgThumb": "blog/thumbs/BetterGI_更好的原神-bg.webp"
+    },
     {
       "slug": "编辑器2.0更新",
       "md": "blog/编辑器2.0更新/index.md",
