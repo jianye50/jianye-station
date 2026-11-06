@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-06T11:39:12.760Z",
+  "generated": "2026-11-06T12:16:59.402Z",
   "posts": [
     {
       "slug": "BetterGI 更好的原神",
@@ -63,10 +63,18 @@
         "Cloudflare",
         "Tutorial"
       ],
+      "mdZh": "blog/Pages 建站指南/index.zh.md",
+      "titleZh": "把博客放进 git：GitHub + Cloudflare Pages 这套组合",
+      "descZh": "代码存在 GitHub，构建和分发交给 Cloudflare，一次 push 就上线。这条链路的每一环、免费额度的真实边界、静态站最常踩的四个坑，以及它什么时候会不够用。",
+      "tagsZh": [
+        "建站",
+        "Cloudflare",
+        "教程"
+      ],
       "imgs": {
         "1745835951378.jpg": "blog/thumbs/Pages_建站指南-i0.webp",
         "cover.png": "blog/thumbs/Pages_建站指南-i1.webp",
-        "shot-pages.png": "blog/thumbs/Pages_建站指南-i4.webp"
+        "shot-pages.png": "blog/thumbs/Pages_建站指南-i5.webp"
       },
       "coverThumb": "blog/thumbs/Pages_建站指南-cover.webp",
       "bgThumb": "blog/thumbs/Pages_建站指南-bg.webp"
@@ -131,11 +139,19 @@
         "Editor",
         "renew"
       ],
+      "mdZh": "blog/编辑器2.0更新/index.zh.md",
+      "titleZh": "博客编辑器 2.0：文章里终于装得下视频、动图和声音",
+      "descZh": "把编辑器从一个 Markdown 输入框，重做成图文音视一体的写作台。附全部新组件的现场演示，以及这次挖出来的九个问题。",
+      "tagsZh": [
+        "博客",
+        "编辑器",
+        "更新"
+      ],
       "imgs": {
         "cover.png": "blog/thumbs/编辑器2.0更新-i1.webp",
-        "shot-list.png": "blog/thumbs/编辑器2.0更新-i6.webp",
-        "shot-mobile.png": "blog/thumbs/编辑器2.0更新-i7.webp",
-        "shot-post.png": "blog/thumbs/编辑器2.0更新-i8.webp"
+        "shot-list.png": "blog/thumbs/编辑器2.0更新-i7.webp",
+        "shot-mobile.png": "blog/thumbs/编辑器2.0更新-i8.webp",
+        "shot-post.png": "blog/thumbs/编辑器2.0更新-i9.webp"
       },
       "coverThumb": "blog/thumbs/编辑器2.0更新-cover.webp",
       "bgThumb": "blog/thumbs/编辑器2.0更新-bg.webp"
@@ -440,8 +456,15 @@
         "OOBE",
         "Win11"
       ],
+      "mdZh": "blog/Windows11 跳过OOBE命令/index.zh.md",
+      "titleZh": "Windows11 跳过OOBE命令",
+      "descZh": "按下 Shift + F10（部分笔记本需按 Shift + Fn + F10），打开命令提示符。 输入以下命令并回车： start ms-cx…",
+      "tagsZh": [
+        "OOBE",
+        "Win11"
+      ],
       "imgs": {
-        "未来都市绮梦.png": "blog/thumbs/Windows11_跳过OOBE命令-i2.webp"
+        "未来都市绮梦.png": "blog/thumbs/Windows11_跳过OOBE命令-i3.webp"
       },
       "coverThumb": "blog/thumbs/Windows11_跳过OOBE命令-cover.webp",
       "bgThumb": "blog/thumbs/Windows11_跳过OOBE命令-bg.webp"
