@@ -9,7 +9,7 @@ background: Windows 12 概念.jpg
 lang: en
 auto: true
 srcHash: 175a95ca88ecc215
-translatedAt: 2026-11-06T10:11:10.104Z
+translatedAt: 2026-11-06T10:13:40.081Z
 ---
 Finally, my personal blog is officially completed.
 

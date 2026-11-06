@@ -9,7 +9,7 @@ background: dTTcmJH0.jpeg
 lang: en
 auto: true
 srcHash: dba34d6629c09b73
-translatedAt: 2026-11-06T10:11:26.523Z
+translatedAt: 2026-11-06T10:13:43.563Z
 ---
 Execute within Windows PowerShell:
 

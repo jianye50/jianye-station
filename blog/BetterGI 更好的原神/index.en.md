@@ -9,7 +9,7 @@ background: cover.png
 lang: en
 auto: true
 srcHash: b6821864b656ad23
-translatedAt: 2026-11-06T10:09:40.339Z
+translatedAt: 2026-11-06T10:13:17.637Z
 ---
 
 The most tiring part of Genshin Impact is not in the abyss, but in the actions that must be done every day without any fun: walking over, pressing F, clicking dialogue, collecting food, and handing in tasks. It adds up to less than half an hour, but you have to spend that half hour every day.

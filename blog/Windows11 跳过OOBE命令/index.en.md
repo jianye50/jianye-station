@@ -9,7 +9,7 @@ background: 未来都市绮梦.png
 lang: en
 auto: true
 srcHash: 10af621390d31d94
-translatedAt: 2026-11-06T10:10:25.253Z
+translatedAt: 2026-11-06T10:13:29.316Z
 ---
 Press Shift + F10 (Shift + Fn + F10 for some notebooks) to open the command prompt.
 

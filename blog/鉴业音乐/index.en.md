@@ -9,7 +9,7 @@ background: 1739621032672.jpeg
 lang: en
 auto: true
 srcHash: 70acab89b16a2035
-translatedAt: 2026-10-30T13:48:37.996Z
+translatedAt: 2026-11-06T10:14:40.518Z
 ---
 > Project address: [https://jianye.pages.dev/music](https://jianye.pages.dev/music)
 
@@ -65,7 +65,7 @@ The entire page is a single page of HTML+CSS+native JavaScript. **No framework (
 ## 📱Tips for use
 1. Open the link directly to use, **no registration and login required**;
 2. Collections and playback records are only saved in the current browser. If you clear the browser, the data will be lost. Remember to export your favorite music for backup;
-3. The Kugou synchronization function is only available when deployed in an online environment. Directly opening an HTML file locally cannot call the cloud synchronization interface;
+3. The Kugou synchronization function is only available when deployed in an online environment. Opening an HTML file locally cannot call the cloud synchronization interface;
 4. It is recommended to use Chrome, Edge, and Firefox modern browsers. Some of the frosted effects of older browsers will be degraded.
 
 ## 💡Write at the end

@@ -9,7 +9,7 @@ background: 1738905943819.jpeg
 lang: en
 auto: true
 srcHash: 01c16af2cd47a405
-translatedAt: 2026-10-30T13:48:33.652Z
+translatedAt: 2026-11-06T10:14:28.343Z
 ---
 ## Preface
 Remote control software, which we often call remote desktop tools, is a very practical tool whether it is to help family and friends remotely repair computers, work remotely from home, operate servers, or remotely control computers with mobile phones.
@@ -30,11 +30,11 @@ A popular domestic remote tool, free for personal non-commercial use, with stabl
 The old domestic remote control has a complete ecosystem and can be used with a boot stick to achieve remote booting; it supports remote desktop, camera viewing, SSH, and port mapping. The free version has traffic limits, and there are paid enterprise plans. Suitable for operation and maintenance and remote management of home hosts.
 👉 Obtain: [Go to Sunflower official website to download ](https://sunlogin.oray.com/)
 
-### 3. NetEase UU Remote
+### 3. NetEase UU remote
 The remote tool produced by NetEase is free of charge and has no ads. It features ultra-low latency, supports 4K/144 frame transmission, supports Windows / macOS / Android / iOS / TV, supports high-speed file transfer, remote boot, privacy screen, and controller peripheral mapping. It is suitable for remote gaming and office assistance. 👉 Obtain: [Go to UU Remote official website to download ](https://uuyc.163.com/)
 
 ### 4. RustDesk (open source and free)
-Completely open source, self-hosted optional remote desktop software, there is no mandatory cloud, you can build your own relay server, and your privacy is controllable. Cross-platform support for Windows, Mac, Linux, and Android, suitable for technology enthusiasts and programmers.
+Completely open source, self-hosted optional remote desktop software, no mandatory cloud, you can build your own relay server, privacy is controllable. Cross-platform support for Windows, Mac, Linux, and Android, suitable for technology enthusiasts and programmers.
 👉 Get: [Go to RustDesk GitHub / official website](https://rustdesk.com/zh-cn/)
 
 ### 5. AnyViewer

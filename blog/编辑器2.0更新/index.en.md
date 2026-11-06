@@ -9,9 +9,9 @@ background: cover.png
 lang: en
 auto: true
 srcHash: 3370556f27a997c9
-translatedAt: 2026-11-01T14:50:28.553Z
+translatedAt: 2026-11-06T10:14:21.224Z
 ---
-This blog has been written by itself from day one: a `index.html`, a minimalist set of Markdown rules, plus a backend editor. The advantage is that it is light, there are no construction steps, and you can view it after refreshing. The disadvantage is also very real - it can only hold "text + pictures" for a long time.
+This blog was written by itself from day one: a `index.html`, a minimalist set of Markdown rules, plus a backend editor. The advantage is that it is light, there are no construction steps, and you can view it after refreshing. The disadvantage is also very real - it can only hold "text + pictures" for a long time.
 
 If you want to play a screen recording, you can only post an external link; if you want to play a song, you have to use a third-party player; if you want to view several pictures side by side, you have to write HTML by hand. Over time, half of what should have been in the article was cut off by the shortcomings of the tool.
 
@@ -29,7 +29,7 @@ The most direct change: local videos can be directly inserted into the text.
 There is no need to remember the path or make a cover first. The editor will read the duration, affix corner markers, and occupy the space according to the true proportions - the vertical screen recording will not be artificially cropped into horizontal ones. If the file is not uploaded successfully, or the file name is written incorrectly, it will clearly tell you "This video could not be loaded" instead of leaving a silent black area.
 
 > [!NOTE]
-> The above paragraph is an example based on public CC0 materials, just so that you can actually click on the player. To record your own screen, drop the file into the same folder and write one line `![说明](文件名.mp4)`.
+> The above paragraph is an example based on public CC0 materials, just so that you can actually click on the player. To record your own screen, drop the file into the same folder and write a line of `![说明](文件名.mp4)`.
 
 ## 2. Animated pictures: moving pictures should not have a pause button
 
@@ -37,18 +37,18 @@ GIFs and videos are grammatically two different things. A video is "a controllab
 
 Therefore, the animation ** has no controls, cannot be paused, and has a silent loop **: it will stop automatically when scrolling out of the screen, and it will continue after scrolling back. It saves power and won’t make a sudden sound when you slide down. If you want to see the details, click on it and go to the big picture to take a closer look.
 
-@motion[The same piece of material, played as a moving picture: silent, looping, no progress bar](loop.mp4)
+@motion[The same piece of material is played as an animated picture: silent, looping, and no progress bar.](loop.mp4)
 
 > [!NOTE]
 > It used to pause when clicked - this is an obvious semantic error, and the "moving picture" is regarded as a player. This time we changed it all together.
 
 ## 3. Audio: A Quiet Card
 
-@audio[Alaska Gulf - Lan Xinyu](bgm.m4a)
+@audio[Gulf of Alaska - Blue Heart Feather](bgm.m4a)
 
 The audio does not occupy the entire line, and is collected into a small card with a title and source tag. It looks the most inconspicuous, but this time the pitfall lies precisely in it:
 
-**The progress bar does not move no matter how I click it. ** After checking the style, level, and event interception for a long time, the result has nothing to do with these - the server returns this `.m4a` without `Accept-Ranges`, and the jumpable range read by the browser is `0 ~ 0`, which is equivalent to telling the player that "this paragraph can only be played from the beginning to the end." The file has actually been downloaded a long time ago, but I can’t drag it if I can’t drag it.
+**The progress bar does not move no matter how I click it. ** After checking the style, level, and event interception for a long time, the result has nothing to do with these - the server returns this `.m4a` without `Accept-Ranges`, and the jumpable range read by the browser is `0 ~ 0`, which is equivalent to telling the player that "this section can only be played from the beginning to the end." The file has actually been downloaded a long time ago, but I can’t drag it if I can’t drag it.
 
 The current process is: once this "unjumpable" state is detected, the entire data is converted into a Blob and then hung back to the player, and dragging resumes immediately. The data is already in the HTTP cache and costs almost no extra traffic.
 
@@ -85,7 +85,7 @@ Some words are not suitable to be buried in paragraphs and need to have a blocky
 > [!CAUTION]
 > Something more serious than a warning: irreversible and data loss.
 
-The colors and icons are different. To write it, just add `> [!TIP]` and add a line of content, without remembering the HTML.
+The colors and icons are different, and to write it is just `> [!TIP]` plus a line of content, no need to remember HTML.
 
 ## 7. To-do list: Can you really tick it off?
 
@@ -100,23 +100,23 @@ The above checkboxes can be clicked. When you click on the site, the status will
 
 ## 8. Typesetting: alignment, tables, code
 
-|c This line is centered, use the left/middle/right buttons on the toolbar to click it
+|c This line is centered. Use the left/middle/right buttons on the toolbar to click it.
 
 |c In the past, "centering" was stuffed into the "Insert" panel - if you want to center the selected text, you have to go to the insert menu and scroll through it, which is logically wrong. It is now back in the text formatting group, next to bold and italics.
 
-| Capabilities | Grammar | Description |
+| ability | grammar | illustrate |
 | --- | --- | --- |
-| Video | `![说明](x.mp4)` | With control bar, can zoom in |
+| video | `![说明](x.mp4)` | With control bar, can zoom in |
 | GIF | `@motion[说明](x.mp4)` | Silent loop, cannot be paused |
 | Audio | `@audio[说明](x.m4a)` | Small card, draggable |
-| Link card | `@link[标题](url "描述")` | Color by domain name |
-| Attachment | `@file[名称](x.zip)` | Direct download |
-| Gallery | `@gallery[a.png, b.png]` | 2 to 4 pictures |
-| Prompt block | `> [!TIP]` | Five styles |
-| To-do | `- [ ]` | Checkable |
+| link card | `@link[标题](url "描述")` | Pick color by domain name |
+| appendix | `@file[名称](x.zip)` | Direct download |
+| Album | `@gallery[a.png, b.png]` | 2 to 4 sheets |
+| prompt block | `> [!TIP]` | five styles |
+| To-do | `- [ ]` | Can be checked |
 
 > [!NOTE]
-> Alignment is not included in this table because its syntax contains a vertical bar, and writing it into the table will cut the table. Writing `|c 文字` at the beginning of the line means centering, `|l`, `|r` in the same way - this is how the two centered paragraphs above came about.
+> Alignment is not included in this table because its syntax contains a vertical bar, and writing it into the table will cut the table. Writing `|c 文字` at the beginning of the line means centering, and the same goes for `|l` and `|r` - this is how the two centered paragraphs above came about.
 
 The code block remains the same:
 
@@ -139,17 +139,17 @@ By the way, the "💾 Save to local" button that is placed in the most conspicuo
 
 ## 10. Nine questions unearthed this time
 
-| Symptoms | Real Cause |
+| symptom | real reason |
 | --- | --- |
-| Click to preview and the whole page freezes | The main rendering loop is idling: no one wants a certain line and no one is moving forward |
-| Mobile phone → Tablet → Desktop switching suddenly hard cut | Two width attributes are animated at the same time, and they are clamped on one side when taking the minimum value |
-| GIFs can be paused | The remaining pause mask has not been deleted |
-| Pictures and videos cannot be enlarged | The lightbox only serves photo albums, not the text |
-| The to-do cannot be checked | The `disabled` is hardcoded when rendering, and the CSS also adds `pointer-events:none` |
-| The save button does not respond | The event is not tied at all |
-| Two copies of the media library appear | Three concurrent refreshes, the same batch of files are repeatedly stuffed into the array |
-| The audio progress bar cannot be dragged | The server did not return `Accept-Ranges`, and the jumpable range is zero |
-| The mobile device has not changed | The three gears are all clamped to the same number by the panel width |
+| Click to preview the whole page stuck | The main rendering loop is idling: no one wants a certain line, and no one is moving forward. |
+| Mobile phone → tablet → desktop switching suddenly hard to switch | Animating two width attributes at the same time, they are clamped on one side when taking the minimum value. |
+| GIFs can be paused | The remaining pause mask has not been deleted. |
+| Pictures and videos cannot be enlarged | The lightbox only serves photo albums and does not receive text. |
+| Can't check the to-do box | `disabled` is hardcoded when rendering, and `pointer-events:none` is added to the CSS. |
+| Save button does not respond | The incident is not tied at all |
+| Two copies appear in the media library | Three concurrent refreshes, the same batch of files are repeatedly stuffed into the array |
+| The audio progress bar cannot be dragged | The server did not return `Accept-Ranges`, and the jumpable range is zero. |
+| The mobile device has not changed | The three gears are all clamped to the same number by the panel width. |
 
 They are listed here because most of them are not "written wrongly", but "look right, but actually don't work" - they will only be exposed if you actually click and drag them again.
 
