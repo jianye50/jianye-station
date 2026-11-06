@@ -9,7 +9,7 @@ background: 1745762684722.jpg
 lang: zh
 auto: true
 srcHash: 9e5e0ec133bd4c40
-translatedAt: 2026-11-06T11:01:29.864Z
+translatedAt: 2026-11-06T11:32:50.878Z
 ---
 **愿我们拥有的时候不要毁，失去的时候不要悔。**
 

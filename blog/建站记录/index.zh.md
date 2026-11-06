@@ -9,7 +9,7 @@ background: Windows 12 概念.jpg
 lang: zh
 auto: true
 srcHash: 175a95ca88ecc215
-translatedAt: 2026-11-06T11:01:29.863Z
+translatedAt: 2026-11-06T11:32:49.474Z
 ---
 终于，我的个人小站博客正式落成。
 

@@ -9,7 +9,7 @@ background: 391.png
 lang: en
 auto: true
 srcHash: 7d11e84e867e05e2
-translatedAt: 2026-11-06T10:13:39.030Z
+translatedAt: 2026-11-06T11:32:45.435Z
 ---
 In the digital age, personal photos, private documents, and work-related confidential information are at risk of being leaked at any time. Many ordinary users want to protect files, but are daunted by complex cryptography. The threshold for command-line encryption tools is too high, and commercial encryption software is bloated and complicated. **Jianye File Encryptor** is a local file encryption and decryption tool for ordinary users. It encapsulates military-grade encryption algorithms into a simple and easy-to-use graphical interface. No professional knowledge is required, and encryption can be completed by dragging and dropping files. It provides a lightweight file privacy protection solution for individuals and small teams.
 

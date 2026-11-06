@@ -9,7 +9,7 @@ background: cover.png
 lang: en
 auto: true
 srcHash: 3370556f27a997c9
-translatedAt: 2026-11-06T10:14:21.224Z
+translatedAt: 2026-11-06T11:33:04.982Z
 ---
 This blog was written by itself from day one: a `index.html`, a minimalist set of Markdown rules, plus a backend editor. The advantage is that it is light, there are no construction steps, and you can view it after refreshing. The disadvantage is also very real - it can only hold "text + pictures" for a long time.
 

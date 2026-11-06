@@ -9,7 +9,7 @@ background: 1739621032672.jpeg
 lang: zh
 auto: true
 srcHash: 70acab89b16a2035
-translatedAt: 2026-11-06T11:01:32.500Z
+translatedAt: 2026-11-06T11:33:13.387Z
 ---
 > 项目地址：[https://jianye.pages.dev/music](https://jianye.pages.dev/music)
 

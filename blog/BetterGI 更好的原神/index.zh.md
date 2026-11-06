@@ -9,7 +9,7 @@ background: cover.png
 lang: zh
 auto: true
 srcHash: b6821864b656ad23
-translatedAt: 2026-11-06T11:01:27.681Z
+translatedAt: 2026-11-06T11:32:20.922Z
 ---
 
 原神最累的地方不在深渊，而在每天那些必须做、又没有任何乐趣的动作：走过去、按 F、点对话、收菜、交委托。加起来不到半小时，但每天都得花这半小时。

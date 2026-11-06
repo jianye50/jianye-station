@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-06T11:01:43.954Z",
+  "generated": "2026-11-06T11:33:23.015Z",
   "posts": [
     {
       "slug": "BetterGI 更好的原神",
@@ -462,7 +462,7 @@
       "bg": "dMIq1HzJ.jpg",
       "mdEn": "blog/如何完全删除Windows安全中心病毒和威胁防护功能/index.en.md",
       "titleEn": "How to completely remove Windows Security Center virus and threat protection features",
-      "descEn": "If you want to completely delete manually, please operate with the highest permissions and delete the following folders \"C:\\Program Files\\Windows Defender\" \"C:\\Program…",
+      "descEn": "If you want to delete it completely manually, please operate with the highest permissions and delete the following folders \"C:\\Program Files\\Windows Defender\" \"C:\\Program…",
       "tagsEn": [
         "Security Center",
         "Win"

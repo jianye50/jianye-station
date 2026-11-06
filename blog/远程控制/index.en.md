@@ -9,7 +9,7 @@ background: 1738905943819.jpeg
 lang: en
 auto: true
 srcHash: 01c16af2cd47a405
-translatedAt: 2026-11-06T10:14:28.343Z
+translatedAt: 2026-11-06T11:33:09.839Z
 ---
 ## Preface
 Remote control software, which we often call remote desktop tools, is a very practical tool whether it is to help family and friends remotely repair computers, work remotely from home, operate servers, or remotely control computers with mobile phones.

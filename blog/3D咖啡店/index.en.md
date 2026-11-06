@@ -9,7 +9,7 @@ background: 1738905943689.jpg
 lang: en
 auto: true
 srcHash: 87e0b6d3de797469
-translatedAt: 2026-11-06T10:13:01.861Z
+translatedAt: 2026-11-06T11:32:02.608Z
 ---
 ![ScreenShot_2026-10-24_145824_539](ScreenShot_2026-10-24_145824_539.png)
 Project online address: [https://jianye.pages.dev/coffee-shop-3d](https://jianye.pages.dev/coffee-shop-3d)

@@ -9,7 +9,7 @@ background: 1745835951308.jpg
 lang: zh
 auto: true
 srcHash: 98d3beaf6be17a8e
-translatedAt: 2026-11-06T11:01:27.678Z
+translatedAt: 2026-11-06T11:32:03.688Z
 ---
 ![AdBlocker_banner_EN_728х90_2x](AdBlocker_banner_EN_728х90_2x.png)
 AdGuard是一款功能强大的广告拦截与隐私保护工具，适用于多种平台

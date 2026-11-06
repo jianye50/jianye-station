@@ -9,7 +9,7 @@ background: 1739621032672.jpeg
 lang: en
 auto: true
 srcHash: 70acab89b16a2035
-translatedAt: 2026-11-06T10:14:40.518Z
+translatedAt: 2026-11-06T11:33:13.386Z
 ---
 > Project address: [https://jianye.pages.dev/music](https://jianye.pages.dev/music)
 
