@@ -9,7 +9,7 @@ background: 1745835951264.jpg
 lang: en
 auto: true
 srcHash: 9aa06873f3699a1e
-translatedAt: 2026-10-31T10:43:16.641Z
+translatedAt: 2026-11-06T10:09:46.158Z
 ---
 ### Jianye PE driver installation module 3.0 core advantage comparison table
 

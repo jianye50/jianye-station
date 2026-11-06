@@ -9,7 +9,7 @@ background: 1745762721370.jpg
 lang: en
 auto: true
 srcHash: e2502954877d6e86
-translatedAt: 2026-10-30T13:48:27.900Z
+translatedAt: 2026-11-06T10:11:20.018Z
 ---
 > Project address: https://jianye.pages.dev/drop
 
@@ -53,7 +53,7 @@ Supports sending multiple files in batches, automatically fragments large files,
 The transfer process displays the progress percentage, real-time transfer speed, and estimated remaining time in real time; all transfer records are saved locally in the browser, and the records will not disappear when the web page is refreshed. When you receive a file, you can save it to your computer with one click. You can also turn on the notification sound, and the notification sound will automatically play when you receive a new file.
 
 ### 🎨 Rich interface customization capabilities
-- **Display Theme**: Automatically switch with the system, light mode, dark mode, three modes available;
+- **Display Theme**: Automatic switching with the system, light mode, dark mode and three modes available;
 - **Personalized color matching**: Provides 8 sets of theme colors, modify the web interface and device avatar colors;
 - **Multi-language**: Built-in 19 commonly used languages around the world, including Simplified Chinese, Traditional Chinese, English, Japanese, Korean, French, German, Arabic, etc., and will automatically recognize the browser system language;
 - **Multi-language typesetting adaptation**: Perfectly supports Arabic and other languages written from right to left;
@@ -90,7 +90,7 @@ The entire program is deployed on the website server, and all page resources can
 ## ⚠️ Precautions for use
 1. The web version is based on the browser WebRTC. **The web page tab must be kept open during the transmission process. Closing the web page will interrupt the transmission**;
 2. Some corporate intranets and strict firewalls will intercept WebRTC connections, causing the device to be unable to establish a P2P channel;
-3. The transmission history is stored locally in the browser. Clearing the browser cache data will clear the record;
+3. The transmission history is stored locally in the browser, and clearing the browser cache data will clear the record;
 4. A single room can accommodate up to 8 devices. When full, some devices need to be exited before new devices can enter the room.
 
 ## 🎯Write at the end

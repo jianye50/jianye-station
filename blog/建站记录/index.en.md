@@ -9,7 +9,7 @@ background: Windows 12 概念.jpg
 lang: en
 auto: true
 srcHash: 175a95ca88ecc215
-translatedAt: 2026-10-30T15:20:37.667Z
+translatedAt: 2026-11-06T10:11:10.104Z
 ---
 Finally, my personal blog is officially completed.
 
@@ -31,7 +31,7 @@ I just want to have a corner of the Internet that is completely my own.
  
 Here it is:
 I will record technical pitfalls, website building experiences, and tool tutorials;
-Will share their own thinking, growth, daily life and insights;
+Will share his thinking, growth, daily life and insights;
 I will store all the content that I am willing to settle and retain.
  
 Social platforms are noisy and fragmented, and content is ephemeral.

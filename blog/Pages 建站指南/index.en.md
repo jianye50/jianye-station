@@ -1,6 +1,6 @@
 ---
 title: "Put your blog into git: GitHub + Cloudflare Pages combination"
-desc: The code is stored on GitHub, construction and distribution are handed over to Cloudflare, and it goes online with one push. Each link of this link, the real boundaries of the free quota, the four most common pitfalls of static sites, and when it will not be enough.
+desc: The code is stored on GitHub, construction and distribution are handed over to Cloudflare, and it goes online with one push. Each link of this link, the real boundaries of the free quota, the four most common pitfalls of static sites, and when it will be insufficient.
 tags: ["Build a website","Cloudflare","Tutorial"]
 date: 2026-11-06
 minutes: 9
@@ -9,7 +9,7 @@ background: 1745835951378.jpg
 lang: en
 auto: true
 srcHash: 083bbf02ea00c33e
-translatedAt: 2026-11-06T08:29:54.130Z
+translatedAt: 2026-11-06T10:10:17.548Z
 ---
 The page you are reading is the product of a `git push`.
 
@@ -31,25 +31,25 @@ The key understanding is here: **Static blogs do not need to be "run", they only
 ![从 git push 到访客打开页面，中间四步都在云上完成](cover.png)
 
 1. **Trigger** - GitHub receives a push and notifies Cloudflare that the warehouse has changed.
-2. **Build** - Cloudflare pulls the code into the temporary container, runs the commands you set (`hugo`, `npm run build`, no need to run anything for pure static sites), and produces a directory such as `dist/`.
+2. **Build** - Cloudflare pulls the code into the temporary container, runs the commands you set (`hugo`, `npm run build`, no need to run anything for a pure static site), and produces a directory such as `dist/`.
 3. **Distribution** - The product is uploaded to the edge network, and each of the more than 300 nodes around the world stores a copy.
 4. **Switch** - The new version takes effect atomically, and the old version remains in the deployment history.
 
-Step 4 is more important than it sounds: **The old version is still online when the build fails**, and readers will not see a half-finished white page. This is difficult to achieve by setting up a server by yourself - `git pull` Halfway through, if the dependency installation fails, the website will really hang up.
+Step 4 is more important than it sounds: **The old version is still online when the build fails**, and readers will not see a half-finished white page. This is difficult to achieve by setting up a server by yourself - `git pull` Halfway through, if the dependency fails, the website will really crash.
 
 ## 3. Why not use GitHub Pages directly?
 
 GitHub Pages can also do this, and I first moved from it. The difference lies in these points:
 
-| Compare Items | GitHub Pages | Cloudflare Pages |
+| Comparative item | GitHub Pages | Cloudflare Pages |
 | --- | --- | --- |
-| Bandwidth | 100 GB/month (soft limit) | Unlimited |
-| Build | 10 times/hour (soft limit) | 500 times/month |
+| bandwidth | 100 GB/month (soft limit) | No limit |
+| build | 10 times/hour (soft limit) | 500 times/month |
 | Deployment timeout | 10 minutes | 20 minutes |
-| Preview deployment | None | One link per branch |
-| Rollback | revert Repost | Click |
-| Backend Functions | None | Pages Functions |
-| Private warehouse | Not supported by the free version | Supported |
+| Preview deployment | none | One link per branch |
+| rollback | revert re-push | Click |
+| backend function | none | Pages Functions |
+| Private warehouse | The free version does not support | support |
 
 The conclusion is not complicated: **pure documentation, few pictures, and little traffic, GitHub Pages is completely sufficient** and requires less configuration. But once you need to "watch the preview before going online", need one-click rollback, or need several interfaces, Pages saves time.
 
@@ -76,14 +76,14 @@ Just use the generator (Hugo, Astro, Hexo) to push the source code. The product 
 
 Console → Workers and Pages → Create → Pages → Connect to Git repository. Fill in the construction parameters according to the site type:
 
-| site type | build command | output directory |
+| site type | Build command | Output directory |
 | --- | --- | --- |
-| Plain HTML | Leave blank | `/` |
+| Pure HTML | Leave blank | `/` |
 | Hugo | `hugo` | `public` |
 | Astro / Vite | `npm run build` | `dist` |
-| Next.js (static export) | `npm run build` | `out` |
+| Next.js (static export)| `npm run build` | `out` |
 
-It's okay to select None by default for the framework. The principle is "run the command and get the directory". You don't need it to make decisions for you.
+It's okay to select None by default for the framework. The principle is to "run the command and get the directory". You don't need it to make decisions for you.
 
 ### Step 3: Bind domain name
 
@@ -105,20 +105,20 @@ If the domain name is already hosted on Cloudflare, just add a CNAME and the cer
 
 Writing down the number is more useful than just saying "free":
 
-| Project | Free version |
+| project | Free version |
 | --- | --- |
-| Number of builds | 500 per month, only 1 running at a time |
+| Number of builds | 500 times per month, only running 1 at a time |
 | Single build timeout | 20 minutes |
 | Number of site files | 20,000 |
 | Single file size | 25 MiB |
-| Bandwidth / Request | Unlimited |
-| Custom domain names | 100 per project |
+| bandwidth/request | No limit |
+| Custom domain name | 100 pcs per item |
 | Number of items | 100 per account |
 
 500 times spreads out to 16 times per day, which is more than enough for a blogger - unless you submit once every time you press save. What you really need to pay attention to is the **single file size of 25 MiB**: this upper limit determines that it cannot be used as a picture bed or video site. A ten-minute screen recording can be enough.
 
 > [!WARNING]
-> If a single file exceeds 25 MiB, the build will fail directly. The same applies if the total number of files exceeds 20,000. Videos and large compressed files should be placed in R2 or object storage, and only links should be left on the page.
+> If a single file exceeds 25 MiB, the build will directly fail. The same applies if the total number of files exceeds 20,000. Videos and large compressed files should be placed in R2 or object storage, and only links should be left on the page.
 
 ## Six or four pits, almost everyone has stepped on them
 
@@ -132,20 +132,20 @@ The routing of SPA is on the front end, and there is no `/posts/hello` file on t
 /*    /index.html   200
 ```
 
-This is an internal rewrite rather than a jump, and the address bar will not change. For multi-page static sites, you should create a `404.html`. Do not use this rule - it will turn the real 404 into the homepage, and the search engine will mark you down.
+This is an internal rewrite rather than a jump, and the address bar will not change. For multi-page static sites, you should create a `404.html`. Don’t use this rule - it will turn the real 404 into the homepage, and the search engine will mark you down.
 
 **3. Uppercase and lowercase. **
 While native Windows does not differentiate between `Logo.PNG` and `logo.png`, Cloudflare's build environment is Linux, which does. There are good local pictures, but all the online pictures are bad. This is basically the reason.
 
 **4. Chinese file name. **
-The Chinese path can be used, but the encoding must be consistent before and after. Written locally `我的图.png`, it may become URL-encoded after construction, and the reference will not change and result in 404. The easiest way to save trouble is to always use lowercase English letters and hyphens in the file names.
+The Chinese path can be used, but the encoding must be consistent before and after. Written locally `我的图.png`, it may become URL-encoded after construction, and the reference will not change accordingly, resulting in 404. The easiest way to save trouble is to always use lowercase English letters and hyphens in the file names.
 
 > [!IMPORTANT]
-> If the build fails, don’t rush to change the code. Check the last twenty lines in the deployment log. Most of the time it's because the Node version is wrong, or `package-lock.json` and `package.json` are out of sync.
+> If the build fails, don’t rush to change the code. Look at the last twenty lines in the deployment log. Most of the time it's because the Node version is wrong, or `package-lock.json` and `package.json` are out of sync.
 
 ## 7. Three underrated functions
 
-**Preview deployment. ** When you push a branch or open a PR, Cloudflare will give it a separate URL and use the same build process. Check the preview link first for the revised version, and then merge it into the main branch if you are satisfied. This is what I always do when I adjust the layout - you can click on it on your mobile phone to know if it is right, and you don’t need to use the online site as a testing ground.
+**Preview deployment. ** Push a branch or open a PR, Cloudflare will give it an independent URL and use the same build process. Check the preview link first for the revision, and then merge it into the main branch if you are satisfied. This is what I always do when I adjust the layout—you can click on it on your mobile phone to know if it’s right, so you don’t have to use the online site as a testing ground.
 
 **One-click rollback. ** Each record in the deployment list can be "Rollback to this deployment". If the style changes, don’t rush to revert. Roll back to the previous version first, and then slowly fix it.
 

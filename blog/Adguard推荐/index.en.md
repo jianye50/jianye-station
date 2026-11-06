@@ -9,7 +9,7 @@ background: 1745835951308.jpg
 lang: en
 auto: true
 srcHash: 98d3beaf6be17a8e
-translatedAt: 2026-10-30T13:48:18.928Z
+translatedAt: 2026-11-06T10:08:52.084Z
 ---
 ![AdBlocker_banner_EN_728х90_2x](AdBlocker_banner_EN_728х90_2x.png)
 AdGuard is a powerful ad blocking and privacy protection tool suitable for multiple platforms

@@ -9,7 +9,7 @@ background: 1745762684722.jpg
 lang: en
 auto: true
 srcHash: 9e5e0ec133bd4c40
-translatedAt: 2026-10-31T05:19:28.347Z
+translatedAt: 2026-11-06T10:11:14.644Z
 ---
 **May we not destroy what we have and regret when we lose it. **
 
@@ -23,7 +23,7 @@ Treat everything in hand well, not with caution and fear, but with sobriety and 
 
 However, gatherings and separations in the world are inherently unpredictable, and many encounters are destined to only go together for one journey. Not all stories have a happy ending, and not all likes can be retained for a long time.
 
-If fate comes to an end, if it is destined to be lost, there is no need to be stuck in the same place and blame yourself repeatedly, and there is no need to hold all your faults in your heart and suffer. If you try your best, be sincere, and take it seriously, you won't have to regret it for a long time. There may be regrets, but there is no need to let regrets trap you in the long days to come. Accepting farewell, allowing to dissipate, and letting go of dignity is also a kind of growth.
+If fate comes to an end, if it is destined to be lost, there is no need to be stuck in the same place and blame yourself repeatedly, and there is no need to hold all your faults in your heart and suffer. If you try your best, be sincere, and take it seriously, you won't have to regret it for a long time. There may be regrets, but there is no need to let regrets trap you in the long days to come. Accepting goodbye, allowing to dissipate, and letting go of dignity is also a kind of growth.
 
 Gains and losses are the normal state of life.
 

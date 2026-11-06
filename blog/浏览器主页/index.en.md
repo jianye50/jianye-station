@@ -9,7 +9,7 @@ background: 微信图片_20260614030832_13646_1032.jpg
 lang: en
 auto: true
 srcHash: c5778cb3c779537d
-translatedAt: 2026-10-30T13:48:30.947Z
+translatedAt: 2026-11-06T10:11:23.444Z
 ---
 > Project address: [https://jianye.pages.dev/homepage-sharepage](https://jianye.pages.dev/homepage-sharepage)
 
@@ -39,11 +39,11 @@ Abandon bloated resources and do not load a large number of pictures and scripts
 The search box is placed directly in the center of the page, and the cursor is automatically focused when opening a tab. Just enter keywords to search directly, eliminating the need for multiple jumps and going directly to the search in one step, making searching simple.
 
 ### Simple and practical, returning to the essence of search
-Keep basic practical elements such as time display and cut off flashy components. Don’t pile up gadgets, don’t pile up information flows, and return to the original positioning of the browser homepage: the entrance to the Internet, not the place for content consumption.
+Keep basic practical elements such as time display and cut off flashy components. Do not pile up gadgets or information flows, and return to the original positioning of the browser homepage: an entrance to the Internet, not a place for content consumption.
 
 ## 🚀 How to experience it
 Two ways can be used:
-1. **Direct experience on the web version**: Open the link and you can use it directly, no installation required.
+1. **Direct experience on the web version**: You can use it directly by opening the link, no installation required.
 2. **Download and Install**: You can download it as a browser new tab extension and take over the new tabs of the browser.
 
 > Access address: [https://jianye.pages.dev/homepage-sharepage](https://jianye.pages.dev/homepage-sharepage)

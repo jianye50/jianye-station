@@ -9,7 +9,7 @@ background: 1738905943689.jpg
 lang: en
 auto: true
 srcHash: 87e0b6d3de797469
-translatedAt: 2026-10-30T13:48:18.464Z
+translatedAt: 2026-11-06T10:08:48.679Z
 ---
 ![ScreenShot_2026-10-24_145824_539](ScreenShot_2026-10-24_145824_539.png)
 Project online address: [https://jianye.pages.dev/coffee-shop-3d](https://jianye.pages.dev/coffee-shop-3d)
@@ -38,7 +38,7 @@ Cute little easter eggs: the kitten curled up on the street corner, the smoke cu
 
 The floating control panel on the left can adjust the status of the entire world in real time:
 
-Time control system Drag the time slider to jump freely to 24 hours a day; turn on "Time Flow" and the world will automatically pass time. The color of the sky, the position of the moon and sun, stars, and building lights will change in real time with time. Late at night, all the lights in the store slowly light up, and the stars appear in the sky; in the morning, the sun rises, and the lights slowly go out.
+Time control system Drag the time slider to jump freely to 24 hours a day; turn on "Time Flow" and the world will automatically pass time. The color of the sky, the position of the moon and sun, stars, and building lights will change in real time with time. Late at night, all the lights in the store slowly light up, and the stars emerge; in the early morning, the sun rises, and the lights slowly go out.
 
 Four weather simulations Sunny☀️/Cloudy☁️/Raining🌧️/Snowing❄️
 
@@ -52,7 +52,7 @@ Switch between multiple perspectives with one click
 
 Street view: Standing across the road and looking at the entire coffee shop building;
 
-Inside the store: Go directly inside the house and browse the furnishings inside the coffee shop;
+In the store: Go directly into the house and browse the furnishings in the coffee shop;
 
 Overlooking: a high-altitude God's perspective, overlooking the entire street;
 

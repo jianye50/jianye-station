@@ -9,8 +9,9 @@ background: cover.png
 lang: en
 auto: true
 srcHash: b6821864b656ad23
-translatedAt: 2026-11-06T06:40:40.251Z
+translatedAt: 2026-11-06T10:09:40.339Z
 ---
+
 The most tiring part of Genshin Impact is not in the abyss, but in the actions that must be done every day without any fun: walking over, pressing F, clicking dialogue, collecting food, and handing in tasks. It adds up to less than half an hour, but you have to spend that half hour every day.
 
 It is this segment that BetterGI wants to solve. It does not modify the game, nor does it draw cards for you. It just sits in front of the screen, looks at the screen, and then presses the keys for you.
@@ -32,28 +33,28 @@ No processes are injected, game files are not modified, and game memory is not r
 
 The number of functions is a bit exaggerated. Let’s pick the ones that are really used every day:
 
-| Function | What to do | Premise |
+| Function | what to do | premise |
 | --- | --- | --- |
-| Automatically pick up | Identify the name of the dropped object, press F automatically, and set the black and white list | OCR is normal, don't talk to the NPC by mistake |
-| Automatic plot | Quickly click on dialogue, automatically select options, skip black screen | Simplified Chinese |
-| Automatic fishing | Fully automatic bait cutting, rod throwing, rod lifting, and rod pulling | AI recognition, need to stabilize the picture |
-| Automatic Summoning of the Seven Saints | Character invitations, weekly guests, etc., customizable decks | Player level and deck required |
-| Automatic battle / secret realm | Identify the team and automatically fight according to the strategy | The secret realm is based on Zhongli |
-| Automatic logging | Equip "Wang Shu Ruiyou" and hang up | Need to equip props first |
-| Map tracking | Positioning based on mini-map, automatic collection and hoeing | Route files |
-| Daily ending | Receive daily commission rewards and re-dispatch | Triggered when talking to Catherine |
-| Quick transfer / automatic cooking / one-click enhancement | Automatic confirmation of transfer point; cooking card perfect area; one-click enhancement of holy relics | — |
+| automatic picking | Identify the name of the dropped object, press F automatically, and set the black and white list | OCR is normal, don’t talk to NPC by mistake |
+| automatic plot | Quickly click on the conversation, automatically select options, and skip the black screen | Simplified Chinese |
+| automatic fishing | Fully automatic bait cutting, rod throwing, rod lifting and rod pulling | AI recognition, need to stabilize the picture |
+| Automatic Summoning of the Seven Saints | Character invitations, weekly guests, etc., customizable card decks | Requires player level and deck |
+| Auto battle/secret realm | Identify the team and automatically play according to the strategy | Secret Realm is based on Zhongli |
+| Automatic logging | Hang up after equipping "Wang Shu Ruiyou" | Need to equip props first |
+| Map tracking | Rely on mini-map for positioning, automatic collection and hoeing | route file |
+| Daily finishing | Receive daily commission rewards and re-dispatch | Triggered when talking to Catherine |
+| Quick transfer/automatic cooking/one-click enhancement | Automatic confirmation of teleport points; perfect area for cooking cards; one-click enhancement of holy relics | — |
 | Keyboard and mouse recording | Record an operation and play it back | — |
 
 There are basically two ways to use it: one is the "hang-up type", such as fishing, brushing, and logging, and you can do other things when you click it; the other is the "hand-saving type", such as picking up, plotting, and teleporting. You are still playing, but you don't have to press a bunch of repeated keys.
 
 ## 3. Download: Look for these points
 
-@link[BetterGI official website](https://www.bettergi.com/ "开源免费的原神自动化工具")
+@link[BetterGI 官网](https://www.bettergi.com/ "开源免费的原神自动化工具")
 
 @link[GitHub Releases](https://github.com/babalae/better-genshin-impact/releases "所有历史版本都在这里")
 
-@link[Download page (including domestic mirror)](https://www.bettergi.com/download.html "GitHub 慢的时候看这里")
+@link[下载页（含国内镜像）](https://www.bettergi.com/download.html "GitHub 慢的时候看这里")
 
 ![官网首页：一个 logo、一句定位、两个按钮，没有多余的营销](site-home.png)
 
@@ -61,9 +62,9 @@ There are basically two ways to use it: one is the "hang-up type", such as fishi
 
 There are generally two types of packages available on GitHub, and there is no difference except the packaging method:
 
-| Documentation | What is it | Who is it suitable for |
+| document | what is | Suitable for whom |
 | --- | --- | --- |
-| `BetterGI.Install.0.66.0.exe` | Offline installation version, it will automatically update after installation | Most people are too lazy to unzip |
+| `BetterGI.Install.0.66.0.exe` | Offline installation version, it will be updated automatically after installation. | Most people are too lazy to decompress |
 | `BetterGI_v0.66.0.7z` | Portable version, unzip and run `BetterGI.exe` | Don’t want to install anything, or want to insert a USB flash drive |
 
 0.66 is the version released on September 26, 2026. The installation package is about 481 MB and the portable package is about 444 MB - the size mainly comes from the built-in recognition model. It is in a period of high-frequency iteration. If you can release new ones, don’t release the old ones.
@@ -96,12 +97,12 @@ The recommended configuration threshold is "medium image quality and stable 60 f
 
 There are four ways to take screenshots, all of which are taken on the "Startup" page:
 
-| Method | Features | When to use |
+| Way | Features | when to use |
 | --- | --- | --- |
-| BitBlt | The best compatibility, the worst performance | If any strange problems occur, replace it first |
-| DwmGetDxSharedSurface | Best performance, using undisclosed API | Pursuing smoothness and accepting occasional instability |
-| WindowsGraphicsCapture | To capture hardware overlays, Win10 1903+ is required | **Yun Yuanshen can only use this** |
-| WindowsGraphicsCapture (HDR) | One more layer of HDR support | Only used when HDR is turned on in the game, otherwise the screen will be dark |
+| BitBlt | Best compatibility, worst performance | If any strange problem occurs, replace it first |
+| DwmGetDxSharedSurface | Best performance, using undisclosed API | Pursue smoothness and accept occasional instability |
+| WindowsGraphicsCapture | Ability to capture hardware overlays requires Win10 1903+ | **Yun Yuanshen can only use this** |
+| WindowsGraphicsCapture（HDR） | One more layer of HDR support | Only use it when HDR is turned on in the game, otherwise the screen will be dark |
 
 ## 6. The four most likely places to get stuck on the first day
 
@@ -127,6 +128,6 @@ At the time of writing this article, this project has more than 17,000 stars and
 What it really gives is not to "play more content", but to eliminate repetitive work from the game. When you open Genshin Impact, you want to finish the game, watch the plot, and visit Teyvat, instead of going through the daily routine first. Whether it's worth it or not depends on how annoying you are for that half hour every day.
 
 > [!TIP]
-> If you encounter problems, first read the [Documentation](https://www.bettergi.com/doc.html) and [FAQ](https://www.bettergi.com/faq.html), and then read the GitHub Issue. The biggest fear of this kind of project is not bugs, but that no one will ask questions without reading the documentation.
+> If you encounter problems, first read [Documentation](https://www.bettergi.com/doc.html) and [FAQ](https://www.bettergi.com/faq.html), and then check GitHub Issues. The biggest fear of this kind of project is not bugs, but that no one will ask questions without reading the documentation.
 
 It's open source, free, and powered by love. If you find it useful, go to GitHub and give it a star, which is more practical than anything else.
