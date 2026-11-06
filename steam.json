@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-06T06:25:06.576Z",
+  "updated": "2026-11-06T14:53:20.054Z",
   "source": "api",
   "player": {
     "name": "鉴业",
@@ -7,20 +7,27 @@
     "url": "https://steamcommunity.com/id/aimjianye/"
   },
   "totalGames": 43,
-  "hours2weeks": 19.233333333333334,
+  "hours2weeks": 16.466666666666665,
   "friends": [
+    {
+      "name": "hhhx",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
+      "state": 1,
+      "playing": "Split Fiction"
+    },
+    {
+      "name": "UxwxU",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561198774453253/",
+      "state": 1,
+      "playing": null
+    },
     {
       "name": "HYJ",
       "avatar": "https://avatars.steamstatic.com/6717ab4263dcfca8866a1d344f75e427acaf9a5b_medium.jpg",
       "profile": "https://steamcommunity.com/id/JINGTIANHAOKUN123/",
       "state": 4,
-      "playing": null
-    },
-    {
-      "name": "wjiazheng2026",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198721612997/",
-      "state": 0,
       "playing": null
     },
     {
@@ -31,9 +38,44 @@
       "playing": null
     },
     {
-      "name": "Lu",
-      "avatar": "https://avatars.steamstatic.com/b72e7a6487c6bd07eb5e95c24474fed86f320b93_medium.jpg",
-      "profile": "https://steamcommunity.com/id/lunacult/",
+      "name": "绝世好人",
+      "avatar": "https://avatars.steamstatic.com/972f5af3d5b2fe6bcde047b47db3aef1ce942f40_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199767357806/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "chenchenwhr",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "wjiazheng2026",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561198721612997/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "刘海柱",
+      "avatar": "https://avatars.steamstatic.com/5650a856c0bd7c678378e9895afec491786ce595_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199193111913/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "吻吻爱",
+      "avatar": "https://avatars.steamstatic.com/655d055db5b16899734d407e7c858cadde558703_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199376152675/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "仙阁小斑",
+      "avatar": "https://avatars.steamstatic.com/51bb78fd07a616dffa959c285ad0951a7ece4680_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199768600704/",
       "state": 0,
       "playing": null
     },
@@ -41,6 +83,20 @@
       "name": "lcyfdn",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
       "profile": "https://steamcommunity.com/profiles/76561199063272174/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "yaya",
+      "avatar": "https://avatars.steamstatic.com/443e8aae2dcccff76fecb2ae0fecbd051c9b9822_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199664593176/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "shinglerdansbury6547",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561198689034491/",
       "state": 0,
       "playing": null
     },
@@ -66,65 +122,9 @@
       "playing": null
     },
     {
-      "name": "吻吻爱",
-      "avatar": "https://avatars.steamstatic.com/655d055db5b16899734d407e7c858cadde558703_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199376152675/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "hhhx",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "绝世好人",
-      "avatar": "https://avatars.steamstatic.com/972f5af3d5b2fe6bcde047b47db3aef1ce942f40_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199767357806/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "仙阁小斑",
-      "avatar": "https://avatars.steamstatic.com/51bb78fd07a616dffa959c285ad0951a7ece4680_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199768600704/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "UxwxU",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198774453253/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "刘海柱",
-      "avatar": "https://avatars.steamstatic.com/5650a856c0bd7c678378e9895afec491786ce595_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199193111913/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "yaya",
-      "avatar": "https://avatars.steamstatic.com/443e8aae2dcccff76fecb2ae0fecbd051c9b9822_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199664593176/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "shinglerdansbury6547",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198689034491/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "chenchenwhr",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
+      "name": "Lu",
+      "avatar": "https://avatars.steamstatic.com/b72e7a6487c6bd07eb5e95c24474fed86f320b93_medium.jpg",
+      "profile": "https://steamcommunity.com/id/lunacult/",
       "state": 0,
       "playing": null
     }
@@ -135,9 +135,9 @@
       "name": "猛兽派对",
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/library_600x900.jpg",
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/header.jpg",
-      "hoursTotal": 478.9,
-      "hours2weeks": 13.3,
-      "last": "11月5日"
+      "hoursTotal": 479,
+      "hours2weeks": 10.7,
+      "last": "11月6日"
     },
     {
       "appid": 728880,
@@ -219,8 +219,8 @@
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/library_600x900.jpg",
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/header.jpg",
       "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/1260320/capsule_184x69.jpg",
-      "hoursTotal": 478.9,
-      "hours2weeks": 13.3,
+      "hoursTotal": 479,
+      "hours2weeks": 10.7,
       "last": "",
       "achEarned": 116,
       "achTotal": 116
