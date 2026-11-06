@@ -2347,12 +2347,16 @@ async function loadPhotosFromManifest(){
 /* 以下为兜底：运行时扫目录 / GitHub API（慢一点，但不跑脚本也能显示） */
 async function loadPhotosByScan(){
   const isFile=location.protocol==="file:";
+  /* 本地预览（localhost / 127.0.0.1）没有 photos.json，也不该去扫远端仓库：
+     那条路要逐目录打 GitHub API、再逐个探 HEAD，目录一多就把渲染进程拖死
+     （实测 #/gallery 会直接崩溃）。开发时想要真的相册数据，放一份 photos.json 就行 */
+  const isDev=/^(localhost|127\.0\.0\.1|::1|\[::1\])$/.test(location.hostname||"");
   let root=null,rootBase=PHOTO_DIRS[0];
   for(const dir of PHOTO_DIRS){
     const r=await listEntries(dir);
     if(r){ root=r; rootBase=dir; break; }
   }
-  if(!root&&!isFile)root=await listEntriesGH(PHOTO_DIRS[0].replace(/\/$/,""));
+  if(!root&&!isFile&&!isDev)root=await listEntriesGH(PHOTO_DIRS[0].replace(/\/$/,""));
   if(!root){
     if(isFile&&PHOTO_FALLBACK.length){
       /* 直接双击打开：读不到目录，用兜底清单（只覆盖根目录图片） */
@@ -2372,10 +2376,12 @@ async function loadPhotosByScan(){
   const ghDir=PHOTO_DIRS[0].replace(/\/$/,"");
   const items=[];
   root.files.forEach(u=>items.push({src:u,album:""}));
-  const rootDirs=root.dirs||[];
+  /* 目录上限：正常相册十几二十个，出现几百个基本是目录结构异常，
+     继续逐个扫只会把请求数乘上去（每个目录还要探直链），直接截断更安全 */
+  const rootDirs=(root.dirs||[]).slice(0,60);
   for(const dname of rootDirs){
     let r=await listEntries(rootBase+dname+"/");
-    if(!r&&!isFile)r=await listEntriesGH(ghDir+"/"+dname);
+    if(!r&&!isFile&&!isDev)r=await listEntriesGH(ghDir+"/"+dname);
     if(!r||!r.files||!r.files.length)continue;   /* 空相册 / 读不到 → 先不显示 */
     r.files.forEach(u=>items.push({src:u,album:dname}));
   }
@@ -3811,6 +3817,14 @@ function mdZhURL(u){
   if(/\.md$/i.test(u))return u.replace(/\.md$/i,".zh.md");
   return "";
 }
+/* 静态另一语言版的「语言体检」：文件存在 ≠ 内容是译文。
+   自动翻译被限流时会写出「front matter 是英文、正文还是中文」的半成品，
+   这种文件必须当它不存在，否则英文界面永远显示中文、也不再走兜底。
+   src="zh" 的英文版：中文占比应低于 15%；src="en" 的中文版：中文占比应高于 25% */
+function altLangOk(text,src){
+  const cjkShare=trShare(text,"zen");
+  return src==="zh" ? cjkShare<0.15 : cjkShare>0.25;
+}
 
 /* 博客列表骨架屏：形状/尺寸与真实卡片一致（缩略图块、标签条、标题条、摘要条、日期条） */
 function blogSkeletonHTML(){
@@ -3843,6 +3857,7 @@ function blogMatch(p,q){
   const tr=p._tr||{};   /* 译文（界面语言对应的翻译完成后挂上）：两种语言的关键词都能搜到 */
   const hay=((p.title||"")+" "+(p.desc||"")+" "+((p.tags||[]).join(" "))+" "+(p.slug||"")
     +" "+(p.titleEn||"")+" "+(p.descEn||"")+" "+((p.tagsEn||[]).join(" "))
+    +" "+(p.titleZh||"")+" "+(p.descZh||"")+" "+((p.tagsZh||[]).join(" "))
     +" "+(tr.t||"")+" "+(tr.d||"")+" "+((tr.g||[]).join(" "))).toLowerCase();
   return q.toLowerCase().split(/\s+/).filter(Boolean).every(w=>hay.includes(w));
 }
@@ -4024,31 +4039,55 @@ function trHash(s){
   return (h>>>0).toString(36);
 }
 function hasCJK(s){return /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/.test(String(s));}
-/* 翻译方向：zen=中→英（历史默认），ezh=英→中。
-   文章用哪种语言写就往反方向翻 —— 判定依据是内容里有没有 CJK 字符 */
-function trNeed(s,dir){
-  s=String(s==null?"":s);
-  if(!s.trim())return false;
-  if(dir==="ezh")return !hasCJK(s)&&/[A-Za-z]/.test(s);   /* 纯数字/符号不用翻 */
-  return hasCJK(s);
-}
-/* 缓存键带方向：旧的中→英条目沿用原键（老缓存照常命中），
-   英→中是新方向、新键，互不污染 */
-function trKey(base,dir){ return dir==="ezh" ? base+":ezh" : base; }
-/* 判断「还有没有真正需要翻译的中文」：代码块、行内代码、图片路径、链接地址、HTML 标签
-   里的中文一律不算 —— 静态英文版里的 ![屏幕截图_x](屏幕截图_x.jpg)、cover: 中文文件名.jpg
-   这类是资源名，本来就不该翻，却被 hasCJK 误判成「没翻译」，于是整页又去走临时机翻 */
-function hasCJKText(s){
-  const t=String(s==null?"":s)
+/* 去掉 Markdown 结构之后剩下的「纯文字」：代码块、行内代码、图片、媒体指令、
+   链接地址、HTML 标签、裸链都不算正文。
+   这一步是必须的 —— ![cover](cover.png)、@file[demo](demo.mp4)、| --- | ---
+   这些只有拉丁字母的「语法行」如果被当成英文段落，中文文章在中文界面下也会
+   被判成「需要翻译」，于是整页挂上「机器翻译 / 自动翻译暂不可用」，
+   而实际上一个字都不用翻。 */
+const MD_MEDIA_LINE=/^[ \t]*@(?:file|embed|audio|gallery|motion|link)\[[^\]]*\]\([^)]*\)[ \t]*$/gm;
+function mdBare(s){
+  return String(s==null?"":s)
     .replace(/```[\s\S]*?```/g,"")        /* 围栏代码块 */
     .replace(/~~~[\s\S]*?~~~/g,"")
+    .replace(MD_MEDIA_LINE,"")            /* 整行媒体指令 */
     .replace(/`[^`\n]*`/g,"")             /* 行内代码 */
     .replace(/!\[[^\]]*\]\([^)]*\)/g,"")  /* 图片：alt 与路径都不算正文 */
     .replace(/\[([^\]]*)\]\([^)]*\)/g,"$1")/* 链接：只留链接文字 */
     .replace(/<[^>]*>/g,"")               /* HTML 标签（含属性里的中文） */
     .replace(/\bhttps?:\/\/\S+/g,"");     /* 裸链 */
+}
+/* 翻译方向：zen=中→英（历史默认），ezh=英→中。
+   单行判定：这一行还有没有「目标语言之外」的文字 */
+function trNeed(s,dir){
+  const t=mdBare(s);
+  if(!t.trim())return false;
+  if(dir==="ezh")return !hasCJK(t)&&/[A-Za-z]/.test(t);   /* 纯数字/符号不用翻 */
   return hasCJK(t);
 }
+/* 整篇判定：目标语言之外的语言，占「正文字符」的比例。
+   以前是「只要有一行外文就翻」——中文文章里夹一个 BetterGI、一句英文命令，
+   就会去请求翻译接口；接口一限流，整页挂上「自动翻译暂不可用」，
+   中文文章在中文界面里也顶着这个标记（就是这个 bug）。
+   现在按比例判断：外来语言不足 12% 视为「这篇文章本来就是访客要读的语言」。 */
+function trShare(s,dir){
+  const t=mdBare(s).replace(/\s+/g,"");
+  if(!t)return 0;
+  const cjk=(t.match(/[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g)||[]).length;
+  const lat=(t.match(/[A-Za-z]/g)||[]).length;
+  return dir==="ezh" ? lat/t.length : cjk/t.length;
+}
+const TR_MIN_SHARE=0.12;
+/* 整篇要不要翻：中英混排的稿子占比过半时照样翻（逐行判定只动另一种语言的段落），
+   纯中文夹几个英文术语则完全不碰 */
+function trNeedDoc(s,dir){ return trShare(s,dir)>=TR_MIN_SHARE; }
+/* 缓存键带方向：旧的中→英条目沿用原键（老缓存照常命中），
+   英→中是新方向、新键，互不污染 */
+function trKey(base,dir){ return dir==="ezh" ? base+":ezh" : base; }
+/* 判断「还有没有真正需要翻译的中文」：复用 mdBare（代码/图片/链接/HTML 里的中文不算）。
+   静态英文版里的 ![屏幕截图_x](屏幕截图_x.jpg)、cover: 中文文件名.jpg 这类是资源名，
+   本来就不该翻，却被 hasCJK 误判成「没翻译」，于是整页又去走临时机翻 */
+function hasCJKText(s){ return hasCJK(mdBare(s)); }
 /* 翻译引擎链（全部免密钥、无日配额，已不再使用有每日限额的 MyMemory）：
    ① 浏览器本地模型：Chrome 138+ 内置的 Translator API，模型在本地，零网络请求、
       零次数限制，离线也能翻；模型没装好就自动跳过，不会偷偷下载几十 MB。
@@ -4083,15 +4122,22 @@ function trTimeout(ms){
   const timer=setTimeout(()=>ac.abort(),ms);
   return {signal:ac.signal,done:()=>clearTimeout(timer)};
 }
-/* 引擎 1：本站 Pages Function 代理（同域，国内可用）。dir 决定翻译方向 */
+/* 引擎 1：本站 Pages Function 代理（同域，国内可用）。dir 决定翻译方向。
+   代理是共享出口 IP，Google 侧会突发限流（实测同一时刻 4 个请求里 3 个 429），
+   所以 429/5xx 时等一会儿重试一次 —— 直接放弃会让整段正文留在原文 */
 async function trViaProxy(text,dir){
   if(trProxyDead){const e=new Error("no proxy");e.skip=true;throw e;}   /* 环境问题，不计数 */
   const tk=trTimeout(9000);
   const pair=dir==="ezh"?{from:"en",to:"zh-CN"}:{from:"zh-CN",to:"en"};
-  try{
-    const r=await fetch(TR_PROXY,{method:"POST",signal:tk.signal,
+  const once=async()=>fetch(TR_PROXY,{method:"POST",signal:tk.signal,
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({q:text,from:pair.from,to:pair.to})});
+  try{
+    let r=await once();
+    if(r.status===429||r.status>=500){
+      await new Promise(s=>setTimeout(s,700+Math.random()*500));
+      r=await once();
+    }
     if(r.status===404){trProxyDead=true;const e=new Error("no proxy");e.skip=true;throw e;}
     if(!r.ok)throw new Error("proxy "+r.status);
     const j=await r.json();
@@ -4274,11 +4320,19 @@ async function translateMarkdown(md,dir){
   const out=lines.slice();
   const jobs=[];
   const tableRows=[];      /* 表格行：整行送翻会把竖线结构弄坏，得按格拆开翻 */
+  const mediaRows=[];      /* 媒体指令行：只翻方括号里的标签，@file(路径) 一个字都不能动 */
   let inCode=false;
   for(let i=0;i<lines.length;i++){
     const line=lines[i];
     if(/^\s*(```|~~~)/.test(line)){inCode=!inCode;out[i]=line;continue;}
     if(inCode){out[i]=line;continue;}
+    /* @file[演示](demo.mp4) / @motion[循环](loop.mp4) / @gallery[图集](a.jpg,b.jpg)：
+       整行送翻会把指令名和路径一起翻坏，媒体直接渲染不出来。只翻标签文字 */
+    const md=line.match(/^([ \t]*@(?:file|embed|audio|gallery|motion|link)\[)([^\]]*)(\]\([^)]*\)[ \t]*)$/);
+    if(md){
+      if(trNeed(md[2],dir))mediaRows.push({i,pre:md[1],label:md[2],post:md[3]});
+      continue;
+    }
     if(!line.trim()
       ||/^\s*(<|<!--|!\[)/.test(line)
       ||/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)
@@ -4306,7 +4360,7 @@ async function translateMarkdown(md,dir){
   const byLine=async g=>{   /* 整组失败的兜底：组内逐行翻，成功几行算几行 */
     await trPool(g,2,async j=>{ out[j.i]=await translateLine(j.line,dir); });
   };
-  await trPool(singles,3,async j=>{ out[j.i]=await translateLine(j.line,dir); });
+  await trPool(singles,2,async j=>{ out[j.i]=await translateLine(j.line,dir); });
   await trPool(groups,2,async g=>{
     const joined=g.map(j=>j.line).join("\n");
     try{
@@ -4322,6 +4376,13 @@ async function translateMarkdown(md,dir){
     }
   });
   await trPool(tableRows,2,async r=>{ out[r.i]=await translateTableRow(r.line,dir); });
+  /* 媒体行的标签：翻失败就保留原标签，指令与路径原样拼回 */
+  await trPool(mediaRows,2,async r=>{
+    let lab=r.label;
+    try{ const t=await gTranslate(r.label,dir); if(t&&t.trim())lab=t.trim(); }catch(e){}
+    if(/[\[\]]/.test(lab))lab=r.label;           /* 译文里冒出方括号会破坏语法 */
+    out[r.i]=r.pre+lab+r.post;
+  });
   return out.join("\n");
 }
 /* 表格行翻译：把 `| a | b |` 拆成格子逐格翻，再按原顺序拼回去。
@@ -4430,7 +4491,9 @@ const TRM_MEM=new Map();
 function translatePostMeta(post,dir){
   dir=dir==="ezh"?"ezh":"zen";
   const title=post.title||"",desc=post.desc||"",tags=Array.isArray(post.tags)?post.tags:[];
-  /* 目标语言里已经「读得懂」的条目不翻：中文界面不碰中文条目，英文界面不碰英文条目 */
+  /* 目标语言里已经「读得懂」的条目不翻：中文界面不碰中文条目，英文界面不碰英文条目。
+     先看整体占比（trNeedDoc）：中文摘要里夹一个产品名的英文条目不值得发请求 */
+  if(!trNeedDoc([title,desc,tags.join("\n")].join("\n"),dir))return Promise.resolve(null);
   if(!trNeed(title,dir)&&!trNeed(desc,dir)&&!tags.some(x=>trNeed(x,dir)))return Promise.resolve(null);
   const key=trKey("jy-trm2:"+(post.slug||"")+":"+trHash(title+"\u0000"+desc+"\u0000"+tags.join("\u0000")),dir);
   try{ const c=localStorage.getItem(key); if(c)return Promise.resolve(JSON.parse(c)); }catch(e){}
@@ -4473,6 +4536,11 @@ function translateBlogList(list){
     /* 已有目标语言的静态版：直接用，不必再机翻 */
     if(dir==="zen"&&(p.titleEn||p.descEn))return;
     if(dir==="ezh"&&(p.titleZh||p.descZh))return;
+    /* 卡片的语种看标题：标题是中文就是中文文章，中文界面下整张卡都不动。
+       否则「把博客放进 git：GitHub + Cloudflare Pages」这种标题里夹满英文术语的
+       中文文章，会连标签一起被送去翻 —— 标签「Cloudflare」翻成「云耀」纯属添乱 */
+    if(dir==="ezh"&&hasCJK(p.title||""))return;
+    if(dir==="zen"&&!/[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/.test(p.title||""))return;
     const r=await translatePostMeta(p,dir);
     if(!r||seq!==blogTrSeq)return;               /* 期间列表已重渲染：放弃 */
     p._tr={t:r.t,d:r.d,g:r.g};                   /* 挂到数据上，英文搜索也能命中 */
@@ -4733,7 +4801,15 @@ async function renderPost(slug,gen){
         if(isHTMLFallbackText(text)||
            (r.headers.get("content-type")||"").toLowerCase().includes("text/html")){
           r=null;text="";
-        }else usedAlt=true;                       /* 真的拿到了静态另一语言版 */
+        }
+        /* 第二道防线：文件在，但语言不对（自动翻译失败时写出过「只有 front matter
+           是英文、正文还全是中文」的半成品）。这种文件一旦当成译文用，
+           英文界面就会一直显示中文，而且再也不会触发兜底。
+           英文版应该几乎没有中文；中文版应该以中文为主。 */
+        else if(!altLangOk(text,guessSrc)){
+          r=null;text="";
+        }
+        else usedAlt=true;                        /* 真的拿到了静态另一语言版 */
       }else r=null;                              /* 静态版缺失/没生成：原文兜底 */
     }
     if(!r){
@@ -4786,11 +4862,11 @@ async function renderPost(slug,gen){
      中文界面下 lang===srcLang，整篇一次都不翻，英文段落永远留在英文界面里；
      英文界面下方向变 zen，英文段落又被 trNeed 判为「已是目标语言」跳过。
      现在按段落跑 trNeed：已经是访客语言的段落原样保留，另一种语言的段落才送翻，
-     中英混排的稿子因此能各自翻成访客要读的那一半。 */
+     中英混排的稿子因此能各自翻成访客要读的那一半。
+     整篇要不要翻用 trNeedDoc 判（按外来语言占比，而不是「有一行外文就翻」）——
+     否则中文文章里夹一句英文命令，就足以让整页挂上「自动翻译暂不可用」。 */
   const trDir=lang==="en"?"zen":"ezh";
-  const needTr=trNeed(title,trDir)||trNeed(desc,trDir)
-    ||(tags||[]).some(x=>trNeed(x,trDir))
-    ||String(body).split(/\r?\n/).some(l=>trNeed(l,trDir));
+  const needTr=trNeedDoc([title,desc,body].join("\n"),trDir);
   /* 界面语言与原文不同 + 没拿到静态另一语言版：正文先按原文秒出，
      后台机器翻译，完成后无感替换（失败保留原文）。
      已经拿到静态版就绝不再机翻——那份就是权威译文，

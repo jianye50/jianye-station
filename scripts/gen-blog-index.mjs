@@ -60,7 +60,7 @@ for (const name of readdirSync(blogDir)) {
   if (st.isDirectory()) {
     const idx = join(p, "index.md");
     if (existsSync(idx)) { mdPath = idx; slug = name; imgBase = `blog/${name}/`; }
-  } else if (/\.md$/i.test(name) && !/\.en\.md$/i.test(name)) {
+  } else if (/\.md$/i.test(name) && !/\.(en|zh)\.md$/i.test(name)) {
     mdPath = p; slug = name.replace(/\.md$/i, "");   /* 散篇 .md：图片放在 blog 根目录 */
   }
   if (!mdPath) continue;
@@ -81,27 +81,27 @@ for (const name of readdirSync(blogDir)) {
     cover: meta.cover || "",
     bg: meta.background || ""
   };
-  /* 英文版（index.en.md / 名字.en.md，由 scripts/gen-blog-en.mjs 生成）存在时，
-     把英文正文地址与英文标题/摘要/标签一起塞进清单：
-     英文界面直接读静态英文，不再逐条机翻，首屏也不会有中英跳变 */
-  const enPath = st.isDirectory() ? join(p, "index.en.md") : join(blogDir, slug + ".en.md");
-  if (existsSync(enPath)) {
+  /* 译文（index.en.md / index.zh.md，由 scripts/gen-blog-en.mjs 双向生成）存在时，
+     把正文地址与标题/摘要/标签一起塞进清单：
+     访客语言对应的静态译文直接读，不再逐条机翻，首屏也不会有语言跳变 */
+  for (const [key, lang] of [["En", "en"], ["Zh", "zh"]]) {
+    const trPath = st.isDirectory() ? join(p, `index.${lang}.md`) : join(blogDir, `${slug}.${lang}.md`);
+    if (!existsSync(trPath)) continue;
     try {
-      const en = parseFM(readFileSync(enPath, "utf8")).meta;
-      const enTags = Array.isArray(en.tags) ? en.tags
-        : (en.tags ? String(en.tags).split(/[,，]/).map(x => x.trim()).filter(Boolean) : []);
-      post.mdEn = st.isDirectory() ? `blog/${name}/index.en.md` : `blog/${slug}.en.md`;
-      if (en.title) post.titleEn = en.title;
-      if (en.desc) post.descEn = en.desc;
-      if (enTags.length) post.tagsEn = enTags;
-      /* 英文版是否落后于中文：srcHash 与当前中文内容的哈希对不上就标记。
-         纯诊断字段（前端不用它），补翻成功后会自动消失，方便一眼看出哪篇没跟上 */
-      if (en.srchash && en.srchash !== sha1(mdRaw)) {
-        post.enStale = true;
-        /* 走 stderr，别污染 --stdout 的 JSON 输出 */
-        console.warn(`! 英文版落后于中文：${name}（英文记录 ${en.srchash} ≠ 当前 ${sha1(mdRaw)}）`);
+      const tr = parseFM(readFileSync(trPath, "utf8")).meta;
+      const trTags = Array.isArray(tr.tags) ? tr.tags
+        : (tr.tags ? String(tr.tags).split(/[,，]/).map(x => x.trim()).filter(Boolean) : []);
+      post["md" + key] = st.isDirectory() ? `blog/${name}/index.${lang}.md` : `blog/${slug}.${lang}.md`;
+      if (tr.title) post["title" + key] = tr.title;
+      if (tr.desc) post["desc" + key] = tr.desc;
+      if (trTags.length) post["tags" + key] = trTags;
+      /* 译文是否落后于原文：srcHash 与当前内容哈希对不上就标记。
+         纯诊断字段（前端不用它），补翻成功后自动消失，方便一眼看出哪篇没跟上 */
+      if (tr.srchash && tr.srchash !== sha1(mdRaw)) {
+        post[lang === "en" ? "enStale" : "zhStale"] = true;
+        console.warn(`! ${lang} 译文落后于原文：${name}（译文记录 ${tr.srchash} ≠ 当前 ${sha1(mdRaw)}）`);
       }
-    } catch (e) { /* 英文版读坏了就当没有，网站回退中文原文 */ }
+    } catch (e) { /* 译文读坏了就当没有，网站回退原文 */ }
   }
   posts.push(post);
 }

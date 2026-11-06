@@ -1,25 +1,25 @@
 #!/usr/bin/env node
 /* =====================================================================
- * 自动生成英文版文章：blog/<文章>/index.md  →  blog/<文章>/index.en.md
- *                      blog/<名字>.md        →  blog/<名字>.en.md
+ * 自动生成文章的另一个语言版本（中 ⇄ 英，双向）
  *
- * 触发方式：仓库里的 .github/workflows/gen-blog-en.yml 在 blog/** 有 push
- * （新增 / 修改 / 删除）时自动运行；也可以在 Actions 页面手动 workflow_dispatch。
+ *   blog/<文章>/index.md      →  index.en.md  +  index.zh.md
+ *   blog/<名字>.md            →  <名字>.en.md +  <名字>.zh.md
  *
- * 规则：
- *   1. 源文件没变（内容哈希一致）→ 跳过，不重复调用翻译接口；
- *   2. 源文章改了 → 重新生成英文版；
- *   3. 源文章删了 → 一并删掉对应的 index.en.md（不留孤儿文件）；
- *   4. 已经人工写好英文版（front matter 里没有 auto: true）→ 一律不动；
- *   5. 源文章本来就没有中文（纯英文）→ 不生成，网站直接读原文即可。
+ * 规则只有一条：**每篇文章最后都要有三种文件**——原文、中文版、英文版。
+ * 作者用中文写，就补英文；用英文写，就补中文；中英混排也补另一边。
+ * 网站因此永远读静态译文，不再依赖浏览器临时机翻。
  *
- * 翻译引擎：Google 免费公开接口（无需密钥）。网络失败自动重试 + 换域名，
- * 单篇文章翻不动就保留原文并继续处理下一篇，绝不让整批失败。
+ * 触发：.github/workflows/gen-blog-en.yml（push blog/**、定时兜底、手动 workflow_dispatch）
+ * 手动：node scripts/gen-blog-en.mjs [--force] [--dry-run] [--only=slug] [--target=en|zh]
  *
- * Markdown 结构保护：代码块整块不送翻；行内代码 / 图片 / 链接地址 / HTML 标签 /
- * 裸链接先用 [[n]] 占位符摘出，译完再还原；标题 # 与列表符号在翻译后重新贴回。
+ * 细节：
+ *   1. 源文件没变（内容哈希一致）→ 跳过；
+ *   2. 译文文件语言不对（正文还大面积是原文语言）→ 重翻，哪怕哈希没变；
+ *   3. 源文章删了 → 两个译文一起删，不留孤儿；
+ *   4. 人工写的译文（front matter 里没有 auto: true）→ 绝不覆盖；
+ *   5. 翻译接口被限流 → 保留原文、下次再试，绝不写出「半成品译文」。
  * ===================================================================== */
-import { readdirSync, readFileSync, writeFileSync, existsSync, statSync, unlinkSync, mkdirSync, appendFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync, existsSync, statSync, unlinkSync, appendFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
@@ -32,21 +32,19 @@ if (!existsSync(blogDir) || !statSync(blogDir).isDirectory()) {
 }
 
 const ARGS = process.argv.slice(2);
-const FORCE = ARGS.includes("--force");                       /* 忽略哈希，全部重译 */
-const DRY = ARGS.includes("--dry-run");                       /* 只打印计划，不写文件 */
-const ONLY = (ARGS.find(a => a.startsWith("--only=")) || "").slice(7);   /* 只处理某一篇 */
-const DELAY = +(process.env.TR_DELAY_MS || 120);              /* 每次请求的间隔，防限流 */
-const MAX_CHARS = 1600;                                       /* 单次请求的最大字符数 */
+const FORCE = ARGS.includes("--force");
+const DRY = ARGS.includes("--dry-run");
+const ONLY = (ARGS.find(a => a.startsWith("--only=")) || "").slice(7);
+const ONLY_TARGET = (ARGS.find(a => a.startsWith("--target=")) || "").slice(9);  /* en | zh | 空=两个都做 */
+const DELAY = +(process.env.TR_DELAY_MS || 120);
+const MAX_CHARS = 1600;
 
+const PAIRS = { en: { from: "zh-CN", to: "en" }, zh: { from: "en", to: "zh-CN" } };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const hasCJK = s => /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/.test(String(s || ""));
 
 /* ---------- front matter 解析（与网站 index.html / gen-blog-index.mjs 保持一致） ---------- */
 function parseFM(raw) {
   const meta = {}; let body = raw;
-  /* 去掉 BOM 和开头的空行：Windows 记事本「另存为 UTF-8」会加 BOM，
-     带 BOM 时 ^--- 匹配不上，front matter 整块失效 ——
-     下游就会把这份英文版误判成「人工写的」而永不更新，必须先清掉 */
   raw = String(raw).replace(/^\uFEFF/, "").replace(/^(?:[ \t]*\r?\n)+/, "");
   const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if (m) {
@@ -65,7 +63,6 @@ function parseFM(raw) {
   return { meta, body };
 }
 
-/* YAML 值转义：含冒号+空格、井号开头等容易读歪的，统一套双引号 */
 function yamlVal(s) {
   s = String(s == null ? "" : s).replace(/\r?\n/g, " ").trim();
   if (!s) return '""';
@@ -75,13 +72,58 @@ function yamlVal(s) {
   return s;
 }
 
-/* ---------- 翻译接口：Google 免费公开接口，双域名 + 指数退避重试 ---------- */
+/* ---------- 语言判定：只数「正文文字」，代码/图片/链接/语法行都不算 ---------- */
+const CJK_RE = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g;
+const CJK_ONE = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
+const MD_MEDIA_LINE = /^[ \t]*@(?:file|embed|audio|gallery|motion|link)\[[^\]]*\]\([^)]*\)[ \t]*$/gm;
+
+function bare(s) {
+  return String(s == null ? "" : s)
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/~~~[\s\S]*?~~~/g, "")
+    .replace(MD_MEDIA_LINE, "")
+    .replace(/`[^`\n]*`/g, "")
+    .replace(/!\[[^\]\n]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]\n]*)\]\([^)]*\)/g, "$1")
+    .replace(/<[^>]*>/g, "")
+    .replace(/\bhttps?:\/\/\S+/g, "");
+}
+function counts(s) {
+  const b = bare(s);
+  const cjk = (b.match(CJK_RE) || []).length;
+  const lat = (b.match(/[A-Za-z]/g) || []).length;
+  return { cjk, lat };
+}
+/* 某种语言在正文里的占比（只按文字字符算，标点符号不参与） */
+function langFrac(s, lang) {
+  const { cjk, lat } = counts(s);
+  const all = cjk + lat;
+  if (!all) return 0;
+  return lang === "zh" ? cjk / all : lat / all;
+}
+/* 原文语言：中文占比 ≥ 20% 就算中文写的（几行英文术语不会改变结论） */
+function detectLang(meta, body) {
+  const s = [meta.title || "", meta.desc || "", body].join("\n");
+  const { cjk, lat } = counts(s);
+  if (!cjk && !lat) return "zh";
+  return cjk / (cjk + lat) >= 0.2 ? "zh" : "en";
+}
+/* 这一段/这一行要不要翻成 target */
+function needsTr(s, target) {
+  const t = bare(String(s == null ? "" : s));
+  if (!t.trim()) return false;
+  if (target === "en") return CJK_ONE.test(t);
+  return !CJK_ONE.test(t) && /[A-Za-z]/.test(t);
+}
+
+/* ---------- 翻译接口：Google 免费公开接口，双域名 + 指数退避 ---------- */
 const HOSTS = ["https://translate.googleapis.com", "https://translate.google.com"];
 let reqCount = 0;
-let failStreak = 0;          /* 连续失败次数：接口整体被限流时早点收手，别干耗 */
-let FATAL = null;            /* 一旦认定接口不可用，后续请求直接抛错 */
-async function gtx(text, from = "zh-CN", to = "en") {
+let failStreak = 0;
+let FATAL = null;
+async function gtx(text, target) {
   if (FATAL) throw FATAL;
+  const { from, to } = PAIRS[target];
   const body = new URLSearchParams({ client: "gtx", sl: from, tl: to, dt: "t", q: text }).toString();
   let lastErr = null;
   for (const host of HOSTS) {
@@ -109,12 +151,11 @@ async function gtx(text, from = "zh-CN", to = "en") {
         return out;
       } catch (e) {
         lastErr = e;
-        /* 连续失败太多次 → 判定接口被限流，本次运行提前收手（已翻好的照样提交） */
         if (++failStreak >= 8) {
           FATAL = new Error(`翻译接口连续失败 ${failStreak} 次（${e.message}），停止本次运行`);
           throw FATAL;
         }
-        await sleep(800 * (attempt + 1) * (attempt + 1));   /* 0.8s → 3.2s → 7.2s */
+        await sleep(800 * (attempt + 1) * (attempt + 1));
       }
     }
   }
@@ -122,16 +163,9 @@ async function gtx(text, from = "zh-CN", to = "en") {
 }
 
 /* ---------- 行内结构保护 ---------- */
-/* 行内代码 / 图片 / 链接地址 / HTML 标签 / 裸链接 → [[n]] 占位符
-   图片与链接的路径允许空格和一层括号：Windows 截图、手机图片常叫
-   `Moon Cat Under theMoonlight (Day - Night)月光下的月猫(昼夜).png`，
-   老写法 `[^)\n]*` 会被中间那个 `)` 截断，导致剩下半截文件名被送去翻译 ——
-   文件名一改，图片就 404（英文页面里图片显示不出来，只剩 alt 文字）。 */
 const IMG_RE = /!\[[^\]\n]*\]\((?:[^()\n]|\([^()]*\))*\)/g;
-const LINK_RE = /\]\((?:[^()\n]|\([^()]*\))+\)/g;
 const PROT_RE = /`[^`\n]+`|!\[[^\]\n]*\]\((?:[^()\n]|\([^()]*\))*\)|\]\((?:[^()\n]|\([^()]*\))+\)|<[a-zA-Z\/!][^>\n]*>|(?:https?:\/\/|www\.)[^\s)<>"'\]]+/g;
 
-/* 取出文本里所有图片地址（大小写无关、去首尾空白），用来校验翻译有没有动过文件名 */
 function imgSrcs(s) {
   return (String(s || "").match(IMG_RE) || [])
     .map(x => x.replace(/^!\[[^\]\n]*\]\(/, "").replace(/\)$/, "").trim().toLowerCase());
@@ -142,7 +176,6 @@ function sameImgs(a, b) {
   for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return false;
   return true;
 }
-
 function protect(text) {
   const keep = [];
   const t = text.replace(PROT_RE, m => {
@@ -158,41 +191,34 @@ function restore(text, keep) {
     if (i >= keep.length) { miss = true; return m; }
     return keep[i];
   });
-  /* 占位符被翻译引擎吞掉/改写了：这次结果不可信，交给调用方降级 */
   const left = (out.match(/\[\[\s*\d+\s*\]\]/g) || []).length;
   if (miss || left) throw new Error("占位符还原失败");
   return out;
 }
-
-/* 前缀（标题井号 / 引用符 / 列表符号）单独摘出来，译完再贴回去 */
 function splitPrefix(line) {
   const m = line.match(/^(\s*(?:#{1,6}\s+|>\s*|[-*+]\s+|\d+[.)]\s+)?)([\s\S]*)$/);
   return { prefix: m ? m[1] : "", rest: m ? m[2] : line };
 }
 
 /* 单段文本翻译（含占位符往返）；失败时按行降级，再失败就保留原文 */
-async function trText(text) {
-  if (!hasCJK(text)) return text;
+async function trText(text, target) {
+  if (!needsTr(text, target)) return text;
   const { t, keep } = protect(text);
   try {
-    const out = await gtx(t);
-    const res = restore(out, keep);
-    /* 安全网：图片地址一个字符都不许变，变了就按失败处理（保留原文），
-       绝不会把一张 404 的图送上线 */
+    const res = restore(await gtx(t, target), keep);
     if (!sameImgs(text, res)) throw new Error("图片地址被翻译改动");
     return res;
   } catch (e) {
-    if (FATAL) throw e;          /* 接口整体挂了：别再逐行重试，直接向上抛 */
-    /* 降级：逐行翻译，单行失败保留该行原文 */
+    if (FATAL) throw e;
     const lines = text.split("\n");
     const done = [];
     for (const line of lines) {
-      if (!hasCJK(line)) { done.push(line); continue; }
+      if (!needsTr(line, target)) { done.push(line); continue; }
       const { prefix, rest } = splitPrefix(line);
-      if (!hasCJK(rest)) { done.push(line); continue; }
+      if (!needsTr(rest, target)) { done.push(line); continue; }
       try {
         const p = protect(rest);
-        done.push(prefix + restore(await gtx(p.t), p.keep));
+        done.push(prefix + restore(await gtx(p.t, target), p.keep));
       } catch (e2) {
         if (FATAL) throw e2;
         done.push(line);
@@ -202,20 +228,18 @@ async function trText(text) {
   }
 }
 
-/* 表格整行：按列拆开分别翻，竖线与单元格两侧空格的原始排版保持不变 */
-async function trTableRow(line) {
-  if (!hasCJK(line)) return line;
+/* 表格整行：按列拆开分别翻，竖线与两侧空格的原始排版保持不变 */
+async function trTableRow(line, target) {
+  if (!needsTr(line, target)) return line;
   const out = [];
   for (const c of line.split("|")) {
     const m = c.match(/^(\s*)([\s\S]*?)(\s*)$/);
-    if (!m || !hasCJK(m[2])) { out.push(c); continue; }
-    out.push(m[1] + await trText(m[2]).catch(() => m[2]) + m[3]);
+    if (!m || !needsTr(m[2], target)) { out.push(c); continue; }
+    out.push(m[1] + await trText(m[2], target).catch(() => m[2]) + m[3]);
   }
   return out.join("|");
 }
 
-/* 代码块整块摘出来换成 [[b0]] 占位，译完原样贴回：
-   不送翻 → 代码里的中文不会被改，缩进也不会被吃掉 */
 const FENCE_RE = /(^|\n)([ \t]*(?:`{3,}|~{3,})[^\n]*\n[\s\S]*?\n[ \t]*(?:`{3,}|~{3,})[ \t]*(?=\n|$))/g;
 function maskFences(body) {
   const codes = [];
@@ -229,7 +253,6 @@ function unmaskFences(text, codes) {
   return text.replace(/\[\[\s*b(\d+)\s*\]\]/g, (m, d) => (codes[+d] !== undefined ? codes[+d] : m));
 }
 
-/* 超长段落按句号/换行再切，避免单次请求过大 */
 function chunks(text, max) {
   if (text.length <= max) return [text];
   const out = [];
@@ -247,65 +270,104 @@ function chunks(text, max) {
   return out;
 }
 
-/* 一个文本块：整块是表格就逐行按列翻，否则按长度切块翻 */
-async function trBlock(seg) {
+async function trBlock(seg, target) {
   const lines = seg.split("\n");
   const rows = lines.filter(l => l.trim());
   if (rows.length && rows.length === lines.length && rows.every(l => /^\s*\|/.test(l))) {
     const out = [];
-    for (const l of lines) out.push(await trTableRow(l));
+    for (const l of lines) out.push(await trTableRow(l, target));
     return out.join("\n");
   }
   const pieces = [];
-  for (const ch of chunks(seg, MAX_CHARS)) pieces.push(await trText(ch));
+  for (const ch of chunks(seg, MAX_CHARS)) pieces.push(await trText(ch, target));
   return pieces.join("");
 }
 
-/* 正文翻译：按空行切段 → 多段合并成一次请求（省请求数，最不容易被限流）
+/* 正文翻译：按空行切段 → 只把「另一种语言」的段落打包合翻（省请求数）
    → 代码块整块跳过 → 段数对不上时退回逐段翻译。 */
-async function trBody(body) {
+async function trBody(body, target) {
   const { masked, codes } = maskFences(body);
   const paras = masked.split(/\n{2,}/).filter(p => p.trim());
-  const out = [];
-  let batch = [], size = 0;
+  const out = new Array(paras.length);
+  let batch = [], idxs = [], size = 0;
 
   const flush = async () => {
     if (!batch.length) return;
     const joined = batch.join("\n\n");
     let done = null;
-    if (hasCJK(joined)) {
-      try {
-        const { t, keep } = protect(joined);
-        const parts = restore(await gtx(t), keep).split(/\n{2,}/);
-        /* 段落数对得上、且每段的图片地址都没被改，才敢用整批结果 */
-        if (parts.length === batch.length && parts.every((p, i) => sameImgs(batch[i], p))) done = parts;
-      } catch (e) {
-        if (FATAL) throw e;
-      }
-      if (!done) {                                           /* 退回逐段翻 */
-        done = [];
-        for (const p of batch) done.push(await trBlock(p));
-      }
-    } else done = batch.slice();
-    out.push(...done);
-    batch = []; size = 0;
+    try {
+      const { t, keep } = protect(joined);
+      const parts = restore(await gtx(t, target), keep).split(/\n{2,}/);
+      if (parts.length === batch.length && parts.every((p, i) => sameImgs(batch[i], p))) done = parts;
+    } catch (e) {
+      if (FATAL) throw e;
+    }
+    if (!done) {
+      done = [];
+      for (const p of batch) done.push(await trBlock(p, target));
+    }
+    done.forEach((d, k) => { out[idxs[k]] = d; });
+    batch = []; idxs = []; size = 0;
   };
 
-  for (const p of paras) {
+  for (let i = 0; i < paras.length; i++) {
+    const p = paras[i];
+    /* 媒体行要先判：bare() 会把整行剔掉，needsTr 永远返回 false，
+       照普通段落走的话标签会一直是原文语言 */
+    if (isMediaPara(p)) { out[i] = await trMediaPara(p, target); continue; }
+    const lines = p.split("\n").filter(l => l.trim());
+    const need = lines.filter(l => needsTr(l, target)).length;
+    if (!need) { out[i] = p; continue; }
+    if (need < lines.length) { out[i] = await trLines(p, target); continue; }   /* 段内混排：逐行 */
     if (size && size + p.length > MAX_CHARS) await flush();
-    batch.push(p); size += p.length + 2;
+    batch.push(p); idxs.push(i); size += p.length + 2;
   }
   await flush();
   return unmaskFences(out.join("\n\n"), codes);
 }
 
-/* 标题 / 摘要 / 标签：同样走保护与降级，短文本单独翻 */
-async function trShort(s) {
-  if (!hasCJK(s)) return s;
-  try { return await trText(String(s)); } catch (e) { if (FATAL) throw e; return String(s); }
+async function trShort(s, target) {
+  if (!needsTr(s, target)) return s;
+  try { return await trText(String(s), target); }
+  catch (e) { if (FATAL) throw e; return String(s); }
+}
+
+/* 一个段落里中英行混在一起（比如半张表格是中文、半张是英文）：
+   整段送翻会因为「段里有中文」被判成不用翻，英文行就永远留着。
+   这种段落按行处理 —— 该翻的行翻，不该翻的行原样，表格行还要按格拆 */
+async function trLines(para, target) {
+  const out = [];
+  for (const l of para.split("\n")) {
+    if (!needsTr(l, target)) { out.push(l); continue; }
+    if (/^\s*\|/.test(l)) out.push(await trTableRow(l, target));
+    else if (MEDIA_LINE.test(l)) out.push(await trMediaLine(l, target));
+    else out.push(await trText(l, target));
+  }
+  return out.join("\n");
+}
+
+/* 媒体指令行 @file[标签](路径)：整行送翻会让占位符还原失败、指令名被翻坏，
+   结果整行原样退回（标签永远是中文）。只翻方括号里的标签，语法一个字不动 */
+const MEDIA_LINE = /^([ \t]*@(?:file|embed|audio|gallery|motion|link)\[)([^\]]*)(\]\([^)]*\)[ \t]*)$/;
+async function trMediaLine(line, target) {
+  const m = line.match(MEDIA_LINE);
+  if (!m || !needsTr(m[2], target)) return line;
+  let lab = m[2];
+  try {
+    const t = await gtx(lab, target);
+    if (t && t.trim() && !/[\[\]]/.test(t)) lab = t.trim();
+  } catch (e) { if (FATAL) throw e; }
+  return m[1] + lab + m[3];
+}
+const isMediaPara = p => p.split("\n").every(l => !l.trim() || MEDIA_LINE.test(l));
+async function trMediaPara(p, target) {
+  const out = [];
+  for (const l of p.split("\n")) out.push(l.trim() ? await trMediaLine(l, target) : l);
+  return out.join("\n");
 }
 
 /* ---------- 扫描文章 ---------- */
+const isTrFile = n => /\.(en|zh)\.md$/i.test(n);
 function scanArticles() {
   const list = [];
   for (const name of readdirSync(blogDir)) {
@@ -316,10 +378,18 @@ function scanArticles() {
     if (st.isDirectory()) {
       const src = join(p, "index.md");
       if (!existsSync(src)) continue;
-      list.push({ slug: name, src, dst: join(p, "index.en.md") });
-    } else if (/\.md$/i.test(name) && !/\.en\.md$/i.test(name)) {
+      list.push({
+        slug: name, src, dir: p,
+        dst: { en: join(p, "index.en.md"), zh: join(p, "index.zh.md") },
+        relBase: `blog/${name}/index`
+      });
+    } else if (/\.md$/i.test(name) && !isTrFile(name)) {
       const slug = name.replace(/\.md$/i, "");
-      list.push({ slug, src: p, dst: join(blogDir, slug + ".en.md") });
+      list.push({
+        slug, src: p, dir: blogDir,
+        dst: { en: join(blogDir, slug + ".en.md"), zh: join(blogDir, slug + ".zh.md") },
+        relBase: `blog/${slug}`
+      });
     }
   }
   return list;
@@ -329,161 +399,161 @@ const sha1 = s => createHash("sha1").update(s).digest("hex").slice(0, 16);
 
 /* ---------- 主流程 ---------- */
 const articles = scanArticles();
-const srcSet = new Set(articles.map(a => a.dst));
+const srcSet = new Set();
+for (const a of articles) { srcSet.add(a.dst.en); srcSet.add(a.dst.zh); }
 let added = 0, updated = 0, skipped = 0, removed = 0, failed = 0;
 
-/* ① 清理孤儿英文版：源文章已经不存在了（删除 / 改名），英文版跟着删 */
+/* ① 清理孤儿译文：源文章不存在了（删除 / 改名），译文跟着删 */
 for (const name of readdirSync(blogDir)) {
   const p = join(blogDir, name);
   let st = null;
   try { st = statSync(p); } catch (e) { continue; }
   const candidates = [];
-  if (st.isDirectory()) candidates.push(join(p, "index.en.md"));
-  else if (/\.en\.md$/i.test(name)) candidates.push(p);
+  if (st.isDirectory()) {
+    candidates.push(join(p, "index.en.md"), join(p, "index.zh.md"));
+  } else if (isTrFile(name)) candidates.push(p);
   for (const c of candidates) {
     if (existsSync(c) && !srcSet.has(c)) {
-      console.log(`- 删除孤儿英文版 ${c.slice(root.length + 1)}`);
+      console.log(`- 删除孤儿译文 ${c.slice(root.length + 1)}`);
       if (!DRY) unlinkSync(c);
       removed++;
     }
   }
 }
 
-/* ② 逐篇生成 */
+/* ② 逐篇、逐方向生成 */
 for (const a of articles) {
-  const rel = a.src.slice(root.length + 1);
   if (ONLY && a.slug !== ONLY) continue;
+  const rel = a.src.slice(root.length + 1);
   const rawSrc = readFileSync(a.src, "utf8");
   const { meta, body } = parseFM(rawSrc);
   const hash = sha1(rawSrc);
+  const srcLang = detectLang(meta, body);
+  const otherLang = srcLang === "zh" ? "en" : "zh";
+  /* 中英混排：另一种语言在正文里占到 15% 以上。
+     这种稿子两个版本都要生成 —— 中文界面读 index.zh.md（英文段落已翻），
+     英文界面读 index.en.md（中文段落已翻），谁都不用等浏览器机翻。
+     纯中文/纯英文则不重复生成「自己这个语言」的版本，避免一堆同义文件 */
+  const mixed = langFrac(body, otherLang) >= 0.15;
+  let targets = ONLY_TARGET ? [ONLY_TARGET] : [otherLang];
+  if (mixed && (!ONLY_TARGET || ONLY_TARGET === srcLang)) targets.push(srcLang);
+  targets = [...new Set(targets)].filter(t => t !== srcLang || mixed);
+  if (!targets.length) continue;
 
-  /* 已有英文版：人工写的别动，自动生成的看哈希 */
-  let prev = null;
-  if (existsSync(a.dst)) {
-    let prevBody = "", broken = "";
-    let rawEn = "";
-    try { rawEn = readFileSync(a.dst, "utf8"); } catch (e) { broken = "读取失败：" + e.message; }
-    if (!broken) {
-      const p = parseFM(rawEn);
-      prev = p.meta; prevBody = p.body;
-      /* 连 front matter 都解析不出来，或者正文是空的 → 这份文件是坏的，
-         不能当成「人工英文版」供起来，否则这篇会永远不更新（本脚本最容易踩的坑） */
-      if (!Object.keys(prev).length) broken = "没有可解析的 front matter";
-      else if (!prevBody.trim()) broken = "正文为空";
-    }
-    if (broken) {
-      prev = null;                                  /* 坏文件按「不存在」处理，直接重译覆盖 */
-      console.log(`! 英文版损坏（${broken}），重新翻译 ${rel}`);
-      console.log(`::warning::英文版损坏，已重新生成：${rel}（${broken}）`);
-    } else {
-      const isAuto = String(prev && prev.auto) === "true";
-      if (!isAuto) {
-        /* 人工写的英文版：绝不覆盖，但必须在 Actions 摘要里显性说出来。
-           否则「改了中文、英文不动」会变成看不出来的静默跳过 —— 这是之前排查最费劲的一类问题 */
-        const msg = `跳过人工英文版（front matter 里没有 auto: true）：${rel}`;
-        console.log(`= ${msg}`);
-        console.log(`::warning::${msg}${FORCE ? " —— 即使加了 --force 也不覆盖；确实要重译就删掉这个文件，或补一行 auto: true" : ""}`);
-        skipped++; continue;
+  for (const target of targets) {
+    const dst = a.dst[target];
+    /* 这个方向要「翻掉」的语言 */
+    const fromLang = target === "en" ? "zh" : "en";
+    const fromFrac = langFrac(body, fromLang);
+    const relDst = dst.slice(root.length + 1);
+
+    /* 已有译文：人工写的别动，自动生成的看哈希与语言体检 */
+    let prev = null;
+    if (existsSync(dst)) {
+      let prevBody = "", broken = "";
+      try {
+        const p = parseFM(readFileSync(dst, "utf8"));
+        prev = p.meta; prevBody = p.body;
+        if (!Object.keys(prev).length) broken = "没有可解析的 front matter";
+        else if (!prevBody.trim()) broken = "正文为空";
+      } catch (e) { broken = "读取失败：" + e.message; }
+      if (broken) {
+        prev = null;
+        console.log(`! 译文损坏（${broken}），重新翻译 ${relDst}`);
+        console.log(`::warning::译文损坏，已重新生成：${relDst}（${broken}）`);
+      } else {
+        if (String(prev.auto) !== "true") {
+          const msg = `跳过人工译文（front matter 里没有 auto: true）：${relDst}`;
+          console.log(`= ${msg}`);
+          console.log(`::warning::${msg}${FORCE ? " —— 即使加 --force 也不覆盖；确实要重译就删掉这个文件，或补一行 auto: true" : ""}`);
+          skipped++; continue;
+        }
+        /* 语言体检：文件在、哈希也对，但正文里「该翻掉的语言」还占大头 →
+           上一次翻译其实失败了（旧脚本会写出这种半成品）。必须重翻，
+           否则网站会把中文当英文版用，而且永远不再更新。 */
+        const badLang = target !== srcLang && fromFrac >= 0.15
+          && langFrac(prevBody, fromLang) > Math.max(0.06, fromFrac * 0.5);
+        if (!FORCE && prev.srchash === hash && !badLang && sameImgs(body, prevBody)) {
+          console.log(`= 跳过（未改动）${relDst}`);
+          skipped++; continue;
+        }
+        if (badLang) console.log(`! 译文语言不对（仍是原文语言），重新翻译 ${relDst}`);
+        else if (prev.srchash === hash) console.log(`! 图片地址与原文对不上，重新翻译 ${relDst}`);
       }
-      if (!FORCE && prev.srchash === hash) {
-        /* 源文章没变，但旧版脚本可能把「带空格/括号的文件名」翻坏了（图片 404）：
-           图片地址对不上就重译一次，让坏图自己修回来 */
-        if (sameImgs(body, prevBody)) { console.log(`= 跳过（未改动）${rel}`); skipped++; continue; }
-        console.log(`! 图片地址与原文对不上，重新翻译 ${rel}`);
+    }
+
+    process.stdout.write(`→ 翻译 ${rel}  [${fromLang} → ${target}] ... `);
+    const t0 = Date.now();
+    try {
+      const title = await trShort(meta.title || a.slug, target);
+      const desc = meta.desc ? await trShort(meta.desc, target) : "";
+      const tags = Array.isArray(meta.tags) ? meta.tags
+        : (meta.tags ? String(meta.tags).split(/[,，]/).map(x => x.trim()).filter(Boolean) : []);
+      const outTags = [];
+      for (const tg of tags) outTags.push(await trShort(tg, target));
+      const outBody = await trBody(body, target);
+
+      /* 质量闸门：接口被限流时 trText 会「保留原文」降级，整篇一个字都没翻，
+         但下面照样会写出一个格式完好的译文文件 —— 那份文件一旦落库就会
+         永远「跳过（未改动）」，线上一直显示原文。所以先体检再落盘。
+         判据是「该翻掉的语言」有没有真的变少（en 版看中文残留，zh 版看英文残留） */
+      const outFrac = langFrac(outBody, fromLang);
+      if (fromFrac >= 0.15 && outFrac > Math.max(0.06, fromFrac * 0.5)) {
+        throw new Error(`译后正文仍有 ${(outFrac * 100).toFixed(0)}% 是 ${fromLang}（原文 ${(fromFrac * 100).toFixed(0)}%），翻译没生效`);
       }
+      if (needsTr(meta.title || "", target) && langFrac(title, fromLang) > Math.max(0.15, fromFrac * 0.6)) {
+        throw new Error("标题没翻成，不写文件");
+      }
+
+      const fm = [
+        "---",
+        `title: ${yamlVal(title)}`,
+        desc ? `desc: ${yamlVal(desc)}` : null,
+        `tags: ${JSON.stringify(outTags)}`,
+        meta.date ? `date: ${yamlVal(meta.date)}` : null,
+        `minutes: ${+meta.minutes || Math.max(1, Math.round(body.replace(/\s/g, "").length / 450))}`,
+        meta.cover ? `cover: ${yamlVal(meta.cover)}` : null,
+        meta.background ? `background: ${yamlVal(meta.background)}` : null,
+        `lang: ${target}`,
+        "auto: true",
+        `srcHash: ${hash}`,
+        `translatedAt: ${new Date().toISOString()}`,
+        "---",
+        ""
+      ].filter(x => x !== null).join("\n");
+
+      if (!DRY) writeFileSync(dst, fm + outBody.replace(/\s+$/, "") + "\n", "utf8");
+      if (prev) updated++; else added++;
+      console.log(`完成（${((Date.now() - t0) / 1000).toFixed(1)}s，${reqCount} 次请求累计）`);
+    } catch (e) {
+      failed++;
+      console.log(`失败：${e.message}（保留原文，下次再试）`);
+      console.log(`::error::翻译失败，这篇的译文仍是旧内容：${relDst} —— ${e.message}`);
+      if (FATAL) { console.log("! 接口本次不可用，先停下——已经翻好的文章照样会提交，剩下的下次再补。"); break; }
     }
   }
-
-  /* 原文本来就没有中文：不生成，网站直接用原文 */
-  if (!hasCJK(body) && !hasCJK(meta.title) && !hasCJK(meta.desc)) {
-    console.log(`= 跳过（原文已是英文）${rel}`);
-    skipped++;
-    continue;
-  }
-
-  process.stdout.write(`→ 翻译 ${rel} ... `);
-  const t0 = Date.now();
-  try {
-    const title = await trShort(meta.title || a.slug);
-    const desc = meta.desc ? await trShort(meta.desc) : "";
-    const tags = Array.isArray(meta.tags) ? meta.tags : (meta.tags ? String(meta.tags).split(/[,，]/).map(x => x.trim()).filter(Boolean) : []);
-    const outTags = [];
-    for (const tg of tags) outTags.push(await trShort(tg));
-    const enBody = await trBody(body);
-
-    /* 质量闸门（2026-10-31 新增）：
-       接口被限流 / 挂掉时，trText 会「保留原文」降级，整篇一个字都没翻，
-       但下面照样会写出一个格式完好的 index.en.md（只有 front matter 是英文的）。
-       这份文件一旦落库，srcHash 就和中文原文一致了 ——
-       以后每次运行都会「跳过（未改动）」，这篇永远不会再被重译，
-       线上英文页面一直显示中文，而 Actions 全程绿勾，查起来极其费劲。
-       所以：译后中文占比没有明显下降，就判定这次没翻成，宁可不写文件。 */
-    const zhRatio = s => {
-      const all = String(s || "").replace(/\s/g, "").length;
-      if (!all) return 0;
-      return (String(s).match(/[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g) || []).length / all;
-    };
-    const r0 = zhRatio(body), r1 = zhRatio(enBody);
-    if (r0 > 0.05 && r1 > r0 * 0.8) {
-      throw new Error(`译后正文中文仍占 ${(r1 * 100).toFixed(0)}%（原文 ${(r0 * 100).toFixed(0)}%），翻译没生效`);
-    }
-    if (hasCJK(title) && zhRatio(title) > 0.3) {
-      throw new Error("标题没翻成（仍是中文），不写文件");
-    }
-
-    const fm = [
-      "---",
-      `title: ${yamlVal(title)}`,
-      desc ? `desc: ${yamlVal(desc)}` : null,
-      `tags: ${JSON.stringify(outTags)}`,
-      meta.date ? `date: ${yamlVal(meta.date)}` : null,
-      `minutes: ${+meta.minutes || Math.max(1, Math.round(body.replace(/\s/g, "").length / 450))}`,
-      meta.cover ? `cover: ${yamlVal(meta.cover)}` : null,
-      meta.background ? `background: ${yamlVal(meta.background)}` : null,
-      "lang: en",
-      "auto: true",
-      `srcHash: ${hash}`,
-      `translatedAt: ${new Date().toISOString()}`,
-      "---",
-      ""
-    ].filter(x => x !== null).join("\n");
-
-    if (!DRY) writeFileSync(a.dst, fm + enBody.replace(/\s+$/, "") + "\n", "utf8");
-    if (prev) updated++; else added++;
-    console.log(`完成（${((Date.now() - t0) / 1000).toFixed(1)}s，${reqCount} 次请求累计）`);
-  } catch (e) {
-    failed++;
-    console.log(`失败：${e.message}（保留原文，下次再试）`);
-    console.log(`::error::翻译失败，这篇的英文版仍是旧内容：${rel} —— ${e.message}`);
-    if (FATAL) { console.log("! 接口本次不可用，先停下——已经翻好的文章照样会提交，剩下的下次再补。"); break; }
-  }
+  if (FATAL) break;
 }
 
-console.log(`\n✓ 英文版：新增 ${added} / 更新 ${updated} / 跳过 ${skipped} / 删除 ${removed} / 失败 ${failed}${DRY ? "（dry-run，未写文件）" : ""}`);
+console.log(`\n✓ 译文：新增 ${added} / 更新 ${updated} / 跳过 ${skipped} / 删除 ${removed} / 失败 ${failed}${DRY ? "（dry-run，未写文件）" : ""}`);
 
-/* 结果写进 Actions 摘要：不点开日志也能一眼看到这次到底做了什么。
-   之前的痛点是「页面全绿、仓库没变化」，现在数字直接摆在运行页面上。 */
 const sumFile = process.env.GITHUB_STEP_SUMMARY;
 if (sumFile) {
   const tbl = [
-    "### 博客英文版生成结果",
+    "### 博客译文生成结果（中 ⇄ 英）",
     "",
     "| 新增 | 更新 | 跳过 | 删除 | 失败 |",
     "| --- | --- | --- | --- | --- |",
     `| ${added} | ${updated} | ${skipped} | ${removed} | ${failed} |`,
     "",
     failed
-      ? `⚠️ 有 ${failed} 篇没翻成（不写文件，避免把中文固化成「英文版」）；已成功的部分照常提交，下次运行自动补翻。`
-      : "✅ 全部处理完毕。",
+      ? `⚠️ 有 ${failed} 个方向没翻成（不写文件，避免把原文固化成「译文」）；已成功的部分照常提交，下次运行自动补翻。`
+      : "✅ 全部处理完毕：每篇文章都有 index.md / index.en.md / index.zh.md。",
     ""
   ].join("\n");
-  try { appendFileSync(sumFile, tbl); } catch (e) { /* 摘要写失败不影响主流程 */ }
+  try { appendFileSync(sumFile, tbl); } catch (e) {}
 }
-/* ---- 结局：只要有失败，就把这次运行标红 ----
-   以前不管成败都退出 0，接口被限流时 Action 一片绿，实际一个文件都没更新，
-   在页面上和「跳过」完全分不出来。现在失败可见：
-   已翻好的部分照常提交（workflow 的提交步骤带 if: always()），下一轮自动补翻。 */
 if (failed && !DRY) {
-  console.log(`::error::有 ${failed} 篇文章没翻成，线上英文版仍是旧内容 —— 已成功的部分照常提交，稍后重跑会自动补翻`);
+  console.log(`::error::有 ${failed} 个方向没翻成，线上仍是旧内容 —— 已成功的部分照常提交，稍后重跑会自动补翻`);
   process.exitCode = 1;
 }
