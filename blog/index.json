@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-06T09:15:14.063Z",
+  "generated": "2026-11-06T09:16:42.491Z",
   "posts": [
     {
       "slug": "BetterGI 更好的原神",
@@ -62,6 +62,27 @@
       },
       "coverThumb": "blog/thumbs/Pages_建站指南-cover.webp",
       "bgThumb": "blog/thumbs/Pages_建站指南-bg.webp"
+    },
+    {
+      "slug": "one-post-two-languages",
+      "md": "blog/one-post-two-languages/index.md",
+      "imgBase": "blog/one-post-two-languages/",
+      "title": "One Post, Two Languages",
+      "desc": "Write in the language you think in, and let the page meet the reader wherever they are. How this blog decides what to translate, which of three engines does the work, and why a cache key with a direction suffix is the difference between a feature and a nuisance.",
+      "tags": [
+        "Writing",
+        "Translation",
+        "Web"
+      ],
+      "date": "2026-11-06",
+      "minutes": 7,
+      "cover": "cover.png",
+      "bg": "cover.png",
+      "imgs": {
+        "cover.png": "blog/thumbs/one-post-two-languages-i0.webp"
+      },
+      "coverThumb": "blog/thumbs/one-post-two-languages-cover.webp",
+      "bgThumb": "blog/thumbs/one-post-two-languages-bg.webp"
     },
     {
       "slug": "编辑器2.0更新",
