@@ -629,7 +629,13 @@ img{display:block;max-width:100%}
   box-shadow:var(--shadow);
   cursor:zoom-in;
   transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s;
+  /* 入场：按 --i 错峰淡入上浮（渲染时写入索引）。backwards 让延迟期间就停在起点，
+     动画结束后交还给 :hover 的 transform，两者不打架 */
+  animation:tileIn .42s cubic-bezier(.2,.7,.2,1) backwards;
+  animation-delay:calc(var(--i,0) * 30ms);
 }
+@keyframes tileIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ph-tile{animation:none}}
 .ph-tile:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
 .ph-tile:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px}
 .ph-tile img{
@@ -696,6 +702,13 @@ img{display:block;max-width:100%}
   align-items:center;justify-content:center;
 }
 .lightbox.open{display:flex;animation:fadeIn .22s ease}
+/* 关灯箱也走动画：.closing 挂着播完淡出再真正隐藏（见 closeLb 的 lbCloseTimer）。
+   没有这一步的话，图片在眼前瞬间蒸发，观感像「闪退」 */
+.lightbox.closing{display:flex;animation:lbFadeOut .18s ease both;pointer-events:none}
+@keyframes lbFadeOut{from{opacity:1}to{opacity:0}}
+@media (prefers-reduced-motion:reduce){
+  .lightbox.open,.lightbox.closing{animation:none}
+}
 /* 灯箱打开时锁住背景滚动 */
 body.lb-lock{overflow:hidden}
 .lightbox img{
@@ -816,7 +829,11 @@ body.lb-lock{overflow:hidden}
   background:var(--card);border:1px solid var(--card-border);
   box-shadow:var(--shadow);cursor:pointer;
   transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s;
+  /* 与照片磁贴同一套错峰入场，相册列表不再是「啪」地整片出现 */
+  animation:tileIn .42s cubic-bezier(.2,.7,.2,1) backwards;
+  animation-delay:calc(var(--i,0) * 30ms);
 }
+@media (prefers-reduced-motion:reduce){.al-card{animation:none}}
 .al-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
 .al-card:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px}
 .al-cover{
@@ -1089,7 +1106,25 @@ body.lb-lock{overflow:hidden}
 }
 .coll-head:hover .coll-chev{color:var(--text-2)}
 .about-card.collapsed .coll-chev{transform:rotate(-90deg)}
-.about-card.collapsed>.coll-body{display:none}
+/* 折叠动画：body 用 grid 行高 1fr ↔ 0fr 插值做平滑收展（不用 JS 量高度，
+   里面图片加载多少都不影响）。收起时 visibility 延迟到动画结束再隐藏，
+   展开时立刻可见 —— 既保证键盘焦点不会落进收起的内容里，又不吃掉入场动画 */
+.about-card.collapsible>.coll-body{
+  display:grid;grid-template-rows:1fr;overflow:hidden;
+  visibility:visible;
+  transition:grid-template-rows .32s cubic-bezier(.2,.7,.2,1),opacity .24s ease,visibility 0s;
+}
+/* 收展的行高插值只认一个网格行：coll-body 里的零散子元素由 JS 包进 .coll-inner
+   （见 applyAboutCollapse），塌缩时靠它 min-height:0 + overflow:hidden 收到零高 */
+.coll-inner{min-height:0;overflow:hidden}
+.about-card.collapsed>.coll-body{
+  grid-template-rows:0fr;opacity:0;visibility:hidden;
+  transition:grid-template-rows .32s cubic-bezier(.2,.7,.2,1),opacity .2s ease,visibility 0s .32s;
+}
+@media (prefers-reduced-motion:reduce){
+  .about-card.collapsible>.coll-body,
+  .about-card.collapsed>.coll-body{transition:none}
+}
 /* 关于页手机端紧凑化：海报从“一行 1 张大图”改为“一行 3 张宫格”，全卡片收紧
    （放在本段基础样式之后，保证媒体查询里的覆盖不被层叠顺序吃掉） */
 @media (max-width:640px){
@@ -1218,7 +1253,11 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 .post-back{display:inline-flex;align-items:center;gap:6px;margin:26px 0 6px;
   color:var(--text-3);font-size:13.5px;font-weight:600;transition:color .2s}
 .post-back:hover{color:var(--accent)}
-.post-back svg{width:15px;height:15px}
+/* 悬停时箭头往左让一让：一个很轻的方向暗示，不挪文字位置免得行内跳动 */
+.post-back svg{width:15px;height:15px;transition:transform .22s cubic-bezier(.2,.7,.2,1)}
+.post-back:hover svg{transform:translateX(-3px)}
+.post-back:active svg{transform:translateX(-1px)}
+@media (prefers-reduced-motion:reduce){.post-back svg{transition:none}.post-back:hover svg{transform:none}}
 .post-head{max-width:760px;margin:0 auto 6px}
 .post-head .post-tags{margin-bottom:10px}
 .post-head h1{font-size:clamp(26px,5vw,38px);font-weight:800;letter-spacing:-.02em;line-height:1.25;margin:0 0 10px}
@@ -2490,7 +2529,7 @@ function photoTilesHtml(list,limit){
     const badge=isLive?`<span class="ph-badge">${esc(T().gallery.liveTag)}</span>`
       :p.type==="video"?`<span class="ph-badge">${esc(T().gallery.videoTag)}</span>`
       :isGif?`<span class="ph-badge">GIF</span>`:"";
-    return `<div class="ph-tile${isLive?" is-live":""}" data-idx="${i}" role="button" tabindex="0" aria-label="${esc(p.name)}">
+    return `<div class="ph-tile${isLive?" is-live":""}" style="--i:${Math.min(i,8)}" data-idx="${i}" role="button" tabindex="0" aria-label="${esc(p.name)}">
       ${mediaTileTag(p,i)}${badge}
       <span class="ph-cap">${esc(p.name)}</span>
       ${more?`<div class="ph-more">+${list.length-limit}</div>`:""}
@@ -2503,8 +2542,8 @@ function albumStripHtml(){
   const t=T().gallery;
   return `<div class="album-label">${esc(t.albums)}</div>
   <div class="album-grid">
-    ${albums.map(a=>`
-    <button class="al-card" data-album="${esc(a.name)}" type="button" aria-label="${esc(a.name)}">
+    ${albums.map((a,i)=>`
+    <button class="al-card" style="--i:${Math.min(i,8)}" data-album="${esc(a.name)}" type="button" aria-label="${esc(a.name)}">
       <span class="al-cover">${
         a.cover?(VID_RE.test(a.cover)
           ?`<video src="${esc(a.cover.indexOf("#")<0?a.cover+"#t=0.1":a.cover)}" preload="metadata" muted playsinline></video>`
@@ -2852,6 +2891,8 @@ function openLb(items,i,grid){
      就保留最初记下的那个，别把焦点目标覆盖成灯箱里的按钮 */
   if(!$("#lightbox").contains(document.activeElement))lbFocus=document.activeElement;
   $("#lightbox").classList.add("open");
+  $("#lightbox").classList.remove("closing");      /* 快速开关：别让上一次的退场动画把入场顶掉 */
+  clearTimeout(lbCloseTimer);
   $("#lightbox").classList.toggle("lb-single",lbItems.length<2);
   document.body.classList.add("lb-lock");         /* 锁住背景滚动 */
   try{ $("#lbClose").focus(); }catch(e){}
@@ -2873,12 +2914,21 @@ function showLb(){
   /* 图片的邻居预取放在这张加载完之后（见 showLbImage）；视频没有加载回调，直接预取 */
   if(p.type==="video")preloadLbNeighbors();
 }
+/* 灯箱退场动画时长（毫秒）：系统开了「减少动态效果」就立刻隐藏 */
+const LB_OUT_MS=(typeof matchMedia==="function"&&matchMedia("(prefers-reduced-motion: reduce)").matches)?0:180;
+let lbCloseTimer=0;
 function closeLb(){
   lbImgToken++;                                   /* 作废还没回来的取图回调 */
   $("#lightbox").classList.remove("lb-busy","lb-zoom");
   try{ $("#lbVideo").pause(); }catch(e){}
-  $("#lightbox").classList.remove("open");
+  const lb=$("#lightbox");
+  lb.classList.remove("open");
   document.body.classList.remove("lb-lock");
+  if(LB_OUT_MS>0){
+    lb.classList.add("closing");                  /* 先播完淡出再 display:none */
+    clearTimeout(lbCloseTimer);
+    lbCloseTimer=setTimeout(()=>lb.classList.remove("closing"),LB_OUT_MS);
+  }
   if(lbFocus&&typeof lbFocus.focus==="function"){ try{ lbFocus.focus(); }catch(e){} }
   lbFocus=null;
 }
@@ -3000,6 +3050,15 @@ function aboutCollapseDefault(){
   try{return matchMedia("(max-width:640px)").matches;}catch(e){return false;}  /* 手机端默认收起 */
 }
 function applyAboutCollapse(){
+  /* 折叠动画需要单一网格行：把 coll-body 里的零散子元素包进一个 .coll-inner。
+     about 页每次重渲染 DOM 都是新拼的，所以这里每次都要检查一遍 */
+  document.querySelectorAll(".about-card.collapsible>.coll-body").forEach(b=>{
+    if(b.firstElementChild&&b.firstElementChild.classList.contains("coll-inner"))return;
+    const w=document.createElement("div");
+    w.className="coll-inner";
+    while(b.firstChild)w.appendChild(b.firstChild);
+    b.appendChild(w);
+  });
   let saved={};
   try{saved=JSON.parse(localStorage.getItem(COLL_KEY)||"{}");}catch(e){}
   document.querySelectorAll(".about-card.collapsible[id]").forEach(c=>{
@@ -5201,8 +5260,25 @@ function revealSite(){
     0 2px 6px rgba(6,10,25,.10),
     0 14px 38px rgba(6,10,25,.28);
 }
-.mp-wrap.open .mp-panel{display:block;animation:mpUp .25s cubic-bezier(.2,.7,.2,1) both}
-@keyframes mpUp{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+/* 开合动画：开=从导航栏底下淡入坠下（带一点缩放），关=原路缩回再隐藏。
+   关闭不能直接 display:none —— 那样退场一帧都看不到。
+   做法：关的时候先挂 .closing 把面板撑在 DOM 里播完退场动画，
+   JS 再摘掉（见下方 setPanel 的 mpCloseTimer）。
+   transform-origin 定在顶部，缩放看起来是「朝导航栏收回去」而不是原地缩 */
+.mp-wrap.open .mp-panel,
+.mp-wrap.closing .mp-panel{display:block}
+.mp-panel{transform-origin:top center}
+.mp-wrap.open .mp-panel{animation:mpIn .26s cubic-bezier(.2,.7,.2,1) both}
+.mp-wrap.closing .mp-panel{animation:mpOut .18s cubic-bezier(.4,0,.75,.2) both}
+@keyframes mpIn{from{opacity:0;transform:translateY(-10px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes mpOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(-8px) scale(.975)}}
+@media (prefers-reduced-motion:reduce){
+  .mp-wrap.open .mp-panel,.mp-wrap.closing .mp-panel{animation:none}
+}
+/* 列表内容换批（切分类 / 换搜索结果）时的轻提示：整列快速淡入一下 */
+.mp-list.mp-swap{animation:mpSwap .2s ease both}
+@keyframes mpSwap{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.mp-list.mp-swap{animation:none}}
 .mp-hd{
   display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding:12px 12px 4px;
@@ -5234,7 +5310,7 @@ function revealSite(){
 }
 .mp-input::placeholder{color:var(--text-3)}
 .mp-input:focus{border-color:var(--accent);background:rgba(255,255,255,.10)}
-.mp-list{max-height:230px;overflow-y:auto;padding:0 8px 8px}
+.mp-list{max-height:min(230px,38vh);overflow-y:auto;padding:0 8px 8px}
 .mp-list::-webkit-scrollbar{width:6px}
 .mp-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:99px}
 .mp-list::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.26)}
@@ -5763,21 +5839,33 @@ input[type=range].mp-range::-moz-range-thumb{
     searchGo.title=lbl; searchGo.setAttribute("aria-label",lbl);
     searchInp.setAttribute("aria-label",lbl);
   }
+  /* 换分类（酷狗歌单 ↔ 在线搜歌）或换成搜索结果时，整列快速淡入一下，
+     内容替换不再是无声闪变。逐字筛选不播——每敲一个字闪一次只会晃眼 */
+  let lastListTab=null;
+  function paintList(html,swap){
+    listEl.innerHTML=html;
+    if(!swap)return;
+    listEl.classList.remove("mp-swap");
+    void listEl.offsetWidth;      /* 强制回流，动画才会从头播 */
+    listEl.classList.add("mp-swap");
+  }
   function renderList(){
     if(!wrap.classList.contains("open"))return;
+    const swap=(lastListTab!==tab);
+    lastListTab=tab;
     const full=poolOf(tab);            /* 该分类的完整歌单 */
     const pool=visiblePool(tab);       /* 应用筛选后实际显示的歌 */
     paintFilterTip(full.length,pool.length);
     if(tab==="search"&&!full.length){
-      listEl.innerHTML='<div class="mp-empty">'+L().emptySearch+'</div>';
+      paintList('<div class="mp-empty">'+L().emptySearch+'</div>',swap);
       return;
     }
     if(!full.length){
-      listEl.innerHTML='<div class="mp-empty">'+L().emptyKg+'</div>';
+      paintList('<div class="mp-empty">'+L().emptyKg+'</div>',swap);
       return;
     }
     if(!pool.length){                  /* 歌单里有歌，只是筛不出来 */
-      listEl.innerHTML='<div class="mp-empty">'+L().filterEmpty(filterKw)+'</div>';
+      paintList('<div class="mp-empty">'+L().filterEmpty(filterKw)+'</div>',swap);
       return;
     }
     const list=(tab==="kg")?pool.slice(0,shown):pool;
@@ -5791,13 +5879,13 @@ input[type=range].mp-range::-moz-range-thumb{
         +(now.artist?'<span class="mp-row-a">'+esc2(now.artist)+"</span>":"")
         +"</div>";
     }
-    listEl.innerHTML=pinned+list.map((t,i)=>
+    paintList(pinned+list.map((t,i)=>
       '<div class="mp-row'+(now&&now.id===t.id?" on":"")+'" data-i="'+i+'">'
       +'<span class="mp-row-n">'+esc2(t.name)+"</span>"
       +(t.artist?'<span class="mp-row-a">'+esc2(t.artist)+"</span>":"")
       +"</div>"
     ).join("")+(tab==="kg"&&pool.length>shown
-      ? '<button class="mp-more" id="mpMore">'+L().more(pool.length-shown)+'</button>':"");
+      ? '<button class="mp-more" id="mpMore">'+L().more(pool.length-shown)+'</button>':""),swap);
     const more=el("mpMore");
     if(more)more.onclick=()=>{ shown+=LIMIT_STEP; renderList(); };
   }
@@ -6151,18 +6239,39 @@ input[type=range].mp-range::-moz-range-thumb{
   try{ window.addEventListener("resize",syncPanelWidth); }catch(e){}
   try{ window.addEventListener("load",syncPanelWidth); }catch(e){}
 
+  /* 面板收起的退场动画时长（毫秒）：.closing 挂这么久再真正隐藏。
+     系统开了「减少动态效果」就立刻收，别让人等一个不存在的动画 */
+  const MP_OUT_MS=(typeof matchMedia==="function"&&matchMedia("(prefers-reduced-motion: reduce)").matches)?0:190;
+  let mpCloseTimer=0;
   function setPanel(open){
-    wrap.classList.toggle("open",open);
-    musicBtn.setAttribute("aria-expanded",open?"true":"false");   /* 无障碍：读屏知道面板开着还是关着 */
+    clearTimeout(mpCloseTimer);
     if(open){
-      syncPanelWidth();                            /* 先对齐导航栏宽度，再展开 */
+      wrap.classList.remove("closing");
+      wrap.classList.add("open");                  /* 必须先挂 open：renderList 里有「面板没开就不渲染」的守卫 */
+      syncPanelWidth();                            /* 再对齐导航栏宽度，然后展开 */
       if(toastEl)toastEl.classList.remove("on");   /* 面板和气泡在同一块地方，先收起来 */
       renderList();
+    }else if(wrap.classList.contains("open")){
+      wrap.classList.remove("open");
+      if(MP_OUT_MS>0){
+        wrap.classList.add("closing");             /* 先播完退场动画再 display:none */
+        mpCloseTimer=setTimeout(()=>wrap.classList.remove("closing"),MP_OUT_MS);
+      }
     }
+    musicBtn.setAttribute("aria-expanded",open?"true":"false");   /* 无障碍：读屏知道面板开着还是关着 */
   }
   /* 点导航栏的音乐入口：开 / 关切换 —— 点一下展开，再点一下收起。
-     （点面板外的空白处、按 Esc 也都能收起。） */
-  musicBtn.addEventListener("click",()=>setPanel(!wrap.classList.contains("open")));
+     （点面板外的空白处、按 Esc 也都能收起。）
+     键盘触发（e.detail===0）时把焦点送进面板，读屏 / 纯键盘用户不用 Tab 摸半天；
+     Esc 收起后焦点还给音乐按钮，别把用户丢到页面开头 */
+  musicBtn.addEventListener("click",e=>{
+    const willOpen=!wrap.classList.contains("open");
+    setPanel(willOpen);
+    if(willOpen&&(e.detail===0)){
+      const first=wrap.querySelector("button,input");
+      if(first){ try{ first.focus(); }catch(err){} }
+    }
+  });
   /* 点面板外面 → 收起面板（按 Esc 也行）。
      注意这里监听的是「按下」而不是「点击」：
      点击面板内的歌会触发 renderList() 重建列表，等事件冒泡到 document 时，
@@ -6175,7 +6284,10 @@ input[type=range].mp-range::-moz-range-thumb{
     setPanel(false);
   },true);
   document.addEventListener("keydown",e=>{
-    if(e.key==="Escape"&&wrap.classList.contains("open"))setPanel(false);
+    if(e.key==="Escape"&&wrap.classList.contains("open")){
+      setPanel(false);
+      try{ musicBtn.focus(); }catch(err){}   /* 焦点还给触发按钮，键盘用户不迷路 */
+    }
   });
   ppBtn.addEventListener("click",toggle);
   nextBtn.addEventListener("click",()=>step(1));
