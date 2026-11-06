@@ -4,29 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
-<title>鉴业の小站｜Jianye's Corner</title>
-<meta name="description" content="鉴业小站（鉴业の小站，也有人写作建业小站）是鉴业（Jianye）的个人网站：愿我们拥有的时候不要毁，失去的时候不要悔。收录作品、博客、相册与实用工具。">
-<meta name="keywords" content="鉴业小站,鉴业の小站,建业小站,鉴业,建业,Jianye,Jianye's Corner,个人网站,博客">
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "鉴业の小站",
-  "alternateName": ["鉴业小站", "建业小站", "Jianye's Corner", "Jianye"],
-  "url": "https://jype.top/",
-  "description": "鉴业小站（鉴业の小站）——鉴业（Jianye）的个人网站，收录作品、博客、相册与实用工具。",
-  "inLanguage": "zh-CN",
-  "publisher": {
-    "@type": "Person",
-    "name": "鉴业",
-    "alternateName": "Jianye",
-    "url": "https://jype.top/"
-  }
-}
-</script>
+<title></title>
+<meta name="description" content="">
 <!-- 站名 / 描述 / 图标（favicon）都由 profile.txt 配置，JS 启动后填到这里 -->
-<link rel="icon" href="/icon.ico" sizes="any">
-<link rel="icon" type="image/png" href="/icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <!-- 移动端地址栏配色（站点固定深色） -->
 <meta name="theme-color" content="#0b0d12">
@@ -91,28 +71,37 @@
 </script>
 <!-- 分享卡片预览（og 内容同样由 profile.txt 配置后回填） -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="鉴业の小站">
-<meta property="og:title" content="鉴业の小站｜Jianye's Corner">
-<meta property="og:description" content="鉴业小站（鉴业の小站）是鉴业的个人网站：愿我们拥有的时候不要毁，失去的时候不要悔。收录作品、博客、相册与实用工具。">
-<meta property="og:url" content="https://jype.top/">
+<meta property="og:site_name" content="">
+<meta property="og:title" content="">
+<meta property="og:description" content="">
+<meta property="og:url" content="https://aimjianye.top/">
 <meta property="og:image" content="">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
 <!-- 规范地址：hash 路由的 #/xxx 都是同一个文档，统一指向站点根。
      这里写的是「默认值」，实际会按 profile.txt 的「域名」再对齐一次 -->
-<link rel="canonical" href="https://jype.top/">
+<link rel="canonical" href="https://aimjianye.top/">
 <!-- 首屏大图所在的图床，提前建连 -->
 <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
 <!-- 相册的 GitHub API 兜底通道，提前建连 -->
 <link rel="preconnect" href="https://api.github.com" crossorigin>
-<!-- 语言：首次访问默认中文（搜索引擎抓取到的标题与描述也是中文），
-     手动切换过的（中文 / 英文）以本地保存为准，右上角仍可随时切换。 -->
+<!-- 语言：首次访问先按系统语言定好（中文→中文，其它语言→英文），
+     免得英文用户先看到一闪而过的中文标题 / 语言标记。手动切换过的以本地保存为准。 -->
 <script>
 (function(){
   var s=null; try{ s=localStorage.getItem("jy-lang"); }catch(e){}
-  /* 首次访问默认中文：搜索引擎抓取时读到的标题与描述也是中文，界面上仍可手动切英文 */
-  if(s!=="zh"&&s!=="en") s="zh";
+  if(s!=="zh"&&s!=="en"){
+    var list=[], i;
+    try{ list=(navigator.languages&&navigator.languages.length)?navigator.languages:[navigator.language||""]; }
+    catch(e){ list=[""]; }
+    s="en";                                   /* 默认英文：非中文一律英文 */
+    for(i=0;i<list.length;i++){
+      var l=String(list[i]||"").replace(/_/g,"-").toLowerCase();
+      if(l.indexOf("zh")===0){ s="zh"; break; }   /* zh / zh-CN / zh-TW / zh-HK… 都算中文 */
+      if(l.indexOf("en")===0){ s="en"; break; }
+    }
+  }
   window.__JY_LANG=s;
   document.documentElement.lang=(s==="zh")?"zh-CN":"en";
   if(s!=="zh") document.title="Jianye's Corner";
@@ -1413,11 +1402,11 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 }
 /* ---------- 图集：@gallery[a.jpg, b.jpg, c.jpg] ---------- */
 .post-body .md-gallery{display:grid;gap:9px;margin:20px 0}
-.post-body .md-gallery.g2{grid-template-columns:1fr 1fr}
-.post-body .md-gallery.g3{grid-template-columns:repeat(3,1fr)}
-.post-body .md-gallery.g4{grid-template-columns:repeat(4,1fr)}
+.post-body .md-gallery.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.post-body .md-gallery.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.post-body .md-gallery.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .post-body .md-gallery img{
-  width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;margin:0;
+  width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;margin:0;overflow:hidden;min-width:0;overflow:hidden;min-width:0;
   border-radius:14px;border:1px solid var(--card-border);background:var(--img-placeholder);
 }
 /* ---------- 提示块：> [!TIP] ---------- */
@@ -1452,7 +1441,7 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 .post-body .md-task li.done span{text-decoration:line-through;color:var(--text-3)}
 .post-body .md-task li.done input{opacity:.65}
 @media (max-width:600px){
-  .post-body .md-gallery.g3,.post-body .md-gallery.g4{grid-template-columns:1fr 1fr}
+  .post-body .md-gallery.g3,.post-body .md-gallery.g4{grid-template-columns:repeat(2,minmax(0,1fr))}
   .post-body .md-linkcard{padding:11px 13px;gap:11px}
   .post-body .lc-mark{width:34px;height:34px;font-size:14px;border-radius:10px}
   .post-body .lc-title{font-size:14px}
@@ -1586,7 +1575,7 @@ html:not(.jy-go) .hero-inner{animation:none}
     <header class="hero">
       <div class="wrap hero-inner">
         <h1>鉴业の小站 · Jianye's Corner</h1>
-        <p>鉴业小站（又称鉴业の小站、建业小站，英文 Jianye's Corner）是鉴业的个人网站。愿我们拥有的时候不要毁，失去的时候不要悔。这里记录拍过的照片、写下的文字，以及正在做的小东西。</p>
+        <p>愿我们拥有的时候不要毁，失去的时候不要悔。这里记录拍过的照片、写下的文字，以及正在做的小东西。</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="#/blog">阅读博客</a>
           <a class="btn btn-ghost" href="#/gallery">逛逛图库</a>
@@ -3208,10 +3197,14 @@ async function manifestPosts(){
       bgThumb:p.bgThumb?encodeURI(String(p.bgThumb)):"",
       imgMap:(p.imgs&&typeof p.imgs==="object")?p.imgs:null,
       /* 静态英文版（由 GitHub Action 自动生成）：英文界面直接读它，
-         不再逐条机器翻译，首屏不会先闪中文再换英文 */
+         不再逐条机器翻译，首屏不会先闪中文再换英文。
+         英文写的文章同理用静态中文版（index.zh.md，约定字段 mdZh/titleZh，没生成也不影响） */
       mdURLEn:p.mdEn?encodeURI(String(p.mdEn)):"",
       titleEn:p.titleEn||"",descEn:p.descEn||"",
-      tagsEn:Array.isArray(p.tagsEn)?p.tagsEn:[]
+      tagsEn:Array.isArray(p.tagsEn)?p.tagsEn:[],
+      mdURLZh:p.mdZh?encodeURI(String(p.mdZh)):"",
+      titleZh:p.titleZh||"",descZh:p.descZh||"",
+      tagsZh:Array.isArray(p.tagsZh)?p.tagsZh:[]
     })).sort(byDateDesc);
   }catch(e){return null;}
 }
@@ -3749,6 +3742,14 @@ function mdEnURL(u){
   if(/\.md$/i.test(u))return u.replace(/\.md$/i,".en.md");
   return "";
 }
+/* 由英文原文地址推出中文版地址：blog/x/index.md → blog/x/index.zh.md
+   （英文写的文章配套的静态中文版，约定同 index.en.md，有没有都行，没有就走机翻） */
+function mdZhURL(u){
+  if(!u||typeof u!=="string")return "";
+  if(/\/index\.md$/i.test(u))return u.replace(/\/index\.md$/i,"/index.zh.md");
+  if(/\.md$/i.test(u))return u.replace(/\.md$/i,".zh.md");
+  return "";
+}
 
 /* 博客列表骨架屏：形状/尺寸与真实卡片一致（缩略图块、标签条、标题条、摘要条、日期条） */
 function blogSkeletonHTML(){
@@ -3778,7 +3779,7 @@ let blogPosts=[];        /* 最近一次加载的文章列表 */
 let blogQuery="";        /* 搜索词：会话内保留，看完文章返回博客还在 */
 function blogMatch(p,q){
   if(!q)return true;
-  const tr=p._tr||{};   /* 译文（英文界面翻译完成后挂上）：英文关键词也能搜到中文文章 */
+  const tr=p._tr||{};   /* 译文（界面语言对应的翻译完成后挂上）：两种语言的关键词都能搜到 */
   const hay=((p.title||"")+" "+(p.desc||"")+" "+((p.tags||[]).join(" "))+" "+(p.slug||"")
     +" "+(p.titleEn||"")+" "+(p.descEn||"")+" "+((p.tagsEn||[]).join(" "))
     +" "+(tr.t||"")+" "+(tr.d||"")+" "+((tr.g||[]).join(" "))).toLowerCase();
@@ -3809,11 +3810,15 @@ function blogListHTML(list,q,stagger){
       lastYear=y;
     }
     const dly=stagger?` style="animation-delay:${(i++)*60}ms"`:"";
-    /* 英文界面 + 有静态英文版 → 直接用英文标题/摘要/标签，免得先闪中文再机翻 */
-    const useEn=lang==="en"&&!!(p.titleEn||p.descEn);
-    const cTitle=useEn&&p.titleEn?p.titleEn:(p.title||t.blog.untitled);
-    const cDesc=useEn&&p.descEn?p.descEn:(p.desc||"");
-    const cTags=(useEn&&(p.tagsEn||[]).length)?p.tagsEn:(p.tags||[]);
+    /* 英文界面 + 有静态英文版 → 直接用英文标题/摘要/标签；
+       中文界面 + 英文文章有静态中文版 → 同理，免得先闪原文再机翻 */
+    const sm=lang==="en"
+      ?{t:p.titleEn,d:p.descEn,g:p.tagsEn}
+      :{t:p.titleZh,d:p.descZh,g:p.tagsZh};
+    const useAlt=!!(sm.t||sm.d);
+    const cTitle=useAlt&&sm.t?sm.t:(p.title||t.blog.untitled);
+    const cDesc=useAlt&&sm.d?sm.d:(p.desc||"");
+    const cTags=(useAlt&&(sm.g||[]).length)?sm.g:(p.tags||[]);
     /* 封面也可以是视频：抓第 0.1 秒当缩略图（纯 <img> 会直接坏掉） */
     const coverSrc=p.coverThumb||postSrc(p,p.cover);
     const thumbHTML=(!p.coverThumb&&isVideoFile(p.cover))
@@ -3958,6 +3963,17 @@ function trHash(s){
   return (h>>>0).toString(36);
 }
 function hasCJK(s){return /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/.test(String(s));}
+/* 翻译方向：zen=中→英（历史默认），ezh=英→中。
+   文章用哪种语言写就往反方向翻 —— 判定依据是内容里有没有 CJK 字符 */
+function trNeed(s,dir){
+  s=String(s==null?"":s);
+  if(!s.trim())return false;
+  if(dir==="ezh")return !hasCJK(s)&&/[A-Za-z]/.test(s);   /* 纯数字/符号不用翻 */
+  return hasCJK(s);
+}
+/* 缓存键带方向：旧的中→英条目沿用原键（老缓存照常命中），
+   英→中是新方向、新键，互不污染 */
+function trKey(base,dir){ return dir==="ezh" ? base+":ezh" : base; }
 /* 判断「还有没有真正需要翻译的中文」：代码块、行内代码、图片路径、链接地址、HTML 标签
    里的中文一律不算 —— 静态英文版里的 ![屏幕截图_x](屏幕截图_x.jpg)、cover: 中文文件名.jpg
    这类是资源名，本来就不该翻，却被 hasCJK 误判成「没翻译」，于是整页又去走临时机翻 */
@@ -3982,19 +3998,23 @@ function hasCJKText(s){
 const TR_PROXY="/api/translate";
 let trProxyDead=false;          /* 代理 404 一次就永久跳过（本地开发场景） */
 let trEngineId="";              /* 上次成功的引擎 id */
-let trLocalState="";            /* ""=未探测 | available | downloadable */
-let trLocalReady=false;         /* 本地模型已就绪：优先用它，零请求零延迟 */
-let trLocal=null;               /* 本地翻译器实例（只建一次） */
+let trLocalState={zen:"",ezh:""};        /* ""=未探测 | available | downloadable（按方向分开记） */
+let trLocalReady={zen:false,ezh:false};  /* 本地模型已就绪（按方向记）：优先用它，零请求零延迟 */
+let trLocalMap={};                       /* 本地翻译器实例：每个方向一个，只建一次 */
 let trRetry=null;               /* 当前文章「重新翻译」入口（失败提示里的按钮用） */
 try{ trEngineId=localStorage.getItem("jy-tr-engine")||""; }catch(e){}
-/* 开机就悄悄探一下本地模型（只是查询状态，不会触发下载） */
+/* 开机就悄悄探一下本地模型（只是查询状态，不会触发下载），两个方向各探各的 */
 if("Translator" in self){
   Promise.resolve().then(async()=>{
-    try{
-      const av=await self.Translator.availability({sourceLanguage:"zh",targetLanguage:"en"});
-      trLocalState = av==="available" ? "available" : "downloadable";
-      if(trLocalState==="available")trLocalReady=true;
-    }catch(e){ trLocalState="downloadable"; }
+    const probe=async(dir,src,dst)=>{
+      try{
+        const av=await self.Translator.availability({sourceLanguage:src,targetLanguage:dst});
+        trLocalState[dir]=av==="available"?"available":"downloadable";
+        if(trLocalState[dir]==="available")trLocalReady[dir]=true;
+      }catch(e){ trLocalState[dir]="downloadable"; }
+    };
+    await probe("zen","zh","en");
+    await probe("ezh","en","zh-CN");
   }).catch(()=>{});
 }
 function trTimeout(ms){
@@ -4002,14 +4022,15 @@ function trTimeout(ms){
   const timer=setTimeout(()=>ac.abort(),ms);
   return {signal:ac.signal,done:()=>clearTimeout(timer)};
 }
-/* 引擎 1：本站 Pages Function 代理（同域，国内可用） */
-async function trViaProxy(text){
+/* 引擎 1：本站 Pages Function 代理（同域，国内可用）。dir 决定翻译方向 */
+async function trViaProxy(text,dir){
   if(trProxyDead){const e=new Error("no proxy");e.skip=true;throw e;}   /* 环境问题，不计数 */
   const tk=trTimeout(9000);
+  const pair=dir==="ezh"?{from:"en",to:"zh-CN"}:{from:"zh-CN",to:"en"};
   try{
     const r=await fetch(TR_PROXY,{method:"POST",signal:tk.signal,
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({q:text,from:"zh-CN",to:"en"})});
+      body:JSON.stringify({q:text,from:pair.from,to:pair.to})});
     if(r.status===404){trProxyDead=true;const e=new Error("no proxy");e.skip=true;throw e;}
     if(!r.ok)throw new Error("proxy "+r.status);
     const j=await r.json();
@@ -4019,11 +4040,12 @@ async function trViaProxy(text){
 }
 /* 引擎 2：Google 翻译公开接口直连（境外网络/有代理时可用）
    超时压到 6 秒：国内被墙时请求会一直挂着，等满 9 秒纯属干耗，短一点能更快放弃 */
-async function trViaGoogle(text){
+async function trViaGoogle(text,dir){
+  const sl=dir==="ezh"?"en":"zh-CN",tl=dir==="ezh"?"zh-CN":"en";
   const tk=trTimeout(6000);
   try{
     const r=await fetch("https://translate.googleapis.com/translate_a/single"
-      +"?client=gtx&sl=zh-CN&tl=en&dt=t&q="+encodeURIComponent(text),
+      +"?client=gtx&sl="+sl+"&tl="+tl+"&dt=t&q="+encodeURIComponent(text),
       {cache:"no-cache",signal:tk.signal});
     if(!r.ok)throw new Error("google "+r.status);
     const j=await r.json();
@@ -4051,26 +4073,30 @@ function trChunks(text,max){
    —— 模型跑在本机，不联网、不花额度、不限次数，是「无限量」这条需求的根本上解。
    只在模型已经就绪（availability === "available"）时才用：不替用户偷偷下载模型。
    Firefox / Safari 暂不支持，会瞬间跳过，不影响其它引擎。 */
-async function trViaLocal(text){
+async function trViaLocal(text,dir){
+  const src=dir==="ezh"?"en":"zh",dst=dir==="ezh"?"zh-CN":"en";
+  const st=trLocalState[dir]||"";
   const notReady=msg=>{const e=new Error(msg);e.skip=true;return e;};
-  if(trLocalState==="downloadable")throw notReady("local model not ready");
-  if(!("Translator" in self)){trLocalState="downloadable";throw notReady("no local translator");}
-  if(!trLocalState){
+  if(st==="downloadable")throw notReady("local model not ready");
+  if(!("Translator" in self)){trLocalState[dir]="downloadable";throw notReady("no local translator");}
+  if(!st){
     let av="";
-    try{ av=await self.Translator.availability({sourceLanguage:"zh",targetLanguage:"en"}); }
+    try{ av=await self.Translator.availability({sourceLanguage:src,targetLanguage:dst}); }
     catch(e){ av=""; }
     /* available=可直接用；downloadable/downloading/unavailable=这轮先不用 */
-    trLocalState = av==="available" ? "available" : "downloadable";
+    trLocalState[dir]=av==="available"?"available":"downloadable";
   }
-  if(trLocalState!=="available")throw notReady("local model not ready");
-  trLocalReady=true;
-  if(!trLocal){
-    trLocal=await self.Translator.create({sourceLanguage:"zh",targetLanguage:"en"});
+  if(trLocalState[dir]!=="available")throw notReady("local model not ready");
+  trLocalReady[dir]=true;
+  const pair=src+">"+dst;
+  if(!trLocalMap[pair]){
+    trLocalMap[pair]=await self.Translator.create({sourceLanguage:src,targetLanguage:dst});
   }
+  const inst=trLocalMap[pair];
   const parts=trChunks(text,900);
   const outs=[];
   for(const p of parts){
-    const s=await trLocal.translate(p);
+    const s=await inst.translate(p);
     if(typeof s!=="string"||!s.trim())throw new Error("local empty");
     outs.push(s.trim());
   }
@@ -4113,16 +4139,18 @@ document.addEventListener("click",e=>{
   trResetFail();
   if(typeof trRetry==="function")trRetry();
 });
-/* 统一入口：按「上次成功的引擎优先」依次尝试，全失败才抛错（调用方保留原文） */
-async function gTranslate(text){
+/* 统一入口：按「上次成功的引擎优先」依次尝试，全失败才抛错（调用方保留原文）。
+   dir="zen" 中→英（默认，兼容旧调用），"ezh" 英→中 */
+async function gTranslate(text,dir){
+  dir=dir==="ezh"?"ezh":"zen";
   /* 排序：本地模型就绪→最前（不花流量、不等网络）；其次上次成功的引擎；其余按原序 */
-  const rank=e=>(e.id==="local"&&trLocalReady)?0:(e.id===trEngineId?1:2);
+  const rank=e=>(e.id==="local"&&trLocalReady[dir])?0:(e.id===trEngineId?1:2);
   const order=TR_ENGINES.slice().sort((a,b)=>rank(a)-rank(b));
   let lastErr=null;
   for(const e of order){
     if(trCooling(e.id))continue;
     try{
-      const out=await e.run(text);
+      const out=await e.run(text,dir);
       if(out&&out.trim()){
         trMarkOk(e.id);
         if(trEngineId!==e.id){
@@ -4155,7 +4183,7 @@ function trPool(items,limit,fn){
   });
 }
 /* 翻译一行：先把行内代码 / 图片 / 链接地址摘成占位符，只送纯文字去翻，译后还原 */
-async function translateLine(line){
+async function translateLine(line,dir){
   const keep=[];
   const stash=s=>{keep.push(s);return "SnPt"+(keep.length-1);};
   try{
@@ -4163,8 +4191,8 @@ async function translateLine(line){
       .replace(/`[^`]+`/g,m=>stash(m))                                   /* 行内代码原样保留 */
       .replace(/!\[[^\]]*\]\([^)\s]+[^)]*\)/g,m=>stash(m))               /* 图片原样保留 */
       .replace(/\[([^\]]+)\]\(([^)\s]+)[^)]*\)/g,(m,txt,u)=>"["+txt+stash("]("+u+")")); /* 链接只翻文字 */
-    if(!hasCJK(work))return line;                                        /* 摘完没有中文了（纯链接行等） */
-    let out=await gTranslate(work);
+    if(!trNeed(work,dir))return line;                                    /* 摘完没有可翻内容（纯链接行等） */
+    let out=await gTranslate(work,dir);
     out=out.replace(TR_TOKEN,(m,n)=>keep[+n]!==undefined?keep[+n]:m);
     if(TR_TOKEN.test(out)){TR_TOKEN.lastIndex=0;return line;}            /* 占位符没还原干净 → 保原文 */
     TR_TOKEN.lastIndex=0;
@@ -4180,7 +4208,7 @@ async function translateLine(line){
    所以把可翻的行打包成组（6 行一组、换行分隔）一次翻一组；
    返回行数对不上（引擎吞行/并行不同）就整组退回逐行翻，再不行才保留原文。
    标签翻译走的正是这种「合并-对齐」路数，实测可靠。 */
-async function translateMarkdown(md){
+async function translateMarkdown(md,dir){
   const lines=String(md).split(/\r?\n/);
   const out=lines.slice();
   const jobs=[];
@@ -4192,7 +4220,7 @@ async function translateMarkdown(md){
     if(!line.trim()
       ||/^\s*(<|<!--|\||!\[)/.test(line)
       ||/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)
-      ||!hasCJK(line)){ out[i]=line; continue; }
+      ||!trNeed(line,dir)){ out[i]=line; continue; }
     jobs.push({i,line});
   }
   /* 先按行分类再分组：只有「连续的纯段落行」才打包合翻；
@@ -4213,13 +4241,13 @@ async function translateMarkdown(md){
   }
   flush();
   const byLine=async g=>{   /* 整组失败的兜底：组内逐行翻，成功几行算几行 */
-    await trPool(g,2,async j=>{ out[j.i]=await translateLine(j.line); });
+    await trPool(g,2,async j=>{ out[j.i]=await translateLine(j.line,dir); });
   };
-  await trPool(singles,3,async j=>{ out[j.i]=await translateLine(j.line); });
+  await trPool(singles,3,async j=>{ out[j.i]=await translateLine(j.line,dir); });
   await trPool(groups,2,async g=>{
     const joined=g.map(j=>j.line).join("\n");
     try{
-      const tr=await gTranslate(joined);
+      const tr=await gTranslate(joined,dir);
       const parts=String(tr).split(/\r?\n/).map(s=>s.trim());
       if(parts.length===g.length&&parts.every(s=>s)){
         g.forEach((j,k)=>{out[j.i]=parts[k];});
@@ -4234,12 +4262,14 @@ async function translateMarkdown(md){
 }
 /* 翻译标签数组：带中文的标签先合并成一次请求（换行分隔、按行对齐），
    行数对不上（不同引擎对换行的处理不一样）就逐个翻，保证标签不会整组卡在中文 */
-async function translateTags(tags){
+/* 翻译标签数组：目标语言里「待翻」的标签先合并成一次请求（换行分隔、按行对齐），
+   行数对不上（不同引擎对换行的处理不一样）就逐个翻，保证标签不会整组卡在原文 */
+async function translateTags(tags,dir){
   const arr=(Array.isArray(tags)?tags:[]).map(x=>String(x));
-  const idx=arr.map((x,i)=>hasCJK(x)?i:-1).filter(i=>i>=0);
+  const idx=arr.map((x,i)=>trNeed(x,dir)?i:-1).filter(i=>i>=0);
   if(!idx.length)return arr;
   try{
-    const out=await gTranslate(idx.map(i=>arr[i]).join("\n"));
+    const out=await gTranslate(idx.map(i=>arr[i]).join("\n"),dir);
     const parts=out.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
     if(parts.length===idx.length){
       const res=arr.slice();
@@ -4252,7 +4282,7 @@ async function translateTags(tags){
   let hit=0;
   await trPool(idx,3,async i=>{
     try{
-      const s=await gTranslate(arr[i]);
+      const s=await gTranslate(arr[i],dir);
       if(s&&s.trim()){ res[i]=s.trim(); hit++; }
     }catch(e){}
   });
@@ -4292,16 +4322,17 @@ function lsPut(k,v){
 /* 翻译一篇完整文章：正文与「标题/摘要/标签」分开缓存。
    好处是正文翻译成功就先落盘（下次打开秒出，不再重复消耗额度），
    标题或标签偶发失败也不会连累正文白翻一遍。 */
-async function translatePost(slug,title,desc,body,tags){
+async function translatePost(slug,title,desc,body,tags,dir){
   tags=Array.isArray(tags)?tags:[];
+  dir=dir==="ezh"?"ezh":"zen";
   /* 元信息（标题/摘要/标签）复用列表页那份缓存，两边只翻一次 */
-  const meta=await translatePostMeta({slug,title,desc,tags});
-  const bkey="jy-trb2:"+slug+":"+trHash(body);
+  const meta=await translatePostMeta({slug,title,desc,tags},dir);
+  const bkey=trKey("jy-trb2:"+slug+":"+trHash(body),dir);
   let bb=null;
   try{ const c=localStorage.getItem(bkey); if(c)bb=JSON.parse(c).b; }catch(e){}
   if(!bb&&TR_MEM.has(bkey))bb=TR_MEM.get(bkey).b;
   if(!bb){
-    bb=await translateMarkdown(body);
+    bb=await translateMarkdown(body,dir);
     if(bb&&bb!==body){
       TR_MEM.set(bkey,{b:bb});
       lsPut(bkey,JSON.stringify({b:bb}));
@@ -4314,23 +4345,25 @@ async function translatePost(slug,title,desc,body,tags){
    缓存里存的是 Promise：同一个条目的并发请求（打字筛选时会重渲染列表）共用一次，
    以前每次重渲染都会为同一篇再发一遍翻译请求 */
 const TRM_MEM=new Map();
-function translatePostMeta(post){
+function translatePostMeta(post,dir){
+  dir=dir==="ezh"?"ezh":"zen";
   const title=post.title||"",desc=post.desc||"",tags=Array.isArray(post.tags)?post.tags:[];
-  if(!hasCJK(title+desc+tags.join("")))return Promise.resolve(null);   /* 全英文条目不用翻 */
-  const key="jy-trm2:"+(post.slug||"")+":"+trHash(title+"\u0000"+desc+"\u0000"+tags.join("\u0000"));
+  /* 目标语言里已经「读得懂」的条目不翻：中文界面不碰中文条目，英文界面不碰英文条目 */
+  if(!trNeed(title,dir)&&!trNeed(desc,dir)&&!tags.some(x=>trNeed(x,dir)))return Promise.resolve(null);
+  const key=trKey("jy-trm2:"+(post.slug||"")+":"+trHash(title+"\u0000"+desc+"\u0000"+tags.join("\u0000")),dir);
   try{ const c=localStorage.getItem(key); if(c)return Promise.resolve(JSON.parse(c)); }catch(e){}
   if(TRM_MEM.has(key))return TRM_MEM.get(key);
   const job=(async()=>{
     const [tt,gg,dd]=await Promise.all([
-      hasCJK(title)?gTranslate(title).catch(()=> ""):Promise.resolve(""),
-      translateTags(tags),
-      desc&&hasCJK(desc)?gTranslate(desc).catch(()=> ""):Promise.resolve("")
+      trNeed(title,dir)?gTranslate(title,dir).catch(()=> ""):Promise.resolve(""),
+      translateTags(tags,dir),
+      desc&&trNeed(desc,dir)?gTranslate(desc,dir).catch(()=> ""):Promise.resolve("")
     ]);
     const r={t:tt||title,g:gg,d:dd||desc};
-    /* 标题 / 摘要 / 标签有任意一项没翻成就不落盘，下次打开重试，别把中文永久当成译文缓存 */
-    const okT=!hasCJK(title)||!!tt;
-    const okD=!desc||!hasCJK(desc)||!!dd;
-    const okG=tags.every((x,i)=>!hasCJK(x)||(gg[i]&&gg[i]!==x));
+    /* 标题 / 摘要 / 标签有任意一项该翻却没翻成就不落盘，下次打开重试，别把原文永久当成译文缓存 */
+    const okT=!trNeed(title,dir)||!!tt;
+    const okD=!desc||!trNeed(desc,dir)||!!dd;
+    const okG=tags.every((x,i)=>!trNeed(x,dir)||(gg[i]&&gg[i]!==x));
     if(okT&&okD&&okG)lsPut(key,JSON.stringify(r));
     return r;
   })();
@@ -4340,20 +4373,25 @@ function translatePostMeta(post){
   TRM_MEM.set(key,safe);
   return safe;
 }
-/* 英文界面下批量翻译博客列表：列表先按中文秒出，译文逐张无感替换。
+/* 英文界面下批量翻译博客列表：列表先按原文秒出，译文逐张无感替换。
+   中文界面同理：碰到英文写的文章，翻成中文替换。
    seq 是列表代次——搜索词一变列表就重渲染，旧的翻译结果不许再写新 DOM */
 let blogTrSeq=0;
 function translateBlogList(list){
   const seq=++blogTrSeq;   /* 列表每重渲染一次（含切回中文）都让在途翻译全部作废 */
-  if(lang!=="en"||!Array.isArray(list)||!list.length)return;
+  if(lang!=="en"&&lang!=="zh")return;
+  const dir=lang==="en"?"zen":"ezh";   /* 方向跟着界面语言走：原文语言反着翻 */
+  if(!Array.isArray(list)||!list.length)return;
   /* 注意：这里不再 trResetFail()。搜索每敲一个字都会重渲染列表，
      每次都清冷却的话，接口一被限流就会「每敲一下重新撞一遍」，反而更糟。
      换文章 / 重新进博客页时已经各清一次了。 */
   const q=blogQuery;
   const slugSel=s=>".post-card[data-slug=\""+((window.CSS&&CSS.escape)?CSS.escape(s):String(s).replace(/"/g,""))+"\"]";
   trPool(list,4,async p=>{
-    if(p.titleEn||p.descEn)return;               /* 已有静态英文版：直接用，不必再机翻 */
-    const r=await translatePostMeta(p);
+    /* 已有目标语言的静态版：直接用，不必再机翻 */
+    if(dir==="zen"&&(p.titleEn||p.descEn))return;
+    if(dir==="ezh"&&(p.titleZh||p.descZh))return;
+    const r=await translatePostMeta(p,dir);
     if(!r||seq!==blogTrSeq)return;               /* 期间列表已重渲染：放弃 */
     p._tr={t:r.t,d:r.d,g:r.g};                   /* 挂到数据上，英文搜索也能命中 */
     const card=document.querySelector(slugSel(p.slug));
@@ -4590,23 +4628,31 @@ async function renderPost(slug,gen){
     <div style="text-align:center"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a></div>
   </div></section>`;};
   if(!post){fail(t.blog.err);return;}
-  /* 英文界面优先读静态英文版（index.en.md），读不到再回退中文原文 + 浏览机翻 */
-  const enURL=(lang==="en")?(post.mdURLEn||mdEnURL(post.mdURL)):"";
-  let raw="",usedEn=false;
+  /* 双向翻译：文章原文是中文、界面是英文 → 找静态英文版（index.en.md）；
+     原文是英文、界面是中文 → 找静态中文版（index.zh.md）。
+     原文语言先用清单里的标题/摘要猜（决定要不要去找静态另一语言版），
+     正文真正到手后再按内容确认（决定要不要机器翻译兜底） */
+  const guessSrc=hasCJKText((post.title||"")+" "+(post.desc||""))?"zh":"en";
+  const altURL=(lang!==guessSrc)
+    ?(guessSrc==="zh"
+        ?(post.mdURLEn||mdEnURL(post.mdURL))
+        :(post.mdURLZh||mdZhURL(post.mdURL)))
+    :"";
+  let raw="",usedAlt=false;
   try{
     let r=null,text="";
-    if(enURL){
-      try{ r=await fetch(enURL,{cache:"no-cache"}); }catch(e){ r=null; }
+    if(altURL){
+      try{ r=await fetch(altURL,{cache:"no-cache"}); }catch(e){ r=null; }
       if(r&&r.ok){
         text=await r.text();
-        /* 关键防线：英文版还没生成时，SPA 兜底会返回 200 + index.html。
-           开头是 HTML 或 content-type 是 text/html 的一律当「英文版缺失」，
-           走下面的中文原文 + 后台机翻兜底，而不是把源码当正文渲染出来 */
+        /* 关键防线：静态另一语言版还没生成时，SPA 兜底会返回 200 + index.html。
+           开头是 HTML 或 content-type 是 text/html 的一律当「静态版缺失」，
+           走下面的原文 + 后台机翻兜底，而不是把源码当正文渲染出来 */
         if(isHTMLFallbackText(text)||
            (r.headers.get("content-type")||"").toLowerCase().includes("text/html")){
           r=null;text="";
-        }else usedEn=true;                       /* 真的拿到了静态英文版 */
-      }else r=null;                              /* 英文版缺失/没生成：中文原文兜底 */
+        }else usedAlt=true;                       /* 真的拿到了静态另一语言版 */
+      }else r=null;                              /* 静态版缺失/没生成：原文兜底 */
     }
     if(!r){
       r=await fetch(post.mdURL,{cache:"no-cache"});
@@ -4653,10 +4699,14 @@ async function renderPost(slug,gen){
     </div>
   </section>`;
   wirePostMedia(slug);
-  /* 英文界面 + 中文文章：正文先按原文秒出，后台机器翻译，完成后无感替换（失败保留原文）
-     已经拿到静态英文版（index.en.md）就绝不再机翻——那份就是权威译文，
-     里面残留的中文只是图片文件名、代码注释之类不该翻的内容 */
-  if(lang==="en"&&!usedEn&&(hasCJKText(body)||hasCJKText(title)||hasCJKText(desc))){
+  /* 原文语言按真实内容判定（标题/摘要/正文里有没有 CJK），翻译方向随之确定 */
+  const srcLang=(hasCJKText(body)||hasCJKText(title)||hasCJKText(desc))?"zh":"en";
+  /* 界面语言与原文不同 + 没拿到静态另一语言版：正文先按原文秒出，
+     后台机器翻译，完成后无感替换（失败保留原文）。
+     已经拿到静态版就绝不再机翻——那份就是权威译文，
+     里面残留的另一种语言只是图片文件名、代码注释之类不该翻的内容 */
+  if(!usedAlt&&lang!==srcLang&&(title||desc||body.trim())){
+    const trDir=srcLang==="zh"?"zen":"ezh";
     const curGen=gen;
     /* 失败后可点「重试」：同一个 run 复用，不必刷新页面 */
     const run=()=>{
@@ -4674,7 +4724,7 @@ async function renderPost(slug,gen){
         if(n&&n.querySelector(".tr-spin"))n.innerHTML=
           `${esc(t.blog.trFail)} <button type="button" class="tr-retry">${esc(t.blog.trRetry)}</button>`;
       },15000);
-      translatePost(slug,title,desc,body,tags).then(r=>{
+      translatePost(slug,title,desc,body,tags,trDir).then(r=>{
         clearTimeout(guard);
         if(curGen!==undefined&&curGen!==routeGen)return;   /* 翻译期间用户切走了：别写新页面 */
         const note=document.getElementById("trNote");
@@ -4700,9 +4750,9 @@ async function renderPost(slug,gen){
           if(art)art.innerHTML=mdToHTML(r.b,post.imgBase,post.imgMap);
           wirePostMedia(slug);   /* 整块换成新 DOM 了：动图视频要重新接上播放控制 */
           if(meta)meta.insertAdjacentHTML("beforeend",`<span class="tr-mt">${esc(t.blog.machineTrans)}</span>`);
-        }else if(art&&hasCJKText(body)){
+        }else if(art&&body.trim()){
           /* 正文一行都没翻成（限流/网络问题），标题标签却翻好了：
-             保留中文原文，但挂「翻译失败 + 重试」，别挂 Machine-translated 误导人。
+             保留原文，但挂「翻译失败 + 重试」，别挂 Machine-translated 误导人。
              注意 note 可能刚被 remove 掉，得重新查一遍 DOM，别往脱节节点里写 */
           const html=`${esc(t.blog.trFail)} <button type="button" class="tr-retry">${esc(t.blog.trRetry)}</button>`;
           const noteNow=document.getElementById("trNote");
