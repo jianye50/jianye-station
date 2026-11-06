@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-06T06:40:49.241Z",
+  "generated": "2026-11-06T08:30:03.489Z",
   "posts": [
     {
       "slug": "BetterGI 更好的原神",
@@ -31,6 +31,37 @@
       },
       "coverThumb": "blog/thumbs/BetterGI_更好的原神-cover.webp",
       "bgThumb": "blog/thumbs/BetterGI_更好的原神-bg.webp"
+    },
+    {
+      "slug": "Pages 建站指南",
+      "md": "blog/Pages 建站指南/index.md",
+      "imgBase": "blog/Pages 建站指南/",
+      "title": "把博客放进 git：GitHub + Cloudflare Pages 这套组合",
+      "desc": "代码存在 GitHub，构建和分发交给 Cloudflare，一次 push 就上线。这条链路的每一环、免费额度的真实边界、静态站最常踩的四个坑，以及它什么时候会不够用。",
+      "tags": [
+        "建站",
+        "Cloudflare",
+        "教程"
+      ],
+      "date": "2026-11-06",
+      "minutes": 9,
+      "cover": "1745835951378.jpg",
+      "bg": "1745835951378.jpg",
+      "mdEn": "blog/Pages 建站指南/index.en.md",
+      "titleEn": "Put your blog into git: GitHub + Cloudflare Pages combination",
+      "descEn": "The code is stored on GitHub, construction and distribution are handed over to Cloudflare, and it goes online with one push. Each link of this link, the real boundaries of the free quota, the four most common pitfalls of static sites, and when it will not be enough.",
+      "tagsEn": [
+        "Build a website",
+        "Cloudflare",
+        "Tutorial"
+      ],
+      "imgs": {
+        "1745835951378.jpg": "blog/thumbs/Pages_建站指南-i0.webp",
+        "cover.png": "blog/thumbs/Pages_建站指南-i1.webp",
+        "shot-pages.png": "blog/thumbs/Pages_建站指南-i4.webp"
+      },
+      "coverThumb": "blog/thumbs/Pages_建站指南-cover.webp",
+      "bgThumb": "blog/thumbs/Pages_建站指南-bg.webp"
     },
     {
       "slug": "编辑器2.0更新",
