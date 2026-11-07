@@ -415,7 +415,8 @@ img{display:block;max-width:100%}
 .nav-link:hover{color:var(--text-1);background:var(--chip)}
 .nav-link.active{color:var(--accent);font-weight:600}
 /* ---------- 「记录」下拉：鼠标悬浮或单击展开，展开 / 收起都带过渡 ---------- */
-.nav-drop{position:relative;display:flex;align-items:center}
+/* 拉伸到导航满高：面板的 top:100% 才是「导航底边」，间距不随文字高低变化 */
+.nav-drop{position:relative;display:flex;align-items:center;align-self:stretch}
 .nav-drop-btn{
   display:inline-flex;align-items:center;
   font-family:inherit;line-height:1;
@@ -424,48 +425,78 @@ img{display:block;max-width:100%}
 /* 触屏点按后别留一圈默认焦点框，键盘 Tab 过来才显示 */
 .nav-drop-btn:focus{outline:none}
 .nav-drop-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-/* 面板：与导航同一套液态玻璃材质，横向排一行，从按钮下方轻轻落下 */
+/* 面板：与导航条完全同一套液态玻璃材质（同底色、同模糊、同棱边、同流光），
+   横向排一行，紧贴在导航下方；展开时从导航底边「挤」出来再落定 */
 .nav-menu{
-  position:absolute;top:calc(100% + 12px);left:50%;
+  position:absolute;top:calc(100% + 14px);left:50%;
   display:flex;align-items:center;gap:2px;
   padding:5px;
   border-radius:999px;
-  /* 液态玻璃基体：白色斜向高光 + 一层烟熏暗底（既透出背景，又保证亮背景上文字可读） */
-  background:var(--glass-grad),rgba(16,20,30,.42);
+  isolation:isolate;
+  /* 液态玻璃基体：与 .nav 完全一致，无额外暗底 */
+  background:var(--glass-grad);
   -webkit-backdrop-filter:var(--glass-blur);
   backdrop-filter:var(--glass-blur);
-  /* 与导航同款棱边：外圈微光 + 顶部受光 + 底部收光 + 落影 */
+  /* 液态玻璃棱边：外圈微光 + 顶部受光高光 + 底部收光 + 落影 */
   box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.24),
-    inset 0 1.5px .5px -1px rgba(255,255,255,.62),
-    inset 0 -1px .5px -1px rgba(255,255,255,.26),
+    inset 0 0 0 1px rgba(255,255,255,.22),
+    inset 0 1.5px .5px -1px rgba(255,255,255,.65),
+    inset 0 -1px .5px -1px rgba(255,255,255,.28),
     inset 0 12px 18px -12px rgba(255,255,255,.30),
-    0 2px 8px rgba(6,10,25,.14),
-    0 18px 42px rgba(6,10,25,.40);
-  opacity:0;visibility:hidden;pointer-events:none;
-  transform:translateX(-50%) translateY(-8px) scale(.96);
+    0 2px 6px rgba(6,10,25,.10),
+    0 14px 38px rgba(6,10,25,.28);
+  /* 收起过程中仍可命中：鼠标在收回半途又探回来能立刻重新展开，
+     真正的「不可点」由 visibility 在过渡结束时接管 */
+  opacity:0;visibility:hidden;
+  /* 收起态：压扁 + 缩窄 + 上移，几乎贴在导航底边，像被吸回条子里 */
+  transform:translateX(-50%) translateY(-14px) scale(.76,.48);
   transform-origin:top center;
-  transition:opacity .2s ease,transform .26s cubic-bezier(.22,.8,.28,1),visibility .26s;
+  transition:opacity .28s ease,transform .36s cubic-bezier(.4,0,.6,1),visibility .36s;
 }
+/* 斜向流光切面：与导航同一道扫过玻璃面的高光 */
+.nav-menu::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;
+  pointer-events:none;z-index:0;
+  background:linear-gradient(
+    105deg,
+    rgba(255,255,255,.30) 0%,
+    rgba(255,255,255,.06) 22%,
+    transparent 46%,
+    transparent 68%,
+    rgba(255,255,255,.10) 100%);
+  mix-blend-mode:screen;
+  opacity:.8;
+}
+/* 玻璃厚度感：底部内侧同样收一道暗折射 */
+.nav-menu::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;
+  pointer-events:none;z-index:0;
+  box-shadow:inset 0 -10px 14px -12px rgba(0,0,0,.35);
+}
+.nav-menu>*{position:relative;z-index:1}
 .nav-drop.open .nav-menu{
   opacity:1;visibility:visible;pointer-events:auto;
-  transform:translateX(-50%) translateY(0) scale(1);
+  transform:translateX(-50%) translateY(0) scale(1,1);
+  /* 展开比收起更慢一点：先快速显形，再带轻微回弹地落定（像从条子里脱出来） */
+  transition:opacity .16s ease-out,transform .42s cubic-bezier(.16,1.16,.3,1),visibility .42s;
 }
 .nav-menu-item{
   display:block;padding:8px 15px;border-radius:999px;
-  font-size:13.5px;color:rgba(244,245,247,.82);white-space:nowrap;
-  opacity:0;transform:translateY(-4px);
-  transition:opacity .18s ease,transform .22s ease,color .18s ease,background .18s ease;
+  font-size:13.5px;color:rgba(244,245,247,.88);white-space:nowrap;
+  opacity:0;transform:translateY(-6px) scale(.92);
+  transition:opacity .18s ease,transform .24s cubic-bezier(.2,.9,.3,1),color .18s ease,background .18s ease;
 }
-/* 逐项错峰浮现，收起时一起淡出（基础态不带延迟，收得干净利落） */
+/* 逐项错峰浮现：等面板先脱出来，文字再依次亮起，收起时一起淡出 */
 .nav-drop.open .nav-menu-item{opacity:1;transform:none}
-.nav-drop.open .nav-menu-item:nth-of-type(1){transition-delay:.04s}
-.nav-drop.open .nav-menu-item:nth-of-type(2){transition-delay:.09s}
+.nav-drop.open .nav-menu-item:nth-of-type(1){transition-delay:.1s}
+.nav-drop.open .nav-menu-item:nth-of-type(2){transition-delay:.16s}
 .nav-menu-item:hover,.nav-menu-item:focus-visible{color:var(--text-1);background:var(--chip);outline:none}
 .nav-menu-item.cur{color:var(--accent);font-weight:600}
-/* 系统开了「减少动态效果」就收掉过渡，只留瞬间切换 */
+/* 系统开了「减少动态效果」：去掉位移形变，只保留一段很短的淡入淡出（不要瞬间硬切） */
 @media (prefers-reduced-motion:reduce){
-  .nav-menu,.nav-menu-item{transition-duration:.01ms!important;transition-delay:0s!important}
+  .nav-menu{transition:opacity .12s linear!important}
+  .nav-menu-item{transition:opacity .12s linear!important;transform:none}
+  .nav-drop.open .nav-menu-item{transition-delay:0s!important}
 }
 .nav-sep{width:1px;height:20px;background:rgba(255,255,255,.22);margin:0 8px;box-shadow:1px 0 0 rgba(0,0,0,.10)}
 .nav-icon{
@@ -5170,7 +5201,8 @@ function route(){
 window.addEventListener("hashchange",route);
 
 /* ---------- 导航「记录」二级菜单：悬浮 / 单击都能展开 ----------
-   · 桌面（hover:hover + 精确指针）：移入即开，移开稍等 180ms 再收（留出跨过间隙的时间）
+   · 桌面（hover:hover + 精确指针）：移入即开，移开稍等 240ms 再收
+     （面板与导航之间留了十几 px，指针穿过去通常要 60~150ms，延时短了会在半路把菜单收掉）
    · 触屏 / 无精确指针：只认单击切换，避免 tap 之后又被 mouseenter 抢开
    · 点页面空白、按 Esc、点菜单项、切换路由都会收起 */
 const navDrop=$("#navDrop"),navDropBtn=$("#navDropBtn");
@@ -5197,7 +5229,7 @@ function closeNavDrop(){
 }
 function closeNavDropSoon(ms){
   clearTimeout(dropTimer);
-  dropTimer=setTimeout(closeNavDrop,ms==null?180:ms);
+  dropTimer=setTimeout(closeNavDrop,ms==null?240:ms);
 }
 if(navDrop&&navDropBtn){
   /* 触屏点按后浏览器会补一轮 mouseenter，别让它把刚点开的菜单又抢着改状态 */
@@ -5219,13 +5251,15 @@ if(navDrop&&navDropBtn){
   navDrop.addEventListener("mouseenter",()=>{
     if(canHoverNav()&&Date.now()-lastTouchTs>800)openNavDrop();
   });
-  navDrop.addEventListener("mouseleave",()=>{if(canHoverNav())closeNavDropSoon(180)});
+  navDrop.addEventListener("mouseleave",()=>{if(canHoverNav())closeNavDropSoon(240)});
   /* 键盘：焦点在按钮上按 ↓ 展开并进入第一项 */
   navDropBtn.addEventListener("keydown",e=>{
     if(e.key!=="ArrowDown")return;
     e.preventDefault();openNavDrop();
+    /* 等一帧再聚焦：面板刚从 visibility:hidden 转成可见，
+       同一帧里 focus() 会被浏览器忽略（元素此刻还算不可见） */
     const first=$("#navMenu .nav-menu-item");
-    if(first)first.focus();
+    if(first)requestAnimationFrame(()=>{try{first.focus();}catch(err){}});
   });
   /* 点菜单项：hash 照常跳转，菜单立刻收起 */
   $("#navMenu").addEventListener("click",e=>{
