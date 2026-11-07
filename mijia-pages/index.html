@@ -181,6 +181,27 @@
     border-bottom: 1px dashed rgba(255,178,87,.5); font-size: 12.5px;
   }
 
+  /* ---------- 只读状态（传感器读数等） ---------- */
+  .stats {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+    padding: 4px 0 10px; margin-bottom: 4px;
+    border-bottom: 1px solid var(--stroke);
+  }
+  .stat {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    padding: 6px 9px; border-radius: 8px; background: rgba(255,255,255,.03);
+    font-size: 12.5px; min-width: 0;
+  }
+  .stats .stat:last-child:nth-child(odd) { grid-column: span 2; }
+  .stat-k { color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stat-v { color: var(--text); font-weight: 600; flex-shrink: 0; }
+  .more-btn {
+    width: 100%; margin-top: 8px; padding: 8px 0; font-size: 12.5px;
+    background: transparent; color: var(--faint); border: 1px dashed var(--stroke);
+    border-radius: 8px; cursor: pointer; font-family: inherit;
+  }
+  .more-btn:hover { color: var(--text); border-color: var(--stroke-hi); }
+
   /* ---------- 摄像头视频区 ---------- */
   .cam-video {
     margin: 2px 0 12px; border-radius: var(--r-md); overflow: hidden;
@@ -361,6 +382,7 @@
     </div>
   </div>
 </div>
+<script src="miot-zh.js"></script>
 <script>
 (function () {
   var LS_CREDS = 'mijia_creds', LS_PIN = 'mijia_pin', LS_SPEC = 'mijia_spec_v3', LS_LANG = 'mijia_lang'
@@ -393,16 +415,17 @@
       offlineTip: '设备当前离线，指令可能不会立即生效',
       noSpec: '该设备未提供 miot 规格，可用底部调试面板控制',
       specFail: '规格加载失败', retry: '重试', noWritable: '该设备无可直接写的属性',
-      sending: '发送指令...', setOk: '已设置', setFail: '设置失败：',
+      sending: '发送指令...', setOk: '已设置', setFail: '设置失败：', readFail: '读取失败：',
       notConfirmed: '设备未确认到状态变化，请稍后点「刷新状态」',
       refreshing: '正在刷新状态...',
       debugTitle: '高级调试（自定义 API 调用）',
       debugHint: '路径（如 /app/miotspec/prop/set 或 /app/miio/call）与 data JSON，将自动签名转发到米家 API：',
       send: '发送', needPath: '请填写路径', jsonParseFail: 'data JSON 解析失败', reqFail: '请求失败：',
-      errCode: '错误码 ', notSupport: '设备不支持该属性或参数不合法', outOfRange: '取值超出范围',
+      errCode: '错误码 ', unknownErr: '未知错误', notSupport: '设备不支持该属性或参数不合法', outOfRange: '取值超出范围',
       devNoResp: '设备无响应，可能离线', devBusy: '设备正忙，请稍后再试',
       devOffline: '设备离线', otherRoom: '其他', choose: '选择...', count: '{n} 台',
       unnamed: '未命名设备', switchLang: '已切换为中文',
+      stateOn: '开', stateOff: '关', showAll: '显示全部 {n} 项', showLess: '收起',
       camSetTitle: '视频流设置', camBase: 'go2rtc 地址', camSrc: '流名称',
       camSetDesc: '页面本身不产生画面，只负责播放。需要先在同局域网的电脑/NAS 上运行 go2rtc，登录小米账号后它会自动生成摄像头流。',
       camHint: '流名称就是 go2rtc WebUI 里显示的流 ID（如 xiaomi1）。保存后本设备卡片会显示实时画面。',
@@ -435,16 +458,17 @@
       offlineTip: 'Device is offline; commands may not take effect',
       noSpec: 'No miot spec for this device; use the debug panel below',
       specFail: 'Failed to load spec', retry: 'Retry', noWritable: 'No writable properties',
-      sending: 'Sending...', setOk: 'Applied', setFail: 'Failed: ',
+      sending: 'Sending...', setOk: 'Applied', setFail: 'Failed: ', readFail: 'Read failed: ',
       notConfirmed: 'Device state change not confirmed. Try "Refresh" later.',
       refreshing: 'Refreshing...',
       debugTitle: 'Advanced debug (custom API calls)',
       debugHint: 'Path (e.g. /app/miotspec/prop/set or /app/miio/call) and data JSON will be signed and forwarded to the Mi API:',
       send: 'Send', needPath: 'Path required', jsonParseFail: 'Invalid data JSON', reqFail: 'Request failed: ',
-      errCode: 'code ', notSupport: 'Property not supported or invalid param', outOfRange: 'Value out of range',
+      errCode: 'code ', unknownErr: 'Unknown error', notSupport: 'Property not supported or invalid param', outOfRange: 'Value out of range',
       devNoResp: 'Device not responding, possibly offline', devBusy: 'Device busy, try later',
       devOffline: 'Device offline', otherRoom: 'Others', choose: 'Select...', count: '{n} devices',
       unnamed: 'Unnamed device', switchLang: 'Switched to English',
+      stateOn: 'On', stateOff: 'Off', showAll: 'Show all {n} more', showLess: 'Collapse',
       camSetTitle: 'Stream settings', camBase: 'go2rtc address', camSrc: 'Stream name',
       camSetDesc: 'This page cannot capture video by itself, it only plays a stream. Run go2rtc on a computer or NAS in the same LAN, sign in with your Xiaomi account, and it will create the camera stream.',
       camHint: 'The stream name is the ID shown in the go2rtc WebUI (e.g. xiaomi1). After saving, this card shows the live picture.',
@@ -510,6 +534,7 @@
     '-704010000': 'devOffline', '-704042011': 'devOffline'
   }
   function miErrText(code, fallback) {
+    if (code === null || code === undefined || code === '') return fallback || tr('unknownErr')
     var k = String(code)
     return MI_ERR[k] ? tr(MI_ERR[k]) : (fallback || tr('errCode') + k)
   }
@@ -632,15 +657,27 @@
       }
       var homes = j.result.homelist
       var all = []
-      var chain = Promise.resolve()
+      // gethome_merged 里常常直接带设备（尤其是共享设备、网关子设备），先收进来，避免 home_device_list 漏掉
       homes.forEach(function (h) {
-        chain = chain.then(function () { return fetchHomeDevices(h.id, h.uid, all) })
+        ;['device', 'devices', 'share_device', 'device_list'].forEach(function (key) {
+          if (Array.isArray(h[key])) h[key].forEach(function (d) { if (d) all.push(d) })
+        })
+      })
+      var chain = Promise.resolve()
+      var fails = []
+      homes.forEach(function (h) {
+        chain = chain.then(function () { return fetchHomeDevices(h.id, h.uid, all, fails) })
       })
       chain.then(function () {
         if (!all.length) {
-          showDeviceError(tf('noDevices', homes.length))
+          showDeviceError(fails.length ? fails[0] : tf('noDevices', homes.length))
         } else {
-          devices = all.map(normDevice).filter(function (d) { return d.did })
+          var seen = {}
+          devices = all.map(normDevice).filter(function (d) {
+            if (!d.did || seen[d.did]) return false
+            seen[d.did] = 1
+            return true
+          })
           renderAll()
           toast(tf('loadedDevices', devices.length))
         }
@@ -648,7 +685,7 @@
     }).catch(function (e) { showDeviceError(tr('netErr') + e.message) })
   }
 
-  function fetchHomeDevices(homeId, uid, all, startDid) {
+  function fetchHomeDevices(homeId, uid, all, fails, startDid) {
     var data = {
       home_owner: uid, home_id: Number(homeId), limit: 200,
       start_did: startDid || '', get_split_device: true,
@@ -656,13 +693,16 @@
     }
     return miCall('home/home_device_list', data).then(function (j) {
       if (j.code !== 0 || !j.result) {
-        showDeviceError(tr('devFail').replace('{id}', homeId) + (j.message || JSON.stringify(j).slice(0, 150)))
+        // 某个家庭拉取失败不能让整页空白：记下来，别的地方拿到的设备照常显示
+        fails.push(tr('devFail').replace('{id}', homeId) + (j.message || JSON.stringify(j).slice(0, 120)))
         return
       }
       ;(j.result.device_info || []).forEach(function (d) { all.push(d) })
       if (j.result.has_more && j.result.max_did) {
-        return fetchHomeDevices(homeId, uid, all, j.result.max_did)
+        return fetchHomeDevices(homeId, uid, all, fails, j.result.max_did)
       }
+    }).catch(function (e) {
+      fails.push(tr('devFail').replace('{id}', homeId) + e.message)
     })
   }
 
@@ -679,24 +719,16 @@
   } catch (e) {}
   function saveSpecCache() { try { localStorage.setItem(LS_SPEC, JSON.stringify(specCache)) } catch (e) {} }
 
-  // 缓存里若完全没有中文 comment（旧版缓存/旧 CDN 数据），视为失效，强制重新拉取
+  // 只要结构合法就能用：厂商没填中文注释的属性，渲染时由 miot-zh.js 的对照表兜底翻译
   function specHasZh(inst) {
-    if (!inst || !Array.isArray(inst.services)) return false
-    for (var i = 0; i < inst.services.length; i++) {
-      var ps = inst.services[i].properties || []
-      for (var j = 0; j < ps.length; j++) {
-        var c = ps[j].comment
-        if (c != null && String(c).trim() !== '') return true
-      }
-    }
-    return false
+    return !!(inst && Array.isArray(inst.services))
   }
 
   function getSpec(type) {
     if (!type) return Promise.resolve(null)
     if (specCache[type]) {
       if (specHasZh(specCache[type])) return Promise.resolve(specCache[type])
-      delete specCache[type]   // 旧缓存无中文，丢弃重取
+      delete specCache[type]   // 结构损坏，丢弃重取
     }
     if (specPending[type]) return specPending[type]   // 同型号设备并发时只请求一次
     specPending[type] = api('api/spec?type=' + encodeURIComponent(type)).then(asJson).then(function (j) {
@@ -713,11 +745,63 @@
   // ---- spec 解析：提取可控制属性（miot-spec 格式：服务与属性各自带 iid，完整编号 = 服务iid + 属性iid） ----
   var NUM_FORMATS = ['uint8','uint16','uint32','int8','int16','int32','float','double']
 
-  // 规格里同时有中文(comment)和英文(description)，两种语言各存一份
-  function labels(o) {
+  // ---- 名称/选项的中文兜底表（miot-zh.js，由官方规格库统计生成） ----
+  // 万一只上传了 index.html、miot-zh.js 没跟着上传，这里有一份最常用词的内置兜底，至少常见设备仍是中文
+  var ZHD_FALLBACK = {
+    p: {
+      'on': '开关', 'mode': '模式', 'brightness': '亮度', 'color-temperature': '色温', 'color': '颜色',
+      'saturation': '饱和度', 'fan-level': '风机档位', 'target-temperature': '设定温度',
+      'swing-mode': '扫风模式', 'horizontal-swing': '左右扫风', 'vertical-swing': '上下扫风',
+      'percentage': '百分比', 'battery-level': '电量', 'temperature': '温度', 'relative-humidity': '相对湿度',
+      'pm2.5-density': 'PM2.5', 'air-quality': '空气质量', 'child-lock': '童锁',
+      'physical-controls-locked': '童锁', 'status': '工作状态', 'fault': '故障', 'volume': '音量',
+      'mute': '静音', 'power-consumption': '功率', 'electricity': '电量', 'voltage': '电压',
+      'heat-level': '加热档位', 'water-temperature': '水温', 'speed-level': '风速档位',
+      'motor-control': '电机控制', 'position': '位置', 'current-position': '当前位置',
+      'target-position': '目标位置', 'illumination': '光照度', 'motion-state': '移动状态',
+      'door-state': '门窗状态', 'contact-state': '接触状态', 'screen-on': '屏幕显示'
+    },
+    s: { 'light': '灯光', 'air-conditioner': '空调', 'switch': '开关', 'outlet': '插座', 'curtain': '窗帘' },
+    c: {
+      'auto': '自动', 'manual': '手动', 'on': '开', 'off': '关', 'open': '开', 'close': '关',
+      'auto mode': '自动', 'cool': '制冷', 'heat': '制热', 'dry': '除湿', 'fan': '送风',
+      'low': '低', 'medium': '中', 'high': '高', 'middle': '中', 'level1': '1档', 'level2': '2档',
+      'level3': '3档', 'level4': '4档', 'level5': '5档', 'level6': '6档', 'level7': '7档',
+      'level8': '8档', 'level9': '9档', 'level10': '10档', 'none': '无', 'null': '无',
+      'default': '默认', 'sleep': '睡眠', 'eco': '节能', 'turbo': '强劲', 'silent': '静音',
+      'idle': '待机', 'busy': '工作中', 'normal': '正常', 'error': '异常', 'fault': '故障',
+      'charging': '充电中', 'not charging': '未充电', 'full': '已满', 'color': '彩色',
+      'celsius': '摄氏度', 'fahrenheit': '华氏度', 'stop': '停止', 'start': '启动', 'pause': '暂停'
+    },
+    v: {}, pv: {}
+  }
+  var ZHD = window.MIOT_ZH || ZHD_FALLBACK
+
+  // urn:miot-spec-v2:property:target-temperature:00000007:xiaomi:1 -> target-temperature
+  function urnSlug(type, kind) {
+    if (!type) return ''
+    var parts = String(type).split(':')
+    for (var i = 0; i < parts.length - 1; i++) if (parts[i] === kind) return parts[i + 1]
+    return ''
+  }
+  function dictZh(slug, kind) {
+    var m = (kind === 'service' ? ZHD.s : ZHD.p)
+    var v = (m && slug) ? m[slug] : ''
+    return v ? String(v) : ''
+  }
+
+  function hasCJK(s) { return /[\u4e00-\u9fa5]/.test(String(s || '')) }
+
+  // 规格里同时有中文(comment)和英文(description)，两种语言各存一份；
+  // 厂商没填中文时，按属性类型的标准标识（on/mode/brightness…）查对照表兜底，保证中文界面不会漏英文。
+  function labels(o, kind) {
     if (!o) return { zh: '', en: '' }
+    kind = kind || 'property'
     var zh = o.comment == null ? '' : String(o.comment).trim()
     var en = o.description == null ? '' : String(o.description).trim()
+    // 有些厂商把英文原样填进中文栏（comment == description），此时按缺失处理，走对照表
+    if (zh && !hasCJK(zh) && zh.toLowerCase() === en.toLowerCase()) zh = ''
+    if (!zh) zh = dictZh(urnSlug(o.type, kind), kind)
     if (!zh) zh = en
     if (!en) en = zh
     return { zh: zh, en: en }
@@ -725,58 +809,121 @@
   function labelText(lb) { return (lang === 'zh' ? lb.zh : lb.en) || lb.zh || lb.en || '' }
   function ctlName(c) { return (lang === 'zh' ? c.nameZh : c.nameEn) || c.nameZh || c.nameEn || '' }
 
+  // 选项值：comment → 该属性的对照表 → 常用核心词 → 通用对照表 → 原文
+  function valueLabels(v, pslug) {
+    var d = v.description == null ? '' : String(v.description).trim()
+    var zh = v.comment == null ? '' : String(v.comment).trim()
+    if (zh && !hasCJK(zh) && zh.toLowerCase() === d.toLowerCase()) zh = ''
+    if (!zh) {
+      var k = d.toLowerCase()
+      var byProp = (pslug && ZHD.pv) ? ZHD.pv[pslug] : null
+      zh = (byProp && byProp[k]) || (ZHD.c && ZHD.c[k]) || (ZHD.v && ZHD.v[k]) || ''
+    }
+    return { zh: zh || d, en: d || zh }
+  }
+
   function isPowerCtl(c) {
     return /:property:on:/.test(c.ptype || '') || c.nameZh === '开关' || c.nameZh === '电源' || c.nameZh === '开关机'
   }
 
-  function extractControls(inst) {
-    if (!inst || !inst.services) return []
-    var out = []
+  // 这些属性对用户没意义，不放进状态区
+  var SKIP_STATUS = {
+    'serial-number': 1, 'serial-no': 1, 'firmware-revision': 1, 'manufacturer': 1,
+    'model': 1, 'device-id': 1, 'name': 1, 'current-firmware-version': 1,
+    'working-time': 1, 'wiring-type': 1, 'fault': 1
+  }
+  // 状态区排序：温湿度、空气质量、电量这些最常看的排前面
+  var STAT_RANK = {
+    'temperature': 1, 'relative-humidity': 2, 'pm2.5': 3, 'pm10': 4, 'co2-density': 5,
+    'tvoc-density': 6, 'illumination': 7, 'battery-level': 8, 'atmospheric-pressure': 9,
+    'air-quality': 10, 'door-state': 11, 'motion-state': 12, 'contact-state': 13,
+    'power-consumption': 20, 'electricity': 21, 'voltage': 22, 'current': 23
+  }
+
+  // 返回 { ctls: 可写控件, stats: 只读状态 }
+  function parseSpec(inst) {
+    if (!inst || !inst.services) return { ctls: [], stats: [] }
+    var ctls = [], stats = []
     inst.services.forEach(function (svc) {
       var siid = svc.iid
+      var svcLb = labels(svc, 'service')
+      var svcName = (svcLb.zh && svcLb.zh !== '设备信息') ? svcLb.zh : ''
       ;(svc.properties || []).forEach(function (p) {
         var access = p.access || []
-        if (access.indexOf('write') < 0) return
-        var lb = labels(p)
-        var fallback = siid + '-' + p.iid
-        var ctl = {
-          siid: siid, piid: p.iid,
-          name: labelText(lb) || fallback,
-          nameZh: lb.zh || fallback,
-          nameEn: lb.en || fallback,
-          ptype: p.type || '',
-          readable: access.indexOf('read') >= 0
+        var canWrite = access.indexOf('write') >= 0
+        var canRead = access.indexOf('read') >= 0
+        var fmt = p.format || ''
+        if (fmt === 'string') return          // 厂商/型号/序列号等文本，不展示
+        var pslug = urnSlug(p.type, 'property')
+        var lb = labels(p, 'property')
+        var base = {
+          siid: siid, piid: p.iid, ptype: p.type || '', pslug: pslug,
+          svcZh: svcName, svcEn: svcLb.en,
+          nameZh: lb.zh, nameEn: lb.en,
+          readable: canRead,
+          unit: (p.unit && p.unit !== 'none') ? String(p.unit) : ''
         }
-        if (p.format === 'bool') {
-          ctl.kind = 'bool'
-        } else if (NUM_FORMATS.indexOf(p.format) >= 0) {
+        if (fmt === 'bool') {
+          base.kind = 'bool'
+        } else if (NUM_FORMATS.indexOf(fmt) >= 0) {
           var vl = p['value-list'], vr = p['value-range']
           if (vl && vl.length) {
-            ctl.kind = 'enum'
-            ctl.list = vl.map(function (v) {
-              var lb2 = labels(v)
-              return { value: v.value, textZh: lb2.zh || String(v.value), textEn: lb2.en || String(v.value) }
+            base.kind = 'enum'
+            base.list = vl.map(function (v) {
+              var l2 = valueLabels(v, pslug)
+              return { value: v.value, textZh: l2.zh, textEn: l2.en }
             })
           } else if (vr && vr.length === 3) {
-            ctl.kind = 'range'
-            ctl.min = vr[0]; ctl.max = vr[1]
-            ctl.step = vr[2] || ((p.format === 'float' || p.format === 'double') ? 0.1 : 1)
+            base.kind = 'range'
+            base.min = vr[0]; base.max = vr[1]
+            base.step = vr[2] || ((fmt === 'float' || fmt === 'double') ? 0.1 : 1)
           }
         }
-        if (!ctl.kind) return
-        out.push(ctl)
+        if (!base.kind) return
+        if (canWrite) ctls.push(base)
+        else if (canRead && !SKIP_STATUS[pslug]) stats.push(base)
       })
     })
-    // 排序：主开关 → 模式等下拉 → 数值滑块 → 其他布尔，保证关键操作在卡片最上面
+
+    // 多键开关等设备：多个服务下都叫「开关」，补上服务名才能分清是哪一个
+    var cnt = {}
+    ctls.forEach(function (c) { cnt[c.nameZh] = (cnt[c.nameZh] || 0) + 1 })
+    ctls.forEach(function (c) {
+      if (cnt[c.nameZh] <= 1) return
+      if (c.svcZh) {
+        if (/^(开关|电源|开关机|总开关)$/.test(c.nameZh)) {
+          c.nameZh = c.svcZh
+          c.nameEn = c.svcEn || c.svcZh
+        } else {
+          c.nameZh = c.svcZh + ' · ' + c.nameZh
+          c.nameEn = (c.svcEn || c.svcZh) + ' · ' + c.nameEn
+        }
+      } else {
+        c.nameZh = c.nameZh + ' #' + c.siid
+        c.nameEn = c.nameEn + ' #' + c.siid
+      }
+    })
+
+    // 排序：主开关 → 下拉/模式 → 数值滑块 → 其他布尔
     function rank(c) {
       if (isPowerCtl(c)) return 0
       if (c.kind === 'enum') return 1
       if (c.kind === 'range') return 2
       return 3
     }
-    out.sort(function (a, b) { return rank(a) - rank(b) })
-    return out.slice(0, 8)
+    ctls.sort(function (a, b) { return rank(a) - rank(b) })
+    // 有可操作项时，状态区只留真正有价值的读数（温湿度/电量/空气质量），过滤电流电压这类内部指标
+    if (ctls.length) {
+      var useful = stats.filter(function (s) { return (STAT_RANK[s.pslug] || 99) <= 12 })
+      if (useful.length) stats = useful
+    }
+    stats.sort(function (a, b) {
+      return (STAT_RANK[a.pslug] || 99) - (STAT_RANK[b.pslug] || 99)
+    })
+    return { ctls: ctls, stats: stats.slice(0, 6) }
   }
+
+  function extractControls(inst) { return parseSpec(inst).ctls }
 
   // ---- 图标 ----
   var ICONS = {
@@ -967,22 +1114,41 @@
         box.innerHTML = '<div class="dev-state">' + tr('specFail') + '<span class="retry" data-retry="' + esc(d.did) + '">' + tr('retry') + '</span></div>'
         return
       }
-      var ctls = extractControls(inst)
-      if (!ctls.length) {
+      var parsed = parseSpec(inst)
+      var ctls = parsed.ctls, stats = parsed.stats
+      box.innerHTML = ''
+      ctlMap[d.did] = []
+      if (!ctls.length && !stats.length) {
         box.innerHTML = '<div class="dev-state">' + tr('noWritable') + '</div>'
         return
       }
-      box.innerHTML = ''
-      ctlMap[d.did] = []
       if (!d.online) {
         var offTip = document.createElement('div')
         offTip.className = 'dev-state'
         offTip.textContent = tr('offlineTip')
         box.appendChild(offTip)
       }
-      ctls.forEach(function (c) {
+
+      // 只读状态（传感器读数、电量、门磁等）：没有可写属性的设备也能看到东西
+      if (stats.length) {
+        var stWrap = document.createElement('div'); stWrap.className = 'stats'
+        stats.forEach(function (s) {
+          var item = document.createElement('div'); item.className = 'stat'
+          var k = document.createElement('span'); k.className = 'stat-k'; k.textContent = ctlName(s)
+          var v = document.createElement('span'); v.className = 'stat-v'; v.textContent = '—'
+          item.appendChild(k); item.appendChild(v)
+          stWrap.appendChild(item)
+          s.el = v; s.readonly = true
+          ctlMap[d.did].push(s)
+        })
+        box.appendChild(stWrap)
+      }
+
+      var LIMIT = 10
+      ctls.forEach(function (c, i) {
         var row = document.createElement('div'); row.className = 'ctl'
         if (!d.online) row.className += ' offline'
+        if (i >= LIMIT) { row.style.display = 'none'; row.setAttribute('data-extra', '1') }
         var label = document.createElement('label'); label.textContent = ctlName(c); row.appendChild(label)
 
         if (c.kind === 'bool') {
@@ -1000,7 +1166,7 @@
           rg.min = c.min; rg.max = c.max; rg.step = c.step
           rg.disabled = !d.online
           var rv = document.createElement('span'); rv.className = 'rv'; rv.textContent = '--'
-          rg.addEventListener('input', function () { rv.textContent = rg.value })
+          rg.addEventListener('input', function () { rv.textContent = fmtNum(rg.value, c) })
           rg.addEventListener('change', function () {
             var prev = rg.dataset.prev
             setProp(d, c, Number(rg.value), rg, prev === undefined ? undefined : Number(prev))
@@ -1024,6 +1190,23 @@
         }
         box.appendChild(row)
       })
+
+      // 超过 10 项不再截断，改为「显示全部」，避免风速/扫风这类关键开关被悄悄藏掉
+      if (ctls.length > LIMIT) {
+        var more = document.createElement('button')
+        more.className = 'more-btn'
+        var rest = ctls.length - LIMIT
+        more.textContent = tr('showAll').replace('{n}', rest)
+        more.addEventListener('click', function () {
+          var open = more.getAttribute('data-open') === '1'
+          more.setAttribute('data-open', open ? '' : '1')
+          Array.prototype.forEach.call(box.querySelectorAll('[data-extra]'), function (r) {
+            r.style.display = open ? 'none' : ''
+          })
+          more.textContent = open ? tr('showAll').replace('{n}', rest) : tr('showLess')
+        })
+        box.appendChild(more)
+      }
       refreshDevice(d)
     })
     return card
@@ -1060,6 +1243,7 @@
         if (ok) { toast(tr('setOk')); confirmSet(d, c, value); return }
         var code = (r0 && r0.code !== undefined && r0.code !== 0) ? r0.code : j.code
         toast(tr('setFail') + miErrText(code, j.message === 'ok' ? '' : j.message))
+        setCardHint(d, tr('setFail') + miErrText(code, j.message === 'ok' ? '' : j.message))
         revert()
       })
       .catch(function (e) {
@@ -1069,10 +1253,34 @@
       .then(done, done)
   }
 
+  // 数值格式化：整数不带小数点，带单位时补上单位
+  var UNIT_TEXT = { percentage: '%', kelvin: 'K', celsius: '°C', fahrenheit: '°F', seconds: 's', minutes: 'min', hours: 'h', 'none': '' }
+  function unitText(u) { return u ? (UNIT_TEXT[u] !== undefined ? UNIT_TEXT[u] : u) : '' }
+  function fmtNum(v, c) {
+    if (v === null || v === undefined || v === '') return '--'
+    var n = Number(v)
+    var s = isFinite(n) ? (Math.round(n * 100) / 100).toString() : String(v)
+    var u = unitText(c && c.unit)
+    return u ? s + ' ' + u : s
+  }
+  function readingText(c, value) {
+    if (value === null || value === undefined) return '—'
+    if (c.kind === 'bool') return value ? tr('stateOn') : tr('stateOff')
+    if (c.kind === 'enum') {
+      var hit = (c.list || []).filter(function (o) { return String(o.value) === String(value) })[0]
+      return hit ? (lang === 'zh' ? hit.textZh : hit.textEn) : String(value)
+    }
+    return fmtNum(value, c)
+  }
+
   function applyCtlValue(c, value) {
     if (!c.el) return
+    if (c.readonly) {
+      c.el.textContent = readingText(c, value)
+      return
+    }
     if (c.kind === 'bool') c.el.checked = !!value
-    else if (c.kind === 'range') { c.el.value = value; if (c.rvEl) c.rvEl.textContent = String(value) }
+    else if (c.kind === 'range') { c.el.value = value; if (c.rvEl) c.rvEl.textContent = fmtNum(value, c) }
     else if (c.kind === 'enum' && value !== null && value !== undefined) c.el.value = String(value)
     if (value !== null && value !== undefined) c.el.dataset.prev = String(value)
   }
@@ -1105,6 +1313,20 @@
     toast(tr('refreshing'))
   }
 
+  // 把失败原因直接写在该设备卡片里，避免「点了没反应也不知为什么」
+  function setCardHint(d, text) {
+    var box = document.querySelector('[data-ctls="' + d.did.replace(/"/g, '') + '"]')
+    if (!box) return
+    var old = box.querySelector('.ctl-hint')
+    if (!text) { if (old) old.parentNode.removeChild(old); return }
+    if (!old) {
+      old = document.createElement('div')
+      old.className = 'dev-state ctl-hint'
+      box.appendChild(old)
+    }
+    old.textContent = text
+  }
+
   function refreshDevice(d) {
     var list = ctlMap[d.did]
     if (!list || !list.length) return Promise.resolve()
@@ -1117,9 +1339,14 @@
         showDeviceError(tr('credExpired').replace('{c}', j.code))
         return
       }
-      if (j.code !== 0 || !j.result) return
+      if (j.code !== 0 || !j.result) {
+        setCardHint(d, tr('readFail') + miErrText(j.code, j.message === 'ok' ? '' : j.message))
+        return
+      }
+      var got = 0, firstErr = null
       j.result.forEach(function (r) {
-        if (r.code !== 0) return
+        if (r.code !== 0) { if (firstErr === null) firstErr = r.code; return }
+        got++
         list.forEach(function (c) {
           if (c.siid !== r.siid || c.piid !== r.piid) return
           if (c.pendingValue !== undefined && Date.now() < c.pendingUntil) {
@@ -1130,7 +1357,12 @@
           applyCtlValue(c, r.value)
         })
       })
-    }).catch(function () {})
+      // 一个都读不到才算异常；部分属性不支持是常态，不打扰用户
+      if (!got) setCardHint(d, tr('readFail') + miErrText(firstErr, ''))
+      else setCardHint(d, '')
+    }).catch(function (e) {
+      setCardHint(d, tr('netErr') + e.message)
+    })
   }
 
   // ---- 调试 ----
