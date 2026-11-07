@@ -455,6 +455,75 @@ img{display:block;max-width:100%}
 /* 触屏点按后别留一圈默认焦点框，键盘 Tab 过来才显示 */
 .nav-drop-btn:focus{outline:none}
 .nav-drop-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* ---------- 悬浮「回到顶部」按钮 ----------
+   首页 / 项目 / 关于这类长页往下翻时浮出来；博客、相册由导航里的「记录」形变承担，
+   两处不会同时出现。材质与导航条同一套液态玻璃，图标与导航里的回顶箭头同一条路径 */
+.to-top{
+  position:fixed;right:24px;bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  z-index:95;                     /* 低于导航(100)与二级菜单(99)，盖在正文之上 */
+  width:46px;height:46px;border-radius:50%;
+  display:grid;place-items:center;
+  color:var(--text-1);
+  isolation:isolate;
+  background:var(--glass-grad);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.22),
+    inset 0 1.5px .5px -1px rgba(255,255,255,.65),
+    inset 0 -1px .5px -1px rgba(255,255,255,.28),
+    inset 0 12px 18px -12px rgba(255,255,255,.30),
+    0 2px 6px rgba(6,10,25,.10),
+    0 14px 38px rgba(6,10,25,.28);
+  /* 收起：往下沉一点、缩一点、透明，和导航里那支箭头的「缩回去」同一个脾气 */
+  opacity:0;visibility:hidden;pointer-events:none;
+  transform:translateY(14px) scale(.82);
+  transition:opacity .24s ease,transform .34s cubic-bezier(.4,0,.6,1),
+             visibility 0s linear .34s,box-shadow .35s ease;
+}
+/* 同一道斜向流光，让按钮和导航条看起来是同一块玻璃 */
+.to-top::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;
+  pointer-events:none;z-index:0;
+  background:linear-gradient(
+    105deg,
+    rgba(255,255,255,.30) 0%,
+    rgba(255,255,255,.06) 22%,
+    transparent 46%,
+    transparent 68%,
+    rgba(255,255,255,.10) 100%);
+  mix-blend-mode:screen;opacity:.8;
+}
+.to-top svg{
+  position:relative;z-index:1;
+  width:19px;height:19px;
+  fill:none;stroke:currentColor;stroke-width:2.2;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.to-top.show{
+  opacity:1;visibility:visible;pointer-events:auto;transform:none;
+  transition:opacity .2s ease,transform .42s cubic-bezier(.16,1.16,.3,1),
+             visibility 0s,box-shadow .35s ease;
+}
+.to-top:hover{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.30),
+    inset 0 1.5px .5px -1px rgba(255,255,255,.8),
+    inset 0 -1px .5px -1px rgba(255,255,255,.34),
+    inset 0 12px 18px -12px rgba(255,255,255,.38),
+    0 2px 8px rgba(6,10,25,.12),
+    0 20px 48px rgba(6,10,25,.34);
+}
+.to-top:active{transform:scale(.92)}
+.to-top:focus{outline:none}
+.to-top:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media (max-width:640px){
+  .to-top{right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));width:42px;height:42px}
+  .to-top svg{width:17px;height:17px}
+}
+@media (prefers-reduced-motion:reduce){
+  .to-top,.to-top.show{transition:opacity .12s linear,visibility 0s!important;transform:none!important}
+}
 /* 面板：与导航条完全同一套液态玻璃材质（同底色、同模糊、同棱边、同流光）。
    脱离 <nav> 后是 position:fixed，left/top 由 JS 按按钮位置写入；
    层级压在导航条下面（nav 是 100），展开时像从条子底下钻出来 */
@@ -1759,6 +1828,12 @@ html:not(.jy-go) .hero-inner{animation:none}
   <a class="nav-menu-item" role="menuitem" data-nav="blog" href="#/blog"><span data-navlabel="blog">博客</span></a>
   <a class="nav-menu-item" role="menuitem" data-nav="gallery" href="#/gallery"><span data-navlabel="gallery">相册</span></a>
 </div>
+
+<!-- 悬浮「回到顶部」：只在首页 / 项目 / 关于这些页面往下翻时浮出；
+     博客 / 相册改用导航里「记录」形变成的箭头，两者互斥，不会同时出现 -->
+<button class="to-top" id="toTopBtn" type="button" aria-label="回到顶部">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.4 3.9h13.2M12 20.1V9.1M7 14.1 12 9.1l5 5"/></svg>
+</button>
 
 <!-- 静态首屏内容（SEO 兜底）：
      页面正文由 JS 渲染，不执行 JS 的抓取程序（如 Bing 网站扫描）读不到 <h1>，
@@ -5219,6 +5294,12 @@ function route(){
     active="about";renderAbout();
   }
   else renderHome();
+  /* 首页地址收干净：这是 hash 路由的单页站，「首页 / 站点名」链接写的是 #/，
+     于是同一个首页会出现 https://jype.top/ 和 https://jype.top/#/ 两种地址。
+     这里把首页的空 hash 抹掉，地址栏 / 复制出来的链接统一成 https://jype.top/ */
+  if(active==="home"&&location.hash&&hash===""){ 
+    try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
+  }
   /* 导航高亮：博客 / 相册都归在「记录」这一项下；顺手标 aria-current，读屏能知道当前在哪一页 */
   const navActive=(active==="blog"||active==="gallery")?"records":active;
   document.querySelectorAll(".nav-link").forEach(el=>{
@@ -5268,7 +5349,7 @@ window.addEventListener("hashchange",route);
      （面板与导航只差 2px，鼠标一移开就收会显得太急；这点延时也留出从按钮点到面板的时间）
    · 触屏 / 无精确指针：只认单击切换，避免 tap 之后又被 mouseenter 抢开
    · 点页面空白、按 Esc、点菜单项、切换路由都会收起 */
-const navDrop=$("#navDrop"),navDropBtn=$("#navDropBtn"),navMenu=$("#navMenu");
+const navDrop=$("#navDrop"),navDropBtn=$("#navDropBtn"),navMenu=$("#navMenu"),toTopBtn=$("#toTopBtn");
 let dropTimer=0;
 function canHoverNav(){
   try{return matchMedia("(hover:hover) and (pointer:fine)").matches;}catch(e){return false;}
@@ -5310,12 +5391,13 @@ function closeNavDropSoon(ms){
   dropTimer=setTimeout(closeNavDrop,ms==null?240:ms);
 }
 /* ---------- 「记录」⇄「回到顶部」----------
-   往下翻页超过一屏，「记录」的文字淡出、向上箭头转进来；点它缓缓回到顶部。
+   博客 / 相册（含文章页、子相册）往下翻超过一屏，「记录」的文字淡出、向上箭头转进来；点它缓缓回到顶部。
    回到顶部后箭头再变回「记录」，这时点「记录」才是展开二级菜单。
-   进入 / 退出用两个阈值（300 / 20），停在临界点时不会来回闪
-   只在「博客 / 相册」（含博客文章页、子相册）生效：首页、项目、关于页翻得再深也保持「记录」 */
+   进入 / 退出用两个阈值（300 / 20），停在临界点时不会来回闪。
+   其余页面（首页 / 项目 / 关于）不在导航里变形，改用右下角那颗悬浮按钮（见 syncFab）。
+   两边互斥：走到了哪一区，就只由那一区的入口承担回顶 */
 const NAV_TOP_ON=300,NAV_TOP_OFF=20;
-let navToTop=false,navScrollRaf=0;
+let navToTop=false,navScrollRaf=0,fabShown=false;
 function navTopText(){
   try{const s=T();if(s&&s.backTop)return s.backTop;}catch(e){}
   return "回到顶部";
@@ -5325,15 +5407,26 @@ function navTopAllowed(){
   const p=location.hash.replace(/^#\/?/,"").split("/").filter(Boolean)[0]||"";
   return p==="blog"||p==="gallery";
 }
+/* 悬浮回顶按钮：只服务非「记录」页；双阈值与导航箭头一致，避免临界点闪烁 */
+function syncFab(y,allowed){
+  if(!toTopBtn)return;
+  const want=allowed?false:(fabShown?(y>NAV_TOP_OFF):(y>NAV_TOP_ON));
+  if(want===fabShown)return;
+  fabShown=want;
+  toTopBtn.classList.toggle("show",want);
+}
 function syncNavTop(onlyLabel){
   /* 启动早期可能还在 const 的 TDZ 里，拿不到就安静跳过 */
   try{ if(!navDrop||!navDropBtn)return; }catch(e){ return; }
   const y=window.scrollY||document.documentElement.scrollTop||0;
   if(onlyLabel){                       /* 切语言：只同步无障碍名称 */
     if(navToTop)navDropBtn.setAttribute("aria-label",navTopText());
+    if(toTopBtn)toTopBtn.setAttribute("aria-label",navTopText());
     return;
   }
-  const want=navTopAllowed()?(navToTop?(y>NAV_TOP_OFF):(y>NAV_TOP_ON)):false;
+  const allowed=navTopAllowed();
+  syncFab(y,allowed);                  /* 先判悬浮按钮，它和导航箭头各自独立 */
+  const want=allowed?(navToTop?(y>NAV_TOP_OFF):(y>NAV_TOP_ON)):false;
   if(want===navToTop)return;
   navToTop=want;
   navDrop.classList.toggle("to-top",want);
@@ -5404,6 +5497,17 @@ if(navDrop&&navDropBtn){
       if(e.target.closest(".nav-menu-item"))closeNavDrop();
     });
   }
+  /* 已在首页时点「首页 / 站点名」不必再往地址栏写一个 #/（会多出一条历史记录）：
+     拦下来改成平滑回顶，地址保持 https://jype.top/ 这种干净形态 */
+  document.addEventListener("click",e=>{
+    if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
+    const a=e.target.closest('a[href="#/"]');
+    if(!a)return;
+    /* 已经离开首页（博客 / 相册 / 项目 / 关于）时照常跳转 */
+    if(location.hash&&location.hash!=="#/")return;
+    e.preventDefault();
+    glideTo(0,600);
+  });
   /* 点空白处收起：按下就判定，比 click 更早，也不会被后续重绘干扰 */
   document.addEventListener("pointerdown",e=>{
     if(!navDrop.classList.contains("open"))return;
@@ -5425,6 +5529,10 @@ if(navDrop&&navDropBtn){
   if(document.fonts&&document.fonts.ready){
     document.fonts.ready.then(()=>{if(navDrop.classList.contains("open"))placeNavMenu()}).catch(()=>{});
   }
+}
+/* 悬浮回顶按钮：点击缓缓回到顶部（键盘回车 / 空格同样走 click） */
+if(toTopBtn){
+  toTopBtn.addEventListener("click",()=>glideTo(0,720));
 }
 
 /* ---------- 交互绑定 ---------- */
