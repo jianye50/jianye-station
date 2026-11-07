@@ -414,6 +414,63 @@ img{display:block;max-width:100%}
 }
 .nav-link:hover{color:var(--text-1);background:var(--chip)}
 .nav-link.active{color:var(--accent);font-weight:600}
+/* ---------- 「记录」下拉：鼠标悬浮或单击展开，展开 / 收起都带过渡 ---------- */
+.nav-drop{position:relative;display:flex;align-items:center}
+.nav-drop-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:inherit;line-height:1;
+}
+.nav-drop-btn .chev{
+  width:13px;height:13px;flex:none;
+  fill:none;stroke:currentColor;stroke-width:2.4;
+  stroke-linecap:round;stroke-linejoin:round;
+  opacity:.62;
+  transition:transform .32s cubic-bezier(.22,.8,.28,1),opacity .2s ease;
+}
+.nav-drop.open .nav-drop-btn .chev{transform:rotate(180deg);opacity:1}
+.nav-drop.open>.nav-drop-btn{color:var(--text-1);background:var(--chip)}
+/* 触屏点按后别留一圈默认焦点框，键盘 Tab 过来才显示 */
+.nav-drop-btn:focus{outline:none}
+.nav-drop-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* 面板：与导航同一套液态玻璃材质，从按钮下方轻轻落下 */
+.nav-menu{
+  position:absolute;top:calc(100% + 12px);left:50%;
+  min-width:138px;padding:6px;
+  border-radius:16px;
+  background-color:rgba(15,18,26,.80);
+  background-image:var(--glass-grad);
+  -webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.18),
+    inset 0 1px 1px -1px rgba(255,255,255,.55),
+    0 2px 8px rgba(6,10,25,.18),
+    0 18px 42px rgba(6,10,25,.44);
+  opacity:0;visibility:hidden;pointer-events:none;
+  transform:translateX(-50%) translateY(-8px) scale(.96);
+  transform-origin:top center;
+  transition:opacity .2s ease,transform .26s cubic-bezier(.22,.8,.28,1),visibility .26s;
+}
+.nav-drop.open .nav-menu{
+  opacity:1;visibility:visible;pointer-events:auto;
+  transform:translateX(-50%) translateY(0) scale(1);
+}
+.nav-menu-item{
+  display:block;padding:9px 13px;border-radius:10px;
+  font-size:13.5px;color:var(--text-2);white-space:nowrap;
+  opacity:0;transform:translateY(-4px);
+  transition:opacity .18s ease,transform .22s ease,color .18s ease,background .18s ease;
+}
+/* 逐项错峰浮现，收起时一起淡出（基础态不带延迟，收得干净利落） */
+.nav-drop.open .nav-menu-item{opacity:1;transform:none}
+.nav-drop.open .nav-menu-item:nth-of-type(1){transition-delay:.04s}
+.nav-drop.open .nav-menu-item:nth-of-type(2){transition-delay:.09s}
+.nav-menu-item:hover,.nav-menu-item:focus-visible{color:var(--text-1);background:var(--chip);outline:none}
+.nav-menu-item.cur{color:var(--accent);font-weight:600}
+/* 系统开了「减少动态效果」就收掉过渡，只留瞬间切换 */
+@media (prefers-reduced-motion:reduce){
+  .nav-menu,.nav-menu-item,.nav-drop-btn .chev{transition-duration:.01ms!important;transition-delay:0s!important}
+}
 .nav-sep{width:1px;height:20px;background:rgba(255,255,255,.22);margin:0 8px;box-shadow:1px 0 0 rgba(0,0,0,.10)}
 .nav-icon{
   width:34px;height:34px;border-radius:50%;
@@ -428,6 +485,9 @@ img{display:block;max-width:100%}
   .nav{gap:0;padding:0 8px}
   .nav-brand{display:none}   /* 手机端站名不显示，占位也一并去掉，内容才能左右居中 */
   .nav-link{padding:7px 9px;font-size:13px}
+  .nav-drop-btn{gap:4px}
+  .nav-drop-btn .chev{width:12px;height:12px}
+  .nav-menu{min-width:126px;top:calc(100% + 10px)}
 }
 /* ===================== 视图容器与动画 ===================== */
 #app{min-height:100vh}
@@ -685,7 +745,6 @@ img{display:block;max-width:100%}
   font-size:.9em;background:var(--chip);padding:2px 7px;border-radius:6px;
 }
 .section-more{text-align:center;padding:16px 0 30px}
-#aboutProjects{scroll-margin-top:86px}   /* 「查看全部项目」锚点定位时给顶部悬浮导航留出空间 */
 .link-more{
   display:inline-flex;align-items:center;gap:8px;
   padding:11px 26px;border-radius:999px;
@@ -1512,6 +1571,12 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 }
 .proj h4{font-size:15.5px;font-weight:700;margin-bottom:6px}
 .proj p{font-size:13px;color:var(--text-2);line-height:1.65;margin:0}
+/* 项目页：projects.txt 还没配东西时的占位提示（读不到配置也不至于空一片） */
+.proj-empty{
+  margin-top:26px;padding:52px 20px;border-radius:16px;
+  border:1px dashed var(--card-border);background:rgba(255,255,255,.02);
+  text-align:center;color:var(--text-3);font-size:14px;line-height:1.9;
+}
 .read-more{
   display:inline-flex;align-items:center;gap:6px;
   color:var(--accent);font-weight:650;font-size:14px;
@@ -1591,10 +1656,21 @@ html:not(.jy-go) .hero-inner{animation:none}
   <a class="nav-brand" href="#/">
     <span class="dot"></span><span id="navBrand"></span>
   </a>
-  <a class="nav-link" data-nav="home" href="#/">Home</a>
-  <a class="nav-link" data-nav="gallery" href="#/gallery">图库</a>
-  <a class="nav-link" data-nav="blog" href="#/blog">博客</a>
-  <a class="nav-link" data-nav="about" href="#/about">About</a>
+  <a class="nav-link" data-nav="home" href="#/"><span data-navlabel="home">首页</span></a>
+  <!-- 「记录」= 博客 + 相册的合并入口：悬浮或单击展开二级菜单 -->
+  <div class="nav-drop" id="navDrop">
+    <button class="nav-link nav-drop-btn" id="navDropBtn" type="button" data-nav="records"
+            aria-haspopup="true" aria-expanded="false" aria-controls="navMenu">
+      <span data-navlabel="records">记录</span>
+      <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <div class="nav-menu" id="navMenu" role="menu" aria-label="记录">
+      <a class="nav-menu-item" role="menuitem" data-nav="blog" href="#/blog"><span data-navlabel="blog">博客</span></a>
+      <a class="nav-menu-item" role="menuitem" data-nav="gallery" href="#/gallery"><span data-navlabel="gallery">相册</span></a>
+    </div>
+  </div>
+  <a class="nav-link" data-nav="projects" href="#/projects"><span data-navlabel="projects">项目</span></a>
+  <a class="nav-link" data-nav="about" href="#/about"><span data-navlabel="about">关于</span></a>
   <span class="nav-sep"></span>
   <button class="nav-icon" id="langBtn" title="切换到英文" aria-label="切换到英文">EN</button>
   <!-- 音乐入口：点一下展开歌单面板（进度环画在按钮外圈） -->
@@ -1823,10 +1899,10 @@ async function loadProjects(){
   }catch(e){}
   if(!j||!j.length)return;
   PROJECTS=j;
-  /* 配置到达时正停在首页 / 关于页 → 原地重绘（同上：启动完成前不抢渲染） */
+  /* 配置到达时正停在首页 / 项目页 → 原地重绘（同上：启动完成前不抢渲染） */
   const h=location.hash;
-  if(window.__JY_STARTED&&(/^#\/about/.test(h)||h===""||h==="#/"||h==="#")){
-    const redraw=/^#\/about/.test(h)?renderAbout:renderHome;
+  if(window.__JY_STARTED&&(/^#\/projects/.test(h)||h===""||h==="#/"||h==="#")){
+    const redraw=/^#\/projects/.test(h)?renderProjects:renderHome;
     const root=document.documentElement,prev=root.style.scrollBehavior;
     root.style.scrollBehavior="auto";
     const y=window.scrollY;
@@ -2050,7 +2126,12 @@ let photosStatus="loading"; // loading | ready | error
 const I18N={
   zh:{
     brand:"鉴业の小站",   /* 默认站名；profile.txt 的「站名」读到后覆盖，配置缺失时也有像样的标题 */
-    nav:{home:"首页",gallery:"相册",blog:"博客",about:"关于"},
+    nav:{home:"首页",records:"记录",projects:"项目",about:"关于",blog:"博客",gallery:"相册"},
+    projects:{
+      title:"项目",
+      sub:"我做过的一些东西，点击卡片可访问 →",
+      empty:"项目清单还没配置：在站点根目录的 projects.txt 里加上你的项目即可。"
+    },
     langTip:"切换到英文",
     hero:{badge:"",sub:"",read:"浏览博客",aboutBtn:"关于我",hint:"向下浏览"},   /* 徽章/描述来自 profile.txt */
     home:{gallery:"相册",more:"查看全部照片",projects:"项目",moreProj:"查看全部项目"},
@@ -2096,8 +2177,6 @@ const I18N={
       title:"关于",
       contact:"想聊项目、交流技术，或者只是打个招呼：",
       socials:"找到我",
-      projTitle:"项目",
-      projSub:"我做过的一些东西，点击卡片可访问 →",
       friends:"友情链接",
       friendsSub:"这些朋友的站点，也欢迎逛逛",
       friendApply:"申请友链",
@@ -2119,7 +2198,12 @@ const I18N={
   },
   en:{
     brand:"Jianye's Corner",
-    nav:{home:"Home",gallery:"Albums",blog:"Blog",about:"About"},
+    nav:{home:"Home",records:"Records",projects:"Projects",about:"About",blog:"Blog",gallery:"Albums"},
+    projects:{
+      title:"Projects",
+      sub:"Things I've built — click a card to visit →",
+      empty:"No projects configured yet — add them to projects.txt at the site root."
+    },
     langTip:"Switch to Chinese",
     hero:{badge:"",sub:"",read:"Browse Blog",aboutBtn:"About Me",hint:"Scroll down"},   /* badge/sub from profile.txt */
     home:{gallery:"Albums",more:"View all photos",projects:"Projects",moreProj:"View all projects"},
@@ -2165,8 +2249,6 @@ const I18N={
       title:"About",
       contact:"For projects, tech chats, or just saying hi:",
       socials:"Find me",
-      projTitle:"Projects",
-      projSub:"Things I've built — click a card to visit →",
       friends:"Friendly Links",
       friendsSub:"Sites from friends — worth a visit",
       friendApply:"Apply for a Link",
@@ -2231,10 +2313,13 @@ function setLang(v,persist){
   $("#langBtn").title=T().langTip||"Switch language";
   $("#langBtn").setAttribute("aria-label",$("#langBtn").title);
   $("#navBrand").textContent=T().brand;
-  ["home","gallery","blog","about"].forEach(k=>{
-    const el=document.querySelector(`[data-nav="${k}"]`);
-    if(el)el.textContent=T().nav[k];
+  /* 导航标签：一级项 + 「记录」下拉里的两项（都挂了 data-navlabel，按钮里的箭头不会被抹掉） */
+  document.querySelectorAll("[data-navlabel]").forEach(el=>{
+    const k=el.dataset.navlabel,v=T().nav[k];
+    if(v)el.textContent=v;
   });
+  const navMenuEl=$("#navMenu");
+  if(navMenuEl)navMenuEl.setAttribute("aria-label",T().nav.records);
   route(); // 重新渲染当前视图
 }
 
@@ -3004,7 +3089,7 @@ function renderHome(){
           ${projectsGridHTML(HOME_PROJECT_COUNT)}
         </div>
         <div class="section-more">
-          <a class="link-more" href="#/about/projects">${esc(t.home.moreProj)} →</a>
+          <a class="link-more" href="#/projects">${esc(t.home.moreProj)} →</a>
         </div>
       </section>`:""}
     </div>
@@ -3058,7 +3143,7 @@ function renderGallery(){
   paintPhotoGrids();
 }
 
-/* ---------- 关于页可折叠卡片（项目/友链/游戏）：点标题行收起或展开 ----------
+/* ---------- 关于页可折叠卡片（友链 / 游戏）：点标题行收起或展开 ----------
    状态存 localStorage；没存过时默认手机端收起、桌面端展开 */
 const COLL_KEY="aboutCollapse";
 const COLL_CHEV=`<svg class="coll-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -3140,21 +3225,7 @@ function renderAbout(){
       </div>
       ${introHTML}
 
-      <!-- 项目模块：从原「项目」页移入，位于个人介绍下方、友情链接上方；可点击标题行折叠。
-           数据来自 projects.txt，读不到配置时整个板块隐藏 -->
-      ${PROJECTS.length?`
-      <div class="about-card collapsible" id="aboutProjects">
-        <div class="coll-head" role="button" tabindex="0" aria-label="${esc(t.about.projTitle)}">
-          <div class="section-label" style="margin:0">${esc(t.about.projTitle)}</div>
-          ${COLL_CHEV}
-        </div>
-        <div class="coll-body">
-          <p class="friends-sub">${esc(t.about.projSub)}</p>
-          <div class="proj-grid">
-            ${projectsGridHTML()}
-          </div>
-        </div>
-      </div>`:""}
+      <!-- 项目已独立成「项目」页（导航第三项），关于页不再放项目板块 -->
 
       ${(FRIENDS.length||FRIEND_FORM)?`
       <div class="about-card collapsible" id="aboutFriends">
@@ -3209,6 +3280,26 @@ function renderAbout(){
     </div>
   </section>`;
   applyAboutCollapse();   /* 按上次的选择（或手机默认收起）应用折叠状态 */
+}
+
+/* ---------- 项目页（导航「项目」） ----------
+   项目不再是关于页里的一张折叠卡：独立成页，卡片网格铺满、全部展示。
+   数据同样来自站点根目录的 projects.txt，读不到时显示一句配置提示，页面照常打开 */
+function renderProjects(){
+  const t=T();
+  app.innerHTML=`
+  <section class="view">
+    <div class="wrap">
+      <div class="page-head">
+        <h1>${esc(t.projects.title)}</h1>
+        <div class="sub">${esc(t.projects.sub)}</div>
+      </div>
+      ${PROJECTS.length
+        ?`<div class="proj-grid">${projectsGridHTML()}</div>`
+        :`<div class="proj-empty">${esc(t.projects.empty)}</div>`}
+      <div style="height:70px"></div>
+    </div>
+  </section>`;
 }
 
 /* ---------- 项目卡片网格 ----------
@@ -5034,19 +5125,29 @@ function route(){
     }
     else renderBlog(gen);
   }
-  else if(parts[0]==="about"){
-    active="about";renderAbout();
-    /* #/about/projects → 渲染后平滑滚到项目板块 */
-    if(parts[1]==="projects")pendingScroll="aboutProjects";
+  else if(parts[0]==="projects"){
+    active="projects";renderProjects();
   }
-  else if(parts[0]==="projects"){location.replace("#/about/projects");return}  /* 旧链接兜底：项目已并入关于页 */
+  else if(parts[0]==="about"){
+    /* 旧链接 #/about/projects（项目当年嵌在关于页时的锚点）→ 换到新的「项目」页 */
+    if(parts[1]==="projects"){location.replace("#/projects");return}
+    active="about";renderAbout();
+  }
   else renderHome();
-  /* 导航高亮：顺手标 aria-current，读屏能知道当前在哪一页 */
+  /* 导航高亮：博客 / 相册都归在「记录」这一项下；顺手标 aria-current，读屏能知道当前在哪一页 */
+  const navActive=(active==="blog"||active==="gallery")?"records":active;
   document.querySelectorAll(".nav-link").forEach(el=>{
-    const on=el.dataset.nav===active;
+    const on=el.dataset.nav===navActive;
     el.classList.toggle("active",on);
-    if(on)el.setAttribute("aria-current","page"); else el.removeAttribute("aria-current");
+    /* 「记录」是按钮：用 true 表示所在分区；真正的页面链接才用 page */
+    if(on)el.setAttribute("aria-current",el.tagName==="BUTTON"?"true":"page");
+    else el.removeAttribute("aria-current");
   });
+  /* 二级菜单里标出当前真正所在的子页面（博客 / 相册） */
+  document.querySelectorAll(".nav-menu-item").forEach(el=>{
+    el.classList.toggle("cur",el.dataset.nav===active);
+  });
+  closeNavDrop();   /* 切页后收起「记录」菜单，别让它悬在新页面上 */
   /* 页脚文案跟随语言（#siteFooter 在所有视图之外，静态默认中文兜底） */
   const ft=$("#siteFooter");
   if(ft)ft.textContent=T().footer;
@@ -5058,8 +5159,8 @@ function route(){
   const root=document.documentElement,
         prevSmooth=root.style.scrollBehavior;
   root.style.scrollBehavior="auto";
-  /* 带锚点的路由（如 #/about/projects）：先正常展示「关于」页顶部，
-     然后页面再缓缓下滑到项目板块 */
+  /* 带锚点的路由（预留能力）：pendingScroll 指定板块 id 时，
+     先展示页面顶部，再缓缓下滑到该板块 */
   const anchor=pendingScroll?document.getElementById(pendingScroll):null;
   pendingScroll=null;
   if(anchor){
@@ -5073,6 +5174,83 @@ function route(){
   }
 }
 window.addEventListener("hashchange",route);
+
+/* ---------- 导航「记录」二级菜单：悬浮 / 单击都能展开 ----------
+   · 桌面（hover:hover + 精确指针）：移入即开，移开稍等 180ms 再收（留出跨过间隙的时间）
+   · 触屏 / 无精确指针：只认单击切换，避免 tap 之后又被 mouseenter 抢开
+   · 点页面空白、按 Esc、点菜单项、切换路由都会收起 */
+const navDrop=$("#navDrop"),navDropBtn=$("#navDropBtn");
+let dropTimer=0;
+function canHoverNav(){
+  try{return matchMedia("(hover:hover) and (pointer:fine)").matches;}catch(e){return false;}
+}
+function openNavDrop(){
+  if(!navDrop)return;
+  clearTimeout(dropTimer);
+  if(!navDrop.classList.contains("open")){
+    /* 歌单面板就挂在导航正下方：别让两个面板叠在一起，先把音乐面板收起来 */
+    const mp=$("#mpWrap");
+    if(mp&&mp.classList.contains("open")){const b=$("#musicBtn"); if(b)b.click();}
+  }
+  navDrop.classList.add("open");
+  if(navDropBtn)navDropBtn.setAttribute("aria-expanded","true");
+}
+function closeNavDrop(){
+  clearTimeout(dropTimer);
+  if(!navDrop||!navDrop.classList.contains("open"))return;
+  navDrop.classList.remove("open");
+  if(navDropBtn)navDropBtn.setAttribute("aria-expanded","false");
+}
+function closeNavDropSoon(ms){
+  clearTimeout(dropTimer);
+  dropTimer=setTimeout(closeNavDrop,ms==null?180:ms);
+}
+if(navDrop&&navDropBtn){
+  /* 触屏点按后浏览器会补一轮 mouseenter，别让它把刚点开的菜单又抢着改状态 */
+  let lastTouchTs=0;
+  window.addEventListener("pointerdown",e=>{
+    if(e.pointerType==="touch")lastTouchTs=Date.now();
+  },{capture:true,passive:true});
+  navDropBtn.addEventListener("click",e=>{
+    e.preventDefault();
+    const isOpen=navDrop.classList.contains("open");
+    /* 鼠标还悬在按钮上时，菜单是 hover 打开的：这一下点击不再收起，
+       否则菜单会在指针正上方凭空消失（要收就移开、点空白或按 Esc）。
+       触屏 / 键盘的点击（pointerType 不是 mouse）照常切换 */
+    const byMouse=e.pointerType?e.pointerType==="mouse":canHoverNav();
+    if(isOpen&&byMouse&&navDrop.matches(":hover"))return;
+    if(isOpen)closeNavDrop();
+    else openNavDrop();
+  });
+  navDrop.addEventListener("mouseenter",()=>{
+    if(canHoverNav()&&Date.now()-lastTouchTs>800)openNavDrop();
+  });
+  navDrop.addEventListener("mouseleave",()=>{if(canHoverNav())closeNavDropSoon(180)});
+  /* 键盘：焦点在按钮上按 ↓ 展开并进入第一项 */
+  navDropBtn.addEventListener("keydown",e=>{
+    if(e.key!=="ArrowDown")return;
+    e.preventDefault();openNavDrop();
+    const first=$("#navMenu .nav-menu-item");
+    if(first)first.focus();
+  });
+  /* 点菜单项：hash 照常跳转，菜单立刻收起 */
+  $("#navMenu").addEventListener("click",e=>{
+    if(e.target.closest(".nav-menu-item"))closeNavDrop();
+  });
+  /* 点空白处收起：按下就判定，比 click 更早，也不会被后续重绘干扰 */
+  document.addEventListener("pointerdown",e=>{
+    if(!navDrop.classList.contains("open"))return;
+    if(navDrop.contains(e.target))return;
+    closeNavDrop();
+  },true);
+  document.addEventListener("keydown",e=>{
+    if(e.key!=="Escape"||!navDrop.classList.contains("open"))return;
+    /* 键盘用户（焦点在菜单里）收起后把焦点还给按钮；用鼠标开着、人却在搜索框里打字时别抢焦点 */
+    const inDrop=navDrop.contains(document.activeElement);
+    closeNavDrop();
+    if(inDrop){try{navDropBtn.focus();}catch(err){}}
+  });
+}
 
 /* ---------- 交互绑定 ---------- */
 $("#langBtn").addEventListener("click",()=>setLang(lang==="zh"?"en":"zh",true));
@@ -5117,8 +5295,8 @@ $("#lightbox").addEventListener("touchend",e=>{
 },{passive:true});
 $("#lightbox").addEventListener("touchcancel",()=>{lbTouch=null;},{passive:true});
 document.addEventListener("click",e=>{
-  /* 相册页在子相册里时再点导航「相册」→ 回到全部相册（hash 会同步改回 #/gallery） */
-  const nav=e.target.closest(".nav-link");
+  /* 相册页在子相册里时再点导航「相册」（记录 → 相册）→ 回到全部相册（hash 会同步改回 #/gallery） */
+  const nav=e.target.closest(".nav-link,.nav-menu-item");
   if(nav&&nav.dataset.nav==="gallery"&&galleryFilter){ openAlbum(""); return; }
   /* 首屏那个滚动提示：点一下平滑滚到相册预览 */
   const sc=e.target.closest("[data-scroll-to]");
