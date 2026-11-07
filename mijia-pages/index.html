@@ -294,7 +294,7 @@
 <div class="toast" id="toast"></div>
 <script>
 (function () {
-  var LS_CREDS = 'mijia_creds', LS_PIN = 'mijia_pin', LS_SPEC = 'mijia_spec_v2', LS_LANG = 'mijia_lang'
+  var LS_CREDS = 'mijia_creds', LS_PIN = 'mijia_pin', LS_SPEC = 'mijia_spec_v3', LS_LANG = 'mijia_lang'
   var creds = null
   try { creds = JSON.parse(localStorage.getItem(LS_CREDS)) } catch (e) {}
 
@@ -332,7 +332,8 @@
       send: '发送', needPath: '请填写路径', jsonParseFail: 'data JSON 解析失败', reqFail: '请求失败：',
       errCode: '错误码 ', notSupport: '设备不支持该属性或参数不合法', outOfRange: '取值超出范围',
       devNoResp: '设备无响应，可能离线', devBusy: '设备正忙，请稍后再试',
-      devOffline: '设备离线', otherRoom: '其他', choose: '选择...', count: '{n} 台'
+      devOffline: '设备离线', otherRoom: '其他', choose: '选择...', count: '{n} 台',
+      unnamed: '未命名设备', switchLang: '已切换为中文'
     },
     en: {
       appTitle: 'Mi Home Console', refresh: '↻ Refresh', logout: 'Sign out',
@@ -365,7 +366,8 @@
       send: 'Send', needPath: 'Path required', jsonParseFail: 'Invalid data JSON', reqFail: 'Request failed: ',
       errCode: 'code ', notSupport: 'Property not supported or invalid param', outOfRange: 'Value out of range',
       devNoResp: 'Device not responding, possibly offline', devBusy: 'Device busy, try later',
-      devOffline: 'Device offline', otherRoom: 'Others', choose: 'Select...', count: '{n} devices'
+      devOffline: 'Device offline', otherRoom: 'Others', choose: 'Select...', count: '{n} devices',
+      unnamed: 'Unnamed device', switchLang: 'Switched to English'
     }
   }
   function tr(key) {
@@ -387,7 +389,7 @@
     lang = lang === 'zh' ? 'en' : 'zh'
     localStorage.setItem(LS_LANG, lang)
     applyStaticTexts()
-    if (devices && devices.length) { renderAll(); toast(lang === 'zh' ? '已切换为中文' : 'Switched to English') }
+    if (devices && devices.length) { renderAll(); toast(tr('switchLang')) }
   }
 
   function $(id) { return document.getElementById(id) }
@@ -407,7 +409,7 @@
     if (ct.indexOf('json') < 0) throw new Error(tr('errNotJson').replace('{c}', r.status))
     return r.json().then(function (j) {
       if (r.status === 401) {
-        var e = new Error((j && j.error) || '访问密码错误')
+        var e = new Error((j && j.error) || tr('pinWrong'))
         e.kind = 'auth'
         throw e
       }
@@ -523,7 +525,7 @@
   function normDevice(d) {
     return {
       did: String(d.device_id || d.did || d.id || ''),
-      name: d.name || '未命名设备',
+      name: d.name || tr('unnamed'),
       model: d.model || '',
       online: !(d.is_online === false || d.is_online === 0 || d.isOnline === false || d.isOnline === 0 || d.online === false),
       specType: d.spec_type || d.specType || '',
@@ -580,14 +582,37 @@
   }
 
   // ---- spec 缓存 ----
+  // v3：旧版缓存可能缺中文 comment 字段（key 升版本即整体作废），且加载时校验结构
   var specCache = {}
   var specPending = {}
-  try { specCache = JSON.parse(localStorage.getItem(LS_SPEC)) || {} } catch (e) {}
+  try {
+    var _raw = JSON.parse(localStorage.getItem(LS_SPEC)) || {}
+    Object.keys(_raw).forEach(function (k) {
+      var v = _raw[k]
+      if (v && Array.isArray(v.services)) specCache[k] = v
+    })
+  } catch (e) {}
   function saveSpecCache() { try { localStorage.setItem(LS_SPEC, JSON.stringify(specCache)) } catch (e) {} }
+
+  // 缓存里若完全没有中文 comment（旧版缓存/旧 CDN 数据），视为失效，强制重新拉取
+  function specHasZh(inst) {
+    if (!inst || !Array.isArray(inst.services)) return false
+    for (var i = 0; i < inst.services.length; i++) {
+      var ps = inst.services[i].properties || []
+      for (var j = 0; j < ps.length; j++) {
+        var c = ps[j].comment
+        if (c != null && String(c).trim() !== '') return true
+      }
+    }
+    return false
+  }
 
   function getSpec(type) {
     if (!type) return Promise.resolve(null)
-    if (specCache[type]) return Promise.resolve(specCache[type])
+    if (specCache[type]) {
+      if (specHasZh(specCache[type])) return Promise.resolve(specCache[type])
+      delete specCache[type]   // 旧缓存无中文，丢弃重取
+    }
     if (specPending[type]) return specPending[type]   // 同型号设备并发时只请求一次
     specPending[type] = api('api/spec?type=' + encodeURIComponent(type)).then(asJson).then(function (j) {
       var inst = j.instance || (j && j.services ? j : null)   // 后端直接返回规格本体，顶层即 services
