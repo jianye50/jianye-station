@@ -417,35 +417,31 @@ img{display:block;max-width:100%}
 /* ---------- 「记录」下拉：鼠标悬浮或单击展开，展开 / 收起都带过渡 ---------- */
 .nav-drop{position:relative;display:flex;align-items:center}
 .nav-drop-btn{
-  display:inline-flex;align-items:center;gap:5px;
+  display:inline-flex;align-items:center;
   font-family:inherit;line-height:1;
 }
-.nav-drop-btn .chev{
-  width:13px;height:13px;flex:none;
-  fill:none;stroke:currentColor;stroke-width:2.4;
-  stroke-linecap:round;stroke-linejoin:round;
-  opacity:.62;
-  transition:transform .32s cubic-bezier(.22,.8,.28,1),opacity .2s ease;
-}
-.nav-drop.open .nav-drop-btn .chev{transform:rotate(180deg);opacity:1}
 .nav-drop.open>.nav-drop-btn{color:var(--text-1);background:var(--chip)}
 /* 触屏点按后别留一圈默认焦点框，键盘 Tab 过来才显示 */
 .nav-drop-btn:focus{outline:none}
 .nav-drop-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-/* 面板：与导航同一套液态玻璃材质，从按钮下方轻轻落下 */
+/* 面板：与导航同一套液态玻璃材质，横向排一行，从按钮下方轻轻落下 */
 .nav-menu{
   position:absolute;top:calc(100% + 12px);left:50%;
-  min-width:138px;padding:6px;
-  border-radius:16px;
-  background-color:rgba(15,18,26,.80);
-  background-image:var(--glass-grad);
+  display:flex;align-items:center;gap:2px;
+  padding:5px;
+  border-radius:999px;
+  /* 液态玻璃基体：白色斜向高光 + 一层烟熏暗底（既透出背景，又保证亮背景上文字可读） */
+  background:var(--glass-grad),rgba(16,20,30,.42);
   -webkit-backdrop-filter:var(--glass-blur);
   backdrop-filter:var(--glass-blur);
+  /* 与导航同款棱边：外圈微光 + 顶部受光 + 底部收光 + 落影 */
   box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.18),
-    inset 0 1px 1px -1px rgba(255,255,255,.55),
-    0 2px 8px rgba(6,10,25,.18),
-    0 18px 42px rgba(6,10,25,.44);
+    inset 0 0 0 1px rgba(255,255,255,.24),
+    inset 0 1.5px .5px -1px rgba(255,255,255,.62),
+    inset 0 -1px .5px -1px rgba(255,255,255,.26),
+    inset 0 12px 18px -12px rgba(255,255,255,.30),
+    0 2px 8px rgba(6,10,25,.14),
+    0 18px 42px rgba(6,10,25,.40);
   opacity:0;visibility:hidden;pointer-events:none;
   transform:translateX(-50%) translateY(-8px) scale(.96);
   transform-origin:top center;
@@ -456,8 +452,8 @@ img{display:block;max-width:100%}
   transform:translateX(-50%) translateY(0) scale(1);
 }
 .nav-menu-item{
-  display:block;padding:9px 13px;border-radius:10px;
-  font-size:13.5px;color:var(--text-2);white-space:nowrap;
+  display:block;padding:8px 15px;border-radius:999px;
+  font-size:13.5px;color:rgba(244,245,247,.82);white-space:nowrap;
   opacity:0;transform:translateY(-4px);
   transition:opacity .18s ease,transform .22s ease,color .18s ease,background .18s ease;
 }
@@ -469,7 +465,7 @@ img{display:block;max-width:100%}
 .nav-menu-item.cur{color:var(--accent);font-weight:600}
 /* 系统开了「减少动态效果」就收掉过渡，只留瞬间切换 */
 @media (prefers-reduced-motion:reduce){
-  .nav-menu,.nav-menu-item,.nav-drop-btn .chev{transition-duration:.01ms!important;transition-delay:0s!important}
+  .nav-menu,.nav-menu-item{transition-duration:.01ms!important;transition-delay:0s!important}
 }
 .nav-sep{width:1px;height:20px;background:rgba(255,255,255,.22);margin:0 8px;box-shadow:1px 0 0 rgba(0,0,0,.10)}
 .nav-icon{
@@ -485,9 +481,8 @@ img{display:block;max-width:100%}
   .nav{gap:0;padding:0 8px}
   .nav-brand{display:none}   /* 手机端站名不显示，占位也一并去掉，内容才能左右居中 */
   .nav-link{padding:7px 9px;font-size:13px}
-  .nav-drop-btn{gap:4px}
-  .nav-drop-btn .chev{width:12px;height:12px}
-  .nav-menu{min-width:126px;top:calc(100% + 10px)}
+  .nav-menu{top:calc(100% + 10px);padding:4px}
+  .nav-menu-item{padding:7px 12px;font-size:13px}
 }
 /* ===================== 视图容器与动画 ===================== */
 #app{min-height:100vh}
@@ -1662,7 +1657,6 @@ html:not(.jy-go) .hero-inner{animation:none}
     <button class="nav-link nav-drop-btn" id="navDropBtn" type="button" data-nav="records"
             aria-haspopup="true" aria-expanded="false" aria-controls="navMenu">
       <span data-navlabel="records">记录</span>
-      <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
     </button>
     <div class="nav-menu" id="navMenu" role="menu" aria-label="记录">
       <a class="nav-menu-item" role="menuitem" data-nav="blog" href="#/blog"><span data-navlabel="blog">博客</span></a>
@@ -2313,7 +2307,7 @@ function setLang(v,persist){
   $("#langBtn").title=T().langTip||"Switch language";
   $("#langBtn").setAttribute("aria-label",$("#langBtn").title);
   $("#navBrand").textContent=T().brand;
-  /* 导航标签：一级项 + 「记录」下拉里的两项（都挂了 data-navlabel，按钮里的箭头不会被抹掉） */
+  /* 导航标签：一级项 + 「记录」下拉里的两项（都挂了 data-navlabel） */
   document.querySelectorAll("[data-navlabel]").forEach(el=>{
     const k=el.dataset.navlabel,v=T().nav[k];
     if(v)el.textContent=v;
