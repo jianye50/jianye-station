@@ -1,6 +1,47 @@
 {
-  "generated": "2026-11-07T09:48:55.459Z",
+  "generated": "2026-11-07T12:03:45.012Z",
   "posts": [
+    {
+      "slug": "米家网页控制台",
+      "md": "blog/米家网页控制台/index.md",
+      "imgBase": "blog/米家网页控制台/",
+      "title": "把米家搬进浏览器：我写了一个纯静态的米家网页控制台",
+      "desc": "扫码登录、按设备规格自动生成控件、界面中英双语、开关状态不再「假回弹」。一个不依赖任何后端数据库的米家网页控制台，为什么摄像头偏偏是例外，以及开发路上踩过的那些坑。",
+      "tags": [
+        "米家",
+        "智能家居",
+        "Cloudflare",
+        "折腾"
+      ],
+      "date": "2026-11-07",
+      "minutes": 9,
+      "cover": "cover.png",
+      "bg": "cover.png",
+      "mdEn": "blog/米家网页控制台/index.en.md",
+      "titleEn": "Bringing Mijia into the browser: I wrote a purely static Mijia web console",
+      "descEn": "Scan the QR code to log in, automatically generate controls according to device specifications, the interface is bilingual in Chinese and English, and the switch status no longer \"fake rebound\". A Mijia web console that does not rely on any back-end database, why the camera is an exception, and the pitfalls encountered on the development road.",
+      "tagsEn": [
+        "Mijia",
+        "smart home",
+        "Cloudflare",
+        "toss"
+      ],
+      "mdZh": "blog/米家网页控制台/index.zh.md",
+      "titleZh": "把米家搬进浏览器：我写了一个纯静态的米家网页控制台",
+      "descZh": "扫码登录、按设备规格自动生成控件、界面中英双语、开关状态不再「假回弹」。一个不依赖任何后端数据库的米家网页控制台，为什么摄像头偏偏是例外，以及开发路上踩过的那些坑。",
+      "tagsZh": [
+        "米家",
+        "智能家居",
+        "Cloudflare",
+        "折腾"
+      ],
+      "imgs": {
+        "cover.png": "blog/thumbs/米家网页控制台-i0.webp",
+        "login.png": "blog/thumbs/米家网页控制台-i4.webp"
+      },
+      "coverThumb": "blog/thumbs/米家网页控制台-cover.webp",
+      "bgThumb": "blog/thumbs/米家网页控制台-bg.webp"
+    },
     {
       "slug": "远程重装系统服务",
       "md": "blog/远程重装系统服务/index.md",
