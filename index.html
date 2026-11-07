@@ -418,9 +418,39 @@ img{display:block;max-width:100%}
 /* 拉伸到导航满高：面板的 top:100% 才是「导航底边」，间距不随文字高低变化 */
 .nav-drop{position:relative;display:flex;align-items:center;align-self:stretch}
 .nav-drop-btn{
-  display:inline-flex;align-items:center;
+  position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
   font-family:inherit;line-height:1;
 }
+/* 「记录」⇄「回到顶部」：往下翻页时这个入口形变成向上箭头，点击回顶后再变回文字。
+   文字只淡出、箭头绝对定位，按钮宽度一点不变 —— 导航其余项不会跟着左右挪 */
+.nav-drop-btn>[data-navlabel]{
+  display:inline-block;
+  transition:opacity .18s ease,transform .3s cubic-bezier(.3,.9,.35,1),filter .2s ease;
+}
+.nav-drop.to-top .nav-drop-btn>[data-navlabel]{
+  opacity:0;filter:blur(2px);
+  transform:translateY(-7px) scale(.78);
+}
+.nav-top-ico{
+  position:absolute;left:50%;top:50%;
+  width:17px;height:17px;
+  opacity:0;pointer-events:none;color:inherit;
+  /* 收起态：从下方偏转着缩着，展开时转正、放大、落到位 */
+  transform:translate(-50%,-50%) translateY(8px) scale(.6) rotate(-40deg);
+  transition:opacity .18s ease,transform .36s cubic-bezier(.22,1.2,.32,1);
+}
+.nav-top-ico svg{
+  display:block;width:100%;height:100%;
+  fill:none;stroke:currentColor;stroke-width:2.2;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.nav-drop.to-top .nav-top-ico{
+  opacity:1;
+  transform:translate(-50%,-50%) scale(1) rotate(0deg);
+}
+.nav-drop.to-top .nav-drop-btn:hover{color:var(--text-1);background:var(--chip)}
+.nav-drop.to-top .nav-drop-btn:active .nav-top-ico{transform:translate(-50%,-50%) scale(.86)}
 .nav-drop.open>.nav-drop-btn{color:var(--text-1);background:var(--chip)}
 /* 触屏点按后别留一圈默认焦点框，键盘 Tab 过来才显示 */
 .nav-drop-btn:focus{outline:none}
@@ -453,7 +483,7 @@ img{display:block;max-width:100%}
   /* 收起态：压扁 + 缩窄 + 往上顶一点，大半藏在导航条背后，像被吸回条子里 */
   transform:translateX(-50%) translateY(-6px) scale(.78,.5);
   transform-origin:top center;
-  transition:opacity .28s ease,transform .36s cubic-bezier(.4,0,.6,1),visibility .36s;
+  transition:opacity .28s ease,transform .36s cubic-bezier(.4,0,.6,1),visibility 0s linear .36s;
 }
 /* 斜向流光切面：与导航同一道扫过玻璃面的高光 */
 .nav-menu::before{
@@ -479,8 +509,10 @@ img{display:block;max-width:100%}
 .nav-menu.open{
   opacity:1;visibility:visible;pointer-events:auto;
   transform:translateX(-50%) translateY(0) scale(1,1);
-  /* 展开比收起更慢一点：先快速显形，再带轻微回弹地落定（像从条子里脱出来） */
-  transition:opacity .16s ease-out,transform .42s cubic-bezier(.16,1.16,.3,1),visibility .42s;
+  /* 展开比收起更慢一点：先快速显形，再带轻微回弹地落定（像从条子里脱出来）。
+     visibility 用 0s 立刻可见（隐藏才延时到收起结束），
+     否则键盘 ↓ 聚焦时面板还算「不可见」，focus() 会被忽略 */
+  transition:opacity .16s ease-out,transform .42s cubic-bezier(.16,1.16,.3,1),visibility 0s;
 }
 .nav-menu-item{
   display:block;padding:8px 15px;border-radius:999px;
@@ -496,9 +528,16 @@ img{display:block;max-width:100%}
 .nav-menu-item.cur{color:var(--accent);font-weight:600}
 /* 系统开了「减少动态效果」：去掉位移形变，只保留一段很短的淡入淡出（不要瞬间硬切） */
 @media (prefers-reduced-motion:reduce){
-  .nav-menu{transition:opacity .12s linear!important}
+  .nav-menu{transition:opacity .12s linear,visibility 0s linear .12s!important}
+  .nav-menu.open{transition:opacity .12s linear,visibility 0s!important}
   .nav-menu-item{transition:opacity .12s linear!important;transform:none}
   .nav-menu.open .nav-menu-item{transition-delay:0s!important}
+  /* 「记录」⇄ 箭头：只留淡入淡出，不做旋转与位移 */
+  .nav-drop-btn>[data-navlabel],.nav-top-ico{transition:opacity .12s linear!important}
+  .nav-drop.to-top .nav-drop-btn>[data-navlabel]{transform:none;filter:none}
+  .nav-top-ico,.nav-drop.to-top .nav-top-ico,.nav-drop.to-top .nav-drop-btn:active .nav-top-ico{
+    transform:translate(-50%,-50%)!important;
+  }
 }
 .nav-sep{width:1px;height:20px;background:rgba(255,255,255,.22);margin:0 8px;box-shadow:1px 0 0 rgba(0,0,0,.10)}
 .nav-icon{
@@ -1690,6 +1729,10 @@ html:not(.jy-go) .hero-inner{animation:none}
     <button class="nav-link nav-drop-btn" id="navDropBtn" type="button" data-nav="records"
             aria-haspopup="true" aria-expanded="false" aria-controls="navMenu">
       <span data-navlabel="records">记录</span>
+      <!-- 往下翻页时文字淡出、这个箭头转进来：点击回到页面顶部 -->
+      <span class="nav-top-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 19.5V5.2M5.4 11.8 12 5.2l6.6 6.6"/></svg>
+      </span>
     </button>
   </div>
   <a class="nav-link" data-nav="projects" href="#/projects"><span data-navlabel="projects">项目</span></a>
@@ -2166,6 +2209,7 @@ const I18N={
       empty:"项目清单还没配置：在站点根目录的 projects.txt 里加上你的项目即可。"
     },
     langTip:"切换到英文",
+    backTop:"回到顶部",
     hero:{badge:"",sub:"",read:"浏览博客",aboutBtn:"关于我",hint:"向下浏览"},   /* 徽章/描述来自 profile.txt */
     home:{gallery:"相册",more:"查看全部照片",projects:"项目",moreProj:"查看全部项目"},
     gallery:{
@@ -2238,6 +2282,7 @@ const I18N={
       empty:"No projects configured yet — add them to projects.txt at the site root."
     },
     langTip:"Switch to Chinese",
+    backTop:"Back to top",
     hero:{badge:"",sub:"",read:"Browse Blog",aboutBtn:"About Me",hint:"Scroll down"},   /* badge/sub from profile.txt */
     home:{gallery:"Albums",more:"View all photos",projects:"Projects",moreProj:"View all projects"},
     gallery:{
@@ -2353,6 +2398,8 @@ function setLang(v,persist){
   });
   const navMenuEl=$("#navMenu");
   if(navMenuEl)navMenuEl.setAttribute("aria-label",T().nav.records);
+  /* 「回到顶部」形态的无障碍名称也跟着换语言 */
+  if(typeof syncNavTop==="function")syncNavTop(true);
   route(); // 重新渲染当前视图
   /* 中英切换会改变导航宽度，「记录」按钮跟着挪位：面板开着就重摆一次 */
   const dd=document.getElementById("navDrop");
@@ -5259,6 +5306,45 @@ function closeNavDropSoon(ms){
   clearTimeout(dropTimer);
   dropTimer=setTimeout(closeNavDrop,ms==null?240:ms);
 }
+/* ---------- 「记录」⇄「回到顶部」----------
+   往下翻页超过一屏，「记录」的文字淡出、向上箭头转进来；点它缓缓回到顶部。
+   回到顶部后箭头再变回「记录」，这时点「记录」才是展开二级菜单。
+   进入 / 退出用两个阈值（300 / 20），停在临界点时不会来回闪 */
+const NAV_TOP_ON=300,NAV_TOP_OFF=20;
+let navToTop=false,navScrollRaf=0;
+function navTopText(){
+  try{const s=T();if(s&&s.backTop)return s.backTop;}catch(e){}
+  return "回到顶部";
+}
+function syncNavTop(onlyLabel){
+  /* 启动早期可能还在 const 的 TDZ 里，拿不到就安静跳过 */
+  try{ if(!navDrop||!navDropBtn)return; }catch(e){ return; }
+  const y=window.scrollY||document.documentElement.scrollTop||0;
+  if(onlyLabel){                       /* 切语言：只同步无障碍名称 */
+    if(navToTop)navDropBtn.setAttribute("aria-label",navTopText());
+    return;
+  }
+  const want=navToTop?(y>NAV_TOP_OFF):(y>NAV_TOP_ON);
+  if(want===navToTop)return;
+  navToTop=want;
+  navDrop.classList.toggle("to-top",want);
+  if(want){
+    /* 形变成箭头时，二级菜单不该还开着（启动早期这个函数可能还没就绪，忽略即可） */
+    try{ closeNavDrop(); }catch(e){}
+    navDropBtn.setAttribute("aria-haspopup","false");
+    navDropBtn.removeAttribute("aria-controls");
+    navDropBtn.setAttribute("aria-label",navTopText());
+  }else{
+    navDropBtn.setAttribute("aria-haspopup","true");
+    navDropBtn.setAttribute("aria-controls","navMenu");
+    navDropBtn.removeAttribute("aria-label");
+  }
+}
+window.addEventListener("scroll",()=>{
+  if(navScrollRaf)return;
+  navScrollRaf=requestAnimationFrame(()=>{navScrollRaf=0;syncNavTop();});
+},{passive:true});
+syncNavTop();   /* 带锚点直接落进文章中部（或刷新时已在半途）也要一开始就对 */
 if(navDrop&&navDropBtn){
   /* 触屏点按后浏览器会补一轮 mouseenter，别让它把刚点开的菜单又抢着改状态 */
   let lastTouchTs=0;
@@ -5267,6 +5353,12 @@ if(navDrop&&navDropBtn){
   },{capture:true,passive:true});
   navDropBtn.addEventListener("click",e=>{
     e.preventDefault();
+    /* 回顶形态：这一下只负责回到顶部（菜单保持收起） */
+    if(navToTop){
+      closeNavDrop();
+      glideTo(0,720);
+      return;
+    }
     const isOpen=navDrop.classList.contains("open");
     /* 鼠标还悬在按钮上时，菜单是 hover 打开的：这一下点击不再收起，
        否则菜单会在指针正上方凭空消失（要收就移开、点空白或按 Esc）。
@@ -5277,6 +5369,7 @@ if(navDrop&&navDropBtn){
     else openNavDrop();
   });
   navDrop.addEventListener("mouseenter",()=>{
+    if(navToTop)return;                /* 已是「回到顶部」：悬浮不再弹菜单 */
     if(canHoverNav()&&Date.now()-lastTouchTs>800)openNavDrop();
   });
   navDrop.addEventListener("mouseleave",()=>{if(canHoverNav())closeNavDropSoon(240)});
@@ -5289,7 +5382,7 @@ if(navDrop&&navDropBtn){
   }
   /* 键盘：焦点在按钮上按 ↓ 展开并进入第一项 */
   navDropBtn.addEventListener("keydown",e=>{
-    if(e.key!=="ArrowDown")return;
+    if(e.key!=="ArrowDown"||navToTop)return;
     e.preventDefault();openNavDrop();
     /* 等一帧再聚焦：面板刚从 visibility:hidden 转成可见，
        同一帧里 focus() 会被浏览器忽略（元素此刻还算不可见） */
