@@ -23,6 +23,33 @@ mijia-pages/
 - ✅ 状态刷新、离线设备标识
 - ✅ 高级调试面板：手动发送 miot 属性 / miio 指令（兜底老设备）
 - ✅ 可选访问密码（`ACCESS_PASSWORD`），防止陌生人控制你家
+- ✅ 摄像头卡片：控制项（开关/夜视/水印等）+ 通过 go2rtc 播放实时画面（需自建转流，见下文）
+
+## 摄像头实时画面（go2rtc）
+
+**先说清楚能力边界**：本页面走的是小米云的属性接口（`api.io.mi.com`），这条通道只传开关量，**不传视频**。小米摄像头视频是端到端加密的 P2P 流，只能在米家 App 内解密（小米官方 Home Assistant 集成也明确表示不会支持）。所以网页里要看画面，必须在本机做一次转流。
+
+`go2rtc` 已原生支持 `xiaomi` 协议源（v1.9.13+），做法：
+
+1. **下载** [go2rtc releases](https://github.com/AlexxIT/go2rtc/releases) 的 `go2rtc_win64.zip`，解压到任意目录，双击 `go2rtc.exe`（保持窗口开着）。
+2. **打开配置台** `http://localhost:1984` → 右侧 **Add** → 选 **Xiaomi** → 输入小米账号密码，按提示填邮箱/短信验证码与滑块。
+3. 登录成功后该页会列出你的摄像头，**点开能直接看到画面**；记下流名称（通常形如 `xiaomi1`，配置里 `streams:` 下那一行）。
+4. 回到本页面，摄像头卡片点 **配置视频流**：
+   - **go2rtc 地址**：`http://192.168.1.10:1984`（换成运行 go2rtc 那台电脑的**局域网 IP**，`ipconfig` 可查；不能写 `localhost`，手机/其他设备访问不到）
+   - **流名称**：`xiaomi1`
+5. 保存即出画面（配置存在浏览器 localStorage，换设备需重填一次）。
+
+**两个硬约束**：
+
+- go2rtc 必须和摄像头在**同一个局域网**（它直连摄像头 P2P），但每次连接都要联网向小米取密钥。
+- 摄像头要**开机且在线**；老款 `tutk` 协议的机型可能不稳定，见 [支持机型列表](https://github.com/AlexxIT/go2rtc/issues/1982)。
+
+**HTTPS 页面看不到画面？** 浏览器会拦截 https 页面里的 http 流（混合内容）。三选一：
+
+- 用 http 打开本页（本地 `http://localhost:8788` 或局域网 IP 访问）；
+- 给 go2rtc 套一层 HTTPS：`cloudflared tunnel --url http://localhost:1984`，把拿到的 `https://xxx.trycloudflare.com` 填进「go2rtc 地址」；
+- 点卡片上的「新窗口打开」直接在浏览器标签页里看。
+
 
 ## 部署到已有网站的子目录
 

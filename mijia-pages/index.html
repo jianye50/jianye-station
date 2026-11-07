@@ -181,6 +181,59 @@
     border-bottom: 1px dashed rgba(255,178,87,.5); font-size: 12.5px;
   }
 
+  /* ---------- 摄像头视频区 ---------- */
+  .cam-video {
+    margin: 2px 0 12px; border-radius: var(--r-md); overflow: hidden;
+    background: rgba(0,0,0,.35); border: 1px solid var(--stroke); position: relative;
+    aspect-ratio: 16 / 9;
+  }
+  .cam-video iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .cam-ph {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px; padding: 14px; text-align: center;
+  }
+  .cam-ph .cam-ico { opacity: .35; }
+  .cam-ph .cam-ico svg { width: 34px; height: 34px; fill: var(--muted); }
+  .cam-ph .cam-tip { font-size: 12.5px; color: var(--faint); line-height: 1.6; max-width: 260px; }
+  .cam-ph .cam-act { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .cam-ph .cam-act button, .cam-ph .cam-act a {
+    font-size: 12px; padding: 5px 11px; border-radius: 99px; cursor: pointer;
+    background: rgba(255,255,255,.06); border: 1px solid var(--stroke); color: var(--text);
+    text-decoration: none; line-height: 1.6;
+  }
+  .cam-ph .cam-act button:hover, .cam-ph .cam-act a:hover { border-color: var(--stroke-hi); }
+  .cam-warn { color: var(--accent2); }
+  .cam-gear {
+    position: absolute; top: 8px; right: 8px; z-index: 2; width: 26px; height: 26px;
+    border-radius: 50%; border: 1px solid var(--stroke-hi); background: rgba(0,0,0,.55);
+    color: var(--text); font-size: 13px; line-height: 1; cursor: pointer; padding: 0;
+  }
+  .cam-gear:hover { background: rgba(0,0,0,.8); }
+
+  /* ---------- 视频设置弹窗 ---------- */
+  .modal-mask {
+    position: fixed; inset: 0; background: rgba(0,0,0,.62); display: none;
+    align-items: center; justify-content: center; z-index: 90; padding: 20px;
+  }
+  .modal-mask.show { display: flex; }
+  .modal {
+    width: 100%; max-width: 440px; background: #1b1c1f; border: 1px solid var(--stroke-hi);
+    border-radius: var(--r-lg); padding: 20px 22px; color: var(--text);
+  }
+  .modal h3 { font-size: 15px; margin-bottom: 6px; font-weight: 500; }
+  .modal p.desc { font-size: 12.5px; color: var(--faint); line-height: 1.7; margin-bottom: 14px; }
+  .modal label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 5px; }
+  .modal input {
+    width: 100%; padding: 9px 11px; font-size: 13px; color: var(--text);
+    background: rgba(255,255,255,.04); border: 1px solid var(--stroke); border-radius: var(--r-sm);
+  }
+  .modal input:focus { outline: none; border-color: var(--accent2); }
+  .modal .acts { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+  .modal .acts button { padding: 8px 16px; font-size: 13px; border-radius: var(--r-sm); cursor: pointer; }
+  .modal .acts .ok { background: var(--accent); color: #111; border: 0; font-weight: 500; }
+  .modal .acts .cancel { background: transparent; color: var(--muted); border: 1px solid var(--stroke); }
+  .modal .hint { font-size: 11.5px; color: var(--faint); margin-top: 8px; line-height: 1.6; }
+
   /* 骨架屏 */
   .skel-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; }
   .skel {
@@ -292,6 +345,22 @@
 
 </main>
 <div class="toast" id="toast"></div>
+
+<div class="modal-mask" id="camModal">
+  <div class="modal">
+    <h3 data-i18n="camSetTitle">视频流设置</h3>
+    <p class="desc" data-i18n-html="camSetDesc">页面本身不产生画面，只负责播放。需要先在同局域网的电脑/NAS 上运行 go2rtc，登录小米账号后它会自动生成摄像头流。</p>
+    <label data-i18n="camBase">go2rtc 地址</label>
+    <input id="camBase" placeholder="http://192.168.1.10:1984">
+    <label data-i18n="camSrc">流名称</label>
+    <input id="camSrc" placeholder="xiaomi1">
+    <p class="hint" data-i18n="camHint">流名称就是 go2rtc WebUI 里显示的流 ID（如 xiaomi1）。保存后本设备卡片会显示实时画面。</p>
+    <div class="acts">
+      <button class="cancel" onclick="closeCamSettings()" data-i18n="cancel">取消</button>
+      <button class="ok" onclick="saveCamSettings()" data-i18n="save">保存</button>
+    </div>
+  </div>
+</div>
 <script>
 (function () {
   var LS_CREDS = 'mijia_creds', LS_PIN = 'mijia_pin', LS_SPEC = 'mijia_spec_v3', LS_LANG = 'mijia_lang'
@@ -333,7 +402,15 @@
       errCode: '错误码 ', notSupport: '设备不支持该属性或参数不合法', outOfRange: '取值超出范围',
       devNoResp: '设备无响应，可能离线', devBusy: '设备正忙，请稍后再试',
       devOffline: '设备离线', otherRoom: '其他', choose: '选择...', count: '{n} 台',
-      unnamed: '未命名设备', switchLang: '已切换为中文'
+      unnamed: '未命名设备', switchLang: '已切换为中文',
+      camSetTitle: '视频流设置', camBase: 'go2rtc 地址', camSrc: '流名称',
+      camSetDesc: '页面本身不产生画面，只负责播放。需要先在同局域网的电脑/NAS 上运行 go2rtc，登录小米账号后它会自动生成摄像头流。',
+      camHint: '流名称就是 go2rtc WebUI 里显示的流 ID（如 xiaomi1）。保存后本设备卡片会显示实时画面。',
+      camNoStream: '未配置视频流', camNeedGo2rtc: '实时画面需通过 go2rtc 转流（在本机或 NAS 上运行）',
+      camConfigure: '配置视频流', camMixed: '当前页面是 HTTPS，浏览器会拦截 http 视频流。请用 http 打开本页，或给 go2rtc 配 HTTPS 隧道。',
+      camOpenTab: '新窗口打开', camSaved: '视频设置已保存', camCleared: '已清除视频设置',
+      camNeedBoth: '地址和流名称都要填', camBadUrl: '地址需以 http:// 或 https:// 开头',
+      cancel: '取消', save: '保存'
     },
     en: {
       appTitle: 'Mi Home Console', refresh: '↻ Refresh', logout: 'Sign out',
@@ -367,7 +444,15 @@
       errCode: 'code ', notSupport: 'Property not supported or invalid param', outOfRange: 'Value out of range',
       devNoResp: 'Device not responding, possibly offline', devBusy: 'Device busy, try later',
       devOffline: 'Device offline', otherRoom: 'Others', choose: 'Select...', count: '{n} devices',
-      unnamed: 'Unnamed device', switchLang: 'Switched to English'
+      unnamed: 'Unnamed device', switchLang: 'Switched to English',
+      camSetTitle: 'Stream settings', camBase: 'go2rtc address', camSrc: 'Stream name',
+      camSetDesc: 'This page cannot capture video by itself, it only plays a stream. Run go2rtc on a computer or NAS in the same LAN, sign in with your Xiaomi account, and it will create the camera stream.',
+      camHint: 'The stream name is the ID shown in the go2rtc WebUI (e.g. xiaomi1). After saving, this card shows the live picture.',
+      camNoStream: 'No stream configured', camNeedGo2rtc: 'Live video needs a go2rtc bridge running on your computer or NAS',
+      camConfigure: 'Configure stream', camMixed: 'This page is served over HTTPS, so the browser blocks the http video stream. Open this page over http, or expose go2rtc through an HTTPS tunnel.',
+      camOpenTab: 'Open in new tab', camSaved: 'Stream settings saved', camCleared: 'Stream settings cleared',
+      camNeedBoth: 'Both the address and stream name are required', camBadUrl: 'Address must start with http:// or https://',
+      cancel: 'Cancel', save: 'Save'
     }
   }
   function tr(key) {
@@ -731,6 +816,91 @@
   var ctlMap = {}   // did -> [{siid, piid, el, kind}]
   var idxMap = {}   // did -> device
 
+  // ---- 摄像头视频流（go2rtc） ----
+  var LS_STREAMS = 'mijia_streams'
+  var camCfg = { base: '', map: {} }
+  try {
+    var _cs = JSON.parse(localStorage.getItem(LS_STREAMS)) || {}
+    camCfg.base = _cs.base || ''
+    camCfg.map = _cs.map || {}
+  } catch (e) {}
+  var camEditing = null
+
+  function saveCamCfg() { try { localStorage.setItem(LS_STREAMS, JSON.stringify(camCfg)) } catch (e) {} }
+
+  function isCamera(d) {
+    var s = ((d.specType || '') + ' ' + (d.model || '') + ' ' + (d.name || '')).toLowerCase()
+    return s.indexOf('device:camera') >= 0 || s.indexOf('camera') >= 0 || s.indexOf('ipc') >= 0 || s.indexOf('摄像') >= 0
+  }
+
+  function camStreamUrl(d) {
+    var src = camCfg.map[d.did]
+    if (!camCfg.base || !src) return ''
+    return camCfg.base.replace(/\/+$/, '') + '/stream.html?src=' + encodeURIComponent(src)
+  }
+
+  function renderCam(d, el) {
+    var url = camStreamUrl(d)
+    el.innerHTML = ''
+    var gear = '<button class="cam-gear" title="' + tr('camConfigure') + '" onclick="openCamSettings(\'' + esc(d.did) + '\')">⚙</button>'
+
+    if (!url) {
+      el.innerHTML = '<div class="cam-ph">' +
+        '<div class="cam-ico">' + svgIcon('camera') + '</div>' +
+        '<div class="cam-tip"><b>' + tr('camNoStream') + '</b><br>' + tr('camNeedGo2rtc') + '</div>' +
+        '<div class="cam-act"><button onclick="openCamSettings(\'' + esc(d.did) + '\')">' + tr('camConfigure') + '</button></div>' +
+        '</div>'
+      return
+    }
+
+    // HTTPS 页面无法嵌入 http 流（混合内容会被浏览器拦截）
+    if (location.protocol === 'https:' && /^http:\/\//i.test(url)) {
+      el.innerHTML = '<div class="cam-ph">' +
+        '<div class="cam-tip cam-warn">' + tr('camMixed') + '</div>' +
+        '<div class="cam-act"><a href="' + esc(url) + '" target="_blank" rel="noopener">' + tr('camOpenTab') + '</a>' +
+        '<button onclick="openCamSettings(\'' + esc(d.did) + '\')">' + tr('camConfigure') + '</button></div>' +
+        '</div>'
+      return
+    }
+
+    var f = document.createElement('iframe')
+    f.src = url
+    f.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture')
+    f.setAttribute('allowfullscreen', 'true')
+    f.loading = 'lazy'
+    el.appendChild(f)
+    el.insertAdjacentHTML('beforeend', gear)
+  }
+
+  window.openCamSettings = function (did) {
+    camEditing = did
+    $('camBase').value = camCfg.base || ''
+    $('camSrc').value = camCfg.map[did] || ''
+    $('camModal').classList.add('show')
+    setTimeout(function () { $('camBase').focus() }, 30)
+  }
+  window.closeCamSettings = function () { $('camModal').classList.remove('show') }
+  window.saveCamSettings = function () {
+    var base = $('camBase').value.trim()
+    var src = $('camSrc').value.trim()
+    if (!base && !src) {   // 全空 = 清除该设备的视频配置
+      delete camCfg.map[camEditing]
+      saveCamCfg(); closeCamSettings(); toast(tr('camCleared'))
+      var el0 = document.querySelector('[data-cam="' + camEditing + '"]')
+      if (el0 && idxMap[camEditing]) renderCam(idxMap[camEditing], el0)
+      return
+    }
+    if (!base || !src) { toast(tr('camNeedBoth')); return }
+    if (!/^https?:\/\//i.test(base)) { toast(tr('camBadUrl')); return }
+    camCfg.base = base
+    camCfg.map[camEditing] = src
+    saveCamCfg(); closeCamSettings(); toast(tr('camSaved'))
+    var el = document.querySelector('[data-cam="' + camEditing + '"]')
+    if (el && idxMap[camEditing]) renderCam(idxMap[camEditing], el)
+  }
+  $('camModal').addEventListener('click', function (e) { if (e.target === this) closeCamSettings() })
+
+
   function renderAll() {
     var host = $('gridHost')
     host.innerHTML = ''
@@ -768,16 +938,21 @@
     var card = document.createElement('div')
     card.className = 'device'
     var iconKey = pickIcon(d.model, d.name)
+    var camHtml = isCamera(d) ? '<div class="cam-video" data-cam="' + esc(d.did) + '"></div>' : ''
     card.innerHTML =
       '<div class="dev-head">' +
         '<div class="dev-icon">' + svgIcon(iconKey) + '</div>' +
         '<div class="dev-title"><h3>' + esc(d.name) + '</h3><div class="model">' + esc(d.model) + '</div></div>' +
         '<div class="pill ' + (d.online ? 'on' : 'off') + '"><span class="pdot"></span>' + (d.online ? tr('online') : tr('offline')) + '</div>' +
       '</div>' +
+      camHtml +
       '<div class="ctls" data-ctls="' + esc(d.did) + '">' +
         '<div class="dev-state"><div class="skel-row"><div class="skel" style="width:40%"></div><div class="skel" style="width:46px;height:22px;border-radius:99px"></div></div>' +
         '<div class="skel-row"><div class="skel" style="width:55%"></div><div class="skel" style="width:96px"></div></div></div>' +
       '</div>'
+
+    var camEl = card.querySelector('[data-cam]')
+    if (camEl) renderCam(d, camEl)
 
     // 异步加载规格
     if (!d.specType) {
