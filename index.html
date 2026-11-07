@@ -426,9 +426,8 @@ img{display:block;max-width:100%}
   font-family:inherit;line-height:1;
 }
 /* ---------- 当前页的导航项 ⇄「回到顶部」 ----------
-   首页 / 项目 / 关于 / 记录（博客·相册）各自负责自己那一页：
-   往下翻超过一屏，该项文字淡出上移、向上箭头（顶上一道横杠）转进来，点一下缓缓回顶；
-   回到顶部后箭头再变回文字。文字只做 opacity/位移、箭头绝对定位居中，
+   仅单篇博客文章页使用：往下翻超过一屏，该项文字淡出上移、向上箭头（顶上一道横杠）转进来，
+   点一下缓缓回顶；回到顶部后箭头再变回文字。文字只做 opacity/位移、箭头绝对定位居中，
    所以按钮宽度一点不变，导航其余项不会跟着左右挪 */
 [data-nav]>[data-navlabel]{
   display:inline-block;
@@ -1728,7 +1727,7 @@ html:not(.jy-go) .hero-inner{animation:none}
   <a class="nav-brand" href="#/">
     <span class="dot"></span><span id="navBrand"></span>
   </a>
-  <!-- 每个导航项都自带一支「回到顶部」箭头：往下翻页时，当前页那一项原地变成它 -->
+  <!-- 每支「回到顶部」箭头都挂在各自导航项里，但只有单篇博客文章页会触发变身 -->
   <a class="nav-link" data-nav="home" href="#/"><span data-navlabel="home">首页</span><span class="nav-top-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.4 3.9h13.2M12 20.1V9.1M7 14.1 12 9.1l5 5"/></svg></span></a>
   <!-- 「记录」= 博客 + 相册的合并入口：悬浮或单击展开二级菜单 -->
   <div class="nav-drop" id="navDrop">
@@ -5322,21 +5321,23 @@ function closeNavDropSoon(ms){
   dropTimer=setTimeout(closeNavDrop,ms==null?240:ms);
 }
 /* ---------- 当前页的导航项 ⇄「回到顶部」----------
-   往下翻页超过一屏，当前页对应的那一项（首页 / 项目 / 关于 / 记录）文字淡出、向上箭头转进来；
-   点它缓缓回到顶部，回到顶部后箭头再变回文字。
-   进入 / 退出用两个阈值（300 / 20），停在临界点时不会来回闪。
-   记录项负责博客 + 相册（含文章页、子相册），其余三项各管自己那一页 —— 同一时刻只会有一项变身 */
+   只在单篇博客文章页（#/blog/<slug>）生效：往下翻页超过一屏，「记录」那一项文字淡出、
+   向上箭头转进来；点它缓缓回到顶部，回到顶部后箭头再变回文字。
+   首页 / 项目 / 关于 / 博客列表 / 相册都不参与，翻页时导航项永远是原来的文字。
+   进入 / 退出用两个阈值（300 / 20），停在临界点时不会来回闪。 */
 const NAV_TOP_ON=300,NAV_TOP_OFF=20;
 let navTopEl=null,navScrollRaf=0;
 function navTopText(){
   try{const s=T();if(s&&s.backTop)return s.backTop;}catch(e){}
   return "回到顶部";
 }
-/* 当前页该由哪一项负责回顶：博客 / 相册归「记录」，其余按页面一一对应 */
+/* 当前页该由哪一项负责回顶 —— 只有单篇博客文章页（#/blog/<slug>）才有这项能力，
+   由「记录」那一项代管；首页 / 项目 / 关于 / 博客列表 / 相册一律返回 null，
+   于是那些页面往下翻不会冒出箭头，导航项始终是原来的文字 */
 function navTopTarget(){
-  const p=location.hash.replace(/^#\/?/,"").split("/").filter(Boolean)[0]||"";
-  const key=(p==="blog"||p==="gallery")?"records":(p==="projects"||p==="about")?p:"home";
-  try{ return document.querySelector('.nav [data-nav="'+key+'"]'); }catch(e){ return null; }
+  const parts=location.hash.replace(/^#\/?/,"").split("/").filter(Boolean);
+  if(parts[0]!=="blog"||!parts[1])return null;
+  try{ return document.querySelector('.nav [data-nav="records"]'); }catch(e){ return null; }
 }
 /* 变回文字：把「记录」按钮的两个无障碍属性还给菜单，链接则只摘掉 aria-label */
 function navTopRest(el){
@@ -5363,7 +5364,12 @@ function syncNavTop(onlyLabel){
   /* 启动早期可能还在 const 的 TDZ 里，拿不到就安静跳过 */
   try{ if(!navDrop||!navDropBtn)return; }catch(e){ return; }
   const el=navTopTarget();
-  if(!el)return;
+  /* 不在单篇文章页（首页 / 项目 / 关于 / 博客列表 / 相册）：不出现箭头。
+     若上一页刚留下箭头（比如从文章页退回列表），这里先把它复原成文字 */
+  if(!el){
+    if(navTopEl){ navTopRest(navTopEl); navTopEl=null; }
+    return;
+  }
   /* 换了页面：先把上一页那一项复原，别让两项同时变箭头 */
   if(navTopEl&&navTopEl!==el)navTopRest(navTopEl);
   navTopEl=el;
