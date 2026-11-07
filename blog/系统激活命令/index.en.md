@@ -8,10 +8,13 @@ cover: dTTcmJH0.jpeg
 background: dTTcmJH0.jpeg
 lang: en
 auto: true
-srcHash: dba34d6629c09b73
-translatedAt: 2026-11-06T11:32:53.526Z
+srcHash: 4c07489408f4270d
+translatedAt: 2026-11-07T03:00:15.840Z
 ---
 Execute within Windows PowerShell:
 
+```
 irm https://get.activated.win | iex
+```
+
 ![ScreenShot_2026-10-24_032114_583](ScreenShot_2026-10-24_032114_583.png)

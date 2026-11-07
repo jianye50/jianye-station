@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-06T12:28:45.224Z",
+  "generated": "2026-11-07T03:00:24.224Z",
   "posts": [
     {
       "slug": "BetterGI 更好的原神",
@@ -522,7 +522,7 @@
       "descZh": "Windows PowerShell内执行： irm https://get.activated.win | iex",
       "tagsZh": [
         "系统激活",
-        "赢"
+        "Win"
       ],
       "imgs": {
         "ScreenShot_2026-10-24_032114_583.png": "blog/thumbs/系统激活命令-i0.webp",
