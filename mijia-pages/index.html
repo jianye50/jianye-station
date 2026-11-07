@@ -241,11 +241,14 @@
 <header>
   <div class="brand">
     <div class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-2v9h-5v-6H10v6H5v-9H3l9-8z"/></svg></div>
-    <div><h1>米家控制台</h1><div class="sub">MI HOME · WEB</div></div>
+    <div><h1 data-i18n="appTitle">米家控制台</h1><div class="sub">MI HOME · WEB</div></div>
   </div>
-  <div class="btns" id="topBtns" style="display:none">
-    <button class="ghost" onclick="refreshAll()">↻ 刷新状态</button>
-    <button class="ghost" onclick="logout()">退出登录</button>
+  <div class="btns">
+    <button class="ghost" id="langBtn" onclick="toggleLang()" title="切换语言 / Switch language">EN</button>
+    <span id="topBtns" style="display:none; gap:10px; align-items:center">
+      <button class="ghost" onclick="refreshAll()" data-i18n="refresh">↻ 刷新状态</button>
+      <button class="ghost" onclick="logout()" data-i18n="logout">退出登录</button>
+    </span>
   </div>
 </header>
 <main>
@@ -255,17 +258,17 @@
     <div class="login-wrap">
       <div class="login-box">
         <div class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-2v9h-5v-6H10v6H5v-9H3l9-8z"/></svg></div>
-        <h2>扫码登录</h2>
-        <p class="desc">使用米家 App 扫描二维码，登录后即可在网页控制设备。<br>凭证只保存在你本机浏览器，不会上传到任何第三方。</p>
+        <h2 data-i18n="loginTitle">扫码登录</h2>
+        <p class="desc" data-i18n-html="loginDesc">使用米家 App 扫描二维码，登录后即可在网页控制设备。<br>凭证只保存在你本机浏览器，不会上传到任何第三方。</p>
         <div id="pinRow">
-          <input type="password" id="pinInput" placeholder="访问密码（未设置可留空）">
-          <button class="primary" style="width:100%;padding:11px" onclick="startLogin()">生成二维码</button>
+          <input type="password" id="pinInput" data-i18n-ph="pinPh" placeholder="访问密码（未设置可留空）">
+          <button class="primary" style="width:100%;padding:11px" onclick="startLogin()" data-i18n="genQr">生成二维码</button>
         </div>
         <img id="qrImg" alt="二维码">
         <div id="loginMsg"></div>
         <div id="manualRow" style="display:none; margin-top:16px; text-align:left;">
-          <input type="text" id="manualJson" placeholder='粘贴 {userId, serviceToken, deviceId, ssecurity} JSON'>
-          <button style="width:100%" onclick="manualImport()">手动导入凭证</button>
+          <input type="text" id="manualJson" data-i18n-ph="manualPh" placeholder='粘贴 {userId, serviceToken, deviceId, ssecurity} JSON'>
+          <button style="width:100%" onclick="manualImport()" data-i18n="manualImport">手动导入凭证</button>
         </div>
       </div>
     </div>
@@ -276,12 +279,12 @@
     <div id="devErr" class="err-banner"></div>
     <div id="gridHost"></div>
     <details class="debug">
-      <summary>高级调试（自定义 API 调用）</summary>
+      <summary data-i18n="debugTitle">高级调试（自定义 API 调用）</summary>
       <div class="inner">
-        <p>路径（如 /app/miotspec/prop/set 或 /app/miio/call）与 data JSON，将自动签名转发到米家 API：</p>
+        <p data-i18n="debugHint">路径（如 /app/miotspec/prop/set 或 /app/miio/call）与 data JSON，将自动签名转发到米家 API：</p>
         <textarea id="dbgPath" placeholder="/app/miio/call"></textarea>
         <textarea id="dbgData" placeholder='{"did":"123","method":"get_prop","params":["power"]}'></textarea>
-        <button class="primary" onclick="debugCall()">发送</button>
+        <button class="primary" onclick="debugCall()" data-i18n="send">发送</button>
         <pre id="dbgOut"></pre>
       </div>
     </details>
@@ -291,9 +294,101 @@
 <div class="toast" id="toast"></div>
 <script>
 (function () {
-  var LS_CREDS = 'mijia_creds', LS_PIN = 'mijia_pin', LS_SPEC = 'mijia_spec_v2'
+  var LS_CREDS = 'mijia_creds', LS_PIN = 'mijia_pin', LS_SPEC = 'mijia_spec_v2', LS_LANG = 'mijia_lang'
   var creds = null
   try { creds = JSON.parse(localStorage.getItem(LS_CREDS)) } catch (e) {}
+
+  // ---------- 多语言 ----------
+  var lang = localStorage.getItem(LS_LANG) ||
+    ((navigator.language || 'zh').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en')
+  var I18N = {
+    zh: {
+      appTitle: '米家控制台', refresh: '↻ 刷新状态', logout: '退出登录',
+      loginTitle: '扫码登录',
+      loginDesc: '使用米家 App 扫描二维码，登录后即可在网页控制设备。<br>凭证只保存在你本机浏览器，不会上传到任何第三方。',
+      pinPh: '访问密码（未设置可留空）', genQr: '生成二维码', manualPh: '粘贴 {userId, serviceToken, deviceId, ssecurity} JSON',
+      manualImport: '手动导入凭证',
+      genQring: '正在生成二维码...', scanHint: '请用米家 App 扫码，并在手机上确认登录',
+      qrExpired: '二维码已失效，请点击「生成二维码」重新获取',
+      qrFail: '二维码图片加载失败。可把下面链接发到手机上打开：',
+      loginOk: '登录成功', loginFail: '登录失败：', importFail: '（可手动导入凭证）',
+      jsonMiss: 'JSON 缺少字段', jsonBad: 'JSON 解析失败', importOk: '导入成功',
+      loginExpired: '登录已失效，请重新扫码', pinWrong: '访问密码错误，请重新输入',
+      netErr: '网络错误：',
+      errNotJson: '接口返回的不是 JSON（HTTP {c}）—— 请确认 _worker.js 已随站点一起部署',
+      loadingDevices: '正在加载设备...', loadedDevices: '已加载 {n} 台设备',
+      homeFail: '获取家庭列表失败：', tokenHint: '\n若提示 token 失效，请点右上角「退出登录」重新扫码。',
+      devFail: '获取设备列表失败（家庭 {id}）：', noDevices: '已登录，但在 {n} 个家庭中未找到任何设备。',
+      credExpired: '登录凭证已失效（code {c}），请点右上角「退出登录」重新扫码。',
+      online: '在线', offline: '离线',
+      offlineTip: '设备当前离线，指令可能不会立即生效',
+      noSpec: '该设备未提供 miot 规格，可用底部调试面板控制',
+      specFail: '规格加载失败', retry: '重试', noWritable: '该设备无可直接写的属性',
+      sending: '发送指令...', setOk: '已设置', setFail: '设置失败：',
+      notConfirmed: '设备未确认到状态变化，请稍后点「刷新状态」',
+      refreshing: '正在刷新状态...',
+      debugTitle: '高级调试（自定义 API 调用）',
+      debugHint: '路径（如 /app/miotspec/prop/set 或 /app/miio/call）与 data JSON，将自动签名转发到米家 API：',
+      send: '发送', needPath: '请填写路径', jsonParseFail: 'data JSON 解析失败', reqFail: '请求失败：',
+      errCode: '错误码 ', notSupport: '设备不支持该属性或参数不合法', outOfRange: '取值超出范围',
+      devNoResp: '设备无响应，可能离线', devBusy: '设备正忙，请稍后再试',
+      devOffline: '设备离线', otherRoom: '其他', choose: '选择...', count: '{n} 台'
+    },
+    en: {
+      appTitle: 'Mi Home Console', refresh: '↻ Refresh', logout: 'Sign out',
+      loginTitle: 'Sign in with QR',
+      loginDesc: 'Scan the QR code with the Mi Home app to control your devices on the web.<br>Credentials are stored only in your local browser and never sent to any third party.',
+      pinPh: 'Access password (leave empty if not set)', genQr: 'Generate QR code',
+      manualPh: 'Paste {userId, serviceToken, deviceId, ssecurity} JSON',
+      manualImport: 'Import credentials manually',
+      genQring: 'Generating QR code...', scanHint: 'Scan with the Mi Home app and confirm on your phone',
+      qrExpired: 'QR code expired. Click "Generate QR code" to retry',
+      qrFail: 'Failed to load QR image. Open this link on your phone: ',
+      loginOk: 'Signed in', loginFail: 'Sign-in failed: ', importFail: ' (you can import credentials manually)',
+      jsonMiss: 'JSON is missing fields', jsonBad: 'Invalid JSON', importOk: 'Imported',
+      loginExpired: 'Session expired, please sign in again', pinWrong: 'Wrong access password, try again',
+      netErr: 'Network error: ',
+      errNotJson: 'Response is not JSON (HTTP {c}) — check that _worker.js is deployed with the site',
+      loadingDevices: 'Loading devices...', loadedDevices: 'Loaded {n} devices',
+      homeFail: 'Failed to load homes: ', tokenHint: '\nIf the token expired, click "Sign out" and scan again.',
+      devFail: 'Failed to load devices (home {id}): ', noDevices: 'Signed in, but no devices found in {n} home(s).',
+      credExpired: 'Credentials expired (code {c}). Click "Sign out" and scan again.',
+      online: 'Online', offline: 'Offline',
+      offlineTip: 'Device is offline; commands may not take effect',
+      noSpec: 'No miot spec for this device; use the debug panel below',
+      specFail: 'Failed to load spec', retry: 'Retry', noWritable: 'No writable properties',
+      sending: 'Sending...', setOk: 'Applied', setFail: 'Failed: ',
+      notConfirmed: 'Device state change not confirmed. Try "Refresh" later.',
+      refreshing: 'Refreshing...',
+      debugTitle: 'Advanced debug (custom API calls)',
+      debugHint: 'Path (e.g. /app/miotspec/prop/set or /app/miio/call) and data JSON will be signed and forwarded to the Mi API:',
+      send: 'Send', needPath: 'Path required', jsonParseFail: 'Invalid data JSON', reqFail: 'Request failed: ',
+      errCode: 'code ', notSupport: 'Property not supported or invalid param', outOfRange: 'Value out of range',
+      devNoResp: 'Device not responding, possibly offline', devBusy: 'Device busy, try later',
+      devOffline: 'Device offline', otherRoom: 'Others', choose: 'Select...', count: '{n} devices'
+    }
+  }
+  function tr(key) {
+    var d = I18N[lang] || I18N.zh
+    return d[key] !== undefined ? d[key] : (I18N.en[key] !== undefined ? I18N.en[key] : key)
+  }
+  function tf(key, n) { return tr(key).replace('{n}', n) }
+  function applyStaticTexts() {
+    document.title = tr('appTitle')
+    var list = document.querySelectorAll('[data-i18n]')
+    for (var i = 0; i < list.length; i++) list[i].textContent = tr(list[i].getAttribute('data-i18n'))
+    var htmls = document.querySelectorAll('[data-i18n-html]')
+    for (var j = 0; j < htmls.length; j++) htmls[j].innerHTML = tr(htmls[j].getAttribute('data-i18n-html'))
+    var phs = document.querySelectorAll('[data-i18n-ph]')
+    for (var k = 0; k < phs.length; k++) phs[k].setAttribute('placeholder', tr(phs[k].getAttribute('data-i18n-ph')))
+    $('langBtn').textContent = lang === 'zh' ? 'EN' : '中文'
+  }
+  window.toggleLang = function () {
+    lang = lang === 'zh' ? 'en' : 'zh'
+    localStorage.setItem(LS_LANG, lang)
+    applyStaticTexts()
+    if (devices && devices.length) { renderAll(); toast(lang === 'zh' ? '已切换为中文' : 'Switched to English') }
+  }
 
   function $(id) { return document.getElementById(id) }
   function toast(msg) {
@@ -309,7 +404,7 @@
 
   function asJson(r) {
     var ct = (r.headers.get('content-type') || '')
-    if (ct.indexOf('json') < 0) throw new Error('接口返回的不是 JSON（HTTP ' + r.status + '）—— 请确认 _worker.js 已随站点一起部署')
+    if (ct.indexOf('json') < 0) throw new Error(tr('errNotJson').replace('{c}', r.status))
     return r.json().then(function (j) {
       if (r.status === 401) {
         var e = new Error((j && j.error) || '访问密码错误')
@@ -322,18 +417,14 @@
 
   // 米家返回码 → 人话
   var MI_ERR = {
-    401: '登录凭证已失效，请退出登录后重新扫码',
-    3: '登录凭证已失效，请退出登录后重新扫码',
-    '-4001': '设备不支持该属性或参数不合法',
-    '-4002': '取值超出范围',
-    '-4003': '设备无响应，可能离线',
-    '-4004': '设备正忙，请稍后再试',
-    '-704010000': '设备离线',
-    '-704042011': '设备离线'
+    401: 'loginExpired', 3: 'loginExpired',
+    '-4001': 'notSupport', '-4002': 'outOfRange',
+    '-4003': 'devNoResp', '-4004': 'devBusy',
+    '-704010000': 'devOffline', '-704042011': 'devOffline'
   }
   function miErrText(code, fallback) {
     var k = String(code)
-    return MI_ERR[k] || fallback || ('错误码 ' + k)
+    return MI_ERR[k] ? tr(MI_ERR[k]) : (fallback || tr('errCode') + k)
   }
 
   var BASE = location.pathname.replace(/[^/]*$/, '')
@@ -356,7 +447,7 @@
     function next() {
       if (i >= QR_HOSTS.length) {
         img.style.display = 'none'
-        $('loginMsg').textContent = '二维码图片加载失败。可把下面链接发到手机上打开：' + loginUrl
+        $('loginMsg').textContent = tr('qrFail') + loginUrl
         return
       }
       img.src = QR_HOSTS[i++](loginUrl)
@@ -369,30 +460,30 @@
   window.startLogin = function () {
     var pin = $('pinInput').value.trim()
     localStorage.setItem(LS_PIN, pin)
-    $('loginMsg').textContent = '正在生成二维码...'
+    $('loginMsg').textContent = tr('genQring')
     api('api/login/start').then(asJson).then(function (j) {
-      if (j.error) { $('loginMsg').textContent = '失败：' + j.error; return }
+      if (j.error) { $('loginMsg').textContent = tr('loginFail') + j.error; return }
       loginState = j
       showQR(j.loginUrl)
-      $('loginMsg').textContent = '请用米家 App 扫码，并在手机上确认登录'
+      $('loginMsg').textContent = tr('scanHint')
       pollLogin(0)
     }).catch(function (e) {
-      $('loginMsg').textContent = e.kind === 'auth' ? '访问密码错误，请重新输入' : ('网络错误：' + e.message)
+      $('loginMsg').textContent = e.kind === 'auth' ? tr('pinWrong') : (tr('netErr') + e.message)
     })
   }
   function pollLogin(n) {
-    if (n > 100) { $('loginMsg').textContent = '二维码已失效，请点击「生成二维码」重新获取'; return }
+    if (n > 100) { $('loginMsg').textContent = tr('qrExpired'); return }
     api('api/login/poll?lp=' + encodeURIComponent(loginState.lp) + '&deviceId=' + encodeURIComponent(loginState.deviceId))
       .then(asJson).then(function (j) {
         if (j.status === 'success') {
           creds = j.data
           localStorage.setItem(LS_CREDS, JSON.stringify(creds))
-          toast('登录成功')
+          toast(tr('loginOk'))
           showView('devices'); loadDevices()
         } else if (j.status === 'pending') {
           setTimeout(function () { pollLogin(n + 1) }, 1500)
         } else {
-          $('loginMsg').textContent = '登录失败：' + (j.error || '未知错误') + '（可手动导入凭证）'
+          $('loginMsg').textContent = tr('loginFail') + (j.error || '-') + tr('importFail')
           $('manualRow').style.display = 'block'
         }
       }).catch(function () { setTimeout(function () { pollLogin(n + 1) }, 2000) })
@@ -400,14 +491,14 @@
   window.manualImport = function () {
     try {
       var j = JSON.parse($('manualJson').value)
-      if (!j.userId || !j.serviceToken || !j.ssecurity) { toast('JSON 缺少字段'); return }
+      if (!j.userId || !j.serviceToken || !j.ssecurity) { toast(tr('jsonMiss')); return }
       creds = {
         userId: String(j.userId), serviceToken: j.serviceToken, ssecurity: j.ssecurity,
         deviceId: j.deviceId || ('mijiaweb' + Math.random().toString(36).slice(2, 12))
       }
       localStorage.setItem(LS_CREDS, JSON.stringify(creds))
-      toast('导入成功'); showView('devices'); loadDevices()
-    } catch (e) { toast('JSON 解析失败') }
+      toast(tr('importOk')); showView('devices'); loadDevices()
+    } catch (e) { toast(tr('jsonBad')) }
   }
   window.logout = function () {
     localStorage.removeItem(LS_CREDS); creds = null
@@ -446,10 +537,10 @@
   window.loadDevices = function () {
     if (!creds) return
     hideDeviceError()
-    toast('正在加载设备...')
+    toast(tr('loadingDevices'))
     miCall('v2/homeroom/gethome_merged', { fg: true, fetch_share: true, fetch_share_dev: true, fetch_cariot: true, limit: 300, app_ver: 7, plat_form: 0 }).then(function (j) {
       if (j.code !== 0 || !j.result || !j.result.homelist) {
-        showDeviceError('获取家庭列表失败：' + (j.message || j.error || JSON.stringify(j).slice(0, 150)) + '\n若提示 token 失效，请点右上角「退出登录」重新扫码。')
+        showDeviceError(tr('homeFail') + (j.message || j.error || JSON.stringify(j).slice(0, 150)) + tr('tokenHint'))
         return
       }
       var homes = j.result.homelist
@@ -460,14 +551,14 @@
       })
       chain.then(function () {
         if (!all.length) {
-          showDeviceError('已登录，但在 ' + homes.length + ' 个家庭中未找到任何设备。')
+          showDeviceError(tf('noDevices', homes.length))
         } else {
           devices = all.map(normDevice).filter(function (d) { return d.did })
           renderAll()
-          toast('已加载 ' + devices.length + ' 台设备')
+          toast(tf('loadedDevices', devices.length))
         }
       })
-    }).catch(function (e) { showDeviceError('网络错误：' + e.message) })
+    }).catch(function (e) { showDeviceError(tr('netErr') + e.message) })
   }
 
   function fetchHomeDevices(homeId, uid, all, startDid) {
@@ -478,7 +569,7 @@
     }
     return miCall('home/home_device_list', data).then(function (j) {
       if (j.code !== 0 || !j.result) {
-        showDeviceError('获取设备列表失败（家庭 ' + homeId + '）：' + (j.message || JSON.stringify(j).slice(0, 150)))
+        showDeviceError(tr('devFail').replace('{id}', homeId) + (j.message || JSON.stringify(j).slice(0, 150)))
         return
       }
       ;(j.result.device_info || []).forEach(function (d) { all.push(d) })
@@ -512,14 +603,20 @@
   // ---- spec 解析：提取可控制属性（miot-spec 格式：服务与属性各自带 iid，完整编号 = 服务iid + 属性iid） ----
   var NUM_FORMATS = ['uint8','uint16','uint32','int8','int16','int32','float','double']
 
-  function zhLabel(o) {
-    if (!o) return ''
-    var c = o.comment == null ? '' : String(o.comment).trim()
-    return c || o.description || o.name || ''
+  // 规格里同时有中文(comment)和英文(description)，两种语言各存一份
+  function labels(o) {
+    if (!o) return { zh: '', en: '' }
+    var zh = o.comment == null ? '' : String(o.comment).trim()
+    var en = o.description == null ? '' : String(o.description).trim()
+    if (!zh) zh = en
+    if (!en) en = zh
+    return { zh: zh, en: en }
   }
+  function labelText(lb) { return (lang === 'zh' ? lb.zh : lb.en) || lb.zh || lb.en || '' }
+  function ctlName(c) { return (lang === 'zh' ? c.nameZh : c.nameEn) || c.nameZh || c.nameEn || '' }
 
   function isPowerCtl(c) {
-    return /:property:on:/.test(c.ptype || '') || c.name === '开关' || c.name === '电源' || c.name === '开关机'
+    return /:property:on:/.test(c.ptype || '') || c.nameZh === '开关' || c.nameZh === '电源' || c.nameZh === '开关机'
   }
 
   function extractControls(inst) {
@@ -530,9 +627,13 @@
       ;(svc.properties || []).forEach(function (p) {
         var access = p.access || []
         if (access.indexOf('write') < 0) return
+        var lb = labels(p)
+        var fallback = siid + '-' + p.iid
         var ctl = {
           siid: siid, piid: p.iid,
-          name: zhLabel(p) || (siid + '-' + p.iid),
+          name: labelText(lb) || fallback,
+          nameZh: lb.zh || fallback,
+          nameEn: lb.en || fallback,
           ptype: p.type || '',
           readable: access.indexOf('read') >= 0
         }
@@ -542,7 +643,10 @@
           var vl = p['value-list'], vr = p['value-range']
           if (vl && vl.length) {
             ctl.kind = 'enum'
-            ctl.list = vl.map(function (v) { return { value: v.value, text: zhLabel(v) || String(v.value) } })
+            ctl.list = vl.map(function (v) {
+              var lb2 = labels(v)
+              return { value: v.value, textZh: lb2.zh || String(v.value), textEn: lb2.en || String(v.value) }
+            })
           } else if (vr && vr.length === 3) {
             ctl.kind = 'range'
             ctl.min = vr[0]; ctl.max = vr[1]
@@ -612,7 +716,7 @@
     var groups = {}
     if (hasRoom) {
       devices.forEach(function (d) {
-        var k = d.room || '其他'
+        var k = d.room || tr('otherRoom')
         ;(groups[k] = groups[k] || []).push(d)
       })
     } else {
@@ -623,7 +727,7 @@
       if (hasRoom) {
         var head = document.createElement('div')
         head.className = 'room-head'
-        head.innerHTML = '<span class="room-name">' + esc(room) + '</span><span class="room-line"></span><span class="room-count">' + groups[room].length + ' 台</span>'
+        head.innerHTML = '<span class="room-name">' + esc(room) + '</span><span class="room-line"></span><span class="room-count">' + tf('count', groups[room].length) + '</span>'
         host.appendChild(head)
       }
       var grid = document.createElement('div')
@@ -643,7 +747,7 @@
       '<div class="dev-head">' +
         '<div class="dev-icon">' + svgIcon(iconKey) + '</div>' +
         '<div class="dev-title"><h3>' + esc(d.name) + '</h3><div class="model">' + esc(d.model) + '</div></div>' +
-        '<div class="pill ' + (d.online ? 'on' : 'off') + '"><span class="pdot"></span>' + (d.online ? '在线' : '离线') + '</div>' +
+        '<div class="pill ' + (d.online ? 'on' : 'off') + '"><span class="pdot"></span>' + (d.online ? tr('online') : tr('offline')) + '</div>' +
       '</div>' +
       '<div class="ctls" data-ctls="' + esc(d.did) + '">' +
         '<div class="dev-state"><div class="skel-row"><div class="skel" style="width:40%"></div><div class="skel" style="width:46px;height:22px;border-radius:99px"></div></div>' +
@@ -653,19 +757,19 @@
     // 异步加载规格
     if (!d.specType) {
       var box0 = card.querySelector('[data-ctls]')
-      box0.innerHTML = '<div class="dev-state">该设备未提供 miot 规格，可用底部调试面板控制</div>'
+      box0.innerHTML = '<div class="dev-state">' + tr('noSpec') + '</div>'
       return card
     }
     getSpec(d.specType).then(function (inst) {
       var box = card.querySelector('[data-ctls]')
       if (!box) return
       if (!inst) {
-        box.innerHTML = '<div class="dev-state">规格加载失败<span class="retry" data-retry="' + esc(d.did) + '">重试</span></div>'
+        box.innerHTML = '<div class="dev-state">' + tr('specFail') + '<span class="retry" data-retry="' + esc(d.did) + '">' + tr('retry') + '</span></div>'
         return
       }
       var ctls = extractControls(inst)
       if (!ctls.length) {
-        box.innerHTML = '<div class="dev-state">该设备无可直接写的属性</div>'
+        box.innerHTML = '<div class="dev-state">' + tr('noWritable') + '</div>'
         return
       }
       box.innerHTML = ''
@@ -673,13 +777,13 @@
       if (!d.online) {
         var offTip = document.createElement('div')
         offTip.className = 'dev-state'
-        offTip.textContent = '设备当前离线，指令可能不会立即生效'
+        offTip.textContent = tr('offlineTip')
         box.appendChild(offTip)
       }
       ctls.forEach(function (c) {
         var row = document.createElement('div'); row.className = 'ctl'
         if (!d.online) row.className += ' offline'
-        var label = document.createElement('label'); label.textContent = c.name; row.appendChild(label)
+        var label = document.createElement('label'); label.textContent = ctlName(c); row.appendChild(label)
 
         if (c.kind === 'bool') {
           // 注意：外层必须是 <label>，否则点可见的滑块不会触发 input
@@ -689,7 +793,7 @@
           inp.addEventListener('change', function () { setProp(d, c, inp.checked, inp, !inp.checked) })
           var sp = document.createElement('span')
           sw.appendChild(inp); sw.appendChild(sp); row.appendChild(sw)
-          ctlMap[d.did].push({ siid: c.siid, piid: c.piid, el: inp, kind: 'bool', readable: c.readable })
+          c.el = inp; ctlMap[d.did].push(c)
         } else if (c.kind === 'range') {
           var wrap = document.createElement('div'); wrap.style.cssText = 'display:flex;align-items:center;gap:8px'
           var rg = document.createElement('input'); rg.type = 'range'
@@ -702,13 +806,13 @@
             setProp(d, c, Number(rg.value), rg, prev === undefined ? undefined : Number(prev))
           })
           wrap.appendChild(rg); wrap.appendChild(rv); row.appendChild(wrap)
-          ctlMap[d.did].push({ siid: c.siid, piid: c.piid, el: rg, kind: 'range', rvEl: rv, readable: c.readable })
+          c.el = rg; c.rvEl = rv; ctlMap[d.did].push(c)
         } else if (c.kind === 'enum') {
           var sel = document.createElement('select')
           sel.disabled = !d.online
-          var opt0 = document.createElement('option'); opt0.value = ''; opt0.textContent = '选择...'; sel.appendChild(opt0)
+          var opt0 = document.createElement('option'); opt0.value = ''; opt0.textContent = tr('choose'); sel.appendChild(opt0)
           c.list.forEach(function (v) {
-            var o = document.createElement('option'); o.value = v.value; o.textContent = v.text; sel.appendChild(o)
+            var o = document.createElement('option'); o.value = v.value; o.textContent = lang === 'zh' ? v.textZh : v.textEn; sel.appendChild(o)
           })
           sel.addEventListener('change', function () {
             if (sel.value === '') return
@@ -716,7 +820,7 @@
             setProp(d, c, Number(sel.value), sel, prev === undefined ? undefined : prev)
           })
           row.appendChild(sel)
-          ctlMap[d.did].push({ siid: c.siid, piid: c.piid, el: sel, kind: 'enum', readable: c.readable })
+          c.el = sel; ctlMap[d.did].push(c)
         }
         box.appendChild(row)
       })
@@ -738,9 +842,9 @@
   })
 
   window.setProp = function (d, c, value, el, prev) {
-    if (!creds) { toast('登录已失效，请重新扫码'); return }
+    if (!creds) { toast(tr('loginExpired')); return }
     if (el) el.disabled = true
-    toast('发送指令...')
+    toast(tr('sending'))
 
     function done() { if (el) el.disabled = !d.online }
     function revert() {
@@ -753,34 +857,64 @@
       .then(function (j) {
         var r0 = Array.isArray(j.result) ? j.result[0] : j.result
         var ok = j.code === 0 && (!r0 || r0.code === 0)
-        if (ok) { toast('已设置'); setTimeout(function () { refreshDevice(d) }, 600); return }
+        if (ok) { toast(tr('setOk')); confirmSet(d, c, value); return }
         var code = (r0 && r0.code !== undefined && r0.code !== 0) ? r0.code : j.code
-        toast('设置失败：' + miErrText(code, j.message === 'ok' ? '' : j.message))
+        toast(tr('setFail') + miErrText(code, j.message === 'ok' ? '' : j.message))
         revert()
       })
       .catch(function (e) {
-        toast('网络错误：' + e.message)
+        toast(tr('netErr') + e.message)
         revert()
       })
       .then(done, done)
   }
 
+  function applyCtlValue(c, value) {
+    if (!c.el) return
+    if (c.kind === 'bool') c.el.checked = !!value
+    else if (c.kind === 'range') { c.el.value = value; if (c.rvEl) c.rvEl.textContent = String(value) }
+    else if (c.kind === 'enum' && value !== null && value !== undefined) c.el.value = String(value)
+    if (value !== null && value !== undefined) c.el.dataset.prev = String(value)
+  }
+
+  function sameVal(a, b) { return String(a) === String(b) }
+
+  // 小米云端属性有 1~3 秒缓存延迟：刚下发完立刻回读会拿到旧值，把开关弹回去。
+  // 所以先乐观显示，再隔几秒多次回读确认；确认期间拒绝用旧值覆盖用户刚设的状态。
+  function confirmSet(d, c, value) {
+    applyCtlValue(c, value)
+    c.pendingValue = value
+    c.pendingUntil = Date.now() + 9000
+    ;[1500, 3000, 5000, 7500].forEach(function (ms) {
+      setTimeout(function () { refreshDevice(d) }, ms)
+    })
+    // 最后兜底：以设备真实状态为准，若仍未生效则明确告知
+    setTimeout(function () {
+      c.pendingValue = undefined; c.pendingUntil = 0
+      refreshDevice(d).then(function () {
+        if (!c.el) return
+        var actual = c.kind === 'bool' ? c.el.checked : c.el.value
+        if (!sameVal(actual, value)) toast(tr('notConfirmed'))
+      })
+    }, 9500)
+  }
+
   window.refreshAll = function () {
     if (!creds || !devices.length) return
     devices.forEach(function (d) { refreshDevice(d) })
-    toast('正在刷新状态...')
+    toast(tr('refreshing'))
   }
 
   function refreshDevice(d) {
     var list = ctlMap[d.did]
-    if (!list || !list.length) return
+    if (!list || !list.length) return Promise.resolve()
     var reads = list.filter(function (c) { return c.readable }).map(function (c) {
       return { did: d.did, siid: c.siid, piid: c.piid }
     })
-    if (!reads.length) return
-    miCall('/miotspec/prop/get', { params: reads.slice(0, 40) }).then(function (j) {
+    if (!reads.length) return Promise.resolve()
+    return miCall('/miotspec/prop/get', { params: reads.slice(0, 40) }).then(function (j) {
       if (j.code === 401 || j.code === 3) {
-        showDeviceError('登录凭证已失效（code ' + j.code + '），请点右上角「退出登录」重新扫码。')
+        showDeviceError(tr('credExpired').replace('{c}', j.code))
         return
       }
       if (j.code !== 0 || !j.result) return
@@ -788,10 +922,12 @@
         if (r.code !== 0) return
         list.forEach(function (c) {
           if (c.siid !== r.siid || c.piid !== r.piid) return
-          if (c.kind === 'bool') c.el.checked = !!r.value
-          else if (c.kind === 'range') { c.el.value = r.value; if (c.rvEl) c.rvEl.textContent = String(r.value) }
-          else if (c.kind === 'enum' && r.value !== null && r.value !== undefined) c.el.value = String(r.value)
-          if (r.value !== null && r.value !== undefined) c.el.dataset.prev = String(r.value)
+          if (c.pendingValue !== undefined && Date.now() < c.pendingUntil) {
+            // 还在等云端刷新，回读到旧值时不要覆盖 UI
+            if (sameVal(r.value, c.pendingValue)) { c.pendingValue = undefined; c.pendingUntil = 0; applyCtlValue(c, r.value) }
+            return
+          }
+          applyCtlValue(c, r.value)
         })
       })
     }).catch(function () {})
@@ -800,10 +936,10 @@
   // ---- 调试 ----
   window.debugCall = function () {
     var path = $('dbgPath').value.trim()
-    if (!path) { $('dbgOut').style.display = 'block'; $('dbgOut').textContent = '请填写路径'; return }
+    if (!path) { $('dbgOut').style.display = 'block'; $('dbgOut').textContent = tr('needPath'); return }
     path = path.replace(/^\/?app\//i, '').replace(/^\/+/, '')   // 兼容用户填 /app/miio/call 或 miio/call
     var data
-    try { data = JSON.parse($('dbgData').value) } catch (e) { $('dbgOut').style.display = 'block'; $('dbgOut').textContent = 'data JSON 解析失败'; return }
+    try { data = JSON.parse($('dbgData').value) } catch (e) { $('dbgOut').style.display = 'block'; $('dbgOut').textContent = tr('jsonParseFail'); return }
     api('app/' + path.replace(/^\/+/, ''), {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: creds.userId, serviceToken: creds.serviceToken, deviceId: creds.deviceId, securityToken: creds.ssecurity, data: data })
@@ -812,11 +948,12 @@
       $('dbgOut').textContent = JSON.stringify(j, null, 2)
     }).catch(function (e) {
       $('dbgOut').style.display = 'block'
-      $('dbgOut').textContent = '请求失败：' + e.message
+      $('dbgOut').textContent = tr('reqFail') + e.message
     })
   }
 
   // ---- 启动 ----
+  applyStaticTexts()
   if (creds && creds.serviceToken && creds.ssecurity) { showView('devices'); loadDevices() }
   else { showView('login') }
 })()
