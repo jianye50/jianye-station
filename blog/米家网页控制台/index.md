@@ -4,8 +4,8 @@ desc: 扫码登录、按设备规格自动生成控件、界面中英双语、�
 tags: [米家, 智能家居, Cloudflare, 折腾]
 date: 2026-11-07
 minutes: 9
-cover: cover.png
-background: cover.png
+cover: cover.jpg
+background: cover.jpg
 ---
 家里十几台米家设备，最烦的不是它们不好用，而是每次想开个空调都得掏手机、解锁、找 App、等它加载完。
 
