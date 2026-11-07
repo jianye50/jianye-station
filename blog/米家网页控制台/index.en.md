@@ -4,12 +4,12 @@ desc: Scan the QR code to log in, automatically generate controls according to d
 tags: ["Mijia","smart home","Cloudflare","toss"]
 date: 2026-11-07
 minutes: 9
-cover: cover.png
-background: cover.png
+cover: cover.jpg
+background: cover.jpg
 lang: en
 auto: true
-srcHash: c485861adbf27965
-translatedAt: 2026-11-07T12:03:32.727Z
+srcHash: 069c17c522ae43e4
+translatedAt: 2026-11-07T12:07:58.104Z
 ---
 There are more than a dozen Mijia devices at home. The most annoying thing is not that they are not easy to use, but that every time I want to turn on the air conditioner, I have to take out my phone, unlock it, find the app, and wait for it to load.
 

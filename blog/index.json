@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-07T12:03:45.012Z",
+  "generated": "2026-11-07T12:08:07.983Z",
   "posts": [
     {
       "slug": "米家网页控制台",
@@ -15,8 +15,8 @@
       ],
       "date": "2026-11-07",
       "minutes": 9,
-      "cover": "cover.png",
-      "bg": "cover.png",
+      "cover": "cover.jpg",
+      "bg": "cover.jpg",
       "mdEn": "blog/米家网页控制台/index.en.md",
       "titleEn": "Bringing Mijia into the browser: I wrote a purely static Mijia web console",
       "descEn": "Scan the QR code to log in, automatically generate controls according to device specifications, the interface is bilingual in Chinese and English, and the switch status no longer \"fake rebound\". A Mijia web console that does not rely on any back-end database, why the camera is an exception, and the pitfalls encountered on the development road.",
@@ -36,7 +36,7 @@
         "折腾"
       ],
       "imgs": {
-        "cover.png": "blog/thumbs/米家网页控制台-i0.webp",
+        "cover.jpg": "blog/thumbs/米家网页控制台-i0.webp",
         "login.png": "blog/thumbs/米家网页控制台-i4.webp"
       },
       "coverThumb": "blog/thumbs/米家网页控制台-cover.webp",
