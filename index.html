@@ -5257,6 +5257,9 @@ function route(){
     window.scrollTo(0,0);
     root.style.scrollBehavior=prevSmooth;
   }
+  /* 切页后立刻校正「记录 / 回到顶部」：首页 / 项目 / 关于页不该出现箭头；
+     scrollTo(0,0) 若本来就在顶部不会触发 scroll 事件，这里必须主动同步一次 */
+  try{ if(typeof syncNavTop==="function")syncNavTop(); }catch(e){}
 }
 window.addEventListener("hashchange",route);
 
@@ -5309,12 +5312,18 @@ function closeNavDropSoon(ms){
 /* ---------- 「记录」⇄「回到顶部」----------
    往下翻页超过一屏，「记录」的文字淡出、向上箭头转进来；点它缓缓回到顶部。
    回到顶部后箭头再变回「记录」，这时点「记录」才是展开二级菜单。
-   进入 / 退出用两个阈值（300 / 20），停在临界点时不会来回闪 */
+   进入 / 退出用两个阈值（300 / 20），停在临界点时不会来回闪
+   只在「博客 / 相册」（含博客文章页、子相册）生效：首页、项目、关于页翻得再深也保持「记录」 */
 const NAV_TOP_ON=300,NAV_TOP_OFF=20;
 let navToTop=false,navScrollRaf=0;
 function navTopText(){
   try{const s=T();if(s&&s.backTop)return s.backTop;}catch(e){}
   return "回到顶部";
+}
+/* 当前路由是否属于「记录」分区（博客 / 相册） */
+function navTopAllowed(){
+  const p=location.hash.replace(/^#\/?/,"").split("/").filter(Boolean)[0]||"";
+  return p==="blog"||p==="gallery";
 }
 function syncNavTop(onlyLabel){
   /* 启动早期可能还在 const 的 TDZ 里，拿不到就安静跳过 */
@@ -5324,7 +5333,7 @@ function syncNavTop(onlyLabel){
     if(navToTop)navDropBtn.setAttribute("aria-label",navTopText());
     return;
   }
-  const want=navToTop?(y>NAV_TOP_OFF):(y>NAV_TOP_ON);
+  const want=navTopAllowed()?(navToTop?(y>NAV_TOP_OFF):(y>NAV_TOP_ON)):false;
   if(want===navToTop)return;
   navToTop=want;
   navDrop.classList.toggle("to-top",want);
