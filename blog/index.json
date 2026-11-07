@@ -1,6 +1,40 @@
 {
-  "generated": "2026-11-07T03:00:24.224Z",
+  "generated": "2026-11-07T09:48:55.459Z",
   "posts": [
+    {
+      "slug": "远程重装系统服务",
+      "md": "blog/远程重装系统服务/index.md",
+      "imgBase": "blog/远程重装系统服务/",
+      "title": "30 元远程重装系统：不用搬电脑，一小时还你一台干净的机器",
+      "desc": "系统越用越卡、蓝屏进不去桌面、被全家桶塞满？30 元一次的远程重装服务，装系统、打驱动、配常用软件一次做完。流程、注意事项和联系方式都写在这篇里。",
+      "tags": [
+        "系统重装",
+        "远程服务"
+      ],
+      "date": "2026-11-07",
+      "minutes": 4,
+      "cover": "1745835951347.jpg",
+      "bg": "1745835951347.jpg",
+      "mdEn": "blog/远程重装系统服务/index.en.md",
+      "titleEn": "30 yuan to remotely reinstall the system: no need to move the computer, you will get a clean machine in one hour",
+      "descEn": "The more you use the system, the more stuck it becomes, the blue screen prevents you from entering the desktop, and the whole family bucket is filled up? The remote reinstallation service costs 30 yuan per time, and you can install the system, drive, and install commonly used software all at once. The process, precautions and contact information are all written in this article.",
+      "tagsEn": [
+        "System reinstallation",
+        "remote service"
+      ],
+      "mdZh": "blog/远程重装系统服务/index.zh.md",
+      "titleZh": "30 元远程重装系统：不用搬电脑，一小时还你一台干净的机器",
+      "descZh": "系统越用越卡、蓝屏进不去桌面、被全家桶塞满？30 元一次的远程重装服务，装系统、打驱动、配常用软件一次做完。流程、注意事项和联系方式都写在这篇里。",
+      "tagsZh": [
+        "系统重装",
+        "远程服务"
+      ],
+      "imgs": {
+        "1745835951347.jpg": "blog/thumbs/远程重装系统服务-i0.webp"
+      },
+      "coverThumb": "blog/thumbs/远程重装系统服务-cover.webp",
+      "bgThumb": "blog/thumbs/远程重装系统服务-bg.webp"
+    },
     {
       "slug": "BetterGI 更好的原神",
       "md": "blog/BetterGI 更好的原神/index.md",
