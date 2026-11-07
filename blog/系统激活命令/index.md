@@ -9,5 +9,8 @@ background: dTTcmJH0.jpeg
 ---
 Windows PowerShell内执行：
 
+```
 irm https://get.activated.win | iex
+```
+
 ![ScreenShot_2026-10-24_032114_583](ScreenShot_2026-10-24_032114_583.png)
