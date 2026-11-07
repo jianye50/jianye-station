@@ -434,7 +434,7 @@ img{display:block;max-width:100%}
 }
 .nav-top-ico{
   position:absolute;left:50%;top:50%;
-  width:17px;height:17px;
+  width:18px;height:18px;
   opacity:0;pointer-events:none;color:inherit;
   /* 收起态：从下方偏转着缩着，展开时转正、放大、落到位 */
   transform:translate(-50%,-50%) translateY(8px) scale(.6) rotate(-40deg);
@@ -1729,9 +1729,9 @@ html:not(.jy-go) .hero-inner{animation:none}
     <button class="nav-link nav-drop-btn" id="navDropBtn" type="button" data-nav="records"
             aria-haspopup="true" aria-expanded="false" aria-controls="navMenu">
       <span data-navlabel="records">记录</span>
-      <!-- 往下翻页时文字淡出、这个箭头转进来：点击回到页面顶部 -->
+      <!-- 往下翻页时文字淡出、这个箭头转进来：点击回到页面顶部（顶上一道横杠 = 上到最顶） -->
       <span class="nav-top-ico" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M12 19.5V5.2M5.4 11.8 12 5.2l6.6 6.6"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M5.4 3.9h13.2M12 20.1V9.1M7 14.1 12 9.1l5 5"/></svg>
       </span>
     </button>
   </div>
