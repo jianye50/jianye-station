@@ -563,6 +563,12 @@ img{display:block;max-width:100%}
 /* ===================== 视图容器与动画 ===================== */
 #app{min-height:100vh}
 .view{animation:fadeUp .55s cubic-bezier(.2,.7,.2,1) both}
+/* 骨架 → 正文的第二次上屏：只淡入、不上浮。
+   文章页会先画骨架、拿到正文后再整块替换，如果两次都播 fadeUp，
+   同一页会「滑上来」两遍，中间还夹一次 opacity:0 的黑闪 */
+.view.soft{animation:fadeIn .3s ease both}
+/* 原地换内容（切语言）：整页不重播入场动画，内容直接换掉 */
+.view.no-in{animation:none}
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
@@ -821,7 +827,7 @@ img{display:block;max-width:100%}
   padding:11px 26px;border-radius:999px;
   border:1px solid var(--card-border);background:var(--card);
   font-size:14px;font-weight:600;color:var(--text-1);
-  box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s,color .2s;
+  box-shadow:var(--shadow);transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s,color .2s;
 }
 .link-more:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);color:var(--accent)}
 
@@ -841,8 +847,21 @@ img{display:block;max-width:100%}
 @media (prefers-reduced-motion:reduce){
   .lightbox.open,.lightbox.closing{animation:none}
 }
-/* 灯箱打开时锁住背景滚动 */
+/* 控件（箭头 / 计数 / 动态条）比背景晚 100ms 浮现：先看到照片铺开，
+   操作层再跟上来，比「整体一起亮」更有层次。
+   只动 opacity —— 翻页箭头自带 translateY(-50%)，改用 transform 会把它顶歪 */
+@keyframes lbChromeIn{from{opacity:0}to{opacity:1}}
+.lightbox.open .lb-btn,
+.lightbox.open .lb-count,
+.lightbox.open .lb-motion{animation:lbChromeIn .28s .1s ease backwards}
+/* 灯箱打开时锁住背景滚动。
+   锁滚动会让滚动条消失（Windows 经典滚动条约 15px），整页会横向「跳」一下：
+   body 补回等宽的右内边距，居中的悬浮导航同步左移半格 —— 相机打开那一瞬不再抽动。
+   --lb-gutter 由 openLb 按实测宽度写入，触屏 / 覆盖式滚动条时为 0，天然无副作用 */
 body.lb-lock{overflow:hidden}
+body.lb-lock{padding-right:var(--lb-gutter,0px)}
+/* 半格为什么不在 transform 里算：calc 混百分比在部分内核上不可靠，直接改 left 更稳 */
+body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 .lightbox img{
   position:relative;z-index:1;   /* 图片必须显式压到按钮之下 */
   max-width:88vw;max-height:80vh;border-radius:16px;
@@ -1307,7 +1326,7 @@ body.lb-lock{overflow:hidden}
   display:flex;align-items:center;gap:16px;
   padding:14px 16px;border-radius:16px;
   border:1px solid var(--card-border);background:var(--bg-2);
-  transition:transform .22s,border-color .22s,box-shadow .22s;
+  transition:transform .3s cubic-bezier(.2,.7,.2,1),border-color .22s,box-shadow .3s;
 }
 .post-card:hover{transform:translateY(-2px);border-color:rgba(77,141,255,.4);box-shadow:var(--shadow)}
 .post-thumb{flex:none;width:104px;height:66px;border-radius:10px;overflow:hidden;background:var(--chip);display:grid;place-items:center;color:var(--text-3)}
@@ -1375,7 +1394,7 @@ body.lb-lock{overflow:hidden}
 .bs-kbd{flex:none;margin-left:auto;font-size:11.5px;color:var(--text-3);border:1px solid var(--card-border);
   border-radius:6px;padding:2px 7px;line-height:1.5;user-select:none}
 mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;padding:0 1px}
-.rvf{animation:card-in .2s ease backwards}   /* 筛选重绘：快速淡入，不做错峰 */
+.rvf{animation:fadeIn .16s ease backwards}   /* 筛选重绘：只做一次极短淡入，卡片不再整列上跳 */
 @media (max-width:560px){.bs-kbd{display:none}.blog-search{gap:8px}}
 /* 文章页 */
 .post-hero{position:relative;height:min(46vh,380px);background:var(--hero-fallback);overflow:hidden}
@@ -1671,6 +1690,11 @@ html:not(.jy-go) .hero-inner{animation:none}
 /* 配置晚到导致的「静默重绘」：不播入场动画，否则背景与文字会再演一遍（看着像闪） */
 .hero.quiet .hero-img,
 .hero.quiet .hero-inner{animation:none}
+/* 导航条跟着揭幕一起浮出来：加载屏还盖着时先不显示，掀开那一下才淡入。
+   只动 opacity ——「记录」面板靠 JS 量按钮位置来定位，导航带 transform 会把它算歪 */
+html:not(.jy-go) .nav{opacity:0}
+html.jy-go .nav{animation:navFade .5s .1s ease backwards}
+@keyframes navFade{from{opacity:0}to{opacity:1}}
 /* 盖住初始化期间的一切闪烁（导航语言未统一、首屏未渲染），
    站点就绪后由 JS 淡出移除 */
 #boot{position:fixed;inset:0;z-index:9999;background:var(--bg);
@@ -2405,6 +2429,13 @@ function setLang(v,persist){
   if(navMenuEl)navMenuEl.setAttribute("aria-label",T().nav.records);
   /* 「回到顶部」形态的无障碍名称也跟着换语言 */
   if(typeof syncNavTop==="function")syncNavTop(true);
+  /* 换语言 = 同一页重画一遍：不重播整页入场动画（否则整页闪一下再滑上来），
+     也别把人从读到一半的位置拽回顶部。
+     只在用户自己点 EN/中 时生效；启动时那句 setLang(persist=false) 还是要正常播入场 */
+  if(persist!==false){
+    muteViewAnim=true;
+    holdScroll(window.scrollY||0);
+  }
   route(); // 重新渲染当前视图
   /* 中英切换会改变导航宽度，「记录」按钮跟着挪位：面板开着就重摆一次 */
   const dd=document.getElementById("navDrop");
@@ -3084,6 +3115,12 @@ function openLb(items,i,grid){
   $("#lightbox").classList.remove("closing");      /* 快速开关：别让上一次的退场动画把入场顶掉 */
   clearTimeout(lbCloseTimer);
   $("#lightbox").classList.toggle("lb-single",lbItems.length<2);
+  /* 先量出滚动条宽度再锁滚动：锁住后滚动条消失，网页会整体右移一截 */
+  try{
+    const g=Math.max(0,window.innerWidth-document.documentElement.clientWidth);
+    document.documentElement.style.setProperty("--lb-gutter",g+"px");
+    document.documentElement.style.setProperty("--lb-half",(g/2)+"px");
+  }catch(e){}
   document.body.classList.add("lb-lock");         /* 锁住背景滚动 */
   try{ $("#lbClose").focus(); }catch(e){}
 }
@@ -3139,7 +3176,7 @@ function renderHome(){
   const prevImg=app.querySelector("img.hero-img");
   const quiet=quietRender;   /* 静默重绘：不再演入场动画 */
   app.innerHTML=`
-  <section class="view">
+  <section class="view${quiet?" no-in":""}">
     <header class="hero${quiet?" quiet":""}">
       ${SITE.bg?`<img class="hero-img" src="${esc(SITE.bg)}"
            alt="" fetchpriority="high" decoding="async" onerror="this.remove()">`:/* 没配背景 → 用 CSS 里的 --hero-fallback 渐变兜底 */""}
@@ -3308,7 +3345,7 @@ function renderAbout(){
         </div>`:""}
       </div>`:"";
   app.innerHTML=`
-  <section class="view">
+  <section class="view${quietRender?" no-in":""}">
     <div class="wrap">
       <div class="page-head">
         <h1>${esc(t.about.title)}</h1>
@@ -4175,7 +4212,7 @@ window.addEventListener("bloglist",()=>{
 });
 async function renderBlog(gen){
   const t=T();
-  app.innerHTML=`<section class="view"><div class="wrap">
+  app.innerHTML=`<section class="${viewCls(gen)}"><div class="wrap">
     <div class="page-head"><h1>${esc(t.blog.title)}</h1><p class="sub" id="blogSub"></p></div>
     <div class="blog-search">
       <div class="bs-box">
@@ -4226,6 +4263,7 @@ async function renderBlog(gen){
     },340);
   }
   bsSync();
+  applyScrollHold();   /* 切语言进来的：列表落定后把阅读位置补回去 */
 }
 
 /* ---------- 文章自动翻译：英文界面下把中文文章机器翻译成英文 ----------
@@ -4973,9 +5011,45 @@ document.addEventListener("error",e=>{
   fig.parentNode.replaceChild(d,fig);
 },true);
 
+/* ---------- 页面入场动画的两个例外 ----------
+   .view 的 fadeUp 是「新页面进场」用的，两种情况不该播：
+     ① 骨架 → 正文：同一页第二次上屏，改用 .soft 只淡入（否则整页会滑上来两遍）；
+     ② 切语言：同一页原地重绘，加 .no-in 直接换（否则整页闪一下再滑一遍）。
+   切语言还要保住阅读位置，所以顺带记一份 scrollY，等异步渲染落定后补回去 */
+let muteViewAnim=false,muteViewGen=-1,scrollHoldY=null,scrollHoldTimer=0;
+function viewCls(gen,extra){
+  let c="view";
+  if(extra)c+=" "+extra;
+  if(gen!==undefined&&gen===muteViewGen)c+=" no-in";
+  return c;
+}
+/* 记住要守住的阅读位置：用户一旦自己滚动 / 跳页，就立刻作废，绝不把人拽回去 */
+function holdScroll(y){
+  if(y==null||y<=0)return;
+  scrollHoldY=y;
+  clearTimeout(scrollHoldTimer);
+  const t0=performance.now();
+  const onScroll=()=>{
+    if(performance.now()-t0<260)return;              /* 跳过刚设完的那几帧程序滚动 */
+    scrollHoldY=null;window.removeEventListener("scroll",onScroll);
+  };
+  window.addEventListener("scroll",onScroll,{passive:true});
+  scrollHoldTimer=setTimeout(()=>{                   /* 兜底：异步渲染迟迟不来也别一直悬着 */
+    scrollHoldY=null;window.removeEventListener("scroll",onScroll);
+  },1500);
+}
+function applyScrollHold(){
+  if(scrollHoldY==null)return;
+  /* 必须瞬时归位：html 上挂着 scroll-behavior:smooth，直接 scrollTo 会直播一段
+     从顶部滑下来的动画，看着像页面自己在乱跑 */
+  const root=document.documentElement,prev=root.style.scrollBehavior;
+  root.style.scrollBehavior="auto";
+  try{ window.scrollTo(0,scrollHoldY); }catch(e){}
+  root.style.scrollBehavior=prev;
+}
 async function renderPost(slug,gen){
   const t=T();
-  app.innerHTML=`<section class="view">
+  app.innerHTML=`<section class="${viewCls(gen)}">
     <div class="post-hero"></div>
     <div class="wrap"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a></div>
   </section>`;
@@ -4983,7 +5057,7 @@ async function renderPost(slug,gen){
   const posts=await loadBlog();
   if(stale())return;
   const post=posts.find(p=>p.slug===slug);
-  const fail=msg=>{ if(stale())return; app.innerHTML=`<section class="view"><div class="wrap">
+  const fail=msg=>{ if(stale())return; app.innerHTML=`<section class="${viewCls(gen)}"><div class="wrap">
     <div class="blog-empty">${msg}</div>
     <div style="text-align:center"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a></div>
   </div></section>`;};
@@ -5059,7 +5133,7 @@ async function renderPost(slug,gen){
     ?`<video class="post-bg" src="${esc(postSrc(post,bg))}" autoplay muted loop playsinline preload="metadata"></video>`
     :"";
   app.innerHTML=`
-  <section class="view">
+  <section class="${viewCls(gen,"soft")}">
     <div class="post-hero">${bgVideo||(bgImg?`<img class="post-bg" src="${bgImg}" alt="" decoding="async" onerror="this.remove()">`:"")}</div>
     <div class="wrap">
       <a class="post-back" href="#/blog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>${esc(t.blog.back)}</a>
@@ -5074,6 +5148,7 @@ async function renderPost(slug,gen){
     </div>
   </section>`;
   wirePostMedia(slug);
+  applyScrollHold();          /* 切语言进来的：正文上屏后把阅读位置补回去 */
   /* 翻译方向只由「访客界面语言」决定，不再看文章整体是什么语言。
      以前是「正文里出现过中文就当整篇是中文」，中英混排的文章会被判成 zh：
      中文界面下 lang===srcLang，整篇一次都不翻，英文段落永远留在英文界面里；
@@ -5160,8 +5235,12 @@ let routeGen=0;   /* 渲染代次：异步渲染（博客列表/文章）await �
                      过期的渲染继续写 DOM 会把新页面整个覆盖掉 —— 每个 await 后先校验 */
 let pendingScroll=null;   /* 带锚点的路由：渲染后要缓缓滑到的板块 id */
 /* 缓速滑动：比浏览器原生 smooth 更从容（约 1 秒），用户滚轮/触摸可随时打断 */
+let glideToken=0,glidePrevBehavior=null;
 function glideTo(y,dur){
   if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches){window.scrollTo(0,y);return;}
+  /* 新滑动立刻接管旧的：连点两个入口（比如先点「博客」再点「相册」）时，
+     两条 rAF 循环同时写 scrollTop 会让画面在两个目标之间来回抖 */
+  const my=++glideToken;
   const startY=window.scrollY,d=y-startY,t0=performance.now();
   const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;   /* easeInOutCubic：起停都柔 */
   let stop=false;
@@ -5173,16 +5252,21 @@ function glideTo(y,dur){
   window.addEventListener("wheel",cancel,opt);
   window.addEventListener("touchstart",cancel,opt);
   const root=document.documentElement,prev=root.style.scrollBehavior;
+  /* 只有第一段滑动记下「原始值」：被接管时恢复的必须是当初那个值，
+     而不是上一段临时写进去的 auto（否则 html 内联 auto 会一直留着，往后所有平滑滚动都失效） */
+  if(glidePrevBehavior===null)glidePrevBehavior=prev;
   root.style.scrollBehavior="auto";                    /* 逐帧设值，不能让 CSS smooth 插手 */
+  const done=()=>{ root.style.scrollBehavior=glidePrevBehavior; glidePrevBehavior=null; if(ac)ac.abort(); };
   let last=startY;                                     /* 单调钳制：杜绝任何帧间的 1px 回抖 */
   (function step(now){
-    if(stop){root.style.scrollBehavior=prev; if(ac)ac.abort(); return;}
+    if(my!==glideToken){ if(ac)ac.abort(); return; }   /* 已被新滑动接管：静默退出，别再写滚动位置 */
+    if(stop){ done(); return; }
     const p=Math.min(1,Math.max(0,(now-t0)/dur));
     const v=startY+d*ease(p);
     last=d>=0?Math.max(last,v):Math.min(last,v);
     window.scrollTo(0,last);
     if(p<1)requestAnimationFrame(step);
-    else{root.style.scrollBehavior=prev; if(ac)ac.abort();}
+    else done();
   })(t0);
 }
 function route(){
@@ -5192,6 +5276,8 @@ function route(){
   const lbNow=$("#lightbox");
   if(lbNow&&lbNow.classList.contains("open"))closeLb();
   const gen=++routeGen;
+  /* 切语言发起的重绘：这一代渲染出来的 .view 不播入场动画（见 viewCls） */
+  if(muteViewAnim){ muteViewGen=gen; muteViewAnim=false; }
   window.__JY_RENDERED=true;   /* 标记：首屏已经真正渲染过（启动流程靠它判断要不要补渲染） */
   const hash=location.hash.replace(/^#\/?/,"");
   const parts=hash.split("/").filter(Boolean);
@@ -5251,7 +5337,8 @@ function route(){
      （文章页等正文加载后会覆盖成文章标题，见 renderPost） */
   document.title=(active==="home")?T().brand:(T().nav[active]+" · "+T().brand);
   /* 切页回到顶部：html 上挂着 scroll-behavior:smooth，
-     这里先临时关掉再滚，免得每次切页都慢慢「滑」上去 */
+     这里先临时关掉再滚，免得每次切页都慢慢「滑」上去。
+     唯一例外是切语言：那是同一页换文字，得留在原来的阅读位置（holdScroll 记着） */
   const root=document.documentElement,
         prevSmooth=root.style.scrollBehavior;
   root.style.scrollBehavior="auto";
@@ -5259,7 +5346,10 @@ function route(){
      先展示页面顶部，再缓缓下滑到该板块 */
   const anchor=pendingScroll?document.getElementById(pendingScroll):null;
   pendingScroll=null;
-  if(anchor){
+  if(scrollHoldY!=null){
+    window.scrollTo(0,scrollHoldY);
+    root.style.scrollBehavior=prevSmooth;
+  }else if(anchor){
     const y=anchor.getBoundingClientRect().top+window.scrollY-86;
     window.scrollTo(0,0);
     root.style.scrollBehavior=prevSmooth;
@@ -5268,11 +5358,20 @@ function route(){
     window.scrollTo(0,0);
     root.style.scrollBehavior=prevSmooth;
   }
+  /* 同步渲染的页面（首页 / 项目 / 关于 / 相册）在这里补一次：切语言时不播入场动画。
+     博客列表 / 文章是异步渲染的，由 renderBlog / renderPost 自己按 gen 打类 */
+  try{
+    const vNow=$("#app>.view");
+    if(vNow&&muteViewGen===gen)vNow.classList.add("no-in");
+  }catch(e){}
   /* 切页后立刻校正「记录 / 回到顶部」：首页 / 项目 / 关于页不该出现箭头；
      scrollTo(0,0) 若本来就在顶部不会触发 scroll 事件，这里必须主动同步一次 */
   try{ if(typeof syncNavTop==="function")syncNavTop(); }catch(e){}
 }
-window.addEventListener("hashchange",route);
+window.addEventListener("hashchange",()=>{
+  scrollHoldY=null;      /* 真的跳页了：切语言留下的「守在原地」立即作废 */
+  route();
+});
 
 /* ---------- 导航「记录」二级菜单：悬浮 / 单击都能展开 ----------
    · 桌面（hover:hover + 精确指针）：移入即开，移开稍等 240ms 再收
@@ -5439,29 +5538,18 @@ if(navDrop&&navDropBtn){
       if(e.target.closest(".nav-menu-item"))closeNavDrop();
     });
   }
-  /* 导航项在几种特殊状态下不按原链接跳转，而是平滑回顶：
-     ① 已经形变成箭头（只在单篇博客文章页出现）；
-     ② 已在首页时点「首页 / 站点名」——不必再往地址栏写一个 #/（会多出一条历史记录），
-        地址保持 https://jype.top/ 这种干净形态；
-     ③ 已在博客列表 / 相册页时点下拉菜单里的「博客 / 相册」——hash 没变不会触发路由，
-        浏览器自己也不会滚，这里拦下来平滑滚回该页最顶上
-        （子相册除外：从 #/gallery/xxx 点「相册」要真的切回全部相册，得让 hash 变化走路由） */
+  /* 导航点击拦截，只剩一种情况：
+     单篇博客文章页里「记录」形变成的回顶箭头——点了平滑回顶。
+     其余导航项一律按普通链接走：已在当前页时 hash 不变、浏览器不会动，
+     已在首页时点「首页 / 站点名」也只拦下跳转（避免往地址栏多写一个 #/），
+     不做任何回顶滚动 —— 全站只有文章页有「一键向上」 */
   document.addEventListener("click",e=>{
     if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
-    const mi=e.target.closest("a.nav-menu-item");
-    if(mi){
-      const h=mi.getAttribute("href"),cur=location.hash||"#/";
-      const same=(h==="#/blog"&&(cur==="#/blog"||cur==="#/blog/"))||
-                 (h==="#/gallery"&&(cur==="#/gallery"||cur==="#/gallery/"));
-      if(same){ e.preventDefault(); glideTo(0,600); }
-      return;
-    }
     const a=e.target.closest("a.nav-link, a.nav-brand");
     if(!a)return;
     if(a.classList.contains("to-top")){ e.preventDefault(); glideTo(0,720); return; }
     if(a.getAttribute("href")==="#/"&&(!location.hash||location.hash==="#/")){
-      e.preventDefault();
-      glideTo(0,600);
+      e.preventDefault();   /* 已在首页：保持地址干净、原地不动 */
     }
   });
   /* 点空白处收起：按下就判定，比 click 更早，也不会被后续重绘干扰 */
@@ -5832,7 +5920,7 @@ function revealSite(){
 .mp-tabs{display:flex;gap:4px;padding:0 12px 10px}
 .mp-tab{
   padding:5px 11px;border-radius:999px;font-size:12px;font-weight:600;
-  color:var(--text-2);background:rgba(255,255,255,.07);transition:.18s;
+  color:var(--text-2);background:rgba(255,255,255,.07);transition:color .18s,background .18s;
 }
 .mp-tab:hover{color:var(--text-1);background:rgba(255,255,255,.12)}
 .mp-tab.on{background:var(--accent-soft);color:var(--accent)}
@@ -5867,7 +5955,7 @@ function revealSite(){
 .mp-more{
   display:block;width:calc(100% - 4px);margin:6px 2px 2px;padding:8px;
   border-radius:10px;background:rgba(255,255,255,.07);color:var(--text-2);
-  font-size:12px;font-weight:600;transition:.18s;
+  font-size:12px;font-weight:600;transition:color .18s,background .18s;
 }
 .mp-more:hover{color:var(--accent);background:var(--accent-soft)}
 .mp-ft{display:flex;flex-direction:column;gap:8px;padding:10px 14px 12px;border-top:1px solid rgba(255,255,255,.10)}
