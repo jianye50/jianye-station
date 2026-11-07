@@ -158,8 +158,10 @@
   }
   .rv { font-size: 12px; color: var(--accent2); min-width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
 
-  .switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
-  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+  .switch input { position: absolute; z-index: 2; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch input:disabled + span { opacity: .45; cursor: not-allowed; }
+  .ctl.offline > label { opacity: .5; }
   .switch span {
     position: absolute; inset: 0; background: rgba(255,255,255,.12);
     border-radius: 26px; transition: .22s; cursor: pointer;
@@ -228,6 +230,9 @@
     main { padding: 20px 16px 60px; }
     .grid { grid-template-columns: 1fr 1fr; gap: 10px; }
     .device { padding: 14px; }
+    .ctl input[type=range] { width: 96px; }
+    .ctl select { max-width: 108px; }
+    .ctl > label { max-width: 46%; }
   }
   @media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
 </style>
@@ -304,8 +309,31 @@
 
   function asJson(r) {
     var ct = (r.headers.get('content-type') || '')
-    if (ct.indexOf('json') < 0) throw new Error('接口返回的不是 JSON —— 请确认 Functions 已随站点一起部署')
-    return r.json()
+    if (ct.indexOf('json') < 0) throw new Error('接口返回的不是 JSON（HTTP ' + r.status + '）—— 请确认 _worker.js 已随站点一起部署')
+    return r.json().then(function (j) {
+      if (r.status === 401) {
+        var e = new Error((j && j.error) || '访问密码错误')
+        e.kind = 'auth'
+        throw e
+      }
+      return j
+    })
+  }
+
+  // 米家返回码 → 人话
+  var MI_ERR = {
+    401: '登录凭证已失效，请退出登录后重新扫码',
+    3: '登录凭证已失效，请退出登录后重新扫码',
+    '-4001': '设备不支持该属性或参数不合法',
+    '-4002': '取值超出范围',
+    '-4003': '设备无响应，可能离线',
+    '-4004': '设备正忙，请稍后再试',
+    '-704010000': '设备离线',
+    '-704042011': '设备离线'
+  }
+  function miErrText(code, fallback) {
+    var k = String(code)
+    return MI_ERR[k] || fallback || ('错误码 ' + k)
   }
 
   var BASE = location.pathname.replace(/[^/]*$/, '')
@@ -317,6 +345,27 @@
 
   // ---- 登录（无状态轮询） ----
   var loginState = null
+
+  var QR_HOSTS = [
+    function (u) { return 'https://api.qrserver.com/v1/create-qr-code/?size=440x440&data=' + encodeURIComponent(u) },
+    function (u) { return 'https://api.pwmqr.com/qrcode/create/?url=' + encodeURIComponent(u) },
+    function (u) { return 'https://qr.topscan.com/api.php?text=' + encodeURIComponent(u) }
+  ]
+  function showQR(loginUrl) {
+    var img = $('qrImg'), i = 0
+    function next() {
+      if (i >= QR_HOSTS.length) {
+        img.style.display = 'none'
+        $('loginMsg').textContent = '二维码图片加载失败。可把下面链接发到手机上打开：' + loginUrl
+        return
+      }
+      img.src = QR_HOSTS[i++](loginUrl)
+    }
+    img.onerror = next
+    img.style.display = 'block'
+    next()
+  }
+
   window.startLogin = function () {
     var pin = $('pinInput').value.trim()
     localStorage.setItem(LS_PIN, pin)
@@ -324,11 +373,12 @@
     api('api/login/start').then(asJson).then(function (j) {
       if (j.error) { $('loginMsg').textContent = '失败：' + j.error; return }
       loginState = j
-      $('qrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(j.loginUrl)
-      $('qrImg').style.display = 'block'
+      showQR(j.loginUrl)
       $('loginMsg').textContent = '请用米家 App 扫码，并在手机上确认登录'
       pollLogin(0)
-    }).catch(function (e) { $('loginMsg').textContent = '网络错误：' + e.message })
+    }).catch(function (e) {
+      $('loginMsg').textContent = e.kind === 'auth' ? '访问密码错误，请重新输入' : ('网络错误：' + e.message)
+    })
   }
   function pollLogin(n) {
     if (n > 100) { $('loginMsg').textContent = '二维码已失效，请点击「生成二维码」重新获取'; return }
@@ -351,7 +401,10 @@
     try {
       var j = JSON.parse($('manualJson').value)
       if (!j.userId || !j.serviceToken || !j.ssecurity) { toast('JSON 缺少字段'); return }
-      creds = { userId: String(j.userId), serviceToken: j.serviceToken, ssecurity: j.ssecurity, deviceId: j.deviceId || '' }
+      creds = {
+        userId: String(j.userId), serviceToken: j.serviceToken, ssecurity: j.ssecurity,
+        deviceId: j.deviceId || ('mijiaweb' + Math.random().toString(36).slice(2, 12))
+      }
       localStorage.setItem(LS_CREDS, JSON.stringify(creds))
       toast('导入成功'); showView('devices'); loadDevices()
     } catch (e) { toast('JSON 解析失败') }
@@ -378,12 +431,12 @@
 
   function normDevice(d) {
     return {
-      did: String(d.device_id || d.id || d.did || ''),
+      did: String(d.device_id || d.did || d.id || ''),
       name: d.name || '未命名设备',
       model: d.model || '',
-      online: !(d.is_online === false || d.is_online === 0),
+      online: !(d.is_online === false || d.is_online === 0 || d.isOnline === false || d.isOnline === 0 || d.online === false),
       specType: d.spec_type || d.specType || '',
-      room: d.room_name || d.roomname || ''
+      room: d.room_name || d.roomname || d.room || ''
     }
   }
 
@@ -437,42 +490,78 @@
 
   // ---- spec 缓存 ----
   var specCache = {}
+  var specPending = {}
   try { specCache = JSON.parse(localStorage.getItem(LS_SPEC)) || {} } catch (e) {}
   function saveSpecCache() { try { localStorage.setItem(LS_SPEC, JSON.stringify(specCache)) } catch (e) {} }
 
   function getSpec(type) {
     if (!type) return Promise.resolve(null)
     if (specCache[type]) return Promise.resolve(specCache[type])
-    return api('api/spec?type=' + encodeURIComponent(type)).then(asJson).then(function (j) {
+    if (specPending[type]) return specPending[type]   // 同型号设备并发时只请求一次
+    specPending[type] = api('api/spec?type=' + encodeURIComponent(type)).then(asJson).then(function (j) {
       var inst = j.instance || (j && j.services ? j : null)   // 后端直接返回规格本体，顶层即 services
       if (inst) { specCache[type] = inst; saveSpecCache() }
       return inst
-    }).catch(function () { return null })
+    }).catch(function () { return null }).then(function (v) {
+      delete specPending[type]
+      return v
+    })
+    return specPending[type]
   }
 
   // ---- spec 解析：提取可控制属性（miot-spec 格式：服务与属性各自带 iid，完整编号 = 服务iid + 属性iid） ----
+  var NUM_FORMATS = ['uint8','uint16','uint32','int8','int16','int32','float','double']
+
+  function zhLabel(o) {
+    if (!o) return ''
+    var c = o.comment == null ? '' : String(o.comment).trim()
+    return c || o.description || o.name || ''
+  }
+
+  function isPowerCtl(c) {
+    return /:property:on:/.test(c.ptype || '') || c.name === '开关' || c.name === '电源' || c.name === '开关机'
+  }
+
   function extractControls(inst) {
-    if (!inst) return []
+    if (!inst || !inst.services) return []
     var out = []
     inst.services.forEach(function (svc) {
       var siid = svc.iid
       ;(svc.properties || []).forEach(function (p) {
-        var piid = p.iid
         var access = p.access || []
-        var ctl = { siid: siid, piid: piid, name: (p.description && p.description !== '' ? p.description : p.name) || (siid + '-' + piid) }
-        if (access.indexOf('write') >= 0) {
-          if (p.format === 'bool') ctl.kind = 'bool'
-          else if (['uint8','uint16','uint32','int8','int16','int32','float'].indexOf(p.format) >= 0) {
-            if (p['value-range'] && p['value-range'].length === 3) {
-              ctl.kind = 'range'; ctl.min = p['value-range'][0]; ctl.max = p['value-range'][1]; ctl.step = p['value-range'][2]
-            } else if (p['value-list'] && p['value-list'].length) { ctl.kind = 'enum'; ctl.list = p['value-list'] }
+        if (access.indexOf('write') < 0) return
+        var ctl = {
+          siid: siid, piid: p.iid,
+          name: zhLabel(p) || (siid + '-' + p.iid),
+          ptype: p.type || '',
+          readable: access.indexOf('read') >= 0
+        }
+        if (p.format === 'bool') {
+          ctl.kind = 'bool'
+        } else if (NUM_FORMATS.indexOf(p.format) >= 0) {
+          var vl = p['value-list'], vr = p['value-range']
+          if (vl && vl.length) {
+            ctl.kind = 'enum'
+            ctl.list = vl.map(function (v) { return { value: v.value, text: zhLabel(v) || String(v.value) } })
+          } else if (vr && vr.length === 3) {
+            ctl.kind = 'range'
+            ctl.min = vr[0]; ctl.max = vr[1]
+            ctl.step = vr[2] || ((p.format === 'float' || p.format === 'double') ? 0.1 : 1)
           }
         }
-        if (ctl.kind && access.indexOf('read') >= 0) ctl.readable = true
-        if (ctl.kind) out.push(ctl)
+        if (!ctl.kind) return
+        out.push(ctl)
       })
     })
-    return out.slice(0, 6)
+    // 排序：主开关 → 模式等下拉 → 数值滑块 → 其他布尔，保证关键操作在卡片最上面
+    function rank(c) {
+      if (isPowerCtl(c)) return 0
+      if (c.kind === 'enum') return 1
+      if (c.kind === 'range') return 2
+      return 3
+    }
+    out.sort(function (a, b) { return rank(a) - rank(b) })
+    return out.slice(0, 8)
   }
 
   // ---- 图标 ----
@@ -581,14 +670,23 @@
       }
       box.innerHTML = ''
       ctlMap[d.did] = []
+      if (!d.online) {
+        var offTip = document.createElement('div')
+        offTip.className = 'dev-state'
+        offTip.textContent = '设备当前离线，指令可能不会立即生效'
+        box.appendChild(offTip)
+      }
       ctls.forEach(function (c) {
         var row = document.createElement('div'); row.className = 'ctl'
+        if (!d.online) row.className += ' offline'
         var label = document.createElement('label'); label.textContent = c.name; row.appendChild(label)
 
         if (c.kind === 'bool') {
-          var sw = document.createElement('div'); sw.className = 'switch'
+          // 注意：外层必须是 <label>，否则点可见的滑块不会触发 input
+          var sw = document.createElement('label'); sw.className = 'switch'
           var inp = document.createElement('input'); inp.type = 'checkbox'
-          inp.addEventListener('change', function () { setProp(d, c, inp.checked, inp) })
+          inp.disabled = !d.online
+          inp.addEventListener('change', function () { setProp(d, c, inp.checked, inp, !inp.checked) })
           var sp = document.createElement('span')
           sw.appendChild(inp); sw.appendChild(sp); row.appendChild(sw)
           ctlMap[d.did].push({ siid: c.siid, piid: c.piid, el: inp, kind: 'bool', readable: c.readable })
@@ -596,20 +694,26 @@
           var wrap = document.createElement('div'); wrap.style.cssText = 'display:flex;align-items:center;gap:8px'
           var rg = document.createElement('input'); rg.type = 'range'
           rg.min = c.min; rg.max = c.max; rg.step = c.step
+          rg.disabled = !d.online
           var rv = document.createElement('span'); rv.className = 'rv'; rv.textContent = '--'
           rg.addEventListener('input', function () { rv.textContent = rg.value })
-          rg.addEventListener('change', function () { setProp(d, c, Number(rg.value), rg) })
+          rg.addEventListener('change', function () {
+            var prev = rg.dataset.prev
+            setProp(d, c, Number(rg.value), rg, prev === undefined ? undefined : Number(prev))
+          })
           wrap.appendChild(rg); wrap.appendChild(rv); row.appendChild(wrap)
           ctlMap[d.did].push({ siid: c.siid, piid: c.piid, el: rg, kind: 'range', rvEl: rv, readable: c.readable })
         } else if (c.kind === 'enum') {
           var sel = document.createElement('select')
+          sel.disabled = !d.online
           var opt0 = document.createElement('option'); opt0.value = ''; opt0.textContent = '选择...'; sel.appendChild(opt0)
           c.list.forEach(function (v) {
-            var o = document.createElement('option'); o.value = v.value; o.textContent = v.description || String(v.value); sel.appendChild(o)
+            var o = document.createElement('option'); o.value = v.value; o.textContent = v.text; sel.appendChild(o)
           })
           sel.addEventListener('change', function () {
             if (sel.value === '') return
-            setProp(d, c, Number(sel.value), sel)
+            var prev = sel.dataset.prev
+            setProp(d, c, Number(sel.value), sel, prev === undefined ? undefined : prev)
           })
           row.appendChild(sel)
           ctlMap[d.did].push({ siid: c.siid, piid: c.piid, el: sel, kind: 'enum', readable: c.readable })
@@ -633,20 +737,32 @@
     }
   })
 
-  window.setProp = function (d, c, value, el) {
+  window.setProp = function (d, c, value, el, prev) {
+    if (!creds) { toast('登录已失效，请重新扫码'); return }
+    if (el) el.disabled = true
     toast('发送指令...')
-    miCall('/miotspec/prop/set', { params: [{ did: d.did, siid: c.siid, piid: c.piid, value: value }] }).then(function (j) {
-      var ok = j.code === 0 && j.result && j.result[0] && j.result[0].code === 0
-      if (ok) { toast('已设置'); setTimeout(function () { refreshDevice(d) }, 600) }
-      else {
-        toast('设置失败：' + JSON.stringify(j.result || j.message || j).slice(0, 80))
-        if (el.type === 'checkbox') el.checked = !el.checked
-        if (el.tagName === 'SELECT') el.value = ''
-      }
-    }).catch(function (e) {
-      toast('网络错误：' + e.message)
-      if (el.type === 'checkbox') el.checked = !el.checked
-    })
+
+    function done() { if (el) el.disabled = !d.online }
+    function revert() {
+      if (!el) return
+      if (el.type === 'checkbox') el.checked = !!prev
+      else if (prev !== undefined && prev !== null && prev !== '') el.value = prev
+    }
+
+    miCall('/miotspec/prop/set', { params: [{ did: d.did, siid: c.siid, piid: c.piid, value: value }] })
+      .then(function (j) {
+        var r0 = Array.isArray(j.result) ? j.result[0] : j.result
+        var ok = j.code === 0 && (!r0 || r0.code === 0)
+        if (ok) { toast('已设置'); setTimeout(function () { refreshDevice(d) }, 600); return }
+        var code = (r0 && r0.code !== undefined && r0.code !== 0) ? r0.code : j.code
+        toast('设置失败：' + miErrText(code, j.message === 'ok' ? '' : j.message))
+        revert()
+      })
+      .catch(function (e) {
+        toast('网络错误：' + e.message)
+        revert()
+      })
+      .then(done, done)
   }
 
   window.refreshAll = function () {
@@ -663,6 +779,10 @@
     })
     if (!reads.length) return
     miCall('/miotspec/prop/get', { params: reads.slice(0, 40) }).then(function (j) {
+      if (j.code === 401 || j.code === 3) {
+        showDeviceError('登录凭证已失效（code ' + j.code + '），请点右上角「退出登录」重新扫码。')
+        return
+      }
       if (j.code !== 0 || !j.result) return
       j.result.forEach(function (r) {
         if (r.code !== 0) return
@@ -671,6 +791,7 @@
           if (c.kind === 'bool') c.el.checked = !!r.value
           else if (c.kind === 'range') { c.el.value = r.value; if (c.rvEl) c.rvEl.textContent = String(r.value) }
           else if (c.kind === 'enum' && r.value !== null && r.value !== undefined) c.el.value = String(r.value)
+          if (r.value !== null && r.value !== undefined) c.el.dataset.prev = String(r.value)
         })
       })
     }).catch(function () {})
@@ -679,6 +800,8 @@
   // ---- 调试 ----
   window.debugCall = function () {
     var path = $('dbgPath').value.trim()
+    if (!path) { $('dbgOut').style.display = 'block'; $('dbgOut').textContent = '请填写路径'; return }
+    path = path.replace(/^\/?app\//i, '').replace(/^\/+/, '')   // 兼容用户填 /app/miio/call 或 miio/call
     var data
     try { data = JSON.parse($('dbgData').value) } catch (e) { $('dbgOut').style.display = 'block'; $('dbgOut').textContent = 'data JSON 解析失败'; return }
     api('app/' + path.replace(/^\/+/, ''), {
@@ -687,6 +810,9 @@
     }).then(asJson).then(function (j) {
       $('dbgOut').style.display = 'block'
       $('dbgOut').textContent = JSON.stringify(j, null, 2)
+    }).catch(function (e) {
+      $('dbgOut').style.display = 'block'
+      $('dbgOut').textContent = '请求失败：' + e.message
     })
   }
 

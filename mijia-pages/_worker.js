@@ -151,8 +151,9 @@ async function pollQRCode(lp, deviceId) {
 // ---------- 米家 API 签名转发 ----------
 async function proxyMiAPI(request, path) {
   const bodyJson = await request.json()
-  const { userId, serviceToken, deviceId, securityToken, data } = bodyJson || {}
-  if (!userId || !serviceToken || !deviceId || !securityToken || data === undefined) {
+  const { userId, serviceToken, securityToken, data } = bodyJson || {}
+  const deviceId = (bodyJson && bodyJson.deviceId) || randomString(16)
+  if (!userId || !serviceToken || !securityToken || data === undefined) {
     return json({ error: '缺少身份验证信息或 data 字段' }, 400)
   }
   const miPath = path.replace(/^\/app/, '')
@@ -172,8 +173,11 @@ async function proxyMiAPI(request, path) {
     },
     body: formParams
   })
-  const respHeaders = new Headers(remote.headers)
-  Object.entries(cors()).forEach(([k, v]) => respHeaders.set(k, v))
+  // 只回传内容，不转发上游的 set-cookie / 压缩头，避免边缘节点二次处理出错
+  const respHeaders = {
+    'Content-Type': remote.headers.get('content-type') || 'application/json; charset=UTF-8',
+    ...cors()
+  }
   return new Response(remote.body, { status: remote.status, headers: respHeaders })
 }
 
@@ -221,8 +225,15 @@ async function handle(request, env) {
   if (request.method === 'GET' && sub === '/api/spec') {
     const type = url.searchParams.get('type') || ''
     if (!type.startsWith('urn:miot-spec')) return json({ error: '非法 type' }, 400)
-    const r = await fetch(SPEC_HOST + '/miot-spec-v2/instance?type=' + encodeURIComponent(type))
-    return new Response(r.body, { status: r.status, headers: { 'Content-Type': 'application/json; charset=UTF-8', ...cors() } })
+    const target = SPEC_HOST + '/miot-spec-v2/instance?type=' + encodeURIComponent(type)
+    const r = await fetch(target, { headers: { 'User-Agent': DEFAULT_UA } })
+    const text = await r.text()
+    try {
+      const parsed = JSON.parse(text)          // 规格不存在时上游返回纯文本 data not found
+      return json(parsed)
+    } catch (e) {
+      return json({ error: '该规格在 miot-spec 上不存在', detail: text.slice(0, 80) }, 404)
+    }
   }
 
   // 米家 API 签名转发
@@ -247,6 +258,6 @@ export default {
     } catch (e) {
       return json({ error: e.message }, 500)
     }
-    return env.ASSETS.fetch(request) // 静态资源（index.html 等）
+    return env && env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not Found', { status: 404 })
   }
 }
