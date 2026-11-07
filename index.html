@@ -5439,12 +5439,23 @@ if(navDrop&&navDropBtn){
       if(e.target.closest(".nav-menu-item"))closeNavDrop();
     });
   }
-  /* 导航项在两种特殊状态下不按原链接跳转，而是平滑回顶：
-     ① 已经形变成箭头（首页 / 项目 / 关于 / 记录都有可能）；
+  /* 导航项在几种特殊状态下不按原链接跳转，而是平滑回顶：
+     ① 已经形变成箭头（只在单篇博客文章页出现）；
      ② 已在首页时点「首页 / 站点名」——不必再往地址栏写一个 #/（会多出一条历史记录），
-        地址保持 https://jype.top/ 这种干净形态 */
+        地址保持 https://jype.top/ 这种干净形态；
+     ③ 已在博客列表 / 相册页时点下拉菜单里的「博客 / 相册」——hash 没变不会触发路由，
+        浏览器自己也不会滚，这里拦下来平滑滚回该页最顶上
+        （子相册除外：从 #/gallery/xxx 点「相册」要真的切回全部相册，得让 hash 变化走路由） */
   document.addEventListener("click",e=>{
     if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
+    const mi=e.target.closest("a.nav-menu-item");
+    if(mi){
+      const h=mi.getAttribute("href"),cur=location.hash||"#/";
+      const same=(h==="#/blog"&&(cur==="#/blog"||cur==="#/blog/"))||
+                 (h==="#/gallery"&&(cur==="#/gallery"||cur==="#/gallery/"));
+      if(same){ e.preventDefault(); glideTo(0,600); }
+      return;
+    }
     const a=e.target.closest("a.nav-link, a.nav-brand");
     if(!a)return;
     if(a.classList.contains("to-top")){ e.preventDefault(); glideTo(0,720); return; }
