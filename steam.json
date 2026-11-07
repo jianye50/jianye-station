@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-07T06:55:43.497Z",
+  "updated": "2026-11-07T13:51:07.434Z",
   "source": "api",
   "player": {
     "name": "鉴业",
@@ -7,26 +7,47 @@
     "url": "https://steamcommunity.com/id/aimjianye/"
   },
   "totalGames": 43,
-  "hours2weeks": 13.95,
+  "hours2weeks": 14.066666666666666,
   "friends": [
+    {
+      "name": "hhhx",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
+      "state": 1,
+      "playing": "Party Animals"
+    },
     {
       "name": "UxwxU",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
       "profile": "https://steamcommunity.com/profiles/76561198774453253/",
       "state": 1,
-      "playing": null
-    },
-    {
-      "name": "刘海柱",
-      "avatar": "https://avatars.steamstatic.com/5650a856c0bd7c678378e9895afec491786ce595_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199193111913/",
-      "state": 0,
-      "playing": null
+      "playing": "Cake Bash"
     },
     {
       "name": "HYJ",
       "avatar": "https://avatars.steamstatic.com/6717ab4263dcfca8866a1d344f75e427acaf9a5b_medium.jpg",
       "profile": "https://steamcommunity.com/id/JINGTIANHAOKUN123/",
+      "state": 1,
+      "playing": "Draw & Guess"
+    },
+    {
+      "name": "昨夜星辰昨夜风",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199085560012/",
+      "state": 1,
+      "playing": "PUBG: BATTLEGROUNDS"
+    },
+    {
+      "name": "仙阁小斑",
+      "avatar": "https://avatars.steamstatic.com/51bb78fd07a616dffa959c285ad0951a7ece4680_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199768600704/",
+      "state": 1,
+      "playing": null
+    },
+    {
+      "name": "Lu",
+      "avatar": "https://avatars.steamstatic.com/b72e7a6487c6bd07eb5e95c24474fed86f320b93_medium.jpg",
+      "profile": "https://steamcommunity.com/id/lunacult/",
       "state": 0,
       "playing": null
     },
@@ -38,16 +59,9 @@
       "playing": null
     },
     {
-      "name": "hhhx",
+      "name": "chenchenwhr",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "仙阁小斑",
-      "avatar": "https://avatars.steamstatic.com/51bb78fd07a616dffa959c285ad0951a7ece4680_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199768600704/",
+      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
       "state": 0,
       "playing": null
     },
@@ -59,23 +73,9 @@
       "playing": null
     },
     {
-      "name": "昨夜星辰昨夜风",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199085560012/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "粥粥",
-      "avatar": "https://avatars.steamstatic.com/ccd744edbb55a43da7f2d094a9c41949205ab8e9_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199511370772/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "aztdndxg",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199876617412/",
+      "name": "刘海柱",
+      "avatar": "https://avatars.steamstatic.com/5650a856c0bd7c678378e9895afec491786ce595_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199193111913/",
       "state": 0,
       "playing": null
     },
@@ -94,23 +94,16 @@
       "playing": null
     },
     {
+      "name": "吻吻爱",
+      "avatar": "https://avatars.steamstatic.com/655d055db5b16899734d407e7c858cadde558703_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199376152675/",
+      "state": 0,
+      "playing": null
+    },
+    {
       "name": "wjiazheng2026",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
       "profile": "https://steamcommunity.com/profiles/76561198721612997/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "chenchenwhr",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "Lu",
-      "avatar": "https://avatars.steamstatic.com/b72e7a6487c6bd07eb5e95c24474fed86f320b93_medium.jpg",
-      "profile": "https://steamcommunity.com/id/lunacult/",
       "state": 0,
       "playing": null
     },
@@ -122,9 +115,16 @@
       "playing": null
     },
     {
-      "name": "吻吻爱",
-      "avatar": "https://avatars.steamstatic.com/655d055db5b16899734d407e7c858cadde558703_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199376152675/",
+      "name": "粥粥",
+      "avatar": "https://avatars.steamstatic.com/ccd744edbb55a43da7f2d094a9c41949205ab8e9_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199511370772/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "aztdndxg",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199876617412/",
       "state": 0,
       "playing": null
     }
@@ -135,8 +135,8 @@
       "name": "猛兽派对",
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/library_600x900.jpg",
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/header.jpg",
-      "hoursTotal": 479.1,
-      "hours2weeks": 10.7,
+      "hoursTotal": 479.2,
+      "hours2weeks": 10.8,
       "last": "11月7日"
     },
     {
@@ -219,8 +219,8 @@
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/library_600x900.jpg",
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/header.jpg",
       "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/1260320/capsule_184x69.jpg",
-      "hoursTotal": 479.1,
-      "hours2weeks": 10.7,
+      "hoursTotal": 479.2,
+      "hours2weeks": 10.8,
       "last": "",
       "achEarned": 116,
       "achTotal": 116
