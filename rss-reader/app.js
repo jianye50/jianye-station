@@ -198,7 +198,13 @@
       'sync.detail': '各订阅源最近一次抓取结果',
       'sync.now': '立即刷新全部',
       'sync.viaDirect': '直连',
+      'fail.timeout': '超时',
+      'fail.cors': '跨域拦截',
+      'fail.notXml': '不是订阅内容',
+      'fail.empty': '0 篇',
       'sync.viaProxy': '代理',
+      'sync.copyDiag': '复制诊断信息',
+      'sync.copied': '诊断信息已复制，可以直接发给我',
       'sync.viaJson': '公共接口·有缓存',
       'toast.badOpml': '无法解析这个 OPML 文件，请检查文件格式。',
       'toast.opmlNoFeed': '这个文件里没有找到订阅源，确认一下是不是 OPML 文件？',
@@ -432,7 +438,13 @@
       'sync.detail': 'Last fetch result for each feed',
       'sync.now': 'Refresh all now',
       'sync.viaDirect': 'direct',
+      'fail.timeout': 'timeout',
+      'fail.cors': 'blocked',
+      'fail.notXml': 'not a feed',
+      'fail.empty': 'empty',
       'sync.viaProxy': 'proxy',
+      'sync.copyDiag': 'Copy diagnostics',
+      'sync.copied': 'Diagnostics copied',
       'sync.viaJson': 'public API · cached',
       'toast.badOpml': 'Could not parse this OPML file. Please check the format.',
       'toast.opmlNoFeed': 'No feeds found in this file — is it really an OPML file?',
@@ -2222,33 +2234,35 @@
     return root.innerHTML;
   }
 
-  /* 抓取链路。顺序很重要：
-     1) 直连：源站自己带 CORS 头时最快，也一定是最新的；
-     2) corsfix 代理：把源站原文原样转回来（不缓存、无需密钥），绝大多数源靠它拿到最新内容；
-     3) rss2json：把 RSS 转成 JSON，稳定但有自己的缓存（十几分钟），只作兜底；
-     4) allorigins / corsproxy：目前多半已失效，留作最后的尝试。
-     注：添加订阅源、手动刷新、自动刷新全都走这一条链路，不分叉。 */
+  /* 抓取链路（和 Fluent Reader 一样的思路：直接拿源站原文，不依赖会缓存的第三方接口）。
+     浏览器有跨域限制，所以「直连」和「代理」必须并发跑：
+       - 直连：源站自己带 CORS 头时最快，内容一定是最新的；
+       - corsfix：把源站原文原样转回来（不缓存、不需要密钥），大多数源靠它；
+       - allorigins / codetabs：多半已失效，但反正并发跑，失败也不额外花时间；
+     直连和代理都拿不到时，才退到 rss2json（它有自己的缓存，会有十几分钟延迟）。
+     添加订阅源、单源刷新、顶部刷新按钮、自动刷新、导入后补抓，全部走 fetchFeed()。 */
   const ENDPOINT_PROXY_JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
   const ENDPOINT_CORSFIX = 'https://proxy.corsfix.com/?';
 
   /* rss2json 免费额度有限（约 60 次/分钟），被限流后先歇 10 分钟，别把额度耗光 */
   let rss2jsonDownUntil = 0;
 
-  function fetchEndpoints(url) {
+  /* 能拿到「源站原文」的通道，并发赛跑 */
+  function freshEndpoints(url) {
     const enc = encodeURIComponent(url);
-    const list = [
+    return [
       { kind: 'xml', tag: 'direct', timeout: 7000, href: url },
-      /* 这个代理要的是原样地址（不能再编码一次），带查询参数的源也能透传 */
-      { kind: 'xml', tag: 'corsfix', timeout: 14000, href: ENDPOINT_CORSFIX + url.replace(/ /g, '%20'), retry: true }
+      /* 这个代理要原样地址（不能再编码一次），带查询参数的源也能透传 */
+      { kind: 'xml', tag: 'corsfix', timeout: 12000, retry: true, href: ENDPOINT_CORSFIX + url.replace(/ /g, '%20') },
+      { kind: 'xml', tag: 'allorigins', timeout: 6000, href: 'https://api.allorigins.win/raw?url=' + enc },
+      { kind: 'xml', tag: 'codetabs', timeout: 6000, href: 'https://api.codetabs.com/v1/proxy?quest=' + enc }
     ];
-    if (Date.now() > rss2jsonDownUntil) {
-      list.push({ kind: 'json', tag: 'json', timeout: 11000, href: ENDPOINT_PROXY_JSON + enc + '&count=50' });
-    }
-    list.push(
-      { kind: 'xml', tag: 'allorigins', timeout: 5000, href: 'https://api.allorigins.win/raw?url=' + enc },
-      { kind: 'xml', tag: 'corsproxy', timeout: 5000, href: 'https://corsproxy.io/?url=' + enc }
-    );
-    return list;
+  }
+
+  /* 有缓存但很稳的接口，最后兜底 */
+  function cachedEndpoints(url) {
+    const enc = encodeURIComponent(url);
+    return [{ kind: 'json', tag: 'json', timeout: 11000, href: ENDPOINT_PROXY_JSON + enc + '&count=50' }];
   }
 
   /* rss2json 的 JSON 转成统一的 items 结构 */
@@ -2298,16 +2312,24 @@
     };
   }
 
-  /* 只发一次请求，成功返回解析结果，失败返回 null。
-     corsfix 偶尔会甩 5xx，所以带了 retry 标记的通道再试一次。 */
-  async function tryEndpoint(ep, url) {
+  /* 打一条通道，返回 { result, status }；status 用来在诊断菜单里显示原因 */
+  async function attemptEndpoint(ep, url, signal) {
     const attempts = ep.retry ? 2 : 1;
+    let last = 'unknown';
     for (let n = 0; n < attempts; n++) {
-      const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), ep.timeout);
+      const ctrl = new AbortController();
+      let timedOut = false;
+      const timer = window.setTimeout(() => {
+        timedOut = true;
+        ctrl.abort();
+      }, ep.timeout);
+      /* 外层中止（别的通道先成功了）也要跟着停 */
+      const onOuterAbort = () => ctrl.abort();
+      if (signal) signal.addEventListener('abort', onOuterAbort);
+
       try {
         const res = await fetch(ep.href, {
-          signal: controller.signal,
+          signal: ctrl.signal,
           mode: 'cors',
           credentials: 'omit',
           cache: 'no-store'
@@ -2315,11 +2337,11 @@
         window.clearTimeout(timer);
 
         if (!res.ok) {
+          last = 'HTTP ' + res.status;
           if (ep.kind === 'json' && (res.status === 429 || res.status === 403)) {
             rss2jsonDownUntil = Date.now() + 10 * 60 * 1000;
           }
-          if (n < attempts - 1) continue;
-          return null;
+          continue;
         }
 
         if (ep.kind === 'json') {
@@ -2327,50 +2349,85 @@
           try {
             data = await res.json();
           } catch (err) {
-            if (n < attempts - 1) continue;
-            return null;
+            last = 'bad json';
+            continue;
           }
           const parsedJson = itemsFromRss2Json(data, url);
           if (parsedJson && parsedJson.items.length) {
             parsedJson.channel = ep.tag;
-            return parsedJson;
+            return { result: parsedJson, status: 'ok' };
           }
           if (data && data.status === 'error' && /limit|quota|rate/i.test(String(data.message || ''))) {
             rss2jsonDownUntil = Date.now() + 10 * 60 * 1000;
           }
-          if (n < attempts - 1) continue;
-          return null;
+          last = data && data.status === 'error' ? 'error' : 'empty';
+          continue;
         }
 
         const text = await res.text();
-        /* 代理挂了有时会返回一个 HTML 错误页，别把它当订阅源解析 */
+        /* 代理挂了有时返回 HTML 错误页，别把它当订阅源解析 */
         if (!/<\?xml|<rss|<feed|<rdf:RDF/i.test(text.slice(0, 600))) {
-          if (n < attempts - 1) continue;
-          return null;
+          last = 'not xml';
+          continue;
         }
         const parsed = parseFeedXml(text, url);
         if (parsed && parsed.items.length) {
           parsed.channel = ep.tag;
-          return parsed;
+          return { result: parsed, status: 'ok' };
         }
-        if (n < attempts - 1) continue;
-        return null;
+        last = 'no items';
       } catch (err) {
         window.clearTimeout(timer);
-        if (n < attempts - 1) continue;
-        return null;
+        last = timedOut ? 'timeout' : 'CORS/network';
+      } finally {
+        if (signal) signal.removeEventListener('abort', onOuterAbort);
       }
     }
-    return null;
+    return { result: null, status: last };
   }
 
-  /* 所有抓取入口（添加订阅源 / 单源刷新 / 全部刷新 / 自动刷新）都调它，
-     保证行为完全一致：同一条链路、同样的解析、同样的去重。 */
-  async function fetchFeed(url) {
-    const endpoints = fetchEndpoints(url);
-    for (let i = 0; i < endpoints.length; i++) {
-      const result = await tryEndpoint(endpoints[i], url);
-      if (result) return result;
+  /* 一组通道并发赛跑：第一个成功的立刻返回，其余全部中止 */
+  function raceEndpoints(endpoints, url, trail) {
+    return new Promise((resolve) => {
+      if (!endpoints.length) {
+        resolve(null);
+        return;
+      }
+      const ctrls = endpoints.map(() => new AbortController());
+      let left = endpoints.length;
+      let settled = false;
+
+      endpoints.forEach((ep, i) => {
+        attemptEndpoint(ep, url, ctrls[i].signal).then((out) => {
+          if (trail) trail.push({ tag: ep.tag, status: out.status });
+          if (settled) return;
+          if (out.result) {
+            settled = true;
+            ctrls.forEach((c, j) => {
+              if (j !== i) c.abort();
+            });
+            resolve(out.result);
+            return;
+          }
+          left--;
+          if (left === 0) {
+            settled = true;
+            resolve(null);
+          }
+        });
+      });
+    });
+  }
+
+  /* 所有抓取入口都调它，保证行为完全一致。
+     trail 可选，传进来会记录每条通道的结果，用于侧边栏的诊断菜单。 */
+  async function fetchFeed(url, trail) {
+    const marks = trail || [];
+    const fresh = await raceEndpoints(freshEndpoints(url), url, marks);
+    if (fresh) return fresh;
+    if (Date.now() > rss2jsonDownUntil) {
+      const cached = await raceEndpoints(cachedEndpoints(url), url, marks);
+      if (cached) return cached;
     }
     return null;
   }
@@ -2498,10 +2555,14 @@
     toast(fmt(t('toast.refreshing'), { name: f.title }));
     setRefreshBusy(true);
     renderSyncLine({ done: 0, total: 1 });
-    const result = await fetchFeed(f.url);
+    const trail = [];
+    const result = await fetchFeed(f.url, trail);
     setRefreshBusy(false);
     if (!result) {
-      feedHealth[f.id] = { at: Date.now(), ok: false, tag: '', items: 0 };
+      feedHealth[f.id] = {
+        at: Date.now(), ok: false, tag: '', items: 0,
+        trail: trail.filter((x) => x.status !== 'ok')
+      };
       renderSyncLine();
       toast(t('toast.refreshFail'));
       return;
@@ -2527,6 +2588,22 @@
   /* 每个源最近一次抓取的结果（只在内存里，用于状态行和诊断菜单） */
   const feedHealth = Object.create(null);
   let lastFailToastAt = 0;
+
+  /* 通道 / 失败原因的中文标签，给诊断菜单用 */
+  function channelLabel(tag) {
+    return tag === 'direct' ? t('sync.viaDirect')
+      : tag === 'corsfix' ? t('sync.viaProxy')
+      : tag === 'json' ? t('sync.viaJson')
+      : tag || '';
+  }
+
+  function failLabel(status) {
+    if (status === 'timeout') return t('fail.timeout');
+    if (status === 'CORS/network') return t('fail.cors');
+    if (status === 'not xml') return t('fail.notXml');
+    if (status === 'no items' || status === 'empty') return t('fail.empty');
+    return String(status || '');
+  }
 
   function fmtClock(ts) {
     const d = new Date(ts);
@@ -2568,6 +2645,51 @@
     );
   }
 
+  /* 拼一份能直接发出去的诊断信息 */
+  function diagText() {
+    const lines = [
+      '鉴业阅读 · 抓取诊断 ' + new Date().toLocaleString('zh-CN'),
+      '页面地址: ' + location.href,
+      '在线: ' + (navigator.onLine ? '是' : '否')
+    ];
+    S.feeds.forEach((f) => {
+      const h = feedHealth[f.id];
+      let line = '- ' + f.title + '  ' + f.url + '  =>  ';
+      if (!h) line += '本轮还没抓过';
+      else if (h.ok) line += '✓ ' + fmtClock(h.at) + ' · ' + h.items + ' 篇 · ' + channelLabel(h.tag);
+      else {
+        const why = (h.trail || []).map((x) => channelLabel(x.tag) + ':' + failLabel(x.status)).join(' / ');
+        line += '✕ ' + fmtClock(h.at) + (why ? ' · ' + why : '（没有记录到具体原因）');
+      }
+      lines.push(line);
+    });
+    return lines.join('\n');
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+      return;
+    }
+    fallbackCopy(text);
+  }
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+    } catch (err) {
+      /* 复制失败就退化成提示，不影响使用 */
+    }
+    document.body.removeChild(ta);
+  }
+
   /* 点状态行：有失败就列出每个源的结果，否则直接刷新 */
   function syncStatusMenu() {
     if (refreshAllRunning) {
@@ -2587,12 +2709,12 @@
       const h = feedHealth[f.id];
       let hint = '—';
       if (h) {
-        const via =
-          h.tag === 'direct' ? t('sync.viaDirect')
-          : h.tag === 'corsfix' ? t('sync.viaProxy')
-          : h.tag === 'json' ? t('sync.viaJson')
-          : '';
-        hint = (h.ok ? '✓ ' : '✕ ') + fmtClock(h.at) + (h.ok ? ' · ' + h.items + (via ? ' · ' + via : '') : '');
+        if (h.ok) {
+          hint = '✓ ' + fmtClock(h.at) + ' · ' + h.items + ' · ' + channelLabel(h.tag);
+        } else {
+          const why = (h.trail || []).map((x) => channelLabel(x.tag) + ' ' + failLabel(x.status)).join('，');
+          hint = '✕ ' + fmtClock(h.at) + (why ? ' · ' + why : '');
+        }
       }
       items.push({
         label: f.title,
@@ -2602,6 +2724,14 @@
           refreshFeed(f.id);
         }
       });
+    });
+    items.push({ divider: true });
+    items.push({
+      label: t('sync.copyDiag'),
+      onClick: () => {
+        copyText(diagText());
+        toast(t('sync.copied'));
+      }
     });
     openMenu(syncLine, items, { iconSpace: true });
   }
@@ -2640,13 +2770,17 @@
         const f = queue.shift();
         if (!f) return;
         if (!feedById(f.id)) continue; /* 抓取过程中被删除 */
-        const result = await fetchFeed(f.url);
+        const trail = [];
+        const result = await fetchFeed(f.url, trail);
         if (result) {
           added += mergeFeedArticles(f, result);
           feedHealth[f.id] = { at: Date.now(), ok: true, tag: result.channel || '', items: result.items.length };
         } else {
           failed++;
-          feedHealth[f.id] = { at: Date.now(), ok: false, tag: '', items: 0 };
+          feedHealth[f.id] = {
+            at: Date.now(), ok: false, tag: '', items: 0,
+            trail: trail.filter((x) => x.status !== 'ok')
+          };
         }
         done++;
         renderSyncLine({ done: done, total: total });
