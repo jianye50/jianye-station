@@ -82,11 +82,11 @@
 <meta name="twitter:card" content="summary_large_image">
 <!-- 规范地址：hash 路由的 #/xxx 都是同一个文档，统一指向站点根。
      由 profile.txt 的「域名」在 JS 里生成；没配域名就不输出 canonical -->
-<!-- 订阅源：中文 rss.xml / 英文 rss-en.xml，都由 GitHub Action 在每次发文后
+<!-- 订阅源：中文 rss-zh.xml / 英文 rss-en.xml，都由 GitHub Action 在每次发文后
      自动重建（scripts/gen-blog-index.mjs 顺手产出）；
      这里只是告诉阅读器这两个地址的存在，hreflang 标出各自语言。
-     都是相对路径，换域名无需改；中文那条运行时会按 profile.txt 的「订阅」校正 -->
-<link rel="alternate" type="application/rss+xml" hreflang="zh-CN" href="rss.xml">
+     都是相对路径，换域名无需改；两条运行时都会按 profile.txt 的「订阅 / 英文订阅」校正 -->
+<link rel="alternate" type="application/rss+xml" hreflang="zh-CN" href="rss-zh.xml">
 <link rel="alternate" type="application/rss+xml" hreflang="en" href="rss-en.xml">
 <!-- 首屏大图所在的图床，提前建连 -->
 <link rel="preconnect" href="https://images.unsplash.com" crossorigin>

@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /* =====================================================================
- * 生成博客清单 blog/index.json（部署加速用）+ 订阅源（默认 rss.xml / rss-en.xml）
+ * 生成博客清单 blog/index.json（部署加速用）+ 订阅源（默认 rss-zh.xml / rss-en.xml）
  *
  * 作用：扫描 blog/ 里的文章文件夹（含 index.md）和散篇 .md，
  *       解析 front matter，输出整份列表清单。
  *       网站部署后优先读这份清单——一次几 KB 的请求就能渲染列表，
  *       顺手产出订阅源：中文 / 英文各一份，站点地址 / 站名 / 描述取自 profile.txt，
  *       文件名与位置也认 profile.txt 的「订阅」「英文订阅」（默认仓库根目录的
- *       rss.xml / rss-en.xml），文章与清单同源，发文后一起自动更新。
+ *       rss-zh.xml / rss-en.xml），文章与清单同源，发文后一起自动更新。
  *
  * 运行方式（二选一，都能实现「发文后自动更新」）：
  *   A. Cloudflare Pages 构建命令填：node scripts/gen-blog-index.mjs
@@ -208,7 +208,7 @@ if (sharp) {
   console.log("! 未安装 sharp，跳过缩略图（可运行 npm install sharp 后重试）");
 }
 
-/* ---------- 生成订阅源（rss.xml 中文 / rss-en.xml 英文）----------
+/* ---------- 生成订阅源（rss-zh.xml 中文 / rss-en.xml 英文）----------
  * 数据源就是上面刚扫出来的 posts，与网站列表逐字段同源，
  * 不会出现「列表里有、订阅里没有」。
  * 站点地址 / 站名 / 描述全部读 profile.txt（脚本里不写死任何个人信息）；
@@ -254,7 +254,7 @@ const feedPath = v => {
   if (!s || /(^|\/)\.\.(\/|$)/.test(s)) return "";   /* 不许跑出仓库根 */
   return s;
 };
-let FEED_ZH = feedPath(profCi("订阅", "rss", "feed", "订阅地址")) || "rss.xml";
+let FEED_ZH = feedPath(profCi("订阅", "rss", "feed", "订阅地址")) || "rss-zh.xml";
 let FEED_EN = feedPath(profCi("英文订阅", "rss-en", "feed-en")) || "rss-en.xml";
 if (FEED_EN === FEED_ZH) {
   console.warn(`! 「订阅」与「英文订阅」指向同一个文件（${FEED_ZH}），英文源改用 rss-en.xml`);
@@ -347,6 +347,40 @@ ${items}
     writeFileSync(path, xml, "utf8");
     changed.push(file);
     console.log(`✓ ${file} 已生成（${Math.min(posts.length, RSS_LIMIT)} 条 → ${origin}/${file}）`);
+  }
+  /* 老地址留一条搬迁公告：中文源改名成 rss-zh.xml 之后，原来的 /rss.xml
+     不能一声不响地变成 404 —— 已经订阅过的人不会收到任何提示，就静默失联了。
+     这里只在「旧文件还在」时把它替换成一条指向新地址的公告；
+     你要是把 rss.xml 删掉，脚本也不会再造出来。 */
+  const LEGACY = "rss.xml";
+  const legacyPath = join(root, LEGACY);
+  if (FEED_ZH !== LEGACY && FEED_EN !== LEGACY && existsSync(legacyPath)) {
+    const to = absPath(FEED_ZH);
+    const noteName = plain(profCi("站名", "brand", "sitename")) || "RSS";
+    const note = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>${esc(noteName + " · 订阅地址已更新")}</title>
+    <link>${esc(origin + "/")}</link>
+    <atom:link href="${esc(absPath(LEGACY))}" rel="self" type="application/rss+xml"/>
+    <description>中文订阅源已迁移到 ${esc(to)}，请在阅读器里改用新地址。</description>
+    <language>zh-CN</language>
+    <item>
+      <title>订阅地址已更新：中文源改用 ${esc(FEED_ZH)}</title>
+      <link>${esc(to)}</link>
+      <guid isPermaLink="false">${esc(to)}</guid>
+      <description><![CDATA[<p>中文订阅源换成了带语言标识的文件名，请在阅读器里把地址改成 <a href="${esc(to)}">${esc(to)}</a>。</p>]]></description>
+    </item>
+  </channel>
+</rss>
+`;
+    let prevNote = null;
+    try { prevNote = readFileSync(legacyPath, "utf8"); } catch (e) {}
+    if (prevNote !== note) {
+      writeFileSync(legacyPath, note, "utf8");
+      changed.push(LEGACY);
+      console.log(`✓ ${LEGACY} 已替换为搬迁公告（指向 ${origin}/${FEED_ZH}）`);
+    }
   }
   if (changed.length) {
     /* 自己把文件放进暂存区：两个 workflow 的提交步骤只 add 了 blog/ 下的路径，
