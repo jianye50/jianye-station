@@ -175,6 +175,11 @@
       'toast.imported': '已导入 {n} 个订阅源{skip}',
       'toast.importSkipped': '，跳过 {n} 个重复项',
       'toast.importProgress': '正在抓取订阅源 {done}/{total}…',
+      'toast.refreshingAll': '正在刷新 {n} 个订阅源…',
+      'toast.refreshProgress': '正在刷新订阅源 {done}/{total}…',
+      'toast.refreshAllNew': '已刷新 {n} 个源，新增 {got} 篇文章',
+      'toast.refreshAllNone': '已刷新 {n} 个源，都是最新的',
+      'toast.refreshAllFail': '刷新失败：可能是浏览器跨域限制或网络问题。',
       'toast.badOpml': '无法解析这个 OPML 文件，请检查文件格式。',
       'toast.readFail': '读取文件失败',
       'toast.exported': '已导出 {n} 个订阅源',
@@ -376,6 +381,11 @@
       'toast.imported': 'Imported {n} feeds{skip}',
       'toast.importSkipped': ', skipped {n} duplicates',
       'toast.importProgress': 'Fetching feeds {done}/{total}…',
+      'toast.refreshingAll': 'Refreshing {n} feeds…',
+      'toast.refreshProgress': 'Refreshing feeds {done}/{total}…',
+      'toast.refreshAllNew': 'Refreshed {n} feeds, {got} new articles',
+      'toast.refreshAllNone': 'Refreshed {n} feeds, already up to date',
+      'toast.refreshAllFail': 'Refresh failed: CORS limits or a network issue.',
       'toast.badOpml': 'Could not parse this OPML file. Please check the format.',
       'toast.readFail': 'Failed to read the file',
       'toast.exported': 'Exported {n} feeds',
@@ -2248,6 +2258,73 @@
     toast(added ? fmt(t('toast.fetched'), { n: added }) : t('toast.upToDate'));
   }
 
+  /* 一次性刷新全部订阅源：并发 4 条，边抓边渲染，失败不影响其他源 */
+  let refreshAllRunning = false;
+  let lastRefreshAllAt = 0; /* 上次刷新时间，避免切标签页时反复抓取 */
+
+  async function refreshAllFeeds(opts) {
+    const o = opts || {};
+    if (refreshAllRunning) return null;
+    if (o.auto && navigator.onLine === false) return null; /* 离线时不空跑一遍 */
+    const feeds = S.feeds.slice();
+    if (!feeds.length) return null;
+
+    refreshAllRunning = true;
+    lastRefreshAllAt = Date.now();
+
+    const total = feeds.length;
+    const showProgress = !o.auto && total >= 4;
+    let done = 0;
+    let added = 0;
+    let failed = 0;
+    let lastPaint = 0;
+
+    if (showProgress) toast(fmt(t('toast.refreshingAll'), { n: total }));
+
+    const queue = feeds.slice();
+    const worker = async () => {
+      for (;;) {
+        const f = queue.shift();
+        if (!f) return;
+        if (!feedById(f.id)) continue; /* 抓取过程中被删除 */
+        const result = await fetchFeed(f.url);
+        if (result) added += mergeFeedArticles(f, result);
+        else failed++;
+        done++;
+
+        /* 有新文章时增量刷新列表，别等全部源抓完才显示；
+           只刷导航和列表，避免打断正在读的文章（重绘阅读区会丢滚动位置） */
+        if (added && Date.now() - lastPaint > 800) {
+          lastPaint = Date.now();
+          renderSidebar();
+          renderList({ keepScroll: true });
+        }
+        if (showProgress) toast(fmt(t('toast.refreshProgress'), { done: done, total: total }));
+      }
+    };
+
+    const lanes = [];
+    const laneCount = Math.min(4, total);
+    for (let i = 0; i < laneCount; i++) lanes.push(worker());
+    try {
+      await Promise.all(lanes);
+    } finally {
+      refreshAllRunning = false;
+    }
+
+    if (added) {
+      persist();
+      renderSidebar();
+      renderList({ keepScroll: true });
+      toast(fmt(t('toast.refreshAllNew'), { n: total, got: added }));
+    } else if (failed === total) {
+      if (!o.auto) toast(t('toast.refreshAllFail'));
+    } else if (!o.auto) {
+      toast(fmt(t('toast.refreshAllNone'), { n: total }));
+    }
+    return { added: added, failed: failed, total: total };
+  }
+
   /* ---------------- 添加订阅源 ---------------- */
   function openFeedDialog(presetUrl, presetCategory) {
     feedForm.reset();
@@ -2906,7 +2983,25 @@
     viewMeta.setAttribute('aria-live', 'polite');
 
     if (!localStorage.getItem(STORAGE_KEY)) saveNow();
+
+    /* 每次进入页面自动刷新全部订阅源（延迟一点，先让首屏渲染完成） */
+    window.setTimeout(() => {
+      refreshAllFeeds({ auto: true });
+    }, 300);
   }
+
+  /* 从往返缓存（浏览器前进/后退）恢复时也刷新一次 */
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) refreshAllFeeds({ auto: true });
+  });
+
+  /* 标签页在后台待久了、重新切回来时刷新一次；10 分钟内不重复抓取 */
+  const REFRESH_ON_VISIBLE_MS = 10 * 60 * 1000;
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (Date.now() - lastRefreshAllAt < REFRESH_ON_VISIBLE_MS) return;
+    refreshAllFeeds({ auto: true });
+  });
 
   boot();
 })();
