@@ -2337,7 +2337,7 @@ const I18N={
       machineTrans:"机器翻译",
       trFail:"自动翻译暂不可用",
       trRetry:"重试",
-      rssTip:"订阅 RSS：新文章自动推送"
+      rssTip:"订阅 RSS（中文源）· 想看英文源就切到 EN 再点一次"
     },
     about:{
       title:"关于",
@@ -2411,7 +2411,7 @@ const I18N={
       machineTrans:"Machine-translated",
       trFail:"Auto-translation unavailable",
       trRetry:"Retry",
-      rssTip:"Subscribe via RSS: new posts, pushed to you"
+      rssTip:"Subscribe via RSS (English feed) · switch to 中 for the Chinese one"
     },
     about:{
       title:"About",
@@ -4271,10 +4271,12 @@ window.addEventListener("bloglist",()=>{
   const sub=document.getElementById("blogSub");
   if(sub&&!blogQuery)sub.textContent=T().blog.sub(blogPosts.length);
 });
-/* RSS 订阅按钮：地址来自 profile.txt 的「订阅」，没配就整块不出现。
-   文案也只在渲染时取一次，切语言重绘博客页时自然跟着换 */
+/* RSS 订阅按钮：跟着界面语言走 —— 中文界面给中文源、英文界面给英文源，
+   地址都来自 profile.txt 的「订阅 / 英文订阅」；两边都没配就整块不出现。
+   英文源没配时退回中文源，总比按钮点不开强 */
 function rssBtnHTML(){
-  const u=feedHref();
+  const zh=feedHref(), en=feedHref(SITE.feedEn);
+  const u=(lang==="en"&&en)?en:(zh||en);
   if(!u)return "";
   const tip=esc(T().blog.rssTip);
   return `<a class="blog-rss" href="${esc(u)}" target="_blank" rel="noopener"
