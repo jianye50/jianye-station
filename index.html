@@ -82,9 +82,11 @@
 <meta name="twitter:card" content="summary_large_image">
 <!-- 规范地址：hash 路由的 #/xxx 都是同一个文档，统一指向站点根。
      由 profile.txt 的「域名」在 JS 里生成；没配域名就不输出 canonical -->
-<!-- 订阅源：rss.xml 由 GitHub Action 在每次发文后自动重建
-     （scripts/gen-blog-index.mjs 顺手产出），这里只是告诉阅读器去哪找 -->
-<link rel="alternate" type="application/rss+xml" href="rss.xml">
+<!-- 订阅源：中文 rss.xml / 英文 rss-en.xml，都由 GitHub Action 在每次发文后
+     自动重建（scripts/gen-blog-index.mjs 顺手产出）；
+     这里只是告诉阅读器这两个地址的存在，hreflang 标出各自语言 -->
+<link rel="alternate" type="application/rss+xml" hreflang="zh-CN" href="rss.xml">
+<link rel="alternate" type="application/rss+xml" hreflang="en" href="rss-en.xml">
 <!-- 首屏大图所在的图床，提前建连 -->
 <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
 <!-- 相册的 GitHub API 兜底通道，提前建连 -->
@@ -1374,7 +1376,7 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 }
 /* ---------- 博客搜索框 ---------- */
 .blog-search{display:flex;align-items:center;gap:12px;margin:0 0 18px}
-.bs-box{position:relative;flex:1;max-width:460px}
+.bs-box{position:relative;flex:1;min-width:0;max-width:460px}
 .bs-box>svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);
   width:16px;height:16px;color:var(--text-3);pointer-events:none;transition:color .2s}
 .bs-box:focus-within>svg{color:var(--accent)}
@@ -1394,9 +1396,19 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 .bs-count{font-size:12.5px;color:var(--text-3);white-space:nowrap}
 .bs-kbd{flex:none;margin-left:auto;font-size:11.5px;color:var(--text-3);border:1px solid var(--card-border);
   border-radius:6px;padding:2px 7px;line-height:1.5;user-select:none}
+/* 搜索行最右侧的 RSS 订阅入口：克制的小胶囊，和输入框同一套边框/底色 */
+.blog-rss{flex:none;display:inline-flex;align-items:center;gap:5px;
+  padding:6px 10px;border-radius:9px;border:1px solid var(--card-border);
+  background:var(--bg-2);color:var(--text-2);text-decoration:none;
+  font-size:12px;font-weight:600;letter-spacing:.02em;line-height:1;
+  transition:color .2s,border-color .2s,background .2s,transform .2s}
+.blog-rss svg{width:13px;height:13px;flex:none}
+.blog-rss:hover{color:var(--accent);border-color:rgba(77,141,255,.5);
+  background:var(--accent-soft);transform:translateY(-1px)}
+.blog-rss:active{transform:translateY(0)}
 mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;padding:0 1px}
 .rvf{animation:fadeIn .16s ease backwards}   /* 筛选重绘：只做一次极短淡入，卡片不再整列上跳 */
-@media (max-width:560px){.bs-kbd{display:none}.blog-search{gap:8px}}
+@media (max-width:560px){.bs-kbd{display:none}.blog-search{gap:8px}.blog-rss{margin-left:auto}}
 /* 文章页 */
 .post-hero{position:relative;height:min(46vh,380px);background:var(--hero-fallback);overflow:hidden}
 .post-hero img.post-bg{width:100%;height:100%;object-fit:cover;display:block}
@@ -2295,7 +2307,8 @@ const I18N={
       translatingZh:"正在翻译成中文…",
       machineTrans:"机器翻译",
       trFail:"自动翻译暂不可用",
-      trRetry:"重试"
+      trRetry:"重试",
+      rssTip:"订阅 RSS：新文章自动推送"
     },
     about:{
       title:"关于",
@@ -2368,7 +2381,8 @@ const I18N={
       translatingZh:"Translating into Chinese…",
       machineTrans:"Machine-translated",
       trFail:"Auto-translation unavailable",
-      trRetry:"Retry"
+      trRetry:"Retry",
+      rssTip:"Subscribe via RSS: new posts, pushed to you"
     },
     about:{
       title:"About",
@@ -4241,6 +4255,11 @@ async function renderBlog(gen){
       </div>
       <span class="bs-count" id="bsCount"></span>
       <span class="bs-kbd" title="${esc(t.blog.kbdTip||"按 / 快速搜索")}">/</span>
+      <a class="blog-rss" href="rss.xml" target="_blank" rel="noopener"
+         title="${esc(t.blog.rssTip)}" aria-label="${esc(t.blog.rssTip)}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M5 5a14 14 0 0 1 14 14"/><path d="M5 11a8 8 0 0 1 8 8"/><circle cx="5.7" cy="18.3" r="1.5" fill="currentColor" stroke="none"/></svg>
+        <span>RSS</span>
+      </a>
     </div>
     <div id="blogBody">${blogSkeletonHTML()}<div id="blogListMount"></div></div>
   </div></section>`;

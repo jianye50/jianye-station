@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /* =====================================================================
- * 生成博客清单 blog/index.json（部署加速用）+ 订阅源 rss.xml
+ * 生成博客清单 blog/index.json（部署加速用）+ 订阅源 rss.xml / rss-en.xml
  *
  * 作用：扫描 blog/ 里的文章文件夹（含 index.md）和散篇 .md，
  *       解析 front matter，输出整份列表清单。
  *       网站部署后优先读这份清单——一次几 KB 的请求就能渲染列表，
- *       顺手产出根目录的 rss.xml：站点地址 / 站名 / 描述取自 profile.txt，
- *       文章与清单同源，发文后随清单一起自动更新。
+ *       顺手产出根目录的 rss.xml（中文）与 rss-en.xml（英文）：站点地址 /
+ *       站名 / 描述取自 profile.txt，文章与清单同源，发文后一起自动更新。
  *
  * 运行方式（二选一，都能实现「发文后自动更新」）：
  *   A. Cloudflare Pages 构建命令填：node scripts/gen-blog-index.mjs
@@ -207,14 +207,13 @@ if (sharp) {
   console.log("! 未安装 sharp，跳过缩略图（可运行 npm install sharp 后重试）");
 }
 
-/* ---------- 生成 RSS（rss.xml）----------
+/* ---------- 生成订阅源（rss.xml 中文 / rss-en.xml 英文）----------
  * 数据源就是上面刚扫出来的 posts，与网站列表逐字段同源，
  * 不会出现「列表里有、订阅里没有」。
  * 站点地址 / 站名 / 描述全部读 profile.txt（脚本里不写死任何个人信息）；
- * 没配域名就跳过——RSS 里的链接必须是绝对地址，拼不出来宁可不生成。
+ * 没配域名就跳过——订阅链接必须是绝对地址，拼不出来宁可不生成。
  * 内容没变就不重写文件 → git 无 diff → 不会让监听 blog/** 的 Action 反复提交。 */
 const RSS_LIMIT = 30;
-const feedPath = join(root, "rss.xml");
 const PROF = (() => {
   const map = {};
   try {
@@ -225,7 +224,7 @@ const PROF = (() => {
       const key = String(cells[0] || "").toLowerCase();
       if (key) (map[key] = map[key] || []).push(cells.slice(1));
     }
-  } catch (e) { console.warn("! 读不到 profile.txt，rss.xml 的标题会是空的"); }
+  } catch (e) { console.warn("! 读不到 profile.txt，订阅源的标题会是空的"); }
   return map;
 })();
 const profRow = (...keys) => {
@@ -235,13 +234,14 @@ const profRow = (...keys) => {
   }
   return null;
 };
-const profZh = (...keys) => { const r = profRow(...keys); return r ? String(r[0] || r[1] || "").trim() : ""; };
-const feedDomain = profZh("域名", "主域名", "站点地址", "domain", "siteurl", "url");
+const profCi = (...keys) => { const r = profRow(...keys); return r ? String(r[0] || r[1] || "").trim() : ""; };  /* 中文优先 */
+const profEn = (...keys) => { const r = profRow(...keys); return r ? String(r[1] || r[0] || "").trim() : ""; };  /* 英文优先 */
+const feedDomain = profCi("域名", "主域名", "站点地址", "domain", "siteurl", "url");
 let origin = feedDomain.replace(/\/+$/, "");
 if (origin && !/^https?:\/\//i.test(origin)) origin = "https://" + origin;
 
 if (!origin) {
-  console.log("! profile.txt 里没有配置「域名」，跳过 rss.xml（订阅链接必须是绝对地址）");
+  console.log("! profile.txt 里没有配置「域名」，跳过 rss.xml / rss-en.xml（订阅链接必须是绝对地址）");
 } else {
   const esc = s => String(s == null ? "" : s)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -252,7 +252,6 @@ if (!origin) {
     .replace(/&nbsp;/g, " ")
     .replace(/\s+([，。、；：！？）】」』])/g, "$1")
     .replace(/([，。、；：！？])\s+/g, "$1")
-    .replace(/([（【「『])\s+/g, "$1")
     .replace(/\s+/g, " ").trim();
   /* 逐段编码：中文 slug / 文件名带空格都不会拼出坏链接 */
   const absPath = p => origin + "/" + String(p).replace(/^\/+/, "")
@@ -263,57 +262,74 @@ if (!origin) {
   };
   const cdata = s => String(s).replace(/]]>/g, "]]]]><![CDATA[>");   /* 正文里出现 ]]> 也不会截断 */
 
-  const feedTitle = profZh("站名", "brand", "sitename") || "RSS";
-  const feedDesc = plain(profZh("描述", "desc", "description")) || feedTitle;
+  /* 一份文章数据、两种语言：中文源优先中文译文，缺了回退原文；英文源反之。
+     除了标题 / 摘要 / 标签 / 推荐语，两边的链接与日期完全一致。 */
+  const buildFeed = (lang, file) => {
+    const zh = lang === "zh";
+    const pickTitle = p => ((zh ? p.titleZh : p.titleEn) || p.title || p.slug);
+    const pickDesc = p => ((zh ? p.descZh : p.descEn) || p.desc || "");
+    const pickTags = p => { const t = zh ? p.tagsZh : p.tagsEn; return (t && t.length ? t : p.tags) || []; };
+    const chanTitle = (zh ? profCi("站名", "brand", "sitename") : profEn("站名", "brand", "sitename"))
+      || profCi("站名", "brand", "sitename") || "RSS";
+    const chanDesc = plain((zh ? profCi("描述", "desc", "description") : profEn("描述", "desc", "description"))
+      || profCi("描述", "desc", "description")) || chanTitle;
 
-  const items = posts.slice(0, RSS_LIMIT).map(p => {
-    const title = plain(p.titleZh || p.title || p.slug);
-    const desc = plain(p.descZh || p.desc || "");
-    const link = `${origin}/#/blog/${encodeURIComponent(p.slug)}`;
-    const cover = p.coverThumb || (p.cover ? p.imgBase + p.cover : "");
-    const img = cover ? absPath(cover) : "";
-    const body = (img ? `<p><img src="${esc(img)}" alt=""></p>` : "")
-      + (desc ? `<p>${esc(desc)}</p>` : "")
-      + `<p><a href="${esc(link)}">阅读全文 / Read more</a></p>`;
-    const tags = (p.tagsZh && p.tagsZh.length ? p.tagsZh : p.tags || []).slice(0, 6)
-      .map(t => `      <category>${esc(t)}</category>`).join("\n");
-    const date = rfc822(p.date);
-    return `    <item>
+    const items = posts.slice(0, RSS_LIMIT).map(p => {
+      const title = plain(pickTitle(p));
+      const desc = plain(pickDesc(p));
+      const link = `${origin}/#/blog/${encodeURIComponent(p.slug)}`;
+      const cover = p.coverThumb || (p.cover ? p.imgBase + p.cover : "");
+      const img = cover ? absPath(cover) : "";
+      const body = (img ? `<p><img src="${esc(img)}" alt=""></p>` : "")
+        + (desc ? `<p>${esc(desc)}</p>` : "")
+        + `<p><a href="${esc(link)}">${zh ? "阅读全文" : "Read more"}</a></p>`;
+      const tags = pickTags(p).slice(0, 6)
+        .map(t => `      <category>${esc(t)}</category>`).join("\n");
+      const date = rfc822(p.date);
+      return `    <item>
       <title>${esc(title)}</title>
       <link>${esc(link)}</link>
       <guid isPermaLink="false">${esc(link)}</guid>
 ${date ? `      <pubDate>${date}</pubDate>\n` : ""}${tags ? tags + "\n" : ""}      <description><![CDATA[${cdata(body)}]]></description>
     </item>`;
-  }).join("\n");
+    }).join("\n");
 
-  const lastBuild = (posts.length && rfc822(posts[0].date)) || new Date().toUTCString();
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>${esc(feedTitle)}</title>
+    <title>${esc(chanTitle)}</title>
     <link>${esc(origin + "/")}</link>
-    <atom:link href="${esc(origin + "/rss.xml")}" rel="self" type="application/rss+xml"/>
-    <description>${esc(feedDesc)}</description>
-    <language>zh-CN</language>
-    <lastBuildDate>${lastBuild}</lastBuildDate>
+    <atom:link href="${esc(origin + "/" + file)}" rel="self" type="application/rss+xml"/>
+    <description>${esc(chanDesc)}</description>
+    <language>${zh ? "zh-CN" : "en-US"}</language>
+    <lastBuildDate>${(posts.length && rfc822(posts[0].date)) || new Date().toUTCString()}</lastBuildDate>
     <generator>gen-blog-index.mjs</generator>
 ${items}
   </channel>
 </rss>
 `;
+  };
 
-  let prevFeed = null;
-  try { prevFeed = readFileSync(feedPath, "utf8"); } catch (e) {}
-  if (prevFeed === xml) {
-    console.log(`✓ rss.xml 无变化（${Math.min(posts.length, RSS_LIMIT)} 条），跳过重写`);
-  } else {
-    writeFileSync(feedPath, xml, "utf8");
-    console.log(`✓ rss.xml 已生成（${Math.min(posts.length, RSS_LIMIT)} 条 → ${origin}/rss.xml）`);
-    /* 自己把 rss.xml 放进暂存区：两个 workflow 的提交步骤只 add 了 blog/ 下的路径，
-       这里主动 stage，root 下的 rss.xml 才能跟同一批改动一起提交 */
+  const changed = [];
+  for (const [lang, file] of [["zh", "rss.xml"], ["en", "rss-en.xml"]]) {
+    const path = join(root, file);
+    const xml = buildFeed(lang, file);
+    let prev = null;
+    try { prev = readFileSync(path, "utf8"); } catch (e) {}
+    if (prev === xml) {
+      console.log(`✓ ${file} 无变化（${Math.min(posts.length, RSS_LIMIT)} 条），跳过重写`);
+      continue;
+    }
+    writeFileSync(path, xml, "utf8");
+    changed.push(file);
+    console.log(`✓ ${file} 已生成（${Math.min(posts.length, RSS_LIMIT)} 条 → ${origin}/${file}）`);
+  }
+  if (changed.length) {
+    /* 自己把文件放进暂存区：两个 workflow 的提交步骤只 add 了 blog/ 下的路径，
+       这里主动 stage，根目录的订阅源才能跟同一批改动一起提交 */
     try {
       const { execSync } = await import("node:child_process");
-      execSync("git add -A rss.xml", { cwd: root, stdio: "ignore" });
+      execSync(`git add -A ${changed.join(" ")}`, { cwd: root, stdio: "ignore" });
     } catch (e) {}
   }
 }

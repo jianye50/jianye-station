@@ -3,6 +3,9 @@
 #   （原文语言那一份没有外语段落时直接落副本，不花接口额度）。
 # 网站按访客的界面语言直接读对应文件，不再依赖浏览器临时机翻（机翻只是兜底）。
 #
+# 同一条链路还会重建 blog/index.json 与两份订阅源（rss.xml / rss-en.xml），
+# 都在 scripts/gen-blog-index.mjs 里一并产出，所以仓库始终只有一个写入者。
+#
 # 手动补翻历史文章：Actions → gen-blog-en → Run workflow（勾 force 可强制全部重译）。
 #
 # 加固点（2026-10-31 第二轮 —— 修「Actions 打绿勾但仓库里一个字都没生成」）：
@@ -29,6 +32,8 @@ on:
       - "!blog/thumbs/**"        # 只是缩略图变化，没必要重跑翻译
       - "scripts/gen-blog-en.mjs"
       - "scripts/gen-blog-index.mjs"
+      # 站名 / 描述 / 域名都来自 profile.txt，改了它订阅源与清单要立刻跟着重建
+      - "profile.txt"
   schedule:
     - cron: "17 */6 * * *"       # 每 6 小时兜底补翻（UTC）
   workflow_dispatch:
@@ -89,7 +94,7 @@ jobs:
             echo "译文无变化，跳过提交"
             exit 0
           fi
-          git commit -m "chore: 自动生成博客中英双语版（index.en.md / index.zh.md）并更新索引"
+          git commit -m "chore: 自动生成博客中英双语版（index.en.md / index.zh.md）并更新索引与订阅源"
 
           for i in 1 2 3; do
             if git push; then
@@ -117,7 +122,7 @@ jobs:
               echo "对齐远端后已无差异（说明这批改动别人已经推过）"
               exit 0
             fi
-            git commit -m "chore: 自动生成博客中英双语版（index.en.md / index.zh.md）并更新索引"
+            git commit -m "chore: 自动生成博客中英双语版（index.en.md / index.zh.md）并更新索引与订阅源"
             sleep 2
           done
 
