@@ -39,16 +39,6 @@
       <description><![CDATA[<p><img src="https://jype.top/blog/thumbs/BetterGI_%E6%9B%B4%E5%A5%BD%E7%9A%84%E5%8E%9F%E7%A5%9E-cover.webp" alt=""></p><p>一个开源免费、只靠截图识别和模拟键鼠工作的原神自动化工具。它怎么「看」游戏、能替你做什么、下载哪个包、第一次要调哪几项设置，以及那句必须先说的话——风险它替不了你承担。</p><p><a href="https://jype.top/#/blog/BetterGI%20%E6%9B%B4%E5%A5%BD%E7%9A%84%E5%8E%9F%E7%A5%9E">阅读全文</a></p>]]></description>
     </item>
     <item>
-      <title>一篇文章，两种语言</title>
-      <link>https://jype.top/#/blog/one-post-two-languages</link>
-      <guid isPermaLink="false">https://jype.top/#/blog/one-post-two-languages</guid>
-      <pubDate>Fri, 06 Nov 2026 00:00:00 GMT</pubDate>
-      <category>写作</category>
-      <category>翻译</category>
-      <category>网络</category>
-      <description><![CDATA[<p><img src="https://jype.top/blog/thumbs/one-post-two-languages-cover.webp" alt=""></p><p>用您思考的语言进行写作，让页面与读者见面，无论他们身在何处。这个博客如何决定翻译什么，三个引擎中的哪一个执行工作，以及为什么带有方向后缀的缓存键是功能和麻烦之间的区别。</p><p><a href="https://jype.top/#/blog/one-post-two-languages">阅读全文</a></p>]]></description>
-    </item>
-    <item>
       <title>把博客放进 git：GitHub + Cloudflare Pages 这套组合</title>
       <link>https://jype.top/#/blog/Pages%20%E5%BB%BA%E7%AB%99%E6%8C%87%E5%8D%97</link>
       <guid isPermaLink="false">https://jype.top/#/blog/Pages%20%E5%BB%BA%E7%AB%99%E6%8C%87%E5%8D%97</guid>
@@ -57,6 +47,16 @@
       <category>Cloudflare</category>
       <category>教程</category>
       <description><![CDATA[<p><img src="https://jype.top/blog/thumbs/Pages_%E5%BB%BA%E7%AB%99%E6%8C%87%E5%8D%97-cover.webp" alt=""></p><p>代码存在 GitHub，构建和分发交给 Cloudflare，一次 push 就上线。这条链路的每一环、免费额度的真实边界、静态站最常踩的四个坑，以及它什么时候会不够用。</p><p><a href="https://jype.top/#/blog/Pages%20%E5%BB%BA%E7%AB%99%E6%8C%87%E5%8D%97">阅读全文</a></p>]]></description>
+    </item>
+    <item>
+      <title>一篇文章，两种语言</title>
+      <link>https://jype.top/#/blog/one-post-two-languages</link>
+      <guid isPermaLink="false">https://jype.top/#/blog/one-post-two-languages</guid>
+      <pubDate>Fri, 06 Nov 2026 00:00:00 GMT</pubDate>
+      <category>写作</category>
+      <category>翻译</category>
+      <category>网络</category>
+      <description><![CDATA[<p><img src="https://jype.top/blog/thumbs/one-post-two-languages-cover.webp" alt=""></p><p>用您思考的语言进行写作，让页面与读者见面，无论他们身在何处。这个博客如何决定翻译什么，三个引擎中的哪一个执行工作，以及为什么带有方向后缀的缓存键是功能和麻烦之间的区别。</p><p><a href="https://jype.top/#/blog/one-post-two-languages">阅读全文</a></p>]]></description>
     </item>
     <item>
       <title>博客编辑器 2.0：文章里终于装得下视频、动图和声音</title>
