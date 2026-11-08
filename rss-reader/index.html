@@ -33,7 +33,7 @@
   })();
 </script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%236750A4'/%3E%3Cg fill='none' stroke='%23EADDFF' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M10 22v.01'/%3E%3Cpath d='M10 15a7 7 0 0 1 7 7'/%3E%3Cpath d='M10 9a13 13 0 0 1 13 13'/%3E%3C/g%3E%3C/svg%3E">
-<link rel="stylesheet" href="styles.css?v=20261108p">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <a class="skip-link" href="#articleList" data-i18n="skip.link">跳到文章列表</a>
@@ -145,22 +145,12 @@
       <button class="icon-btn" id="settingsBtn" aria-label="设置" title="设置" data-i18n-aria="settings.title" data-i18n-title="settings.title">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-settings"></use></svg>
       </button>
-      <div class="home-top-actions">
-        <button class="icon-btn" id="refreshAllBtn" aria-label="刷新全部订阅源" title="刷新全部" aria-busy="false" data-i18n-aria="refresh.allAria" data-i18n-title="refresh.all">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-refresh"></use></svg>
-        </button>
-        <button class="icon-btn" id="addFeedBtn" aria-label="添加订阅源" title="添加订阅源" data-i18n-aria="action.addFeed" data-i18n-title="action.addFeed">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"></use></svg>
-        </button>
-      </div>
+      <button class="icon-btn" id="addFeedBtn" aria-label="添加订阅源" title="添加订阅源" data-i18n-aria="action.addFeed" data-i18n-title="action.addFeed">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"></use></svg>
+      </button>
     </div>
 
     <h1 class="home-title" data-i18n="app.name">鉴业阅读</h1>
-
-    <button type="button" class="sync-line" id="syncLine" title="点击立即刷新" aria-label="更新状态，点击刷新" data-i18n-aria="sync.aria" data-i18n-title="sync.title">
-      <span class="sync-dot" id="syncDot" aria-hidden="true"></span>
-      <span class="sync-text" id="syncText">尚未更新</span>
-    </button>
 
     <button class="hero-card" id="heroCard" aria-label="打开当前视图" data-i18n-aria="aria.hero">
       <span class="hero-icon" aria-hidden="true">
@@ -186,7 +176,7 @@
       <div class="cat-list" id="categoryList"></div>
     </div>
 
-    <input type="file" id="opmlInput" accept=".json,.opml,.xml,application/json,text/xml,application/xml" hidden>
+    <input type="file" id="opmlInput" accept=".opml,.xml,text/xml,application/xml" hidden>
   </aside>
 
   <div class="scrim" id="scrim" hidden></div>
@@ -492,7 +482,6 @@
         </button>
         <button type="button" class="btn-text danger" id="clearAllBtn" data-i18n="settings.clear">清空所有文章</button>
       </div>
-      <div class="setting-desc" data-i18n="settings.dataDesc">导出可选「完整备份（含文章）」或「OPML（仅订阅源）」；导入会自动识别两种格式</div>
     </div>
 
     <div class="setting-block touch-hide">
@@ -515,6 +504,6 @@
   </div>
 </dialog>
 
-<script src="app.js?v=20261108p"></script>
+<script src="app.js"></script>
 </body>
 </html>
