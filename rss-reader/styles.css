@@ -505,6 +505,10 @@ kbd {
 }
 .list-actions { display: flex; align-items: center; gap: 2px; }
 
+/* 刷新全部：进行中图标旋转，完成后恢复（按钮在侧边栏顶部「+」左边） */
+#refreshAllBtn.is-busy { color: var(--primary); background: var(--hover-layer); }
+#refreshAllBtn.is-busy .icon { animation: spin 0.9s linear infinite; }
+
 .search-wrap {
   position: relative;
   display: flex;
@@ -1372,6 +1376,7 @@ dialog {
   justify-content: space-between;
   padding: 2px 2px 0;
 }
+.home-top-actions { display: flex; align-items: center; gap: 4px; }
 .home-title {
   font-size: 30px;
   font-weight: 800;

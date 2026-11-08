@@ -177,9 +177,16 @@
       'toast.importProgress': '正在抓取订阅源 {done}/{total}…',
       'toast.refreshingAll': '正在刷新 {n} 个订阅源…',
       'toast.refreshProgress': '正在刷新订阅源 {done}/{total}…',
-      'toast.refreshAllNew': '已刷新 {n} 个源，新增 {got} 篇文章',
+      'toast.refreshAllNew': '已刷新 {n} 个源，新增 {got} 篇文章{removed}',
       'toast.refreshAllNone': '已刷新 {n} 个源，都是最新的',
       'toast.refreshAllFail': '刷新失败：可能是浏览器跨域限制或网络问题。',
+      'toast.removed': '已同步移除 {n} 篇源站已删除的文章',
+      'toast.removedInline': '，并移除 {n} 篇源站已删除的文章',
+      'toast.noFeeds': '还没有订阅源，先添加一个吧',
+      'toast.refreshingNow': '正在刷新中，稍等一下…',
+      'toast.partialFail': '{n} 个源没能刷新，可能是源站限流或跨域拦截',
+      'refresh.all': '刷新全部订阅源',
+      'refresh.allAria': '刷新全部订阅源',
       'toast.badOpml': '无法解析这个 OPML 文件，请检查文件格式。',
       'toast.readFail': '读取文件失败',
       'toast.exported': '已导出 {n} 个订阅源',
@@ -383,9 +390,16 @@
       'toast.importProgress': 'Fetching feeds {done}/{total}…',
       'toast.refreshingAll': 'Refreshing {n} feeds…',
       'toast.refreshProgress': 'Refreshing feeds {done}/{total}…',
-      'toast.refreshAllNew': 'Refreshed {n} feeds, {got} new articles',
+      'toast.refreshAllNew': 'Refreshed {n} feeds, {got} new articles{removed}',
       'toast.refreshAllNone': 'Refreshed {n} feeds, already up to date',
       'toast.refreshAllFail': 'Refresh failed: CORS limits or a network issue.',
+      'toast.removed': 'Removed {n} articles deleted at the source',
+      'toast.removedInline': ', removed {n} deleted at the source',
+      'toast.noFeeds': 'No feeds yet — add one first',
+      'toast.refreshingNow': 'Already refreshing, hang on…',
+      'toast.partialFail': '{n} feeds could not be refreshed (rate limit or CORS)',
+      'refresh.all': 'Refresh all feeds',
+      'refresh.allAria': 'Refresh all feeds',
       'toast.badOpml': 'Could not parse this OPML file. Please check the format.',
       'toast.readFail': 'Failed to read the file',
       'toast.exported': 'Exported {n} feeds',
@@ -571,6 +585,7 @@
   const sortBtn = $('#sortBtn');
   const sortLabel = $('#sortLabel');
   const markAllBtn = $('#markAllBtn');
+  const refreshAllBtn = $('#refreshAllBtn');
   const articleList = $('#articleList');
   const listScroll = $('#listScroll');
   const listEmpty = $('#listEmpty');
@@ -2154,29 +2169,140 @@
     return root.innerHTML;
   }
 
-  async function fetchFeed(url) {
-    const endpoints = [
-      url,
-      'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-      'https://corsproxy.io/?url=' + encodeURIComponent(url)
-    ];
+  /* 抓取链路：直连 → rss2json（第三方转 JSON，带 CORS）→ 公共代理兜底。
+     直连对自带 CORS 的源最快，也不会占用第三方额度；失败的源才走代理。
+     allorigins / corsproxy 目前多半不可用（超时 / 需要 API key），只留作最后的兜底。 */
+  const ENDPOINT_PROXY_JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
+
+  /* 想更稳的话，可以自建一个 CORS 代理（Cloudflare Worker 十几行就够），
+     把地址填到这里、形如 'https://xxx.workers.dev/?url='，它会被优先使用（同样接编码后的地址）。 */
+  const CUSTOM_PROXY = '';
+
+  /* rss2json 免费额度有限（约 60 次/窗口），被限流后先歇 10 分钟，别把额度耗光 */
+  let rss2jsonDownUntil = 0;
+
+  function fetchEndpoints(url) {
+    const enc = encodeURIComponent(url);
+    const list = [{ kind: 'xml', tag: 'direct', timeout: 7000, href: url }];
+    if (CUSTOM_PROXY) list.push({ kind: 'xml', tag: 'custom', timeout: 9000, href: CUSTOM_PROXY + enc });
+    if (Date.now() > rss2jsonDownUntil) {
+      list.push({ kind: 'json', tag: 'json', timeout: 11000, href: ENDPOINT_PROXY_JSON + enc + '&count=50' });
+    }
+    list.push(
+      { kind: 'xml', tag: 'allorigins', timeout: 7000, href: 'https://api.allorigins.win/raw?url=' + enc },
+      { kind: 'xml', tag: 'corsproxy', timeout: 6000, href: 'https://corsproxy.io/?url=' + enc }
+    );
+    return list;
+  }
+
+  /* 某一轮刷新里，某条代理连续失败 3 次就整轮跳过：几十个源时不用逐个等超时。
+     直连不参与跳过（有的源本来就没开 CORS，那是正常失败）。 */
+  function noteEndpoint(state, tag, ok) {
+    if (!state || !tag || tag === 'direct') return;
+    if (ok) {
+      delete state.fails[tag];
+      return;
+    }
+    state.fails[tag] = (state.fails[tag] || 0) + 1;
+    if (state.fails[tag] >= 3) state.skip.add(tag);
+  }
+
+  /* rss2json 的 JSON 转成统一的 items 结构 */
+  function itemsFromRss2Json(data, feedUrl) {
+    if (!data || data.status !== 'ok' || !Array.isArray(data.items) || !data.items.length) return null;
+    const meta = data.feed || {};
+    const base = meta.link || feedUrl;
+    const items = data.items.slice(0, 40).map((it) => {
+      const title = String(it.title || '').trim() || t('untitled');
+      const rawContent = it.content || it.description || '';
+      const content = sanitizeHtml(rawContent, base);
+      const excerpt = htmlToText(content).slice(0, 160);
+      let publishedAt = new Date().toISOString();
+      const rawDate = String(it.pubDate || '').trim();
+      if (rawDate) {
+        /* rss2json 给的是 UTC 的 "2026-11-08 09:56:07" */
+        let iso = rawDate.replace(' ', 'T');
+        if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(iso)) iso += 'Z';
+        const parsed = new Date(iso);
+        if (!isNaN(parsed.getTime())) publishedAt = parsed.toISOString();
+      }
+      let link = it.link || base;
+      try {
+        link = new URL(link, base).href;
+      } catch (err) {
+        /* 保留原值 */
+      }
+      return {
+        title: title,
+        link: link,
+        publishedAt: publishedAt,
+        author: it.author || '',
+        content: content || '<p>' + esc(excerpt) + '</p>',
+        excerpt: excerpt,
+        readTime: estimateReadTime(content)
+      };
+    });
+
+    return {
+      title: meta.title || '',
+      site: meta.link || '',
+      desc: meta.description || '',
+      items: items.filter((it) => it.title && it.link)
+    };
+  }
+
+  async function fetchFeed(url, netState) {
+    const endpoints = fetchEndpoints(url);
 
     for (let i = 0; i < endpoints.length; i++) {
+      const ep = endpoints[i];
+      if (netState && ep.tag && netState.skip.has(ep.tag)) continue;
       const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 9000);
+      const timer = window.setTimeout(() => controller.abort(), ep.timeout);
       try {
-        const res = await fetch(endpoints[i], {
+        const res = await fetch(ep.href, {
           signal: controller.signal,
           mode: 'cors',
-          credentials: 'omit'
+          credentials: 'omit',
+          cache: 'no-store'
         });
         window.clearTimeout(timer);
-        if (!res.ok) continue;
+        if (!res.ok) {
+          if (ep.kind === 'json' && (res.status === 429 || res.status === 403)) {
+            rss2jsonDownUntil = Date.now() + 10 * 60 * 1000;
+          }
+          noteEndpoint(netState, ep.tag, false);
+          continue;
+        }
+        if (ep.kind === 'json') {
+          let data = null;
+          try {
+            data = await res.json();
+          } catch (err) {
+            noteEndpoint(netState, ep.tag, false);
+            continue;
+          }
+          const parsedJson = itemsFromRss2Json(data, url);
+          if (parsedJson && parsedJson.items.length) {
+            noteEndpoint(netState, ep.tag, true);
+            return parsedJson;
+          }
+          if (data && data.status === 'error' && /limit|quota|rate/i.test(String(data.message || ''))) {
+            rss2jsonDownUntil = Date.now() + 10 * 60 * 1000;
+          }
+          noteEndpoint(netState, ep.tag, false);
+          continue;
+        }
         const text = await res.text();
         const parsed = parseFeedXml(text, url);
-        if (parsed && parsed.items.length) return parsed;
+        if (parsed && parsed.items.length) {
+          noteEndpoint(netState, ep.tag, true);
+          return parsed;
+        }
+        noteEndpoint(netState, ep.tag, false);
       } catch (err) {
         window.clearTimeout(timer);
+        noteEndpoint(netState, ep.tag, false);
       }
     }
     return null;
@@ -2199,18 +2325,76 @@
     };
   }
 
+  /* 规范化链接用于比对：忽略协议、www、锚点、末尾斜杠、百分号编码大小写等差异，
+     但保留路径大小写（路径是区分大小写的） */
+  function linkKey(raw) {
+    const s = String(raw || '').trim();
+    if (!s) return '';
+    let key;
+    try {
+      const u = new URL(s);
+      u.hash = '';
+      key = u.hostname.replace(/^www\./i, '').toLowerCase() + u.pathname + u.search;
+    } catch (err) {
+      key = s.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('#')[0];
+    }
+    try {
+      key = decodeURIComponent(key); /* "a%20b" 与 "a b" 归一 */
+    } catch (err) {
+      /* 非法百分号编码就保持原样比对 */
+    }
+    return key.replace(/\/+$/, '');
+  }
+
+  function itemKey(item) {
+    return linkKey(item && item.link) || 'title:' + String((item && item.title) || '').trim();
+  }
+
   function mergeFeedArticles(feed, result) {
-    const existing = new Set(
-      S.articles.filter((a) => a.feedId === feed.id).map((a) => a.link || a.title)
-    );
+    const existing = new Set(S.articles.filter((a) => a.feedId === feed.id).map(itemKey));
     let added = 0;
     result.items.forEach((it) => {
-      if (existing.has(it.link || it.title)) return;
+      const key = itemKey(it);
+      if (existing.has(key)) return;
+      existing.add(key); /* 同一批里的重复也挡掉 */
       S.articles.push(articleFromItem(feed, it, added));
       added++;
     });
     if (result.site && !feed.site) feed.site = result.site;
     return added;
+  }
+
+  /* 源站删掉的文章，本地也删掉。
+     只清理“落在本次抓取窗口内”的文章：把本批返回里最早的发布时间当作窗口下界，
+     比它更老的一律保留——那些可能只是被源站保留条数挤下去了，不是被删了。
+     星标文章不动；返回不足 3 条时视为抓取不完整，不做删除。 */
+  function pruneFeedArticles(feed, result) {
+    const items = result.items || [];
+    if (items.length < 3) return 0;
+
+    const times = items.map((it) => Date.parse(it.publishedAt)).filter((n) => !isNaN(n));
+    if (!times.length) return 0;
+    const oldest = Math.min.apply(null, times);
+
+    const alive = new Set(items.map(itemKey));
+    const doomed = new Set();
+    S.articles.forEach((a) => {
+      if (a.feedId !== feed.id || a.starred) return;
+      if (alive.has(itemKey(a))) return;
+      const t = Date.parse(a.publishedAt);
+      if (isNaN(t) || t < oldest) return;
+      doomed.add(a.id);
+    });
+    if (!doomed.size) return 0;
+    S.articles = S.articles.filter((a) => !doomed.has(a.id));
+    return doomed.size;
+  }
+
+  /* 一次抓取的完整同步：先补新增，再清源站已删除的 */
+  function syncFeedArticles(feed, result) {
+    const added = mergeFeedArticles(feed, result);
+    const removed = pruneFeedArticles(feed, result);
+    return { added: added, removed: removed };
   }
 
   async function fetchFeedsInBackground(feeds) {
@@ -2252,15 +2436,25 @@
       toast(t('toast.refreshFail'));
       return;
     }
-    const added = mergeFeedArticles(f, result);
+    const r = syncFeedArticles(f, result);
     persist();
+    if (r.removed) ensureSelection();
     renderAll({ keepScroll: true });
-    toast(added ? fmt(t('toast.fetched'), { n: added }) : t('toast.upToDate'));
+    if (r.added) toast(fmt(t('toast.fetched'), { n: r.added }));
+    else if (r.removed) toast(fmt(t('toast.removed'), { n: r.removed }));
+    else toast(t('toast.upToDate'));
   }
 
   /* 一次性刷新全部订阅源：并发 4 条，边抓边渲染，失败不影响其他源 */
   let refreshAllRunning = false;
   let lastRefreshAllAt = 0; /* 上次刷新时间，避免切标签页时反复抓取 */
+
+  /* 手动刷新按钮的进行中状态（自动刷新时也会转起来，至少能看出它在干活） */
+  function setRefreshBusy(busy) {
+    if (!refreshAllBtn) return;
+    refreshAllBtn.classList.toggle('is-busy', !!busy);
+    refreshAllBtn.setAttribute('aria-busy', busy ? 'true' : 'false');
+  }
 
   async function refreshAllFeeds(opts) {
     const o = opts || {};
@@ -2271,30 +2465,38 @@
 
     refreshAllRunning = true;
     lastRefreshAllAt = Date.now();
+    setRefreshBusy(true);
 
     const total = feeds.length;
     const showProgress = !o.auto && total >= 4;
     let done = 0;
     let added = 0;
+    let removed = 0;
     let failed = 0;
     let lastPaint = 0;
 
     if (showProgress) toast(fmt(t('toast.refreshingAll'), { n: total }));
 
+    const netState = { fails: {}, skip: new Set() }; /* 本轮各代理的健康状况 */
     const queue = feeds.slice();
     const worker = async () => {
       for (;;) {
         const f = queue.shift();
         if (!f) return;
         if (!feedById(f.id)) continue; /* 抓取过程中被删除 */
-        const result = await fetchFeed(f.url);
-        if (result) added += mergeFeedArticles(f, result);
-        else failed++;
+        const result = await fetchFeed(f.url, netState);
+        if (result) {
+          const r = syncFeedArticles(f, result);
+          added += r.added;
+          removed += r.removed;
+        } else {
+          failed++;
+        }
         done++;
 
         /* 有新文章时增量刷新列表，别等全部源抓完才显示；
            只刷导航和列表，避免打断正在读的文章（重绘阅读区会丢滚动位置） */
-        if (added && Date.now() - lastPaint > 800) {
+        if ((added || removed) && Date.now() - lastPaint > 800) {
           lastPaint = Date.now();
           renderSidebar();
           renderList({ keepScroll: true });
@@ -2310,19 +2512,34 @@
       await Promise.all(lanes);
     } finally {
       refreshAllRunning = false;
+      setRefreshBusy(false);
     }
 
-    if (added) {
+    if (added || removed) {
       persist();
       renderSidebar();
       renderList({ keepScroll: true });
-      toast(fmt(t('toast.refreshAllNew'), { n: total, got: added }));
+      if (removed) {
+        ensureSelection(); /* 正在读的那篇可能刚被源站删掉 */
+        renderReader();
+      }
+    }
+    if (added) {
+      toast(fmt(t('toast.refreshAllNew'), {
+        n: total,
+        got: added,
+        removed: removed ? fmt(t('toast.removedInline'), { n: removed }) : ''
+      }));
+    } else if (removed) {
+      toast(fmt(t('toast.removed'), { n: removed }));
     } else if (failed === total) {
-      if (!o.auto) toast(t('toast.refreshAllFail'));
+      toast(t('toast.refreshAllFail'), { duration: 4600 });
+    } else if (failed) {
+      toast(fmt(t('toast.partialFail'), { n: failed }), { duration: 4200 });
     } else if (!o.auto) {
       toast(fmt(t('toast.refreshAllNone'), { n: total }));
     }
-    return { added: added, failed: failed, total: total };
+    return { added: added, removed: removed, failed: failed, total: total };
   }
 
   /* ---------------- 添加订阅源 ---------------- */
@@ -2585,6 +2802,22 @@
   });
 
   markAllBtn.addEventListener('click', markAllMenu);
+
+  /* 全局手动刷新：把列表头那颗按钮接上
+     （老版本 index.html 被缓存时按钮可能不存在，这里做个空值保护，别让脚本整段挂掉） */
+  if (refreshAllBtn) {
+    refreshAllBtn.addEventListener('click', () => {
+      if (refreshAllRunning) {
+        toast(t('toast.refreshingNow'));
+        return;
+      }
+      if (!S.feeds.length) {
+        toast(t('toast.noFeeds'));
+        return;
+      }
+      refreshAllFeeds();
+    });
+  }
 
   articleList.addEventListener('click', (e) => {
     const item = e.target.closest('.article-item');
