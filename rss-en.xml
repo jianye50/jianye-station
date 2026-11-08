@@ -9,6 +9,14 @@
     <lastBuildDate>Sun, 08 Nov 2026 00:00:00 GMT</lastBuildDate>
     <generator>gen-blog-index.mjs</generator>
     <item>
+      <title>Huawei</title>
+      <link>https://jype.top/#/blog/1</link>
+      <guid isPermaLink="false">https://jype.top/#/blog/1</guid>
+      <pubDate>Sun, 08 Nov 2026 00:00:00 GMT</pubDate>
+      <category>test</category>
+      <description><![CDATA[<p>Huawei</p><p><a href="https://jype.top/#/blog/1">Read more</a></p>]]></description>
+    </item>
+    <item>
       <title>Put RSS into the browser: I wrote a zero-dependency pure front-end reader</title>
       <link>https://jype.top/#/blog/rss-reader-article</link>
       <guid isPermaLink="false">https://jype.top/#/blog/rss-reader-article</guid>

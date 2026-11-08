@@ -1,6 +1,32 @@
 {
-  "generated": "2026-11-08T11:24:45.652Z",
+  "generated": "2026-11-08T12:23:46.000Z",
   "posts": [
+    {
+      "slug": "1",
+      "md": "blog/1/index.md",
+      "imgBase": "blog/1/",
+      "title": "华为",
+      "desc": "华为",
+      "tags": [
+        "测试"
+      ],
+      "date": "2026-11-08",
+      "minutes": 1,
+      "cover": "",
+      "bg": "",
+      "mdEn": "blog/1/index.en.md",
+      "titleEn": "Huawei",
+      "descEn": "Huawei",
+      "tagsEn": [
+        "test"
+      ],
+      "mdZh": "blog/1/index.zh.md",
+      "titleZh": "华为",
+      "descZh": "华为",
+      "tagsZh": [
+        "测试"
+      ]
+    },
     {
       "slug": "rss-reader-article",
       "md": "blog/rss-reader-article/index.md",

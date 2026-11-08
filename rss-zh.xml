@@ -9,6 +9,14 @@
     <lastBuildDate>Sun, 08 Nov 2026 00:00:00 GMT</lastBuildDate>
     <generator>gen-blog-index.mjs</generator>
     <item>
+      <title>华为</title>
+      <link>https://jype.top/#/blog/1</link>
+      <guid isPermaLink="false">https://jype.top/#/blog/1</guid>
+      <pubDate>Sun, 08 Nov 2026 00:00:00 GMT</pubDate>
+      <category>测试</category>
+      <description><![CDATA[<p>华为</p><p><a href="https://jype.top/#/blog/1">阅读全文</a></p>]]></description>
+    </item>
+    <item>
       <title>把 RSS 搬进浏览器：我写了一个零依赖的纯前端阅读器</title>
       <link>https://jype.top/#/blog/rss-reader-article</link>
       <guid isPermaLink="false">https://jype.top/#/blog/rss-reader-article</guid>
