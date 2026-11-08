@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>简阅 · RSS Reader</title>
+<style>
+  :root {
+    --accent: #0f6cbd;
+    --accent-soft: rgba(15, 108, 189, 0.10);
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --panel-2: #fafbfc;
+    --card: #ffffff;
+    --text: #1b1f24;
+    --text-2: #5b6570;
+    --text-3: #98a1ab;
+    --border: #e6e9ec;
+    --hover: #f0f2f5;
+    --active: #e8eef5;
+    --shadow: 0 1px 2px rgba(16,24,40,.05), 0 1px 3px rgba(16,24,40,.06);
+    --shadow-lg: 0 4px 16px rgba(16,24,40,.10);
+    --radius: 10px;
+  }
+  html[data-theme="dark"] {
+    --accent: #479ef5;
+    --accent-soft: rgba(71, 158, 245, 0.14);
+    --bg: #141518;
+    --panel: #1c1d21;
+    --panel-2: #191a1e;
+    --card: #202126;
+    --text: #e8eaed;
+    --text-2: #a2a8b0;
+    --text-3: #6d737c;
+    --border: #2b2d33;
+    --hover: #26282e;
+    --active: #2a323d;
+    --shadow: 0 1px 3px rgba(0,0,0,.3);
+    --shadow-lg: 0 6px 20px rgba(0,0,0,.45);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    overflow: hidden;
+    transition: background .25s, color .25s;
+  }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--text-3); border-radius: 4px; opacity: .4; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-2); }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  #app { display: flex; height: 100vh; }
+
+  /* ============ Sidebar ============ */
+  #sidebar {
+    width: 250px; min-width: 250px;
+    background: var(--panel-2);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    transition: margin-left .25s ease, background .25s;
+  }
+  #app.sidebar-hidden #sidebar { margin-left: -250px; }
+  .side-head {
+    padding: 18px 16px 12px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), #7ab8e8);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; flex-shrink: 0;
+  }
+  .logo svg { width: 17px; height: 17px; }
+  .side-head h1 { font-size: 16px; font-weight: 600; letter-spacing: .5px; }
+  .side-head .spacer { flex: 1; }
+  .icon-btn {
+    width: 30px; height: 30px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-2); transition: background .15s, color .15s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--hover); color: var(--text); }
+  .icon-btn svg { width: 16px; height: 16px; }
+
+  .nav-list { flex: 1; overflow-y: auto; padding: 4px 8px 12px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px; border-radius: 8px;
+    color: var(--text-2); cursor: pointer; user-select: none;
+    transition: background .12s;
+    position: relative;
+  }
+  .nav-item:hover { background: var(--hover); color: var(--text); }
+  .nav-item.active { background: var(--active); color: var(--text); font-weight: 500; }
+  .nav-item.active::before {
+    content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 16px; border-radius: 2px; background: var(--accent);
+  }
+  .nav-item .label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13.5px; }
+  .nav-item .count {
+    font-size: 11px; color: var(--text-3);
+    background: var(--hover); border-radius: 10px; padding: 1px 7px;
+  }
+  .nav-item.active .count { background: var(--accent-soft); color: var(--accent); }
+  .nav-item.unread .count { background: var(--accent); color: #fff; }
+  .nav-item .fav {
+    width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: #fff; font-weight: 600;
+  }
+  .nav-item .fav img { width: 16px; height: 16px; border-radius: 50%; }
+  .nav-item .del-btn {
+    opacity: 0; width: 22px; height: 22px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center; color: var(--text-3);
+  }
+  .nav-item:hover .del-btn { opacity: 1; }
+  .nav-item .del-btn:hover { background: rgba(220,50,50,.12); color: #d13438; }
+  .nav-item .del-btn svg { width: 13px; height: 13px; }
+  .nav-section {
+    padding: 14px 10px 6px; font-size: 11px; font-weight: 600;
+    color: var(--text-3); letter-spacing: 1px; text-transform: uppercase;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-section .add-feed-mini {
+    width: 22px; height: 22px; border-radius: 5px; color: var(--text-3);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-section .add-feed-mini:hover { background: var(--hover); color: var(--accent); }
+  .nav-section .add-feed-mini svg { width: 13px; height: 13px; }
+  .side-footer { padding: 10px; border-top: 1px solid var(--border); }
+
+  /* ============ Main ============ */
+  #main { flex: 1; display: flex; min-width: 0; flex-direction: column; }
+  .toolbar {
+    height: 52px; display: flex; align-items: center; gap: 6px;
+    padding: 0 16px; border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    transition: background .25s;
+  }
+  .toolbar .title { font-size: 15px; font-weight: 600; margin-right: 4px; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .icon-btn { width: 34px; height: 34px; }
+  .toolbar .icon-btn svg { width: 17px; height: 17px; }
+  .search-box {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--hover); border-radius: 8px; padding: 6px 12px;
+    width: 220px; transition: width .2s;
+  }
+  .search-box svg { width: 14px; height: 14px; color: var(--text-3); flex-shrink: 0; }
+  .search-box input {
+    border: none; outline: none; background: transparent; color: var(--text);
+    font-size: 13px; width: 100%; font-family: inherit;
+  }
+  .search-box input::placeholder { color: var(--text-3); }
+
+  #article-pane { flex: 1; min-width: 0; display: flex; position: relative; }
+
+  /* Article list */
+  #list-wrap { flex: 1; min-width: 0; overflow-y: auto; padding: 12px 16px 40px; }
+  .filter-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+  .filter-tab {
+    padding: 5px 14px; border-radius: 16px; font-size: 12.5px;
+    color: var(--text-2); border: 1px solid transparent; transition: all .15s;
+  }
+  .filter-tab:hover { background: var(--hover); }
+  .filter-tab.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+  .filter-tab.active.all { background: var(--accent); color: #fff; }
+  .article-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 18px;
+    margin-bottom: 8px; cursor: pointer;
+    transition: box-shadow .15s, transform .15s, border-color .15s, background .25s;
+    box-shadow: var(--shadow);
+    display: flex; gap: 14px; align-items: flex-start;
+    animation: fadein .25s ease;
+  }
+  @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .article-card:hover { box-shadow: var(--shadow-lg); border-color: var(--text-3); transform: translateY(-1px); }
+  .article-card.read { opacity: .55; }
+  .article-card.read:hover { opacity: 1; }
+  .article-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow-lg); }
+  .unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 7px; flex-shrink: 0; }
+  .article-card.read .unread-dot { background: transparent; }
+  .card-body { flex: 1; min-width: 0; }
+  .card-meta {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text-3); margin-bottom: 4px;
+  }
+  .card-meta .src { color: var(--accent); font-weight: 500; }
+  .card-title {
+    font-size: 15px; font-weight: 600; line-height: 1.4; margin-bottom: 4px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .article-card.read .card-title { font-weight: 500; }
+  .card-snippet {
+    font-size: 12.5px; color: var(--text-2); line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .card-star { width: 26px; height: 26px; border-radius: 6px; color: var(--text-3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .card-star:hover { background: var(--hover); color: #f2a900; }
+  .card-star.starred { color: #f2a900; }
+  .card-star svg { width: 15px; height: 15px; }
+  .card-star.starred svg { fill: #f2a900; }
+
+  .empty-state {
+    text-align: center; padding: 80px 20px; color: var(--text-3);
+  }
+  .empty-state .big-icon { font-size: 44px; margin-bottom: 14px; opacity: .5; }
+  .empty-state h3 { color: var(--text-2); font-size: 15px; margin-bottom: 6px; font-weight: 500; }
+  .empty-state p { font-size: 13px; margin-bottom: 18px; }
+  .suggest-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .suggest-chip {
+    padding: 7px 14px; border-radius: 18px; font-size: 12.5px;
+    background: var(--card); border: 1px solid var(--border); color: var(--text-2);
+    transition: all .15s;
+  }
+  .suggest-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  /* Reading view */
+  #reader {
+    position: absolute; inset: 0; background: var(--panel);
+    display: none; flex-direction: column; z-index: 10;
+  }
+  #reader.open { display: flex; }
+  .reader-toolbar {
+    height: 52px; display: flex; align-items: center; gap: 4px;
+    padding: 0 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .reader-toolbar .icon-btn { width: 34px; height: 34px; }
+  .reader-toolbar .icon-btn svg { width: 17px; height: 17px; }
+  .reader-toolbar .spacer { flex: 1; }
+  .article-content {
+    flex: 1; overflow-y: auto; padding: 36px 0 80px;
+  }
+  .article-inner {
+    max-width: 680px; margin: 0 auto; padding: 0 28px;
+  }
+  .article-inner h1 { font-size: 24px; font-weight: 700; line-height: 1.35; margin-bottom: 12px; }
+  .article-inner .byline {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--text-3); padding-bottom: 20px;
+    border-bottom: 1px solid var(--border); margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .article-inner .byline .src-name { color: var(--accent); font-weight: 600; }
+  .article-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
+  .article-content p { line-height: 1.85; margin: 14px 0; font-size: 15px; color: var(--text); }
+  .article-content h1, .article-content h2, .article-content h3, .article-content h4 { margin: 26px 0 12px; line-height: 1.4; }
+  .article-content h2 { font-size: 20px; } .article-content h3 { font-size: 17px; }
+  .article-content a { color: var(--accent); text-decoration: none; }
+  .article-content a:hover { text-decoration: underline; }
+  .article-content blockquote {
+    border-left: 3px solid var(--accent); padding: 4px 16px; margin: 16px 0;
+    color: var(--text-2); background: var(--panel-2); border-radius: 0 8px 8px 0;
+  }
+  .article-content pre {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.6; margin: 14px 0;
+  }
+  .article-content code { font-family: "Cascadia Code", Consolas, monospace; font-size: .9em; background: var(--hover); padding: 2px 5px; border-radius: 4px; }
+  .article-content pre code { background: transparent; padding: 0; }
+  .article-content ul, .article-content ol { padding-left: 24px; line-height: 1.85; margin: 12px 0; }
+  .article-content table { border-collapse: collapse; margin: 14px 0; width: 100%; font-size: 13.5px; }
+  .article-content th, .article-content td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+  .article-content iframe { max-width: 100%; border: none; border-radius: 8px; aspect-ratio: 16/9; }
+
+  /* Modal */
+  .modal-mask {
+    position: fixed; inset: 0; background: rgba(0,0,0,.35);
+    display: none; align-items: center; justify-content: center; z-index: 100;
+    backdrop-filter: blur(2px);
+  }
+  .modal-mask.open { display: flex; }
+  .modal {
+    background: var(--panel); border-radius: 14px; box-shadow: var(--shadow-lg);
+    width: 480px; max-width: calc(100vw - 40px); padding: 24px;
+    animation: pop .18s ease;
+  }
+  @keyframes pop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+  .modal h2 { font-size: 16px; margin-bottom: 6px; }
+  .modal p { font-size: 13px; color: var(--text-2); margin-bottom: 16px; line-height: 1.6; }
+  .modal input[type="text"] {
+    width: 100%; padding: 10px 12px; border-radius: 8px; font-size: 13.5px;
+    border: 1px solid var(--border); background: var(--panel-2); color: var(--text);
+    outline: none; font-family: inherit; margin-bottom: 6px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .modal input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .modal .err { color: #d13438; font-size: 12px; min-height: 18px; margin-bottom: 6px; }
+  .modal .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+  .btn {
+    padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    transition: all .15s;
+  }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.1); }
+  .btn.primary:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.ghost { color: var(--text-2); }
+  .btn.ghost:hover { background: var(--hover); color: var(--text); }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--text); color: var(--bg); padding: 10px 20px;
+    border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none;
+    transition: all .25s; z-index: 200; box-shadow: var(--shadow-lg);
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%); }
+
+  .spin { animation: rotate 1s linear infinite; }
+  @keyframes rotate { to { transform: rotate(360deg); } }
+
+  @media (max-width: 860px) {
+    .search-box { width: 140px; }
+    #reader { position: fixed; }
+  }
+  @media (max-width: 680px) {
+    #sidebar { position: fixed; z-index: 50; height: 100%; box-shadow: var(--shadow-lg); }
+    #app:not(.sidebar-hidden) .mask-mobile { display: block; }
+    .mask-mobile {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.3); z-index: 40;
+    }
+    .search-box { display: none; }
+    #list-wrap { padding: 10px 12px 40px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="side-head">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4.44v2.83c7.03 0 12.73 5.7 12.73 12.73h2.83c0-8.59-6.97-15.56-15.56-15.56zm0 5.66v2.83c3.9 0 7.07 3.17 7.07 7.07h2.83c0-5.47-4.43-9.9-9.9-9.9zM6.18 15.64a2.18 2.18 0 1 1 0 4.36 2.18 2.18 0 0 1 0-4.36z"/></svg>
+      </div>
+      <h1>简阅</h1>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="btn-add-feed" title="添加订阅">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+    <nav class="nav-list" id="nav-list">
+      <div class="nav-item" data-nav="all">
+        <span class="fav" style="background:var(--accent)">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        </span>
+        <span class="label">全部文章</span>
+        <span class="count" id="count-all">0</span>
+      </div>
+      <div class="nav-item" data-nav="starred">
+        <span class="fav" style="background:#f2a900">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="#fff"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </span>
+        <span class="label">收藏</span>
+        <span class="count" id="count-starred">0</span>
+      </div>
+      <div class="nav-section">
+        <span>订阅源</span>
+        <button class="add-feed-mini" id="btn-add-feed-2" title="添加订阅">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+      <div id="feed-list"></div>
+    </nav>
+    <div class="side-footer">
+      <div class="nav-item" data-nav="settings" style="display:none" id="nav-settings"></div>
+    </div>
+  </aside>
+  <div class="mask-mobile" id="mask-mobile"></div>
+
+  <main id="main">
+    <div class="toolbar">
+      <button class="icon-btn" id="btn-toggle-sidebar" title="切换侧栏">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <span class="title" id="view-title">全部文章</span>
+      <div class="spacer"></div>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="search-input" placeholder="搜索文章…">
+      </div>
+      <button class="icon-btn" id="btn-refresh" title="刷新全部订阅">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-mark-all" title="全部标为已读">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-theme" title="切换深色模式">
+        <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+    <div id="article-pane">
+      <div id="list-wrap">
+        <div class="filter-tabs">
+          <button class="filter-tab active all" data-filter="all">全部</button>
+          <button class="filter-tab" data-filter="unread">未读</button>
+          <button class="filter-tab" data-filter="starred">收藏</button>
+        </div>
+        <div id="article-list"></div>
+      </div>
+      <div id="reader">
+        <div class="reader-toolbar">
+          <button class="icon-btn" id="btn-close-reader" title="返回列表">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </button>
+          <div class="spacer"></div>
+          <button class="icon-btn" id="btn-star-article" title="收藏">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-open-ext" title="在浏览器中打开">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg>
+          </button>
+        </div>
+        <div class="article-content">
+          <div class="article-inner" id="reader-inner"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modal-mask">
+  <div class="modal">
+    <h2>添加订阅</h2>
+    <p>输入 RSS / Atom 源地址，例如 <code>https://www.ruanyifeng.com/blog/atom.xml</code></p>
+    <input type="text" id="feed-url-input" placeholder="订阅源 URL">
+    <div class="err" id="feed-err"></div>
+    <div class="actions">
+      <button class="btn ghost" id="btn-cancel-feed">取消</button>
+      <button class="btn primary" id="btn-confirm-feed">订阅</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* =============== 存储 =============== */
+const STORE_KEY = "jianyue-rss-v1";
+let state = {
+  feeds: [],        // {id, url, title, siteUrl, desc, error}
+  items: {},        // feedId -> [{id, feedId, title, link, date, snippet, content, read, starred}]
+  view: "all",      // all | starred | feed:<id>
+  filter: "all",    // all | unread | starred
+  theme: "light",
+  search: "",
+};
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) state = Object.assign(state, JSON.parse(raw));
+  } catch (e) { /* 忽略损坏数据 */ }
+}
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+/* =============== 工具 =============== */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._tm); t._tm = setTimeout(() => t.classList.remove("show"), 2400);
+}
+function fmtDate(d) {
+  if (!d || isNaN(d)) return "";
+  const now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return "刚刚";
+  if (diff < 3600) return Math.floor(diff / 60) + " 分钟前";
+  if (diff < 86400) return Math.floor(diff / 3600) + " 小时前";
+  if (diff < 86400 * 7) return Math.floor(diff / 86400) + " 天前";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+const PALETTE = ["#0f6cbd","#8764b8","#00838f","#c94f7c","#b45309","#2e7d32","#5b6ee1","#b03a48"];
+function colorOf(str) {
+  let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+function faviconEl(feed, size) {
+  const span = document.createElement("span");
+  span.className = "fav";
+  span.style.background = colorOf(feed.url);
+  span.style.width = span.style.height = size + "px";
+  const letter = esc((feed.title || "?").trim().charAt(0).toUpperCase());
+  if (feed.siteUrl) {
+    try {
+      const host = new URL(feed.siteUrl).hostname;
+      const img = document.createElement("img");
+      img.src = "https://favicon.im/" + host + "?larger=true";
+      img.loading = "lazy";
+      img.onerror = () => { img.remove(); span.textContent = letter; };
+      span.appendChild(img);
+      return span;
+    } catch (e) {}
+  }
+  span.textContent = letter;
+  return span;
+}
+
+/* =============== RSS 抓取（多代理回退） =============== */
+const PROXIES = [
+  u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
+  u => "https://corsproxy.io/?url=" + encodeURIComponent(u),
+  u => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u),
+];
+
+async function fetchText(url) {
+  let lastErr;
+  for (const wrap of PROXIES) {
+    try {
+      const ctrl = new AbortController();
+      const tm = setTimeout(() => ctrl.abort(), 20000);
+      const res = await fetch(wrap(url), { signal: ctrl.signal });
+      clearTimeout(tm);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      if (text && text.length > 30) return text;
+      throw new Error("空响应");
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error("网络错误");
+}
+
+function parseFeed(xmlText, url) {
+  const doc = new DOMParser().parseFromString(xmlText, "text/xml");
+  if (doc.querySelector("parsererror")) throw new Error("不是有效的 RSS/Atom 源");
+  const ch = doc.querySelector("channel") || doc.querySelector("feed");
+  if (!ch) throw new Error("不是有效的 RSS/Atom 源");
+  const isAtom = ch.localName === "feed";
+  const pick = (el, names) => {
+    for (const n of names) {
+      const t = el.querySelector(n);
+      if (t) return t.textContent.trim();
+    }
+    return "";
+  };
+  let siteUrl = "";
+  if (isAtom) {
+    for (const l of ch.querySelectorAll("link")) {
+      const rel = l.getAttribute("rel"), href = l.getAttribute("href");
+      if (!rel && href) { siteUrl = href; break; }
+      if (rel === "alternate" && href) siteUrl = href;
+    }
+  } else {
+    siteUrl = pick(ch, ["link"]);
+  }
+  const feedInfo = {
+    title: pick(ch, ["title"]) || url,
+    siteUrl: siteUrl || url,
+    desc: pick(ch, ["description", "subtitle"]),
+  };
+  const itemEls = isAtom ? ch.querySelectorAll("entry") : ch.querySelectorAll("item");
+  const items = [];
+  itemEls.forEach((it, i) => {
+    let link = "";
+    if (isAtom) {
+      for (const l of it.querySelectorAll("link")) {
+        const rel = l.getAttribute("rel"), href = l.getAttribute("href");
+        if ((!rel || rel === "alternate") && href) { link = href; break; }
+      }
+    } else {
+      link = pick(it, ["link"]);
+    }
+    const dateStr = pick(it, isAtom ? ["updated", "published"] : ["pubDate", "dc:date", "published", "updated"]);
+    let date = dateStr ? new Date(dateStr) : new Date();
+    if (isNaN(date)) date = new Date();
+    let content = pick(it, ["content\\:encoded", "content", "description", "summary"]);
+    if (!content) content = "";
+    const tmp = document.createElement("div");
+    tmp.innerHTML = content;
+    const snippet = (tmp.textContent || "").replace(/\s+/g, " ").trim().slice(0, 200);
+    const id = pick(it, ["guid", "id"]) || link || (url + "#" + i + "-" + (dateStr || ""));
+    items.push({
+      id, feedId: "", title: pick(it, ["title"]) || "(无标题)",
+      link, date: date.getTime(), snippet, content,
+      read: false, starred: false,
+    });
+  });
+  return { feedInfo, items };
+}
+
+/* =============== 数据操作 =============== */
+function allItems() {
+  const arr = [];
+  for (const fid of Object.keys(state.items)) {
+    for (const it of state.items[fid]) arr.push(it);
+  }
+  arr.sort((a, b) => b.date - a.date);
+  return arr;
+}
+function currentItems() {
+  let arr;
+  if (state.view === "all") arr = allItems();
+  else if (state.view === "starred") arr = allItems().filter(i => i.starred);
+  else {
+    const fid = state.view.slice(5);
+    arr = (state.items[fid] || []).slice().sort((a, b) => b.date - a.date);
+  }
+  if (state.filter === "unread") arr = arr.filter(i => !i.read);
+  else if (state.filter === "starred") arr = arr.filter(i => i.starred);
+  if (state.search) {
+    const q = state.search.toLowerCase();
+    arr = arr.filter(i => (i.title + " " + i.snippet).toLowerCase().includes(q));
+  }
+  return arr;
+}
+function unreadCount(fid) {
+  const list = fid ? (state.items[fid] || []) : allItems();
+  return list.filter(i => !i.read).length;
+}
+
+async function addFeed(url) {
+  url = url.trim();
+  if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+  if (state.feeds.some(f => f.url === url)) throw new Error("该订阅源已存在");
+  const xml = await fetchText(url);
+  const { feedInfo, items } = parseFeed(xml, url);
+  const feed = {
+    id: "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    url, ...feedInfo, error: "",
+  };
+  items.forEach(it => it.feedId = feed.id);
+  // 合并旧缓存（保留已读/收藏状态）
+  const old = state.items[feed.id];
+  if (old) {
+    const oldMap = new Map(old.map(o => [o.id, o]));
+    items.forEach(n => { const o = oldMap.get(n.id); if (o) { n.read = o.read; n.starred = o.starred; } });
+  }
+  state.feeds.push(feed);
+  state.items[feed.id] = items;
+  save();
+  render();
+  return feed;
+}
+
+async function refreshFeed(feed) {
+  const xml = await fetchText(feed.url);
+  const { feedInfo, items } = parseFeed(xml, feed.url);
+  Object.assign(feed, feedInfo, { error: "" });
+  const oldMap = new Map((state.items[feed.id] || []).map(o => [o.id, o]));
+  items.forEach(n => { const o = oldMap.get(n.id); if (o) { n.read = o.read; n.starred = o.starred; } });
+  state.items[feed.id] = items;
+}
+
+async function refreshAll(silent) {
+  if (!state.feeds.length) { toast("还没有订阅源，先添加一个吧"); return; }
+  const btn = $("#btn-refresh");
+  const svg = btn.querySelector("svg");
+  svg.classList.add("spin");
+  let ok = 0, fail = 0;
+  await Promise.all(state.feeds.map(async f => {
+    try { await refreshFeed(f); ok++; }
+    catch (e) { f.error = "抓取失败"; fail++; }
+  }));
+  svg.classList.remove("spin");
+  save(); render();
+  if (!silent || fail) toast(`已更新 ${ok} 个订阅源` + (fail ? `，${fail} 个失败` : ""));
+}
+
+function removeFeed(fid) {
+  const feed = state.feeds.find(f => f.id === fid);
+  if (!feed) return;
+  if (!confirm(`确定取消订阅「${feed.title}」吗？其文章与收藏将一并删除。`)) return;
+  state.feeds = state.feeds.filter(f => f.id !== fid);
+  delete state.items[fid];
+  if (state.view === "feed:" + fid) state.view = "all";
+  save(); render();
+  toast("已取消订阅");
+}
+
+/* =============== 渲染 =============== */
+function render() {
+  renderSidebar();
+  renderList();
+  renderCounts();
+}
+function renderCounts() {
+  $("#count-all").textContent = unreadCount();
+  $("#count-starred").textContent = allItems().filter(i => i.starred).length;
+}
+function renderSidebar() {
+  const list = $("#feed-list");
+  list.innerHTML = "";
+  state.feeds.forEach(f => {
+    const div = document.createElement("div");
+    div.className = "nav-item" + (state.view === "feed:" + f.id ? " active" : "") + (unreadCount(f.id) ? " unread" : "");
+    div.appendChild(faviconEl(f, 18));
+    const label = document.createElement("span");
+    label.className = "label"; label.textContent = f.title;
+    div.appendChild(label);
+    const uc = unreadCount(f.id);
+    if (uc) {
+      const c = document.createElement("span");
+      c.className = "count"; c.textContent = uc;
+      div.appendChild(c);
+    }
+    const del = document.createElement("button");
+    del.className = "del-btn"; del.title = "取消订阅";
+    del.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>';
+    del.onclick = e => { e.stopPropagation(); removeFeed(f.id); };
+    div.appendChild(del);
+    div.onclick = () => { state.view = "feed:" + f.id; render(); closeMobileSidebar(); };
+    list.appendChild(div);
+  });
+  if (!state.feeds.length) {
+    const tip = document.createElement("div");
+    tip.style.cssText = "padding:10px 12px;font-size:12px;color:var(--text-3);line-height:1.6";
+    tip.textContent = "点击右上角 + 添加你的第一个订阅源";
+    list.appendChild(tip);
+  }
+  // 高亮当前视图
+  $$("#nav-list .nav-item").forEach(el => {
+    const nav = el.dataset.nav;
+    if (nav) el.classList.toggle("active", nav === state.view);
+  });
+  $("#view-title").textContent =
+    state.view === "all" ? "全部文章" :
+    state.view === "starred" ? "收藏" :
+    (state.feeds.find(f => "feed:" + f.id === state.view) || {}).title || "订阅源";
+}
+function renderList() {
+  const wrap = $("#article-list");
+  wrap.innerHTML = "";
+  const arr = currentItems();
+  if (!arr.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    if (!state.feeds.length) {
+      empty.innerHTML = `
+        <div class="big-icon">📡</div>
+        <h3>还没有订阅源</h3>
+        <p>点击下面的推荐订阅，或使用左上角 + 添加</p>
+        <div class="suggest-row">
+          <button class="suggest-chip" data-url="https://www.ruanyifeng.com/blog/atom.xml">阮一峰的网络日志</button>
+          <button class="suggest-chip" data-url="https://sspai.com/feed">少数派</button>
+          <button class="suggest-chip" data-url="https://feeds.appinn.com/appinn/">小众软件</button>
+          <button class="suggest-chip" data-url="https://www.solidot.org/index.rss">Solidot</button>
+        </div>`;
+      empty.querySelectorAll(".suggest-chip").forEach(btn => {
+        btn.onclick = async () => {
+          btn.disabled = true; btn.textContent = "订阅中…";
+          try { await addFeed(btn.dataset.url); toast("订阅成功，正在拉取文章…"); }
+          catch (e) { btn.textContent = "失败，点击重试"; btn.disabled = false; toast(e.message); }
+        };
+      });
+    } else if (state.search) {
+      empty.innerHTML = `<div class="big-icon">🔍</div><h3>没有匹配的文章</h3><p>换个关键词试试</p>`;
+    } else {
+      empty.innerHTML = `<div class="big-icon">🎉</div><h3>这里空空如也</h3><p>没有符合条件的文章</p>`;
+    }
+    wrap.appendChild(empty);
+    return;
+  }
+  const feedMap = new Map(state.feeds.map(f => [f.id, f]));
+  arr.forEach(it => {
+    const feed = feedMap.get(it.feedId) || { title: "?", url: it.feedId };
+    const card = document.createElement("div");
+    card.className = "article-card" + (it.read ? " read" : "");
+    if (reader.currentId === it.id && $("#reader").classList.contains("open")) card.classList.add("selected");
+    card.innerHTML = `<div class="unread-dot"></div>`;
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const meta = document.createElement("div");
+    meta.className = "card-meta";
+    const src = document.createElement("span");
+    src.className = "src"; src.textContent = feed.title;
+    const dt = document.createElement("span");
+    dt.textContent = fmtDate(new Date(it.date));
+    meta.appendChild(src); meta.appendChild(dt);
+    const title = document.createElement("div");
+    title.className = "card-title"; title.textContent = it.title;
+    const snip = document.createElement("div");
+    snip.className = "card-snippet"; snip.textContent = it.snippet;
+    body.appendChild(meta); body.appendChild(title); body.appendChild(snip);
+    const star = document.createElement("button");
+    star.className = "card-star" + (it.starred ? " starred" : "");
+    star.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+    star.title = "收藏";
+    star.onclick = e => { e.stopPropagation(); it.starred = !it.starred; save(); render(); };
+    card.appendChild(body); card.appendChild(star);
+    card.onclick = () => openArticle(it, feed);
+    wrap.appendChild(card);
+  });
+}
+
+/* =============== 阅读器 =============== */
+const reader = { currentId: null, currentLink: "" };
+
+function sanitizeHtml(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  doc.querySelectorAll("script, style, link, meta, form, object, embed").forEach(el => el.remove());
+  doc.querySelectorAll("*").forEach(el => {
+    for (const attr of Array.from(el.attributes)) {
+      const n = attr.name.toLowerCase();
+      if (n.startsWith("on") || (n === "href" && attr.value.trim().toLowerCase().startsWith("javascript:"))) el.removeAttribute(attr.name);
+    }
+    if (el.tagName === "IFRAME") { el.setAttribute("loading", "lazy"); el.removeAttribute("srcdoc"); }
+    if (el.tagName === "IMG") { el.setAttribute("loading", "lazy"); }
+  });
+  // 相对链接转绝对
+  const base = reader.currentLink;
+  if (base) {
+    try {
+      const b = new URL(base);
+      doc.querySelectorAll("a[href]").forEach(a => {
+        try { a.href = new URL(a.getAttribute("href"), b).href; a.target = "_blank"; a.rel = "noopener"; } catch (e) {}
+      });
+      doc.querySelectorAll("img[src]").forEach(img => {
+        try { img.src = new URL(img.getAttribute("src"), b).href; } catch (e) {}
+      });
+    } catch (e) {}
+  }
+  return doc.body.innerHTML;
+}
+
+function openArticle(it, feed) {
+  reader.currentId = it.id;
+  reader.currentLink = it.link;
+  if (!it.read) { it.read = true; save(); }
+  const inner = $("#reader-inner");
+  inner.innerHTML = `
+    <h1>${esc(it.title)}</h1>
+    <div class="byline">
+      <span class="src-name">${esc(feed.title)}</span>
+      <span>${new Date(it.date).toLocaleString("zh-CN")}</span>
+    </div>
+    <div class="article-body-host">${it.content ? sanitizeHtml(it.content) : "<p>" + esc(it.snippet) + "</p>"}</div>`;
+  if (it.content) {
+    inner.querySelector(".article-body-host").replaceWith(...inner.querySelector(".article-body-host").childNodes);
+  }
+  const starBtn = $("#btn-star-article");
+  const svg = starBtn.querySelector("svg");
+  svg.setAttribute("fill", it.starred ? "currentColor" : "none");
+  starBtn.style.color = it.starred ? "#f2a900" : "";
+  $("#reader").classList.add("open");
+  $("#reader .article-content").scrollTop = 0;
+  render();
+  if (window.innerWidth <= 680) { $("#app").classList.add("sidebar-hidden"); }
+}
+function closeReader() {
+  $("#reader").classList.remove("open");
+  reader.currentId = null;
+  render();
+}
+
+/* =============== 主题 =============== */
+function applyTheme() {
+  document.documentElement.dataset.theme = state.theme;
+}
+function toggleTheme() {
+  state.theme = state.theme === "light" ? "dark" : "light";
+  save(); applyTheme();
+}
+
+/* =============== 事件绑定 =============== */
+function openMobileSidebar() { $("#app").classList.remove("sidebar-hidden"); }
+function closeMobileSidebar() { if (window.innerWidth <= 680) $("#app").classList.add("sidebar-hidden"); }
+
+function bindEvents() {
+  $("#btn-add-feed").onclick = $("#btn-add-feed-2").onclick = () => {
+    $("#feed-url-input").value = ""; $("#feed-err").textContent = "";
+    $("#modal-mask").classList.add("open");
+    setTimeout(() => $("#feed-url-input").focus(), 50);
+  };
+  $("#btn-cancel-feed").onclick = () => $("#modal-mask").classList.remove("open");
+  $("#modal-mask").onclick = e => { if (e.target === $("#modal-mask")) $("#modal-mask").classList.remove("open"); };
+  $("#btn-confirm-feed").onclick = confirmAddFeed;
+  $("#feed-url-input").onkeydown = e => { if (e.key === "Enter") confirmAddFeed(); };
+
+  $$("#nav-list .nav-item").forEach(el => {
+    const nav = el.dataset.nav;
+    if (nav) el.onclick = () => { state.view = nav; render(); closeMobileSidebar(); };
+  });
+
+  $$(".filter-tab").forEach(t => {
+    t.onclick = () => {
+      state.filter = t.dataset.filter;
+      $$(".filter-tab").forEach(x => x.classList.toggle("active", x === t));
+      renderList();
+    };
+  });
+
+  $("#search-input").oninput = e => { state.search = e.target.value.trim(); renderList(); };
+  $("#btn-refresh").onclick = () => refreshAll(false);
+  $("#btn-mark-all").onclick = () => {
+    const arr = currentItems().filter(i => !i.read);
+    if (!arr.length) { toast("没有未读文章"); return; }
+    arr.forEach(i => i.read = true);
+    save(); render(); toast(`已将 ${arr.length} 篇文章标为已读`);
+  };
+  $("#btn-theme").onclick = toggleTheme;
+  $("#btn-toggle-sidebar").onclick = () => {
+    if (window.innerWidth <= 680) {
+      $("#app").classList.contains("sidebar-hidden") ? openMobileSidebar() : closeMobileSidebar();
+    } else {
+      $("#app").classList.toggle("sidebar-hidden");
+    }
+  };
+  $("#mask-mobile").onclick = closeMobileSidebar;
+
+  $("#btn-close-reader").onclick = closeReader;
+  $("#btn-star-article").onclick = () => {
+    const it = findItem(reader.currentId);
+    if (!it) return;
+    it.starred = !it.starred;
+    const btn = $("#btn-star-article");
+    btn.querySelector("svg").setAttribute("fill", it.starred ? "currentColor" : "none");
+    btn.style.color = it.starred ? "#f2a900" : "";
+    save(); render();
+    toast(it.starred ? "已收藏" : "已取消收藏");
+  };
+  $("#btn-open-ext").onclick = () => { if (reader.currentLink) window.open(reader.currentLink, "_blank", "noopener"); };
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+      if ($("#modal-mask").classList.contains("open")) $("#modal-mask").classList.remove("open");
+      else if ($("#reader").classList.contains("open")) closeReader();
+    }
+  });
+}
+function findItem(id) {
+  for (const fid of Object.keys(state.items)) {
+    const it = state.items[fid].find(i => i.id === id);
+    if (it) return it;
+  }
+  return null;
+}
+async function confirmAddFeed() {
+  const url = $("#feed-url-input").value.trim();
+  const err = $("#feed-err");
+  const btn = $("#btn-confirm-feed");
+  if (!url) { err.textContent = "请输入订阅源地址"; return; }
+  err.textContent = ""; btn.disabled = true; btn.textContent = "获取中…";
+  try {
+    await addFeed(url);
+    $("#modal-mask").classList.remove("open");
+    toast("订阅成功");
+    refreshFeedSilent(state.feeds[state.feeds.length - 1]);
+  } catch (e) {
+    err.textContent = e.message === "Failed to fetch" ? "网络错误，请检查地址后重试" : (e.message || "添加失败");
+  } finally {
+    btn.disabled = false; btn.textContent = "订阅";
+  }
+}
+async function refreshFeedSilent(feed) {
+  try { await refreshFeed(feed); save(); render(); }
+  catch (e) { feed.error = "抓取失败"; save(); render(); toast("订阅已添加，但文章抓取失败，可稍后刷新重试"); }
+}
+
+/* =============== 启动 =============== */
+load();
+applyTheme();
+bindEvents();
+render();
+// 首次访问自动刷新
+if (state.feeds.length) refreshAll(true);
+if (window.innerWidth <= 680) $("#app").classList.add("sidebar-hidden");
+</script>
+</body>
+</html>
