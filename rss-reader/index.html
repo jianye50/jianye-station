@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FEF7FF">
+<title>鉴业阅读 Jianye Reader</title>
+<meta name="description" content="鉴业阅读 Jianye Reader 是一个 Material Design 风格的网页 RSS 阅读器，支持订阅管理、分组、星标收藏与多设备响应式阅读。">
+<!-- 首屏主题引导：在样式表生效前同步确定明暗主题，避免深色系统下先闪一帧白屏 -->
+<script>
+  (function () {
+    var STORAGE_KEY = 'jianread.state.v1';
+    var LIGHT_BG = '#f7f2fa';
+    var DARK_BG = '#1d1b20';
+    var theme = 'system';
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var ui = JSON.parse(raw).ui || {};
+        if (ui.theme === 'light' || ui.theme === 'dark' || ui.theme === 'system') theme = ui.theme;
+      }
+    } catch (err) {}
+    if (theme === 'system') {
+      theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    var root = document.documentElement;
+    var dark = theme === 'dark';
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    root.style.colorScheme = dark ? 'dark' : 'light';
+    root.style.backgroundColor = dark ? DARK_BG : LIGHT_BG;
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', dark ? DARK_BG : LIGHT_BG);
+  })();
+</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%236750A4'/%3E%3Cg fill='none' stroke='%23EADDFF' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M10 22v.01'/%3E%3Cpath d='M10 15a7 7 0 0 1 7 7'/%3E%3Cpath d='M10 9a13 13 0 0 1 13 13'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#articleList" data-i18n="skip.link">跳到文章列表</a>
+
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-rss" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+    <circle cx="6" cy="18" r="1.6" fill="currentColor" stroke="none"></circle>
+    <path d="M5 11a8 8 0 0 1 8 8"></path>
+    <path d="M5 4.5a14.5 14.5 0 0 1 14.5 14.5"></path>
+  </symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.5 13h4l1.6 2.6h5.8L16.5 13h4"></path>
+    <path d="M3.5 13 6.8 5.4A1.6 1.6 0 0 1 8.3 4.5h7.4a1.6 1.6 0 0 1 1.5 1L20.5 13v4.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"></path>
+  </symbol>
+  <symbol id="i-unread" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+    <circle cx="12" cy="12" r="8.2"></circle>
+    <circle cx="12" cy="12" r="3.1" fill="currentColor" stroke="none"></circle>
+  </symbol>
+  <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+    <path d="M12 3.8l2.55 5.17 5.7.83-4.12 4.02.97 5.68L12 16.82l-5.1 2.68.97-5.68L3.75 9.8l5.7-.83z"></path>
+  </symbol>
+  <symbol id="i-star-fill" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <path d="M12 3.8l2.55 5.17 5.7.83-4.12 4.02.97 5.68L12 16.82l-5.1 2.68.97-5.68L3.75 9.8l5.7-.83z"></path>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+    <circle cx="11" cy="11" r="6.4"></circle>
+    <path d="M16 16l4.6 4.6"></path>
+  </symbol>
+  <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+    <path d="M6.5 6.5l11 11M17.5 6.5l-11 11"></path>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 12.5l4.2 4.3L19 7"></path>
+  </symbol>
+  <symbol id="i-check-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2.5 12.5l3.6 3.7 7.4-8"></path>
+    <path d="M9.5 17l1 1L21 6.6"></path>
+  </symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+    <path d="M4 7h16M4 12h16M4 17h16"></path>
+  </symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+    <path d="M12 5.5v13M5.5 12h13"></path>
+  </symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5.5 9l6.5 6.5L18.5 9"></path>
+  </symbol>
+  <symbol id="i-more" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <circle cx="5" cy="12" r="1.6"></circle>
+    <circle cx="12" cy="12" r="1.6"></circle>
+    <circle cx="19" cy="12" r="1.6"></circle>
+  </symbol>
+  <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19.5 12H5M11 5.5L4.5 12l6.5 6.5"></path>
+  </symbol>
+  <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M13.5 4.5H19.5V10.5"></path>
+    <path d="M19.5 4.5L11 13"></path>
+    <path d="M18 14.5V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V7.5A1.5 1.5 0 0 1 5 6h4.5"></path>
+  </symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 12a8 8 0 1 1-2.6-5.9"></path>
+    <path d="M20 4v4.5h-4.5"></path>
+  </symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 6.8h16"></path>
+    <path d="M9.5 6.8V4.4h5v2.4"></path>
+    <path d="M6.5 6.8l.9 12.1a1.6 1.6 0 0 0 1.6 1.5h6a1.6 1.6 0 0 0 1.6-1.5l.9-12.1"></path>
+  </symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 20h4.2L20 8.2 15.8 4 4 15.8z"></path>
+    <path d="M13.6 6.2 17.8 10.4"></path>
+  </symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.2h8A1.5 1.5 0 0 1 20.5 9.7v8.8A1.5 1.5 0 0 1 19 20H5a1.5 1.5 0 0 1-1.5-1.5z"></path>
+  </symbol>
+  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 4v11.5"></path>
+    <path d="M7.2 11l4.8 4.8 4.8-4.8"></path>
+    <path d="M4.5 20h15"></path>
+  </symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 20V8.5"></path>
+    <path d="M7.2 13 12 8.2 16.8 13"></path>
+    <path d="M4.5 4h15"></path>
+  </symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path>
+  </symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 4.5v15M3.6 16.2 7 19.5l3.4-3.3"></path>
+    <path d="M13 7h8M13 12h6M13 17h4"></path>
+  </symbol>
+  <symbol id="i-rows" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <path d="M4 7h16M4 12h16M4 17h16"></path>
+  </symbol>
+  <symbol id="i-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="12" cy="12" r="8.2"></circle>
+  </symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9.5 5.5 16 12l-6.5 6.5"></path>
+  </symbol>
+</svg>
+
+<div class="app" id="app">
+  <!-- ================= 侧边栏 ================= -->
+  <aside class="sidebar" id="sidebar" aria-label="订阅源导航" data-i18n-aria="aria.sidebar">
+    <div class="home-top">
+      <button class="icon-btn" id="settingsBtn" aria-label="设置" title="设置" data-i18n-aria="settings.title" data-i18n-title="settings.title">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-settings"></use></svg>
+      </button>
+      <button class="icon-btn" id="addFeedBtn" aria-label="添加订阅源" title="添加订阅源" data-i18n-aria="action.addFeed" data-i18n-title="action.addFeed">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"></use></svg>
+      </button>
+    </div>
+
+    <h1 class="home-title" data-i18n="app.name">鉴业阅读</h1>
+
+    <button class="hero-card" id="heroCard" aria-label="打开当前视图" data-i18n-aria="aria.hero">
+      <span class="hero-icon" aria-hidden="true">
+        <svg class="icon" viewBox="0 0 24 24"><use id="heroIconUse" href="#i-rows"></use></svg>
+      </span>
+      <span class="hero-text">
+        <span class="hero-label" id="heroLabel">全部文章</span>
+        <span class="hero-sub" id="heroSub">0 项已存档</span>
+      </span>
+      <svg class="icon hero-chevron" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+    </button>
+
+    <div class="sidebar-scroll">
+      <div class="home-groups-head">
+        <h2 class="home-groups-title" data-i18n="section.categories">分组</h2>
+        <button class="icon-btn small" id="addCategoryBtn" aria-label="新建分组" title="新建分组" data-i18n-aria="action.addCategory" data-i18n-title="action.addCategory">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"></use></svg>
+        </button>
+        <button class="icon-btn small" id="groupsToggle" aria-label="折叠分组" aria-expanded="true" data-i18n-aria="aria.collapseAll">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+        </button>
+      </div>
+      <div class="cat-list" id="categoryList"></div>
+    </div>
+
+    <input type="file" id="opmlInput" accept=".opml,.xml,text/xml,application/xml" hidden>
+  </aside>
+
+  <div class="scrim" id="scrim" hidden></div>
+
+  <!-- ================= 文章列表 ================= -->
+  <section class="list-pane" id="listPane" aria-label="文章列表" data-i18n-aria="aria.listPane">
+    <header class="list-header" id="listHeader">
+      <div class="list-header-row">
+        <button class="icon-btn compact-only" id="menuBtn" aria-label="返回首页" aria-expanded="false" aria-controls="sidebar" data-i18n-aria="aria.backHome">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"></use></svg>
+        </button>
+        <div class="list-title-wrap">
+          <h1 class="list-title" id="viewTitle">全部文章</h1>
+          <p class="list-meta" id="viewMeta">共 0 篇 · 0 篇未读</p>
+        </div>
+        <div class="list-actions">
+          <button class="icon-btn mobile-only" id="searchToggle" aria-label="搜索文章" aria-expanded="false" aria-controls="searchWrap" data-i18n-aria="search.aria">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"></use></svg>
+          </button>
+          <button class="icon-btn" id="markAllBtn" aria-label="将当前列表标为已读（可选期限）" title="标为已读" data-i18n-aria="markAll.aria" data-i18n-title="markAll.title">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check-all"></use></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="search-wrap" id="searchWrap">
+        <svg class="icon search-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"></use></svg>
+        <input class="search-input" id="searchInput" type="search" placeholder="搜索标题、作者或摘要" aria-label="搜索文章" autocomplete="off" data-i18n-ph="search.placeholder" data-i18n-aria="search.aria">
+        <button class="icon-btn small search-clear" id="searchClear" aria-label="清除搜索" hidden data-i18n-aria="search.clear">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"></use></svg>
+        </button>
+      </div>
+
+      <div class="chips" role="group" aria-label="快速筛选" data-i18n-aria="aria.quickFilter">
+        <button class="chip is-active" data-filter="all" aria-pressed="true" data-i18n="chip.all">全部</button>
+        <button class="chip" data-filter="unread" aria-pressed="false" data-i18n="chip.unread">未读</button>
+        <button class="chip" data-filter="starred" aria-pressed="false" data-i18n="chip.starred">已加星标</button>
+        <span class="chips-spacer"></span>
+        <button class="chip sort-chip" id="sortBtn" aria-label="切换排序方式" aria-pressed="false" data-i18n-aria="sort.aria">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sort"></use></svg>
+          <span id="sortLabel">最新优先</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="list-scroll" id="listScroll">
+      <ul class="article-list" id="articleList" aria-label="文章" data-i18n-aria="aria.articleList"></ul>
+      <div class="empty" id="listEmpty" hidden>
+        <svg class="empty-art" viewBox="0 0 120 120" aria-hidden="true">
+          <rect x="22" y="18" width="76" height="84" rx="12" fill="none" stroke="currentColor" stroke-width="2.2" opacity=".35"></rect>
+          <path d="M38 44h44M38 58h44M38 72h28" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" opacity=".55"></path>
+          <circle cx="88" cy="88" r="17" fill="var(--primary-container)"></circle>
+          <path d="M82 88.5l4 4 8-9" fill="none" stroke="var(--on-primary-container)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        <h2 class="empty-title" data-i18n="empty.title">这里很安静</h2>
+        <p class="empty-text" id="listEmptyText">添加一个订阅源，开始你的阅读。</p>
+        <div class="empty-actions">
+          <button class="btn-tonal" id="emptyAddBtn" data-i18n="empty.add">添加订阅源</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 阅读区 ================= -->
+  <main class="reader" id="reader" aria-label="文章阅读区" data-i18n-aria="aria.reader">
+    <div class="reader-progress" aria-hidden="true"><div class="reader-progress-bar" id="progressBar"></div></div>
+    <div class="reader-toolbar">
+      <button class="icon-btn mobile-only" id="backBtn" aria-label="返回文章列表" data-i18n-aria="reader.back">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"></use></svg>
+      </button>
+      <div class="reader-scope" id="readerScope">阅读</div>
+      <div class="reader-actions">
+        <button class="icon-btn" id="starBtn" aria-label="为这篇文章加星标" aria-pressed="false" title="加星标（S）" data-i18n-aria="reader.star" data-i18n-title="reader.starTitle">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-star"></use></svg>
+        </button>
+        <button class="icon-btn" id="readBtn" aria-label="标为未读" aria-pressed="false" title="已读 / 未读（M）" data-i18n-aria="reader.unmark" data-i18n-title="reader.markTitle">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check"></use></svg>
+        </button>
+        <span class="toolbar-divider" aria-hidden="true"></span>
+        <button class="icon-btn" id="fontDec" aria-label="减小正文字号" title="减小字号" data-i18n-aria="reader.fontDec" data-i18n-title="reader.fontDec">
+          <span class="font-btn-label">A<span class="font-btn-sub">−</span></span>
+        </button>
+        <button class="icon-btn" id="fontInc" aria-label="增大正文字号" title="增大字号" data-i18n-aria="reader.fontInc" data-i18n-title="reader.fontInc">
+          <span class="font-btn-label">A<span class="font-btn-sub">+</span></span>
+        </button>
+        <a class="icon-btn" id="openLink" href="#" target="_blank" rel="noopener noreferrer" aria-label="在浏览器中打开原文" title="打开原文" data-i18n-aria="reader.open" data-i18n-title="reader.openShort">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-external"></use></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="reader-scroll" id="readerScroll" tabindex="-1">
+      <article class="reader-doc" id="readerDoc" tabindex="-1"></article>
+    </div>
+  </main>
+</div>
+
+<!-- ================= 移动端底部导航 ================= -->
+<nav class="bottom-nav" id="bottomNav" aria-label="主要导航" data-i18n-aria="aria.mainNav">
+  <button class="bn-item" data-scope="starred" aria-label="已加星标" data-i18n-aria="nav.starred">
+    <span class="bn-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-star"></use></svg></span>
+  </button>
+  <button class="bn-item" data-scope="unread" aria-label="全部未读" data-i18n-aria="nav.unread">
+    <span class="bn-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-circle"></use></svg></span>
+  </button>
+  <button class="bn-item is-active" data-scope="all" aria-label="全部文章" data-i18n-aria="nav.all">
+    <span class="bn-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-rows"></use></svg></span>
+  </button>
+</nav>
+
+<button class="fab" id="fab" aria-label="添加订阅源" data-i18n-aria="action.addFeed">
+  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"></use></svg>
+  <span class="fab-tip" aria-hidden="true" data-i18n="action.addFeed">添加订阅源</span>
+</button>
+
+<div class="snackbar" id="snackbar" role="status" aria-live="polite">
+  <span class="snackbar-text" id="snackbarText"></span>
+  <button class="snackbar-action" id="snackbarAction" hidden>撤销</button>
+</div>
+
+<!-- ================= 订阅源详情面板 ================= -->
+<dialog class="dialog" id="feedSheet" aria-labelledby="feedSheetTitle">
+  <button type="button" class="icon-btn sheet-close" data-close-dialog aria-label="关闭" data-i18n-aria="dialog.close">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"></use></svg>
+  </button>
+  <div class="sheet-grab" aria-hidden="true"></div>
+  <div class="sheet-head">
+    <span class="feed-avatar sheet-avatar" id="sheetAvatar" aria-hidden="true">?</span>
+    <h2 class="sheet-title" id="feedSheetTitle">订阅源</h2>
+    <p class="sheet-url" id="sheetUrl"></p>
+  </div>
+  <div class="sheet-section">
+    <h3 data-i18n="sheet.moveTo">移动到分组</h3>
+    <div class="sheet-chips" id="sheetGroups"></div>
+  </div>
+  <div class="sheet-section">
+    <h3 data-i18n="sheet.actions">操作</h3>
+    <div class="sheet-chips">
+      <button type="button" class="chip" id="sheetRefresh">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-refresh"></use></svg>
+        <span data-i18n="menu.refresh">刷新</span>
+      </button>
+      <button type="button" class="chip" id="sheetOpen">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-external"></use></svg>
+        <span data-i18n="sheet.open">在浏览器中打开</span>
+      </button>
+      <button type="button" class="chip" id="sheetRename">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-edit"></use></svg>
+        <span data-i18n="menu.rename">重命名</span>
+      </button>
+      <button type="button" class="chip danger" id="sheetClear">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-trash"></use></svg>
+        <span data-i18n="sheet.clear">清空文章</span>
+      </button>
+      <button type="button" class="chip danger" id="sheetUnsub">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"></use></svg>
+        <span data-i18n="sheet.unsub">取消订阅</span>
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ================= 添加订阅源 ================= -->
+<dialog class="dialog" id="feedDialog" aria-labelledby="feedDialogTitle">
+  <form class="dialog-form" id="feedForm" novalidate>
+    <div class="dialog-head">
+      <h2 class="dialog-title" id="feedDialogTitle" data-i18n="feed.title">添加订阅源</h2>
+      <button type="button" class="icon-btn" data-close-dialog aria-label="关闭" data-i18n-aria="dialog.close">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"></use></svg>
+      </button>
+    </div>
+    <p class="dialog-sub" data-i18n="feed.sub">粘贴 RSS / Atom 地址即可订阅。浏览器受同源策略限制时会自动尝试公共代理，若仍失败，订阅源仍会保存，可稍后刷新。</p>
+
+    <div class="field">
+      <label class="field-label" for="feedUrl" data-i18n="feed.url">订阅源地址</label>
+      <input class="input" id="feedUrl" type="url" inputmode="url" placeholder="https://example.com/feed.xml" autocomplete="off" required>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label" for="feedTitleInput" data-i18n="feed.name">名称（可选）</label>
+        <input class="input" id="feedTitleInput" type="text" placeholder="自动识别" autocomplete="off" data-i18n-ph="feed.namePh">
+      </div>
+      <div class="field">
+        <span class="field-label" id="feedCatLabel" data-i18n="feed.category">分组</span>
+        <div class="mselect">
+          <button type="button" class="input mselect-trigger" id="feedCatTrigger" aria-haspopup="menu" aria-expanded="false" aria-labelledby="feedCatLabel feedCatValue">
+            <span class="mselect-value" id="feedCatValue">默认分组</span>
+            <svg class="icon mselect-arrow" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dialog-status" id="feedStatus" hidden>
+      <span class="spinner" aria-hidden="true"></span>
+      <span id="feedStatusText">正在获取订阅源…</span>
+    </div>
+
+    <div class="dialog-actions">
+      <button type="button" class="btn-text" data-close-dialog data-i18n="dialog.cancel">取消</button>
+      <button type="submit" class="btn-filled" id="feedSubmit" data-i18n="feed.submit">添加订阅</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ================= 通用输入 ================= -->
+<dialog class="dialog dialog-sm" id="promptDialog" aria-labelledby="promptTitle">
+  <form class="dialog-form" id="promptForm" novalidate>
+    <h2 class="dialog-title" id="promptTitle">重命名</h2>
+    <p class="dialog-sub" id="promptDesc"></p>
+    <div class="field">
+      <label class="field-label" for="promptInput" id="promptLabel">名称</label>
+      <input class="input" id="promptInput" type="text" autocomplete="off">
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn-text" data-close-dialog data-i18n="dialog.cancel">取消</button>
+      <button type="submit" class="btn-filled" id="promptSubmit" data-i18n="prompt.save">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ================= 确认 ================= -->
+<dialog class="dialog dialog-sm" id="confirmDialog" aria-labelledby="confirmTitle">
+  <div class="dialog-form">
+    <h2 class="dialog-title" id="confirmTitle">确认操作</h2>
+    <p class="dialog-sub" id="confirmDesc"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn-text" id="confirmCancel" data-i18n="dialog.cancel">取消</button>
+      <button type="button" class="btn-filled" id="confirmOk" data-i18n="confirm.ok">确定</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ================= 设置 ================= -->
+<dialog class="dialog" id="settingsDialog" aria-labelledby="settingsTitle">
+  <div class="dialog-form">
+    <div class="dialog-head">
+      <h2 class="dialog-title" id="settingsTitle" data-i18n="settings.title">设置</h2>
+      <button type="button" class="icon-btn" data-close-dialog aria-label="关闭" data-i18n-aria="dialog.close">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"></use></svg>
+      </button>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-copy">
+        <div class="setting-name" data-i18n="settings.lang">语言</div>
+        <div class="setting-desc" data-i18n="settings.langDesc">界面显示语言</div>
+      </div>
+      <div class="segmented" id="langSeg" role="group" aria-label="语言" data-i18n-aria="settings.lang">
+        <button type="button" data-lang-opt="zh">中文</button>
+        <button type="button" data-lang-opt="en">English</button>
+        <button type="button" data-lang-opt="system" data-i18n="lang.auto">自动</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-copy">
+        <div class="setting-name" data-i18n="settings.theme">主题</div>
+        <div class="setting-desc" data-i18n="settings.themeDesc">跟随系统或固定明暗</div>
+      </div>
+      <div class="segmented" id="themeSeg" role="group" aria-label="主题" data-i18n-aria="settings.theme">
+        <button type="button" data-theme-opt="light" data-i18n="theme.light">浅色</button>
+        <button type="button" data-theme-opt="dark" data-i18n="theme.dark">深色</button>
+        <button type="button" data-theme-opt="system" data-i18n="theme.system">系统</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-copy">
+        <div class="setting-name" data-i18n="settings.font">正文字号</div>
+        <div class="setting-desc" data-i18n="settings.fontDesc">仅影响阅读区排版</div>
+      </div>
+      <div class="segmented" id="fontSeg" role="group" aria-label="正文字号" data-i18n-aria="settings.font">
+        <button type="button" data-font-opt="small" data-i18n="font.small">小</button>
+        <button type="button" data-font-opt="normal" data-i18n="font.normal">标准</button>
+        <button type="button" data-font-opt="large" data-i18n="font.large">大</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-copy">
+        <div class="setting-name" data-i18n="settings.motion">减少动画</div>
+        <div class="setting-desc" data-i18n="settings.motionDesc">关闭过渡与入场动画</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="motionSwitch">
+        <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+        <span class="sr-only" data-i18n="settings.motion">减少动画</span>
+      </label>
+    </div>
+
+    <div class="setting-block">
+      <div class="setting-name" data-i18n="settings.data">数据</div>
+      <div class="setting-actions">
+        <button type="button" class="btn-tonal" id="settingsImport">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-upload"></use></svg>
+          <span data-i18n="action.import">导入</span>
+        </button>
+        <button type="button" class="btn-tonal" id="settingsExport">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-download"></use></svg>
+          <span data-i18n="action.export">导出</span>
+        </button>
+        <button type="button" class="btn-text danger" id="clearAllBtn" data-i18n="settings.clear">清空所有文章</button>
+      </div>
+    </div>
+
+    <div class="setting-block touch-hide">
+      <div class="setting-name" data-i18n="settings.shortcuts">键盘快捷键</div>
+      <dl class="shortcut-list compact">
+        <div><dt><kbd>/</kbd></dt><dd data-i18n="sc.search">搜索</dd></div>
+        <div><dt><kbd>J</kbd><kbd>K</kbd></dt><dd data-i18n="sc.next">下一篇 / 上一篇</dd></div>
+        <div><dt><kbd>M</kbd></dt><dd data-i18n="sc.mark">标为已读</dd></div>
+        <div><dt><kbd>S</kbd></dt><dd data-i18n="sc.star">加星标</dd></div>
+        <div><dt><kbd>G</kbd> <kbd>A</kbd></dt><dd data-i18n="sc.all">全部文章</dd></div>
+        <div><dt><kbd>G</kbd> <kbd>U</kbd></dt><dd data-i18n="sc.unread">只看未读</dd></div>
+        <div><dt><kbd>G</kbd> <kbd>S</kbd></dt><dd data-i18n="sc.starred">只看星标文章</dd></div>
+        <div><dt><kbd>Esc</kbd></dt><dd data-i18n="sc.esc">关闭 / 返回</dd></div>
+      </dl>
+    </div>
+
+    <div class="dialog-actions">
+      <button type="button" class="btn-filled" data-close-dialog data-i18n="settings.done">完成</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
