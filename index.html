@@ -4,12 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
-<title>鉴业の小站 · Jianye's Corner</title>
-<!-- 默认文案兜底：profile.txt 里的站名/描述读到后会覆盖这些值；
-     配置缺失或未到达时，标签页标题与 SEO/分享卡片也不会是空白 -->
-<meta name="description" content="记录拍过的照片、写下的文字，以及正在做的小东西。Photos, words, and little things I build.">
+<title></title>
+<!-- 标签页标题 / 描述 / 分享卡片 / 图标 全部来自 profile.txt，这里不写任何兜底文案：
+     配置读不到就保持空白，绝不显示源码里写死的旧内容 -->
+<meta name="description" content="">
 <!-- 站名 / 描述 / 图标（favicon）都由 profile.txt 配置，JS 启动后填到这里 -->
-<link rel="apple-touch-icon" href="icon.png">
 <!-- 移动端地址栏配色（站点固定深色） -->
 <meta name="theme-color" content="#0b0d12">
 <!-- ============ 强制站点域名 ============
@@ -71,19 +70,21 @@
   },function(){ return "ok"; });
 })();
 </script>
-<!-- 分享卡片预览（og 内容同样由 profile.txt 配置后回填） -->
+<!-- 分享卡片预览（og 内容全部由 profile.txt 回填，这里只留空的属性位） -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="鉴业の小站 · Jianye's Corner">
-<meta property="og:title" content="鉴业の小站 · Jianye's Corner">
-<meta property="og:description" content="记录拍过的照片、写下的文字，以及正在做的小东西。">
-<meta property="og:url" content="https://aimjianye.top/">
+<meta property="og:site_name" content="">
+<meta property="og:title" content="">
+<meta property="og:description" content="">
+<meta property="og:url" content="">
 <meta property="og:image" content="">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
 <!-- 规范地址：hash 路由的 #/xxx 都是同一个文档，统一指向站点根。
-     这里写的是「默认值」，实际会按 profile.txt 的「域名」再对齐一次 -->
-<link rel="canonical" href="https://aimjianye.top/">
+     由 profile.txt 的「域名」在 JS 里生成；没配域名就不输出 canonical -->
+<!-- 订阅源：rss.xml 由 GitHub Action 在每次发文后自动重建
+     （scripts/gen-blog-index.mjs 顺手产出），这里只是告诉阅读器去哪找 -->
+<link rel="alternate" type="application/rss+xml" href="rss.xml">
 <!-- 首屏大图所在的图床，提前建连 -->
 <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
 <!-- 相册的 GitHub API 兜底通道，提前建连 -->
@@ -106,7 +107,7 @@
   }
   window.__JY_LANG=s;
   document.documentElement.lang=(s==="zh")?"zh-CN":"en";
-  if(s!=="zh") document.title="Jianye's Corner";
+  /* 标签页标题等站名相关内容一律不在这里写死：等 profile.txt 的「站名」读进来再填 */
 })();
 </script>
 <!-- ============ 开发者工具拦截 ============
@@ -1789,28 +1790,20 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
   <a class="nav-menu-item" role="menuitem" data-nav="gallery" href="#/gallery"><span data-navlabel="gallery">相册</span></a>
 </div>
 
-<!-- 静态首屏内容（SEO 兜底）：
-     页面正文由 JS 渲染，不执行 JS 的抓取程序（如 Bing 网站扫描）读不到 <h1>，
-     所以这里放一份真实的静态标题与简介。
-     正常访问时启动屏先盖住它，路由渲染会整块覆盖 #app，不会出现闪烁或重复标题。 -->
-<main id="app">
-  <section class="view">
-    <header class="hero">
-      <div class="wrap hero-inner">
-        <h1>鉴业の小站 · Jianye's Corner</h1>
-        <p>愿我们拥有的时候不要毁，失去的时候不要悔。这里记录拍过的照片、写下的文字，以及正在做的小东西。</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="#/blog">阅读博客</a>
-          <a class="btn btn-ghost" href="#/gallery">逛逛图库</a>
-          <a class="btn btn-ghost" href="#/about">关于我</a>
-        </div>
-      </div>
-    </header>
-  </section>
-</main>
+<!-- 正文容器：内容全部由 JS 按 profile.txt 渲染，源码里不放任何写死的站名 / 描述 /
+     标题，避免改配置后这里还留着一份旧的。配置读不到就保持空白。 -->
+<main id="app"></main>
+<!-- 关掉 JS 的访客：正文是 JS 渲染的，给一句明确提示，别让人对着空白页 -->
+<noscript>
+  <div style="max-width:560px;margin:38vh auto 0;padding:0 24px;text-align:center;
+              color:#9aa3b2;font:15px/1.8 system-ui,-apple-system,'Segoe UI',sans-serif">
+    这个站点需要开启 JavaScript 才能浏览。
+  </div>
+</noscript>
 
-<!-- 页脚：文案由 JS 按当前语言写入（见 route 里的 paintFooter）；这里是默认中文兜底 -->
-<footer id="siteFooter">© 2026 Jianye · 用心血手写</footer>
+<!-- 页脚：文案完全来自 profile.txt 的「页脚」，源码里不留任何兜底文字。
+     没配（或配置读不到）→ 整个页脚隐藏，连那条上边框都不出现 -->
+<footer id="siteFooter" hidden></footer>
 
 <!-- ============ 灯箱 ============ -->
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lbCount">
@@ -1855,12 +1848,12 @@ let PROJECTS=[];         /* 由 loadProjects() 从 projects.txt 读入 */
    关于页的个人介绍卡整体隐藏，页面其余功能不受影响。 */
 let PROFILE=null;        /* 由 loadProfile() 从 profile.txt 读入 */
 let quietRender=false;   /* 配置晚到触发的「静默重绘」：不播首屏入场动画，避免又闪一下 */
-let SITE={name:null,icon:"",bg:"",badge:null,desc:null,domain:""};   /* 站点级配置：站名/图标/背景/徽章/描述/域名 */
+let SITE={name:null,icon:"",bg:"",badge:null,desc:null,domain:"",footer:null};   /* 站点级配置：站名/图标/背景/徽章/描述/域名/页脚 */
 
 /* 解析 profile.txt 的行式配置（键名不区分大小写，中文英文键名都认） */
 function parseProfileText(text){
   const out={hello:null,tagline:null,bios:[],avatar:"",email:"",chips:[],socials:[],
-             name:null,icon:"",bg:"",badge:null,desc:null,domain:""};
+             name:null,icon:"",bg:"",badge:null,desc:null,domain:"",footer:null};
   String(text||"").split(/\r?\n/).forEach(raw=>{
     const line=raw.trim();
     if(!line||line.charAt(0)==="#")return;
@@ -1879,6 +1872,7 @@ function parseProfileText(text){
     else if(k==="徽章"||k==="badge"){ if(p[1]||p[2])out.badge={zh:p[1]||p[2],en:p[2]||p[1]}; }
     else if(k==="描述"||k==="desc"||k==="description"){ if(p[1]||p[2])out.desc={zh:p[1]||p[2],en:p[2]||p[1]}; }
     else if(k==="域名"||k==="主域名"||k==="站点地址"||k==="domain"||k==="siteurl"||k==="url"){ if(p[1])out.domain=p[1]; }
+    else if(k==="页脚"||k==="版权"||k==="footer"||k==="copyright"){ if(p[1]||p[2])out.footer={zh:p[1]||p[2],en:p[2]||p[1]}; }
   });
   return out;
 }
@@ -1891,6 +1885,7 @@ function applySiteConfig(){
   if(SITE.name){I18N.zh.brand=SITE.name.zh;I18N.en.brand=SITE.name.en;}
   if(SITE.badge){I18N.zh.hero.badge=SITE.badge.zh;I18N.en.hero.badge=SITE.badge.en;}
   if(SITE.desc){I18N.zh.hero.sub=SITE.desc.zh;I18N.en.hero.sub=SITE.desc.en;}
+  if(SITE.footer){I18N.zh.footer=SITE.footer.zh;I18N.en.footer=SITE.footer.en;}
   /* 启动流程完成前不在这里触发渲染：启动流程会等配置到位后统一渲染一次，
      否则首页会被画两遍、背景图重新解码（闪两下）。
      启动流程已经揭幕后（配置晚到）→ 这里的重绘走静默模式，不重播入场动画 */
@@ -1907,8 +1902,11 @@ function applySiteConfig(){
     if(/\.ico$/i.test(SITE.icon)){l.sizes="any";}else{l.type="image/png";}
     l.href=SITE.icon;
     document.head.appendChild(l);
-    const at=document.querySelector("link[rel='apple-touch-icon']");
-    if(at&&!/\.ico$/i.test(SITE.icon))at.href=SITE.icon;
+    if(!/\.ico$/i.test(SITE.icon)){
+      let at=document.querySelector("link[rel='apple-touch-icon']");
+      if(!at){ at=document.createElement("link"); at.rel="apple-touch-icon"; document.head.appendChild(at); }
+      at.href=SITE.icon;
+    }
   }
   /* meta 描述 / 分享卡片（og）：文案取纯文本，图片用背景图 */
   const plain=s=>String(s||"").replace(/<br\s*\/?>/gi," ").replace(/<[^>]+>/g,"").trim();
@@ -1930,12 +1928,29 @@ function applySiteConfig(){
       origin=new URL(raw).origin;
     }catch(e){}
     if(origin){
-      const cn=document.querySelector("link[rel='canonical']");
-      if(cn)cn.href=origin+"/";
+      /* HTML 里不再写死 canonical：配了「域名」才生成这一行 */
+      let cn=document.querySelector("link[rel='canonical']");
+      if(!cn){ cn=document.createElement("link"); cn.rel="canonical"; document.head.appendChild(cn); }
+      cn.href=origin+"/";
       const ogu=document.querySelector("meta[property='og:url']");
       if(ogu)ogu.content=origin+"/";
     }
   }
+}
+/* 从 profile.txt 的「社交」里按关键字找链接（如 steam）；找不到就返回空串，
+   源码里不再写死任何个人主页地址 */
+function socialUrl(re){
+  const list=(PROFILE&&PROFILE.socials)||[];
+  for(const s of list){
+    if(re.test(String(s.u||""))||re.test(String(s.zh||""))||re.test(String(s.en||"")))return s.u||"";
+  }
+  return "";
+}
+/* 拼标签页标题：「页面名 · 站名」。站名来自 profile.txt，没配就只留页面名，
+   不会出现「博客 · 」这种尾巴，也不会凭空编一个站名出来 */
+function pageTitle(page,brand){
+  const a=String(page||"").trim(), b=String(brand||"").trim();
+  return (a&&b)?(a+" · "+b):(a||b);
 }
 /* 读取个人信息配置：no-cache 保证改完配置刷新立即生效（没更新时走 304，不重复下载）。
    文件读不到或整份是空的 → PROFILE 保持 null，关于页的个人介绍卡不渲染；
@@ -1955,11 +1970,11 @@ async function loadProfile(){
   }catch(e){}
   if(!j)return;
   const valid=j.hello||j.tagline||j.bios.length||j.avatar||j.email||j.chips.length||j.socials.length
-             ||j.name||j.icon||j.bg||j.badge||j.desc||j.domain;
+             ||j.name||j.icon||j.bg||j.badge||j.desc||j.domain||j.footer;
   if(!valid)return;
   PROFILE=j;
-  /* 站点级字段单独存一份，回填到标题 / 图标 / meta / 首屏 */
-  SITE={name:j.name,icon:j.icon,bg:j.bg,badge:j.badge,desc:j.desc,domain:j.domain||""};
+  /* 站点级字段单独存一份，回填到标题 / 图标 / meta / 首屏 / 页脚 */
+  SITE={name:j.name,icon:j.icon,bg:j.bg,badge:j.badge,desc:j.desc,domain:j.domain||"",footer:j.footer};
   applySiteConfig();
   /* 配置到达时正停在首页 / 关于页 → 原地重绘（保住滚动位置，不打断浏览）。
      __JY_STARTED：启动流程自己会等本配置到位后再做第一次渲染，
@@ -2125,6 +2140,9 @@ const fmtHours=h=>{
 };
 function steamModuleHTML(){
   const t=T(),s=STEAM;
+  /* 「前往 Steam 主页」的地址：优先用接口返回的本人主页，否则取 profile.txt「社交」里的 Steam，
+     两处都没有就不显示这个链接（不再写死个人地址） */
+  const steamHome=(s.player&&s.player.url)||socialUrl(/steam/i);
   const sub=[];
   if(s.hours2weeks)sub.push(t.about.steamSub.replace("{h}",fmtHours(s.hours2weeks)).split(" · ")[0]);
   if(s.totalGames)sub.push((lang==="zh"?`共 ${s.totalGames} 款游戏`:`${s.totalGames} games owned`));
@@ -2160,7 +2178,7 @@ function steamModuleHTML(){
     <div class="friends-head coll-head" role="button" tabindex="0" aria-label="${esc(t.about.steamTitle)}">
       <div class="section-label" style="margin:0">${esc(t.about.steamTitle)}</div>
       <span class="friends-count">${s.totalGames||s.recent.length}</span>
-      <a class="steam-link" href="${esc((s.player&&s.player.url)||"https://steamcommunity.com/id/aimjianye/")}" target="_blank" rel="noopener">${esc(t.about.steamProfile)}</a>
+      ${steamHome?`<a class="steam-link" href="${esc(steamHome)}" target="_blank" rel="noopener">${esc(t.about.steamProfile)}</a>`:""}
       <button class="steam-refresh" type="button" title="${esc(t.about.steamRefresh)}" aria-label="${esc(t.about.steamRefresh)}" onclick="manualSteamRefresh(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
@@ -2230,7 +2248,7 @@ let photosStatus="loading"; // loading | ready | error
 /* ---------- 国际化 ---------- */
 const I18N={
   zh:{
-    brand:"鉴业の小站",   /* 默认站名；profile.txt 的「站名」读到后覆盖，配置缺失时也有像样的标题 */
+    brand:"",   /* 站名只来自 profile.txt 的「站名」；读不到就留空，不在源码里写死 */
     nav:{home:"首页",records:"记录",projects:"项目",about:"关于",blog:"博客",gallery:"相册"},
     projects:{
       title:"项目",
@@ -2300,10 +2318,10 @@ const I18N={
       steamAchFull:"满成就",
       steamProfile:"前往 Steam 主页 →"
     },
-    footer:"© 2026 Jianye · 用心血手写"
+    footer:""   /* 页脚文案只来自 profile.txt 的「页脚」，读不到就整块隐藏 */
   },
   en:{
-    brand:"Jianye's Corner",
+    brand:"",
     nav:{home:"Home",records:"Records",projects:"Projects",about:"About",blog:"Blog",gallery:"Albums"},
     projects:{
       title:"Projects",
@@ -2373,7 +2391,7 @@ const I18N={
       steamAchFull:"100%",
       steamProfile:"Open Steam profile →"
     },
-    footer:"© 2026 Jianye · Handcrafted"
+    footer:""
   }
 };
 
@@ -3182,7 +3200,7 @@ function renderHome(){
            alt="" fetchpriority="high" decoding="async" onerror="this.remove()">`:/* 没配背景 → 用 CSS 里的 --hero-fallback 渐变兜底 */""}
       <div class="wrap hero-inner">
         ${t.hero.badge?`<span class="hero-badge"><span class="pulse"></span>${esc(t.hero.badge)}</span>`:""}
-        <h1>${esc(t.brand)}</h1>
+        ${t.brand?`<h1>${esc(t.brand)}</h1>`:""}
         ${t.hero.sub?`<p>${t.hero.sub}</p>`:""}
         <div class="hero-actions">
           <a class="btn btn-primary" href="#/blog">${esc(t.hero.read)}</a>
@@ -3328,7 +3346,7 @@ function renderAbout(){
   const P=PROFILE;
   const introHTML=P?`
       <div class="about-card">
-        ${P.avatar?`<div class="avatar">J<img src="${esc(P.avatar)}" alt="${esc(lang==="zh"?"鉴业的头像":"Jianye's avatar")}" decoding="async" onerror="this.remove()"></div>`:""}
+        ${P.avatar?`<div class="avatar">${esc((t.brand||"").trim().charAt(0))}<img src="${esc(P.avatar)}" alt="" decoding="async" onerror="this.remove()"></div>`:""}
         ${P.hello?`<h2>${esc(lang==="zh"?P.hello.zh:P.hello.en)}</h2>`:""}
         ${P.tagline?`<p class="tagline">${esc(lang==="zh"?P.tagline.zh:P.tagline.en)}</p>`:""}
         ${P.bios.map(b=>`<p>${esc(lang==="zh"?b.zh:b.en)}</p>`).join("")}
@@ -5058,6 +5076,7 @@ async function renderPost(slug,gen){
   if(stale())return;
   const post=posts.find(p=>p.slug===slug);
   const fail=msg=>{ if(stale())return; app.innerHTML=`<section class="${viewCls(gen)}"><div class="wrap">
+    <div class="page-head"><h1>${esc((post&&post.title)||t.blog.title)}</h1></div>
     <div class="blog-empty">${msg}</div>
     <div style="text-align:center"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a></div>
   </div></section>`;};
@@ -5115,7 +5134,7 @@ async function renderPost(slug,gen){
      只看正文，不看 front matter（title:/tags:/srcHash: 这些行天然是拉丁字母，
      短文会被它们拉高「外语占比」，误判成需要翻译） */
   if(!usedAlt&&isLikelyLang(body,want))usedAlt=true;
-  document.title=title+" · "+t.brand;   /* 浏览器标签页 / 历史记录显示文章标题 */
+  document.title=pageTitle(title,t.brand);   /* 浏览器标签页 / 历史记录显示文章标题 */
   /* 标签归一化：front matter 里「tags: a, b」这种逗号写法解析出来是字符串，
      直接 .map 会抛 TypeError 导致整篇文章页渲染失败 —— 列表页已归一化，这里补上 */
   let tags=meta.tags||post.tags||[];
@@ -5330,12 +5349,18 @@ function route(){
     el.classList.toggle("cur",el.dataset.nav===active);
   });
   closeNavDrop();   /* 切页后收起「记录」菜单，别让它悬在新页面上 */
-  /* 页脚文案跟随语言（#siteFooter 在所有视图之外，静态默认中文兜底） */
+  /* 页脚文案跟随语言：只认 profile.txt 的「页脚」。没配 → 整个页脚隐藏
+     （hidden 属性连带那条上边框一起消失，不会留一条空的分隔线） */
   const ft=$("#siteFooter");
-  if(ft)ft.textContent=T().footer;
+  if(ft){
+    const ftext=T().footer||"";
+    ft.textContent=ftext;
+    ft.hidden=!ftext;
+  }
   /* 每页一个独立标题：浏览器历史记录能区分「博客 / 相册 / 关于」
-     （文章页等正文加载后会覆盖成文章标题，见 renderPost） */
-  document.title=(active==="home")?T().brand:(T().nav[active]+" · "+T().brand);
+     （文章页等正文加载后会覆盖成文章标题，见 renderPost）
+     站名没配时只显示页面名，不留下「 · 」这种空挂钩 */
+  document.title=pageTitle(active==="home"?"":T().nav[active],T().brand);
   /* 切页回到顶部：html 上挂着 scroll-behavior:smooth，
      这里先临时关掉再滚，免得每次切页都慢慢「滑」上去。
      唯一例外是切语言：那是同一页换文字，得留在原来的阅读位置（holdScroll 记着） */
@@ -6075,7 +6100,6 @@ input[type=range].mp-range::-moz-range-thumb{
   /* ---------------- 中英文文案（跟随站点右上角的 EN / 中 按钮） ---------------- */
   const MP_I18N={
     zh:{
-      brand:"鉴业の小站",
       pillName:"鉴业音乐", pillSub:"正在读取歌单…",
       navMusic:"音乐（点击展开歌单）",
       playPause:"播放 / 暂停", next:"下一首", sync:"重新同步歌单", mode:"播放模式",
@@ -6104,7 +6128,6 @@ input[type=range].mp-range::-moz-range-thumb{
       netErr:"网络异常", httpErr:"接口返回 HTTP ", modeTitle:"播放模式："
     },
     en:{
-      brand:"Jianye's Site",
       pillName:"Jianye Music", pillSub:"Loading playlist…",
       navMusic:"Music (click to open playlist)",
       playPause:"Play / Pause", next:"Next", sync:"Resync playlist", mode:"Playback mode",
@@ -6658,7 +6681,7 @@ input[type=range].mp-range::-moz-range-thumb{
     nameEl.textContent=t.name;
     paintSub();
     if("mediaSession" in navigator){
-      try{ navigator.mediaSession.metadata=new MediaMetadata({title:t.name,artist:t.artist||"",album:L().brand}); }catch(e){}
+      try{ navigator.mediaSession.metadata=new MediaMetadata({title:t.name,artist:t.artist||"",album:T().brand||""}); }catch(e){}
     }
   }
   function paintSub(){
