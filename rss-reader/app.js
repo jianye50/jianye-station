@@ -186,6 +186,19 @@
       'toast.partialFail': '{n} 个源没能刷新，可能是源站限流或跨域拦截',
       'refresh.all': '刷新全部订阅源',
       'refresh.allAria': '刷新全部订阅源',
+      'sync.title': '点击立即刷新全部订阅源',
+      'sync.aria': '更新状态，点击刷新',
+      'sync.never': '尚未更新 · 点此刷新',
+      'sync.running': '正在更新 {done}/{total}…',
+      'sync.syncing': '正在更新…',
+      'sync.okNew': '更新于 {time} · 新增 {n} 篇',
+      'sync.ok': '更新于 {time} · 已是最新',
+      'sync.warn': '更新于 {time} · {n} 个源没成功',
+      'sync.fail': '更新失败 · 点此重试',
+      'sync.detail': '各订阅源最近一次抓取结果',
+      'sync.now': '立即刷新全部',
+      'sync.viaDirect': '直连',
+      'sync.viaJson': '公共接口·有缓存',
       'toast.badOpml': '无法解析这个 OPML 文件，请检查文件格式。',
       'toast.opmlNoFeed': '这个文件里没有找到订阅源，确认一下是不是 OPML 文件？',
       'toast.opmlTooBig': '文件太大了（超过 8 MB），请换个更小的文件。',
@@ -406,6 +419,19 @@
       'toast.partialFail': '{n} feeds could not be refreshed (rate limit or CORS)',
       'refresh.all': 'Refresh all feeds',
       'refresh.allAria': 'Refresh all feeds',
+      'sync.title': 'Click to refresh all feeds now',
+      'sync.aria': 'Update status, click to refresh',
+      'sync.never': 'Not updated yet · click to refresh',
+      'sync.running': 'Updating {done}/{total}…',
+      'sync.syncing': 'Updating…',
+      'sync.okNew': 'Updated {time} · {n} new',
+      'sync.ok': 'Updated {time} · up to date',
+      'sync.warn': 'Updated {time} · {n} failed',
+      'sync.fail': 'Update failed · click to retry',
+      'sync.detail': 'Last fetch result for each feed',
+      'sync.now': 'Refresh all now',
+      'sync.viaDirect': 'direct',
+      'sync.viaJson': 'public API · cached',
       'toast.badOpml': 'Could not parse this OPML file. Please check the format.',
       'toast.opmlNoFeed': 'No feeds found in this file — is it really an OPML file?',
       'toast.opmlTooBig': 'That file is too large (over 8 MB). Please pick a smaller one.',
@@ -600,6 +626,8 @@
   const sortLabel = $('#sortLabel');
   const markAllBtn = $('#markAllBtn');
   const refreshAllBtn = $('#refreshAllBtn');
+  const syncLine = $('#syncLine');
+  const syncText = $('#syncText');
   const articleList = $('#articleList');
   const listScroll = $('#listScroll');
   const listEmpty = $('#listEmpty');
@@ -672,6 +700,7 @@
     });
     applyStaticI18n();
     updateChrome();
+    renderSyncLine();
   }
 
   /* ---------------- 数据查询 ---------------- */
@@ -2196,17 +2225,12 @@
      allorigins / corsproxy 目前多半不可用（超时 / 需要 API key），只留作最后的兜底。 */
   const ENDPOINT_PROXY_JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
-  /* 想更稳的话，可以自建一个 CORS 代理（Cloudflare Worker 十几行就够），
-     把地址填到这里、形如 'https://xxx.workers.dev/?url='，它会被优先使用（同样接编码后的地址）。 */
-  const CUSTOM_PROXY = '';
-
   /* rss2json 免费额度有限（约 60 次/窗口），被限流后先歇 10 分钟，别把额度耗光 */
   let rss2jsonDownUntil = 0;
 
   function fetchEndpoints(url) {
     const enc = encodeURIComponent(url);
     const list = [{ kind: 'xml', tag: 'direct', timeout: 7000, href: url }];
-    if (CUSTOM_PROXY) list.push({ kind: 'xml', tag: 'custom', timeout: 9000, href: CUSTOM_PROXY + enc });
     if (Date.now() > rss2jsonDownUntil) {
       list.push({ kind: 'json', tag: 'json', timeout: 11000, href: ENDPOINT_PROXY_JSON + enc + '&count=50' });
     }
@@ -2309,6 +2333,7 @@
           }
           const parsedJson = itemsFromRss2Json(data, url);
           if (parsedJson && parsedJson.items.length) {
+            parsedJson.channel = ep.tag;
             noteEndpoint(netState, ep.tag, true);
             return parsedJson;
           }
@@ -2321,6 +2346,7 @@
         const text = await res.text();
         const parsed = parseFeedXml(text, url);
         if (parsed && parsed.items.length) {
+          parsed.channel = ep.tag;
           noteEndpoint(netState, ep.tag, true);
           return parsed;
         }
@@ -2427,7 +2453,12 @@
         if (!f) return;
         if (!feedById(f.id)) continue; /* 抓取过程中被删除 */
         const result = await fetchFeed(f.url);
-        if (result) total += mergeFeedArticles(f, result);
+        if (result) {
+          total += mergeFeedArticles(f, result);
+          feedHealth[f.id] = { at: Date.now(), ok: true, tag: result.channel || '', items: result.items.length };
+        } else {
+          feedHealth[f.id] = { at: Date.now(), ok: false, tag: '', items: 0 };
+        }
         done++;
         if (feeds.length >= 6 && done < feeds.length) {
           toast(fmt(t('toast.importProgress'), { done: done, total: feeds.length }));
@@ -2449,20 +2480,114 @@
     const f = feedById(id);
     if (!f) return;
     toast(fmt(t('toast.refreshing'), { name: f.title }));
+    setRefreshBusy(true);
+    renderSyncLine({ done: 0, total: 1 });
     const result = await fetchFeed(f.url);
+    setRefreshBusy(false);
     if (!result) {
+      feedHealth[f.id] = { at: Date.now(), ok: false, tag: '', items: 0 };
+      renderSyncLine();
       toast(t('toast.refreshFail'));
       return;
     }
     const added = mergeFeedArticles(f, result);
+    feedHealth[f.id] = { at: Date.now(), ok: true, tag: result.channel || '', items: result.items.length };
+    S.ui.lastSync = { at: Date.now(), added: added, failed: 0, total: 1 };
     persist();
     renderAll({ keepScroll: true });
+    renderSyncLine();
     toast(added ? fmt(t('toast.fetched'), { n: added }) : t('toast.upToDate'));
   }
 
   /* 一次性刷新全部订阅源：并发 4 条，边抓边渲染，失败不影响其他源 */
   let refreshAllRunning = false;
   let lastRefreshAllAt = 0; /* 上次刷新时间，避免切标签页时反复抓取 */
+
+  /* 页面一直开着时的轮询间隔：不等重新进入也能拿到新文章 */
+  const AUTO_REFRESH_MS = 3 * 60 * 1000;
+  /* 切回标签页 / 窗口重新聚焦时，距上次超过这个时间就补刷一次 */
+  const VISIBLE_REFRESH_MS = 60 * 1000;
+
+  /* 每个源最近一次抓取的结果（只在内存里，用于状态行和诊断菜单） */
+  const feedHealth = Object.create(null);
+  let lastFailToastAt = 0;
+
+  function fmtClock(ts) {
+    const d = new Date(ts);
+    return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  }
+
+  function setSyncLine(state, text, title) {
+    if (!syncLine || !syncText) return;
+    syncLine.dataset.state = state || '';
+    syncText.textContent = text;
+    syncLine.title = title || t('sync.title');
+  }
+
+  /* 侧边栏那行「更新于 19:32 · 新增 3 篇」。传 progress 时显示实时进度 */
+  function renderSyncLine(progress) {
+    if (!syncLine) return;
+    if (progress) {
+      setSyncLine('running', fmt(t('sync.running'), { done: progress.done, total: progress.total }));
+      return;
+    }
+    const last = S.ui && S.ui.lastSync;
+    if (!last || !last.at) {
+      setSyncLine('', t('sync.never'));
+      return;
+    }
+    if (last.failed && last.total && last.failed >= last.total) {
+      setSyncLine('fail', t('sync.fail'), t('sync.detail'));
+      return;
+    }
+    if (last.failed) {
+      setSyncLine('warn', fmt(t('sync.warn'), { time: fmtClock(last.at), n: last.failed }), t('sync.detail'));
+      return;
+    }
+    setSyncLine(
+      'ok',
+      last.added
+        ? fmt(t('sync.okNew'), { time: fmtClock(last.at), n: last.added })
+        : fmt(t('sync.ok'), { time: fmtClock(last.at) })
+    );
+  }
+
+  /* 点状态行：有失败就列出每个源的结果，否则直接刷新 */
+  function syncStatusMenu() {
+    if (refreshAllRunning) {
+      toast(t('toast.refreshingNow'));
+      return;
+    }
+    const failed = S.feeds.filter((f) => feedHealth[f.id] && !feedHealth[f.id].ok);
+    if (!failed.length) {
+      refreshAllFeeds();
+      return;
+    }
+    const items = [
+      { label: t('sync.now'), icon: 'i-refresh', onClick: () => refreshAllFeeds() },
+      { divider: true }
+    ];
+    S.feeds.forEach((f) => {
+      const h = feedHealth[f.id];
+      let hint = '—';
+      if (h) {
+        const via =
+          h.tag === 'direct' ? t('sync.viaDirect')
+          : h.tag === 'json' ? t('sync.viaJson')
+          : '';
+        hint = (h.ok ? '✓ ' : '✕ ') + fmtClock(h.at) + (h.ok ? ' · ' + h.items + (via ? ' · ' + via : '') : '');
+      }
+      items.push({
+        label: f.title,
+        hint: hint,
+        onClick: () => {
+          feedHealth[f.id] = null;
+          refreshFeed(f.id);
+        }
+      });
+    });
+    openMenu(syncLine, items, { iconSpace: true });
+  }
 
   /* 手动刷新按钮的进行中状态（自动刷新时也会转起来，至少能看出它在干活） */
   function setRefreshBusy(busy) {
@@ -2481,6 +2606,7 @@
     refreshAllRunning = true;
     lastRefreshAllAt = Date.now();
     setRefreshBusy(true);
+    renderSyncLine({ done: 0, total: feeds.length });
 
     const total = feeds.length;
     const showProgress = !o.auto && total >= 4;
@@ -2499,9 +2625,15 @@
         if (!f) return;
         if (!feedById(f.id)) continue; /* 抓取过程中被删除 */
         const result = await fetchFeed(f.url, netState);
-        if (result) added += mergeFeedArticles(f, result);
-        else failed++;
+        if (result) {
+          added += mergeFeedArticles(f, result);
+          feedHealth[f.id] = { at: Date.now(), ok: true, tag: result.channel || '', items: result.items.length };
+        } else {
+          failed++;
+          feedHealth[f.id] = { at: Date.now(), ok: false, tag: '', items: 0 };
+        }
         done++;
+        renderSyncLine({ done: done, total: total });
 
         /* 有新文章时增量刷新列表，别等全部源抓完才显示；
            只刷导航和列表，避免打断正在读的文章（重绘阅读区会丢滚动位置） */
@@ -2524,18 +2656,29 @@
       setRefreshBusy(false);
     }
 
+    S.ui.lastSync = { at: Date.now(), added: added, failed: failed, total: total };
+    persist();
+
     if (added) {
-      persist();
       renderSidebar();
       renderList({ keepScroll: true });
       toast(fmt(t('toast.refreshAllNew'), { n: total, got: added }));
     } else if (failed === total) {
-      toast(t('toast.refreshAllFail'), { duration: 4600 });
+      /* 自动轮询时不要每 3 分钟弹一次同样的失败提示 */
+      if (!o.auto || Date.now() - lastFailToastAt > 10 * 60 * 1000) {
+        lastFailToastAt = Date.now();
+        toast(t('toast.refreshAllFail'), { duration: 4600 });
+      }
     } else if (failed) {
-      toast(fmt(t('toast.partialFail'), { n: failed }), { duration: 4200 });
+      if (!o.auto || Date.now() - lastFailToastAt > 10 * 60 * 1000) {
+        lastFailToastAt = Date.now();
+        toast(fmt(t('toast.partialFail'), { n: failed }), { duration: 4200 });
+      }
     } else if (!o.auto) {
       toast(fmt(t('toast.refreshAllNone'), { n: total }));
     }
+
+    renderSyncLine();
     return { added: added, failed: failed, total: total };
   }
 
@@ -3495,24 +3638,39 @@
 
     if (!localStorage.getItem(STORAGE_KEY)) saveNow();
 
+    renderSyncLine();
+
     /* 每次进入页面自动刷新全部订阅源（延迟一点，先让首屏渲染完成） */
     window.setTimeout(() => {
       refreshAllFeeds({ auto: true });
     }, 300);
   }
 
+  /* 页面一直开着也要更新：每 3 分钟静默抓一轮（切到后台时不抓） */
+  window.setInterval(() => {
+    if (document.visibilityState !== 'visible') return;
+    if (navigator.onLine === false) return;
+    refreshAllFeeds({ auto: true });
+  }, AUTO_REFRESH_MS);
+
   /* 从往返缓存（浏览器前进/后退）恢复时也刷新一次 */
   window.addEventListener('pageshow', (e) => {
     if (e.persisted) refreshAllFeeds({ auto: true });
   });
 
-  /* 标签页在后台待久了、重新切回来时刷新一次；10 分钟内不重复抓取 */
-  const REFRESH_ON_VISIBLE_MS = 10 * 60 * 1000;
-  document.addEventListener('visibilitychange', () => {
+  /* 从后台切回来、或窗口重新获得焦点：超过 1 分钟没抓就补一次 */
+  function refreshIfStale() {
     if (document.visibilityState !== 'visible') return;
-    if (Date.now() - lastRefreshAllAt < REFRESH_ON_VISIBLE_MS) return;
+    if (Date.now() - lastRefreshAllAt < VISIBLE_REFRESH_MS) return;
     refreshAllFeeds({ auto: true });
-  });
+  }
+  document.addEventListener('visibilitychange', refreshIfStale);
+  window.addEventListener('focus', refreshIfStale);
+
+  /* 断网重连后补一次，不用等下一轮轮询 */
+  window.addEventListener('online', () => refreshAllFeeds({ auto: true }));
+
+  if (syncLine) syncLine.addEventListener('click', syncStatusMenu);
 
   boot();
 })();

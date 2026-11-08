@@ -33,7 +33,7 @@
   })();
 </script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%236750A4'/%3E%3Cg fill='none' stroke='%23EADDFF' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M10 22v.01'/%3E%3Cpath d='M10 15a7 7 0 0 1 7 7'/%3E%3Cpath d='M10 9a13 13 0 0 1 13 13'/%3E%3C/g%3E%3C/svg%3E">
-<link rel="stylesheet" href="styles.css?v=20261108h">
+<link rel="stylesheet" href="styles.css?v=20261108k">
 </head>
 <body>
 <a class="skip-link" href="#articleList" data-i18n="skip.link">跳到文章列表</a>
@@ -156,6 +156,11 @@
     </div>
 
     <h1 class="home-title" data-i18n="app.name">鉴业阅读</h1>
+
+    <button type="button" class="sync-line" id="syncLine" title="点击立即刷新" aria-label="更新状态，点击刷新" data-i18n-aria="sync.aria" data-i18n-title="sync.title">
+      <span class="sync-dot" id="syncDot" aria-hidden="true"></span>
+      <span class="sync-text" id="syncText">尚未更新</span>
+    </button>
 
     <button class="hero-card" id="heroCard" aria-label="打开当前视图" data-i18n-aria="aria.hero">
       <span class="hero-icon" aria-hidden="true">
@@ -510,6 +515,6 @@
   </div>
 </dialog>
 
-<script src="app.js?v=20261108h"></script>
+<script src="app.js?v=20261108k"></script>
 </body>
 </html>
