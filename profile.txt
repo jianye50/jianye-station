@@ -35,7 +35,7 @@
 
 # 描述|首页大标题下面的一句话；想换行就在断行处写 <br>
 #     这一行同时是两份订阅源的频道简介：rss.xml 用中文列，rss-en.xml 用英文列
-描述|愿我们拥有的时候不要毁，<br>失去的时候不要悔。|Making things, keeping notes,<br>and the light I like.
+描述|愿我们拥有的时候不要毁，<br>失去的时候不要悔。|May we not ruin what we have, <br>nor regret what we lose.
 
 # 页脚|网站最底部的版权行（纯文字，不认 HTML 标签）；只写中文时英文页也用这份
 #     年份写在文案里，跨年了自己改一下就行
