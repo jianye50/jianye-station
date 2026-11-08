@@ -62,7 +62,7 @@
       'home.unreadCnt': '{n} 项未读',
       'home.starredCnt': '{n} 项已加星标',
       'aria.backHome': '返回首页',
-      'aria.hero': '打开当前视图',
+      'aria.hero': '返回全部文章',
       'aria.collapseAll': '折叠 / 展开分组',
       'sheet.moveTo': '移动到分组',
       'sheet.newCat': '新建分组',
@@ -265,7 +265,7 @@
       'home.unreadCnt': '{n} unread',
       'home.starredCnt': '{n} starred',
       'aria.backHome': 'Back to home',
-      'aria.hero': 'Open current view',
+      'aria.hero': 'Back to all articles',
       'aria.collapseAll': 'Collapse / expand groups',
       'sheet.moveTo': 'Move to group',
       'sheet.newCat': 'New group',
@@ -969,23 +969,10 @@
       b.setAttribute('aria-current', on ? 'page' : 'false');
     });
 
-    /* 主卡片：跟随当前视图 */
-    const inScope = scopeArticles();
-    let hIcon = 'i-rows';
-    let hSub;
-    if (S.ui.filter === 'unread') {
-      hIcon = 'i-circle';
-      hSub = fmt(t('home.unreadCnt'), { n: inScope.filter((a) => !a.read).length });
-    } else if (S.ui.filter === 'starred') {
-      hIcon = 'i-star';
-      hSub = fmt(t('home.starredCnt'), { n: inScope.filter((a) => a.starred).length });
-    } else {
-      hIcon = S.ui.scope === 'all' ? 'i-rows' : 'i-folder';
-      hSub = fmt(t('home.archived'), { n: inScope.length });
-    }
-    heroIconUse.setAttribute('href', '#' + hIcon);
-    heroLabel.textContent = currentViewLabel();
-    heroSub.textContent = hSub;
+    /* 主卡片：固定显示「全部文章」，不跟随当前视图，点击可随时返回全部 */
+    heroIconUse.setAttribute('href', '#i-rows');
+    heroLabel.textContent = t('nav.all');
+    heroSub.textContent = fmt(t('home.archived'), { n: total });
 
     /* 默认分组（未归入任何分组的订阅源）固定排在最顶上 */
     const groups = [];
@@ -2526,7 +2513,11 @@
   scrim.addEventListener('click', () => setNav(false));
   backBtn.addEventListener('click', closeReader);
 
-  $('#heroCard').addEventListener('click', browseTo);
+  /* 主卡片固定为「全部文章」：点击随时返回全部视图 */
+  $('#heroCard').addEventListener('click', () => {
+    if (S.ui.scope !== 'all' || S.ui.filter !== 'all') setScope('all', 'all');
+    browseTo();
+  });
 
   $('#groupsToggle').addEventListener('click', () => {
     const collapsed = sidebar.classList.toggle('groups-collapsed');
