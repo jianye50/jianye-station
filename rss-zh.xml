@@ -6,19 +6,8 @@
     <atom:link href="https://jype.top/rss-zh.xml" rel="self" type="application/rss+xml"/>
     <description>愿我们拥有的时候不要毁，失去的时候不要悔。</description>
     <language>zh-CN</language>
-    <lastBuildDate>Sun, 08 Nov 2026 00:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Sat, 07 Nov 2026 00:00:00 GMT</lastBuildDate>
     <generator>gen-blog-index.mjs</generator>
-    <item>
-      <title>把 RSS 搬进浏览器：我写了一个零依赖的纯前端阅读器</title>
-      <link>https://jype.top/#/blog/rss-reader-article</link>
-      <guid isPermaLink="false">https://jype.top/#/blog/rss-reader-article</guid>
-      <pubDate>Sun, 08 Nov 2026 00:00:00 GMT</pubDate>
-      <category>RSS</category>
-      <category>前端</category>
-      <category>工具</category>
-      <category>折腾</category>
-      <description><![CDATA[<p><img src="https://jype.top/blog/thumbs/rss-reader-article-cover.webp" alt=""></p><p>不用注册、不用装 App、数据不出浏览器。一个只有三个文件的 Material Design RSS 阅读器，怎么在纯前端解决跨域抓取、主题闪白和本地存储这些事，以及它诚实的边界在哪里。</p><p><a href="https://jype.top/#/blog/rss-reader-article">阅读全文</a></p>]]></description>
-    </item>
     <item>
       <title>把米家搬进浏览器：我写了一个纯静态的米家网页控制台</title>
       <link>https://jype.top/#/blog/%E7%B1%B3%E5%AE%B6%E7%BD%91%E9%A1%B5%E6%8E%A7%E5%88%B6%E5%8F%B0</link>
