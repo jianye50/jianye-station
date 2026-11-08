@@ -145,9 +145,6 @@
       <button class="icon-btn" id="settingsBtn" aria-label="设置" title="设置" data-i18n-aria="settings.title" data-i18n-title="settings.title">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-settings"></use></svg>
       </button>
-      <button class="icon-btn" id="refreshAllBtn" aria-label="刷新全部订阅源" title="刷新全部订阅源" data-i18n-aria="action.refreshAll" data-i18n-title="action.refreshAll">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-refresh"></use></svg>
-      </button>
       <button class="icon-btn" id="addFeedBtn" aria-label="添加订阅源" title="添加订阅源" data-i18n-aria="action.addFeed" data-i18n-title="action.addFeed">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"></use></svg>
       </button>
@@ -179,7 +176,7 @@
       <div class="cat-list" id="categoryList"></div>
     </div>
 
-    <input type="file" id="opmlInput" accept=".opml,.xml,.json,text/xml,application/xml,application/json" hidden>
+    <input type="file" id="opmlInput" accept=".opml,.xml,text/xml,application/xml" hidden>
   </aside>
 
   <div class="scrim" id="scrim" hidden></div>
@@ -295,7 +292,7 @@
   <span class="fab-tip" aria-hidden="true" data-i18n="action.addFeed">添加订阅源</span>
 </button>
 
-<div class="snackbar" id="snackbar" popover="manual" role="status" aria-live="polite">
+<div class="snackbar" id="snackbar" role="status" aria-live="polite">
   <span class="snackbar-text" id="snackbarText"></span>
   <button class="snackbar-action" id="snackbarAction" hidden>撤销</button>
 </div>

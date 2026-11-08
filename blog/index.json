@@ -1,51 +1,6 @@
 {
-  "generated": "2026-11-08T12:44:59.539Z",
+  "generated": "2026-11-08T12:56:38.810Z",
   "posts": [
-    {
-      "slug": "rss-reader-article",
-      "md": "blog/rss-reader-article/index.md",
-      "imgBase": "blog/rss-reader-article/",
-      "title": "把 RSS 搬进浏览器：我写了一个零依赖的纯前端阅读器",
-      "desc": "不用注册、不用装 App、数据不出浏览器。一个只有三个文件的 Material Design RSS 阅读器，怎么在纯前端解决跨域抓取、主题闪白和本地存储这些事，以及它诚实的边界在哪里。",
-      "tags": [
-        "RSS",
-        "前端",
-        "工具",
-        "折腾"
-      ],
-      "date": "2026-11-08",
-      "minutes": 8,
-      "cover": "1745835951361.jpg",
-      "bg": "1745835951361.jpg",
-      "mdEn": "blog/rss-reader-article/index.en.md",
-      "titleEn": "Put RSS into the browser: I wrote a zero-dependency pure front-end reader",
-      "descEn": "No registration, no app installation, and no data leaving the browser. A Material Design RSS reader with only three files, how to solve cross-domain crawling, theme flashing and local storage in a pure front-end, and where is its honest boundary.",
-      "tagsEn": [
-        "RSS",
-        "front end",
-        "tool",
-        "toss"
-      ],
-      "mdZh": "blog/rss-reader-article/index.zh.md",
-      "titleZh": "把 RSS 搬进浏览器：我写了一个零依赖的纯前端阅读器",
-      "descZh": "不用注册、不用装 App、数据不出浏览器。一个只有三个文件的 Material Design RSS 阅读器，怎么在纯前端解决跨域抓取、主题闪白和本地存储这些事，以及它诚实的边界在哪里。",
-      "tagsZh": [
-        "RSS",
-        "前端",
-        "工具",
-        "折腾"
-      ],
-      "imgs": {
-        "1745835951361.jpg": "blog/thumbs/rss-reader-article-i0.webp",
-        "addfeed.png": "blog/thumbs/rss-reader-article-i1.webp",
-        "desk.png": "blog/thumbs/rss-reader-article-i2.webp",
-        "light.png": "blog/thumbs/rss-reader-article-i6.webp",
-        "mlist.png": "blog/thumbs/rss-reader-article-i7.webp",
-        "mread.png": "blog/thumbs/rss-reader-article-i8.webp"
-      },
-      "coverThumb": "blog/thumbs/rss-reader-article-cover.webp",
-      "bgThumb": "blog/thumbs/rss-reader-article-bg.webp"
-    },
     {
       "slug": "米家网页控制台",
       "md": "blog/米家网页控制台/index.md",

@@ -1086,11 +1086,7 @@ kbd {
 .snackbar {
   position: fixed;
   left: 50%;
-  right: auto;
-  top: auto;
   bottom: 26px;
-  margin: 0;
-  border: 0;
   transform: translate(-50%, 24px);
   display: flex;
   align-items: center;
@@ -1375,16 +1371,6 @@ dialog {
   align-items: center;
   justify-content: space-between;
   padding: 2px 2px 0;
-}
-/* 刷新按钮不参与三等分居中：贴到添加按钮左边 */
-#refreshAllBtn { margin-left: auto; }
-#refreshAllBtn + #addFeedBtn { margin-left: 4px; }
-.icon-btn.spinning .icon {
-  animation: spin 0.9s linear infinite;
-}
-.icon-btn:disabled {
-  opacity: 0.55;
-  pointer-events: none;
 }
 .home-title {
   font-size: 30px;

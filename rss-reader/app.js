@@ -45,7 +45,6 @@
       'cat.default': '默认分组',
       'action.addCategory': '新建分组',
       'action.addFeed': '添加订阅源',
-      'action.refreshAll': '刷新全部订阅源',
       'action.import': '导入',
       'action.export': '导出',
       'sidebar.hint': '点击订阅源右侧的 ⋯ 按钮，可重命名、移动分组或刷新。',
@@ -170,14 +169,13 @@
       'toast.added': '已添加「{name}」，抓取到 {n} 篇文章',
       'toast.savedNoFetch': '订阅源已保存，但没能抓取文章：浏览器跨域限制可能阻止了请求，可稍后刷新。',
       'toast.refreshing': '正在刷新「{name}」…',
-      'toast.refreshAllStart': '正在刷新全部订阅源…',
       'toast.refreshFail': '刷新失败：可能是浏览器跨域限制或网络问题。',
       'toast.fetched': '已获取 {n} 篇新文章',
       'toast.upToDate': '已经是最新内容了',
       'toast.imported': '已导入 {n} 个订阅源{skip}',
       'toast.importSkipped': '，跳过 {n} 个重复项',
       'toast.importProgress': '正在抓取订阅源 {done}/{total}…',
-      'toast.badOpml': '无法解析这个文件，请使用本应用导出的 JSON 备份或标准 OPML 文件。',
+      'toast.badOpml': '无法解析这个 OPML 文件，请检查文件格式。',
       'toast.readFail': '读取文件失败',
       'toast.exported': '已导出 {n} 个订阅源',
       'toast.catCreated': '已创建分组「{name}」',
@@ -248,7 +246,6 @@
       'cat.default': 'Default group',
       'action.addCategory': 'New group',
       'action.addFeed': 'Add feed',
-      'action.refreshAll': 'Refresh all feeds',
       'action.import': 'Import',
       'action.export': 'Export',
       'sidebar.hint': 'Tap the ⋯ button next to a feed to rename it, move it between groups or refresh it.',
@@ -373,14 +370,13 @@
       'toast.added': 'Added "{name}" with {n} articles',
       'toast.savedNoFetch': 'Feed saved, but its articles could not be fetched (browser CORS limits). Try refreshing later.',
       'toast.refreshing': 'Refreshing "{name}"…',
-      'toast.refreshAllStart': 'Refreshing all feeds…',
       'toast.refreshFail': 'Refresh failed: CORS limits or a network issue.',
       'toast.fetched': 'Fetched {n} new articles',
       'toast.upToDate': 'Already up to date',
       'toast.imported': 'Imported {n} feeds{skip}',
       'toast.importSkipped': ', skipped {n} duplicates',
       'toast.importProgress': 'Fetching feeds {done}/{total}…',
-      'toast.badOpml': 'Could not parse this file. Use a JSON backup exported by this app or a standard OPML file.',
+      'toast.badOpml': 'Could not parse this OPML file. Please check the format.',
       'toast.readFail': 'Failed to read the file',
       'toast.exported': 'Exported {n} feeds',
       'toast.catCreated': 'Created group "{name}"',
@@ -1993,7 +1989,6 @@
   /* ---------------- 提示条 ---------------- */
   let snackTimer = null;
   let snackCallback = null;
-  let snackHideTimer = 0;
 
   function toast(message, opts) {
     const o = opts || {};
@@ -2006,14 +2001,6 @@
       snackCallback = null;
       snackbarAction.hidden = true;
     }
-    /* 提示条用 popover 提升到顶层，否则会被 showModal 弹窗的 backdrop 盖住 */
-    clearTimeout(snackHideTimer);
-    if (typeof snackbar.showPopover === 'function' && !snackbar.matches(':popover-open')) {
-      try {
-        snackbar.showPopover();
-        void snackbar.offsetWidth; /* 强制 reflow，保证淡入过渡生效 */
-      } catch (err) { /* 已在顶层等情况忽略 */ }
-    }
     snackbar.classList.add('is-visible');
     clearTimeout(snackTimer);
     snackTimer = window.setTimeout(hideToast, o.duration || 3400);
@@ -2021,12 +2008,6 @@
   function hideToast() {
     snackbar.classList.remove('is-visible');
     clearTimeout(snackTimer);
-    if (typeof snackbar.hidePopover === 'function' && snackbar.matches(':popover-open')) {
-      /* 等淡出动画播完再退出顶层，避免瞬间消失 */
-      snackHideTimer = window.setTimeout(() => {
-        try { snackbar.hidePopover(); } catch (err) { /* 忽略 */ }
-      }, 260);
-    }
   }
   snackbarAction.addEventListener('click', () => {
     const cb = snackCallback;
@@ -2222,9 +2203,8 @@
     return added;
   }
 
-  async function fetchFeedsInBackground(feeds, opts) {
-    if (!feeds.length) return 0;
-    const quiet = !!(opts && opts.quiet); /* 自动刷新时不刷进度提示，避免打扰 */
+  async function fetchFeedsInBackground(feeds) {
+    if (!feeds.length) return;
     let total = 0;
     let done = 0;
     /* 并发抓取（最多 4 条同时），OPML 一次导入几十个源时不会串行等到天荒地老 */
@@ -2237,7 +2217,7 @@
         const result = await fetchFeed(f.url);
         if (result) total += mergeFeedArticles(f, result);
         done++;
-        if (!quiet && feeds.length >= 6 && done < feeds.length) {
+        if (feeds.length >= 6 && done < feeds.length) {
           toast(fmt(t('toast.importProgress'), { done: done, total: feeds.length }));
         }
       }
@@ -2250,29 +2230,6 @@
       persist();
       renderAll({ keepScroll: true });
       toast(fmt(t('toast.fetched'), { n: total }));
-    }
-    return total;
-  }
-
-  let refreshingAll = false;
-  async function refreshAllFeeds(auto) {
-    if (refreshingAll) return;
-    if (!S.feeds.length) {
-      if (!auto) toast(t('sidebar.noFeeds'));
-      return;
-    }
-    refreshingAll = true;
-    const btn = $('#refreshAllBtn');
-    btn.classList.add('spinning');
-    btn.disabled = true;
-    if (!auto) toast(t('toast.refreshAllStart'));
-    try {
-      const total = await fetchFeedsInBackground(S.feeds, { quiet: auto });
-      if (!total && !auto) toast(t('toast.upToDate'));
-    } finally {
-      refreshingAll = false;
-      btn.classList.remove('spinning');
-      btn.disabled = false;
     }
   }
 
@@ -2396,32 +2353,12 @@
     return out;
   }
 
-  function handleBackupFile(file) {
+  function handleOpmlFile(file) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const text = String(reader.result);
-        let entries = null;
-
-        /* 优先按本应用导出的 JSON 备份解析（只含订阅源信息与分组） */
-        try {
-          const data = JSON.parse(text);
-          if (data && Array.isArray(data.feeds)) {
-            entries = data.feeds
-              .filter((f) => f && typeof f.url === 'string' && f.url.trim())
-              .map((f) => ({
-                title: (f.title || '').trim() || f.url.trim(),
-                url: f.url.trim(),
-                site: (f.site || '').trim(),
-                desc: (f.desc || '').trim(),
-                category: (f.category || '').trim()
-              }));
-          }
-        } catch (err) { /* 不是 JSON，继续按 OPML 解析 */ }
-
-        if (!entries) entries = parseOpml(text);
-
+        const entries = parseOpml(String(reader.result));
         if (!entries.length) {
           toast(t('toast.badOpml'));
           return;
@@ -2449,8 +2386,8 @@
             url: entry.url,
             category: catId,
             color: hashColor(entry.url),
-            desc: entry.desc || '',
-            site: entry.site || ''
+            desc: '',
+            site: ''
           };
           S.feeds.push(feed);
           newFeeds.push(feed);
@@ -2483,26 +2420,38 @@
     window.setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
 
-  /* 导出 JSON 备份：只含订阅源信息（名称/地址/站点/描述）与分组，不含文章数据 */
-  function exportBackup() {
-    const catName = (id) => {
-      const c = S.categories.find((x) => x.id === id);
-      return c ? c.name : '';
+  function exportOpml() {
+    const xmlEsc = (s) =>
+      String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+    const lines = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<opml version="2.0">',
+      '  <head>',
+      '    <title>' + xmlEsc(fmt(t('opml.title'), { name: t('app.name') })) + '</title>',
+      '    <dateCreated>' + new Date().toUTCString() + '</dateCreated>',
+      '  </head>',
+      '  <body>'
+    ];
+
+    const pushFeed = (f, indent) => {
+      lines.push(
+        indent + '<outline type="rss" text="' + xmlEsc(f.title) + '" title="' + xmlEsc(f.title) +
+        '" xmlUrl="' + xmlEsc(f.url) + '"' + (f.site ? ' htmlUrl="' + xmlEsc(f.site) + '"' : '') + '/>'
+      );
     };
-    const data = {
-      app: 'jianye-reader',
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      categories: S.categories.map((c) => ({ id: c.id, name: c.name })),
-      feeds: S.feeds.map((f) => ({
-        title: f.title,
-        url: f.url,
-        category: catName(f.category),
-        site: f.site || '',
-        desc: f.desc || ''
-      }))
-    };
-    downloadFile('jianye-reader-backup.json', JSON.stringify(data, null, 2), 'application/json;charset=utf-8');
+
+    S.categories.forEach((c) => {
+      const feeds = S.feeds.filter((f) => f.category === c.id);
+      lines.push('    <outline text="' + xmlEsc(c.name) + '" title="' + xmlEsc(c.name) + '">');
+      feeds.forEach((f) => pushFeed(f, '      '));
+      lines.push('    </outline>');
+    });
+    S.feeds
+      .filter((f) => !S.categories.some((c) => c.id === f.category))
+      .forEach((f) => pushFeed(f, '    '));
+
+    lines.push('  </body>', '</opml>');
+    downloadFile('jianye-reader-subscriptions.opml', lines.join('\n'));
     toast(fmt(t('toast.exported'), { n: S.feeds.length }));
   }
 
@@ -2693,19 +2642,18 @@
 
   /* 订阅源 / 导入导出 */
   $('#addFeedBtn').addEventListener('click', () => openFeedDialog());
-  $('#refreshAllBtn').addEventListener('click', () => refreshAllFeeds());
   fab.addEventListener('click', () => openFeedDialog());
   $('#addCategoryBtn').addEventListener('click', addCategory);
   opmlInput.addEventListener('change', () => {
     const file = opmlInput.files && opmlInput.files[0];
-    handleBackupFile(file);
+    handleOpmlFile(file);
     opmlInput.value = '';
   });
 
   /* 设置 */
   $('#settingsBtn').addEventListener('click', openSettings);
   $('#settingsImport').addEventListener('click', () => opmlInput.click());
-  $('#settingsExport').addEventListener('click', exportBackup);
+  $('#settingsExport').addEventListener('click', exportOpml);
   $('#clearAllBtn').addEventListener('click', clearAllFeeds);
 
   /* 订阅源详情面板 */
@@ -2958,11 +2906,6 @@
     viewMeta.setAttribute('aria-live', 'polite');
 
     if (!localStorage.getItem(STORAGE_KEY)) saveNow();
-
-    /* 每次进入页面自动静默刷新一次全部订阅源，等同自动刷新 */
-    if (S.feeds.length) {
-      window.setTimeout(() => refreshAllFeeds(true), 900);
-    }
   }
 
   boot();
