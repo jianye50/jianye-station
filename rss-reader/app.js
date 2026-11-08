@@ -160,6 +160,7 @@
       'settings.motion': '减少动画',
       'settings.motionDesc': '关闭过渡与入场动画',
       'settings.data': '数据',
+      'settings.dataDesc': '导出可选「完整备份（含文章）」或「OPML（仅订阅源）」；导入会自动识别两种格式',
       'settings.clear': '清空所有订阅源',
       'settings.shortcuts': '键盘快捷键',
       'lang.auto': '自动',
@@ -177,17 +178,23 @@
       'toast.importProgress': '正在抓取订阅源 {done}/{total}…',
       'toast.refreshingAll': '正在刷新 {n} 个订阅源…',
       'toast.refreshProgress': '正在刷新订阅源 {done}/{total}…',
-      'toast.refreshAllNew': '已刷新 {n} 个源，新增 {got} 篇文章{removed}',
+      'toast.refreshAllNew': '已刷新 {n} 个源，新增 {got} 篇文章',
       'toast.refreshAllNone': '已刷新 {n} 个源，都是最新的',
       'toast.refreshAllFail': '刷新失败：可能是浏览器跨域限制或网络问题。',
-      'toast.removed': '已同步移除 {n} 篇源站已删除的文章',
-      'toast.removedInline': '，并移除 {n} 篇源站已删除的文章',
       'toast.noFeeds': '还没有订阅源，先添加一个吧',
       'toast.refreshingNow': '正在刷新中，稍等一下…',
       'toast.partialFail': '{n} 个源没能刷新，可能是源站限流或跨域拦截',
       'refresh.all': '刷新全部订阅源',
       'refresh.allAria': '刷新全部订阅源',
       'toast.badOpml': '无法解析这个 OPML 文件，请检查文件格式。',
+      'toast.opmlNoFeed': '这个文件里没有找到订阅源，确认一下是不是 OPML 文件？',
+      'toast.opmlTooBig': '文件太大了（超过 8 MB），请换个更小的文件。',
+      'toast.importAllDup': '这些订阅源都已经在列表里了',
+      'export.full': '完整备份（含文章）',
+      'export.opml': 'OPML（仅订阅源）',
+      'toast.exportedFull': '已导出备份：{n} 个订阅源、{m} 篇文章',
+      'toast.restored': '已恢复 {n} 个订阅源、{m} 篇文章',
+      'toast.badBackup': '这个备份文件读不出来，可能已经损坏了',
       'toast.readFail': '读取文件失败',
       'toast.exported': '已导出 {n} 个订阅源',
       'toast.catCreated': '已创建分组「{name}」',
@@ -373,6 +380,7 @@
       'settings.motion': 'Reduce motion',
       'settings.motionDesc': 'Turn off transitions and entrances',
       'settings.data': 'Data',
+      'settings.dataDesc': 'Export a full backup with articles, or OPML with feeds only. Import detects either format.',
       'settings.clear': 'Clear all feeds',
       'settings.shortcuts': 'Keyboard shortcuts',
       'lang.auto': 'Auto',
@@ -390,17 +398,23 @@
       'toast.importProgress': 'Fetching feeds {done}/{total}…',
       'toast.refreshingAll': 'Refreshing {n} feeds…',
       'toast.refreshProgress': 'Refreshing feeds {done}/{total}…',
-      'toast.refreshAllNew': 'Refreshed {n} feeds, {got} new articles{removed}',
+      'toast.refreshAllNew': 'Refreshed {n} feeds, {got} new articles',
       'toast.refreshAllNone': 'Refreshed {n} feeds, already up to date',
       'toast.refreshAllFail': 'Refresh failed: CORS limits or a network issue.',
-      'toast.removed': 'Removed {n} articles deleted at the source',
-      'toast.removedInline': ', removed {n} deleted at the source',
       'toast.noFeeds': 'No feeds yet — add one first',
       'toast.refreshingNow': 'Already refreshing, hang on…',
       'toast.partialFail': '{n} feeds could not be refreshed (rate limit or CORS)',
       'refresh.all': 'Refresh all feeds',
       'refresh.allAria': 'Refresh all feeds',
       'toast.badOpml': 'Could not parse this OPML file. Please check the format.',
+      'toast.opmlNoFeed': 'No feeds found in this file — is it really an OPML file?',
+      'toast.opmlTooBig': 'That file is too large (over 8 MB). Please pick a smaller one.',
+      'toast.importAllDup': 'Those feeds are already in your list',
+      'export.full': 'Full backup (with articles)',
+      'export.opml': 'OPML (feeds only)',
+      'toast.exportedFull': 'Backup saved: {n} feeds, {m} articles',
+      'toast.restored': 'Restored {n} feeds and {m} articles',
+      'toast.badBackup': "Couldn't read this backup file — it may be damaged",
       'toast.readFail': 'Failed to read the file',
       'toast.exported': 'Exported {n} feeds',
       'toast.catCreated': 'Created group "{name}"',
@@ -2094,12 +2108,18 @@
       const rawTitle = pick(node, ['title']) || t('untitled');
       const rawContent = pick(node, ['content:encoded', 'encoded', 'content', 'description', 'summary']);
       const rawLink = pick(node, ['link']) || attrLink(node);
-      let link = itemBase;
+      const guid = pick(node, ['guid', 'id', 'dc:identifier']);
+      let link = '';
       try {
         if (rawLink) link = new URL(rawLink, itemBase).href;
+        else if (guid && /^https?:\/\//i.test(guid)) link = new URL(guid).href;
       } catch (err) {
-        link = rawLink || itemBase;
+        link = rawLink || '';
       }
+      /* 有些源只在 <guid> 里给唯一 id、不给链接。这时链接就留空，
+         去重用 guid——绝不能退化成站点首页，否则整批文章会被当成同一篇，
+         表现就是「一个源只进来一篇文章」。 */
+      const key = link ? linkKey(link) : guid ? 'guid:' + guid : '';
       const date = pick(node, ['pubDate', 'published', 'updated', 'dc:date']);
       const author = pick(node, ['dc:creator', 'creator', 'author', 'name']);
       const content = sanitizeHtml(rawContent, itemBase);
@@ -2112,6 +2132,7 @@
       return {
         title: rawTitle,
         link: link,
+        key: key,
         publishedAt: publishedAt,
         author: author,
         content: content || '<p>' + esc(excerpt) + '</p>',
@@ -2124,7 +2145,8 @@
       title: title,
       site: site,
       desc: desc,
-      items: items.filter((it) => it.title && it.link)
+      /* 不再要求必须有链接：只有标题的文章也要收进来（靠标题去重） */
+      items: items.filter((it) => it.title)
     };
   }
 
@@ -2226,15 +2248,18 @@
         const parsed = new Date(iso);
         if (!isNaN(parsed.getTime())) publishedAt = parsed.toISOString();
       }
-      let link = it.link || base;
+      let link = '';
       try {
-        link = new URL(link, base).href;
+        if (it.link) link = new URL(it.link, base).href;
+        else if (it.guid && /^https?:\/\//i.test(it.guid)) link = new URL(it.guid).href;
       } catch (err) {
-        /* 保留原值 */
+        link = it.link || '';
       }
+      const key = link ? linkKey(link) : it.guid ? 'guid:' + it.guid : '';
       return {
         title: title,
         link: link,
+        key: key,
         publishedAt: publishedAt,
         author: it.author || '',
         content: content || '<p>' + esc(excerpt) + '</p>',
@@ -2247,7 +2272,7 @@
       title: meta.title || '',
       site: meta.link || '',
       desc: meta.description || '',
-      items: items.filter((it) => it.title && it.link)
+      items: items.filter((it) => it.title)
     };
   }
 
@@ -2320,7 +2345,8 @@
       starred: false,
       excerpt: item.excerpt,
       image: extractArticleImage(item.content),
-      link: item.link,
+      link: item.link || '',
+      key: item.key || '', /* 去重键：链接缺失时是 guid，两边都不存在则为空（退回标题） */
       content: item.content
     };
   }
@@ -2347,54 +2373,46 @@
   }
 
   function itemKey(item) {
-    return linkKey(item && item.link) || 'title:' + String((item && item.title) || '').trim();
+    if (!item) return '';
+    if (item.key) return item.key; /* 解析时就定好的键（链接或 guid） */
+    const byLink = linkKey(item.link);
+    if (byLink) return byLink;
+    return 'title:' + String(item.title || '').trim();
   }
 
+  /* 抓取结果入库：只做一件事——把本地还没有的文章加进来。
+
+     明确不做的事：源站删掉/撤下某篇文章时，本地一律保留。已读、星标、
+     旧文章都不动，本地数据只增不减（除非你自己手动删）。
+
+     判断“是不是同一篇”：优先用规范化后的链接（见 linkKey）；
+     链接缺失时退回标题。同一批返回内部的重复也一并挡掉。 */
   function mergeFeedArticles(feed, result) {
-    const existing = new Set(S.articles.filter((a) => a.feedId === feed.id).map(itemKey));
+    if (!feed || !result || !Array.isArray(result.items)) return 0;
+
+    /* 先把这个源已有的文章建成索引，避免每条都去遍历整个列表 */
+    const known = new Set();
+    for (let i = 0; i < S.articles.length; i++) {
+      const a = S.articles[i];
+      if (a.feedId === feed.id) known.add(itemKey(a));
+    }
+
     let added = 0;
-    result.items.forEach((it) => {
+    for (let i = 0; i < result.items.length; i++) {
+      const it = result.items[i];
+      if (!it || !it.title) continue;
       const key = itemKey(it);
-      if (existing.has(key)) return;
-      existing.add(key); /* 同一批里的重复也挡掉 */
+      if (!key || known.has(key)) continue;
+      known.add(key);
       S.articles.push(articleFromItem(feed, it, added));
       added++;
-    });
-    if (result.site && !feed.site) feed.site = result.site;
+    }
+
+    /* 顺手补一下源的元信息，只填空缺，不覆盖已有值 */
+    if (!feed.site && result.site) feed.site = result.site;
+    if (!feed.desc && result.desc) feed.desc = result.desc;
+
     return added;
-  }
-
-  /* 源站删掉的文章，本地也删掉。
-     只清理“落在本次抓取窗口内”的文章：把本批返回里最早的发布时间当作窗口下界，
-     比它更老的一律保留——那些可能只是被源站保留条数挤下去了，不是被删了。
-     星标文章不动；返回不足 3 条时视为抓取不完整，不做删除。 */
-  function pruneFeedArticles(feed, result) {
-    const items = result.items || [];
-    if (items.length < 3) return 0;
-
-    const times = items.map((it) => Date.parse(it.publishedAt)).filter((n) => !isNaN(n));
-    if (!times.length) return 0;
-    const oldest = Math.min.apply(null, times);
-
-    const alive = new Set(items.map(itemKey));
-    const doomed = new Set();
-    S.articles.forEach((a) => {
-      if (a.feedId !== feed.id || a.starred) return;
-      if (alive.has(itemKey(a))) return;
-      const t = Date.parse(a.publishedAt);
-      if (isNaN(t) || t < oldest) return;
-      doomed.add(a.id);
-    });
-    if (!doomed.size) return 0;
-    S.articles = S.articles.filter((a) => !doomed.has(a.id));
-    return doomed.size;
-  }
-
-  /* 一次抓取的完整同步：先补新增，再清源站已删除的 */
-  function syncFeedArticles(feed, result) {
-    const added = mergeFeedArticles(feed, result);
-    const removed = pruneFeedArticles(feed, result);
-    return { added: added, removed: removed };
   }
 
   async function fetchFeedsInBackground(feeds) {
@@ -2436,13 +2454,10 @@
       toast(t('toast.refreshFail'));
       return;
     }
-    const r = syncFeedArticles(f, result);
+    const added = mergeFeedArticles(f, result);
     persist();
-    if (r.removed) ensureSelection();
     renderAll({ keepScroll: true });
-    if (r.added) toast(fmt(t('toast.fetched'), { n: r.added }));
-    else if (r.removed) toast(fmt(t('toast.removed'), { n: r.removed }));
-    else toast(t('toast.upToDate'));
+    toast(added ? fmt(t('toast.fetched'), { n: added }) : t('toast.upToDate'));
   }
 
   /* 一次性刷新全部订阅源：并发 4 条，边抓边渲染，失败不影响其他源 */
@@ -2471,7 +2486,6 @@
     const showProgress = !o.auto && total >= 4;
     let done = 0;
     let added = 0;
-    let removed = 0;
     let failed = 0;
     let lastPaint = 0;
 
@@ -2485,18 +2499,13 @@
         if (!f) return;
         if (!feedById(f.id)) continue; /* 抓取过程中被删除 */
         const result = await fetchFeed(f.url, netState);
-        if (result) {
-          const r = syncFeedArticles(f, result);
-          added += r.added;
-          removed += r.removed;
-        } else {
-          failed++;
-        }
+        if (result) added += mergeFeedArticles(f, result);
+        else failed++;
         done++;
 
         /* 有新文章时增量刷新列表，别等全部源抓完才显示；
            只刷导航和列表，避免打断正在读的文章（重绘阅读区会丢滚动位置） */
-        if ((added || removed) && Date.now() - lastPaint > 800) {
+        if (added && Date.now() - lastPaint > 800) {
           lastPaint = Date.now();
           renderSidebar();
           renderList({ keepScroll: true });
@@ -2515,23 +2524,11 @@
       setRefreshBusy(false);
     }
 
-    if (added || removed) {
+    if (added) {
       persist();
       renderSidebar();
       renderList({ keepScroll: true });
-      if (removed) {
-        ensureSelection(); /* 正在读的那篇可能刚被源站删掉 */
-        renderReader();
-      }
-    }
-    if (added) {
-      toast(fmt(t('toast.refreshAllNew'), {
-        n: total,
-        got: added,
-        removed: removed ? fmt(t('toast.removedInline'), { n: removed }) : ''
-      }));
-    } else if (removed) {
-      toast(fmt(t('toast.removed'), { n: removed }));
+      toast(fmt(t('toast.refreshAllNew'), { n: total, got: added }));
     } else if (failed === total) {
       toast(t('toast.refreshAllFail'), { duration: 4600 });
     } else if (failed) {
@@ -2539,7 +2536,7 @@
     } else if (!o.auto) {
       toast(fmt(t('toast.refreshAllNone'), { n: total }));
     }
-    return { added: added, removed: removed, failed: failed, total: total };
+    return { added: added, failed: failed, total: total };
   }
 
   /* ---------------- 添加订阅源 ---------------- */
@@ -2625,20 +2622,65 @@
   });
 
   /* ---------------- OPML ---------------- */
+
+  /* OPML 里的地址可能带空格、写 feed:// 或不写协议，统一成 http(s) 地址 */
+  function normalizeFeedUrl(raw) {
+    let s = String(raw || '').trim();
+    if (!s) return '';
+    s = s.replace(/^feed:\/\//i, 'https://').replace(/^feed:/i, 'https://');
+    if (/^\/\//.test(s)) s = 'https:' + s;
+    else if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
+    try {
+      const u = new URL(s);
+      u.hash = '';
+      return u.href;
+    } catch (err) {
+      return s;
+    }
+  }
+
+  /* 判断两个源是不是同一个：忽略协议、www、末尾斜杠、域名大小写 */
+  function feedUrlKey(raw) {
+    const s = normalizeFeedUrl(raw);
+    try {
+      const u = new URL(s);
+      return (u.hostname.replace(/^www\./i, '').toLowerCase() + u.pathname + u.search).replace(/\/+$/, '');
+    } catch (err) {
+      return s.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+    }
+  }
+
+  /* 递归解析：以前只遍历 <opml> 的第一层，碰到 <body> 就 return，
+     所以标准 OPML（订阅源都放在 body 里）永远解析出 0 条。 */
   function parseOpml(text) {
-    const doc = new DOMParser().parseFromString(text, 'text/xml');
+    const doc = new DOMParser().parseFromString(String(text || '').replace(/^\uFEFF/, ''), 'text/xml');
     if (!doc || doc.querySelector('parsererror')) throw new Error('bad opml');
     const out = [];
+    const seen = new Set();
 
     const walk = (node, category) => {
       Array.prototype.slice.call(node.children || []).forEach((child) => {
-        if (!child.tagName || child.tagName.toLowerCase() !== 'outline') return;
-        const url = child.getAttribute('xmlUrl') || child.getAttribute('xmlurl');
-        const label = child.getAttribute('title') || child.getAttribute('text') || '';
-        if (url) {
+        const tag = String(child.tagName || '').toLowerCase();
+        if (tag === 'head') return; /* 头部只有标题和时间，不用看 */
+        const rawUrl =
+          child.getAttribute('xmlUrl') ||
+          child.getAttribute('xmlurl') ||
+          child.getAttribute('XMLURL') ||
+          child.getAttribute('feedUrl') ||
+          child.getAttribute('feedurl') ||
+          '';
+        const label = (child.getAttribute('title') || child.getAttribute('text') || '').trim();
+
+        if (rawUrl) {
+          const url = normalizeFeedUrl(rawUrl);
+          const key = feedUrlKey(url);
+          if (!url || seen.has(key)) return;
+          seen.add(key);
           out.push({ title: label || url, url: url, category: category });
         } else if (child.children && child.children.length) {
-          walk(child, label || category);
+          /* body 只是容器，不能把它的名字当分类；分类名取最近一层有名字的 outline */
+          const next = tag === 'body' || tag === 'opml' ? category : label || category;
+          walk(child, next);
         }
       });
     };
@@ -2647,59 +2689,122 @@
     return out;
   }
 
+  /* 有些导出文件是 UTF-16 或 GBK，直接按 UTF-8 读会变乱码读不出内容 */
+  function decodeOpmlBuffer(buffer) {
+    const bytes = new Uint8Array(buffer);
+    if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
+      return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+    }
+    if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+      return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+    }
+    let text = new TextDecoder('utf-8').decode(bytes);
+    const m = /^\s*<\?xml[^>]*encoding=["']([\w-]+)["']/i.exec(text.replace(/^\uFEFF/, ''));
+    if (m) {
+      const enc = m[1].toLowerCase();
+      if (enc !== 'utf-8' && enc !== 'utf8' && enc !== 'us-ascii') {
+        try {
+          text = new TextDecoder(enc).decode(bytes);
+        } catch (err) {
+          /* 浏览器不支持这个编码就用 UTF-8 的结果 */
+        }
+      }
+    }
+    return text.replace(/^\uFEFF/, '');
+  }
+
   function handleOpmlFile(file) {
     if (!file) return;
+    if (file.size > 40 * 1024 * 1024) {
+      toast(t('toast.opmlTooBig'));
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
-      try {
-        const entries = parseOpml(String(reader.result));
-        if (!entries.length) {
-          toast(t('toast.badOpml'));
+      const text = decodeOpmlBuffer(reader.result);
+
+      /* JSON 备份：源 + 分组 + 全部文章 + 已读/星标，一眼就能认出来 */
+      if (text.trim().charAt(0) === '{') {
+        let data = null;
+        try {
+          data = JSON.parse(text);
+        } catch (err) {
+          toast(t('toast.badBackup'));
           return;
         }
-        let added = 0;
-        let skipped = 0;
-        const newFeeds = [];
-        entries.forEach((entry) => {
-          if (S.feeds.some((f) => f.url === entry.url)) {
-            skipped++;
-            return;
-          }
-          let catId = '';
-          if (entry.category) {
-            let cat = S.categories.find((c) => c.name === entry.category);
-            if (!cat) {
-              cat = { id: uid('c'), name: entry.category };
-              S.categories.push(cat);
-            }
-            catId = cat.id;
-          }
-          const feed = {
-            id: uid('f'),
-            title: entry.title,
-            url: entry.url,
-            category: catId,
-            color: hashColor(entry.url),
-            desc: '',
-            site: ''
-          };
-          S.feeds.push(feed);
-          newFeeds.push(feed);
-          added++;
-        });
+        if (!data || (!Array.isArray(data.feeds) && !Array.isArray(data.articles))) {
+          toast(t('toast.badBackup'));
+          return;
+        }
+        const restored = importBackup(data);
         persist();
         renderAll();
+        if (settingsDialog.open) settingsDialog.close();
+        toast(fmt(t('toast.restored'), { n: restored.feeds, m: restored.articles }));
+        if (restored.newFeeds.length) fetchFeedsInBackground(restored.newFeeds);
+        return;
+      }
+
+      let entries = [];
+      try {
+        entries = parseOpml(text);
+      } catch (err) {
+        toast(t('toast.badOpml'));
+        return;
+      }
+      if (!entries.length) {
+        toast(t('toast.opmlNoFeed'));
+        return;
+      }
+
+      let added = 0;
+      let skipped = 0;
+      const newFeeds = [];
+      const existing = new Set(S.feeds.map((f) => feedUrlKey(f.url)));
+      entries.forEach((entry) => {
+        const key = feedUrlKey(entry.url);
+        if (existing.has(key)) {
+          skipped++;
+          return;
+        }
+        existing.add(key);
+        let catId = '';
+        if (entry.category) {
+          let cat = S.categories.find((c) => c.name === entry.category);
+          if (!cat) {
+            cat = { id: uid('c'), name: entry.category };
+            S.categories.push(cat);
+          }
+          catId = cat.id;
+        }
+        const feed = {
+          id: uid('f'),
+          title: entry.title,
+          url: entry.url,
+          category: catId,
+          color: hashColor(entry.url),
+          desc: '',
+          site: ''
+        };
+        S.feeds.push(feed);
+        newFeeds.push(feed);
+        added++;
+      });
+      persist();
+      renderAll();
+      /* 设置弹窗是顶层元素，关掉它才看得到底下新导入的源和提示条 */
+      if (settingsDialog.open) settingsDialog.close();
+      if (!added && skipped) toast(t('toast.importAllDup'));
+      else {
         toast(fmt(t('toast.imported'), {
           n: added,
           skip: skipped ? fmt(t('toast.importSkipped'), { n: skipped }) : ''
         }));
-        if (newFeeds.length) fetchFeedsInBackground(newFeeds);
-      } catch (err) {
-        toast(t('toast.badOpml'));
       }
+      if (newFeeds.length) fetchFeedsInBackground(newFeeds);
     };
     reader.onerror = () => toast(t('toast.readFail'));
-    reader.readAsText(file, 'utf-8');
+    reader.readAsArrayBuffer(file); /* 先拿原始字节，自己判断编码，避免 UTF-16 / GBK 变乱码 */
   }
 
   function downloadFile(name, content, type) {
@@ -2714,7 +2819,169 @@
     window.setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
 
+  /* ---------------- 完整备份（JSON） ----------------
+     OPML 只能装订阅地址，装不了文章。要把文章、已读、星标一起搬，得用 JSON 备份。 */
+
+  function backupStamp() {
+    const d = new Date();
+    const p = (n) => (n < 10 ? '0' + n : '' + n);
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
+  }
+
+  function backupPayload() {
+    const catName = {};
+    S.categories.forEach((c) => (catName[c.id] = c.name));
+    const feedUrl = {};
+    S.feeds.forEach((f) => (feedUrl[f.id] = f.url));
+
+    const feeds = S.feeds.map((f) => ({
+      title: f.title,
+      url: f.url,
+      site: f.site || '',
+      desc: f.desc || '',
+      color: f.color || '',
+      category: f.category ? catName[f.category] || '' : ''
+    }));
+
+    const articles = [];
+    S.articles.forEach((a) => {
+      const url = feedUrl[a.feedId];
+      if (!url) return;
+      articles.push({
+        feedUrl: url,
+        title: a.title,
+        link: a.link || '',
+        key: a.key || '',
+        author: a.author || '',
+        publishedAt: a.publishedAt || '',
+        readTime: a.readTime || 5,
+        read: !!a.read,
+        starred: !!a.starred,
+        excerpt: a.excerpt || '',
+        image: a.image || '',
+        content: a.content || ''
+      });
+    });
+
+    return {
+      app: 'jianye-reader',
+      kind: 'backup',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      categories: S.categories.map((c) => c.name),
+      feeds: feeds,
+      articles: articles
+    };
+  }
+
+  function exportBackup() {
+    if (!S.feeds.length && !S.articles.length) {
+      toast(t('toast.noFeeds'));
+      return;
+    }
+    const data = backupPayload();
+    downloadFile(
+      'jianye-reader-backup-' + backupStamp() + '.json',
+      JSON.stringify(data),
+      'application/json;charset=utf-8'
+    );
+    if (settingsDialog.open) settingsDialog.close();
+    toast(fmt(t('toast.exportedFull'), { n: data.feeds.length, m: data.articles.length }));
+  }
+
+  /* 把备份并进现有数据：源按 URL 认、文章按去重键认；只补缺，绝不删你现有的东西 */
+  function importBackup(data) {
+    const catIdByName = {};
+    S.categories.forEach((c) => (catIdByName[c.name] = c.id));
+
+    (Array.isArray(data.categories) ? data.categories : []).forEach((raw) => {
+      const name = String(typeof raw === 'string' ? raw : (raw && raw.name) || '').trim();
+      if (!name || catIdByName[name]) return;
+      const cat = { id: uid('c'), name: name };
+      S.categories.push(cat);
+      catIdByName[name] = cat.id;
+    });
+
+    const feedByKey = {};
+    S.feeds.forEach((f) => (feedByKey[feedUrlKey(f.url)] = f));
+
+    const newFeeds = [];
+    let addedFeeds = 0;
+
+    (Array.isArray(data.feeds) ? data.feeds : []).forEach((raw) => {
+      if (!raw) return;
+      const url = normalizeFeedUrl(raw.url);
+      if (!url) return;
+      const key = feedUrlKey(url);
+      let feed = feedByKey[key];
+      if (!feed) {
+        const catName = String(raw.category || '').trim();
+        feed = {
+          id: uid('f'),
+          title: String(raw.title || '').trim() || url,
+          url: url,
+          category: catName && catIdByName[catName] ? catIdByName[catName] : '',
+          color: raw.color || hashColor(url),
+          desc: raw.desc || '',
+          site: raw.site || ''
+        };
+        S.feeds.push(feed);
+        feedByKey[key] = feed;
+        newFeeds.push(feed);
+        addedFeeds++;
+      } else {
+        if (!feed.site && raw.site) feed.site = raw.site;
+        if (!feed.desc && raw.desc) feed.desc = raw.desc;
+      }
+    });
+
+    /* 已有文章索引：feedId + 去重键，避免一条条遍历整个列表 */
+    const index = {};
+    S.articles.forEach((a) => {
+      index[a.feedId + '|' + itemKey(a)] = a;
+    });
+
+    let addedArticles = 0;
+    (Array.isArray(data.articles) ? data.articles : []).forEach((raw) => {
+      if (!raw || !raw.title) return;
+      const feed = feedByKey[feedUrlKey(raw.feedUrl)];
+      if (!feed) return;
+      const slot = feed.id + '|' + itemKey(raw);
+      const hit = index[slot];
+      if (hit) {
+        /* 已经有了就不覆盖正文，只把星标/已读这类状态补回来 */
+        if (raw.starred) hit.starred = true;
+        if (raw.read) hit.read = true;
+        return;
+      }
+      const article = {
+        id: uid('a') + '-' + addedArticles,
+        feedId: feed.id,
+        title: raw.title,
+        author: raw.author || feed.title,
+        publishedAt: raw.publishedAt || new Date().toISOString(),
+        readTime: raw.readTime || 5,
+        read: !!raw.read,
+        starred: !!raw.starred,
+        excerpt: raw.excerpt || '',
+        image: raw.image || '',
+        link: raw.link || '',
+        key: raw.key || '',
+        content: raw.content || ''
+      };
+      S.articles.push(article);
+      index[slot] = article;
+      addedArticles++;
+    });
+
+    return { feeds: addedFeeds, articles: addedArticles, newFeeds: newFeeds };
+  }
+
   function exportOpml() {
+    if (!S.feeds.length) {
+      toast(t('toast.noFeeds'));
+      return;
+    }
     const xmlEsc = (s) =>
       String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
     const lines = [
@@ -2746,6 +3013,7 @@
 
     lines.push('  </body>', '</opml>');
     downloadFile('jianye-reader-subscriptions.opml', lines.join('\n'));
+    if (settingsDialog.open) settingsDialog.close();
     toast(fmt(t('toast.exported'), { n: S.feeds.length }));
   }
 
@@ -2963,7 +3231,17 @@
   /* 设置 */
   $('#settingsBtn').addEventListener('click', openSettings);
   $('#settingsImport').addEventListener('click', () => opmlInput.click());
-  $('#settingsExport').addEventListener('click', exportOpml);
+  const settingsExportBtn = $('#settingsExport');
+  settingsExportBtn.addEventListener('click', () => {
+    if (!S.feeds.length && !S.articles.length) {
+      toast(t('toast.noFeeds'));
+      return;
+    }
+    openMenu(settingsExportBtn, [
+      { label: t('export.full'), icon: 'i-download', onClick: exportBackup },
+      { label: t('export.opml'), icon: 'i-upload', onClick: exportOpml }
+    ], { iconSpace: true });
+  });
   $('#clearAllBtn').addEventListener('click', clearAllFeeds);
 
   /* 订阅源详情面板 */

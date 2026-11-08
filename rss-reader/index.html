@@ -33,7 +33,7 @@
   })();
 </script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%236750A4'/%3E%3Cg fill='none' stroke='%23EADDFF' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M10 22v.01'/%3E%3Cpath d='M10 15a7 7 0 0 1 7 7'/%3E%3Cpath d='M10 9a13 13 0 0 1 13 13'/%3E%3C/g%3E%3C/svg%3E">
-<link rel="stylesheet" href="styles.css?v=20261108d">
+<link rel="stylesheet" href="styles.css?v=20261108h">
 </head>
 <body>
 <a class="skip-link" href="#articleList" data-i18n="skip.link">跳到文章列表</a>
@@ -181,7 +181,7 @@
       <div class="cat-list" id="categoryList"></div>
     </div>
 
-    <input type="file" id="opmlInput" accept=".opml,.xml,text/xml,application/xml" hidden>
+    <input type="file" id="opmlInput" accept=".json,.opml,.xml,application/json,text/xml,application/xml" hidden>
   </aside>
 
   <div class="scrim" id="scrim" hidden></div>
@@ -487,6 +487,7 @@
         </button>
         <button type="button" class="btn-text danger" id="clearAllBtn" data-i18n="settings.clear">清空所有文章</button>
       </div>
+      <div class="setting-desc" data-i18n="settings.dataDesc">导出可选「完整备份（含文章）」或「OPML（仅订阅源）」；导入会自动识别两种格式</div>
     </div>
 
     <div class="setting-block touch-hide">
@@ -509,6 +510,6 @@
   </div>
 </dialog>
 
-<script src="app.js?v=20261108d"></script>
+<script src="app.js?v=20261108h"></script>
 </body>
 </html>
