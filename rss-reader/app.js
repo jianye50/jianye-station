@@ -198,6 +198,7 @@
       'sync.detail': '各订阅源最近一次抓取结果',
       'sync.now': '立即刷新全部',
       'sync.viaDirect': '直连',
+      'sync.viaProxy': '代理',
       'sync.viaJson': '公共接口·有缓存',
       'toast.badOpml': '无法解析这个 OPML 文件，请检查文件格式。',
       'toast.opmlNoFeed': '这个文件里没有找到订阅源，确认一下是不是 OPML 文件？',
@@ -431,6 +432,7 @@
       'sync.detail': 'Last fetch result for each feed',
       'sync.now': 'Refresh all now',
       'sync.viaDirect': 'direct',
+      'sync.viaProxy': 'proxy',
       'sync.viaJson': 'public API · cached',
       'toast.badOpml': 'Could not parse this OPML file. Please check the format.',
       'toast.opmlNoFeed': 'No feeds found in this file — is it really an OPML file?',
@@ -2220,37 +2222,33 @@
     return root.innerHTML;
   }
 
-  /* 抓取链路：直连 → rss2json（第三方转 JSON，带 CORS）→ 公共代理兜底。
-     直连对自带 CORS 的源最快，也不会占用第三方额度；失败的源才走代理。
-     allorigins / corsproxy 目前多半不可用（超时 / 需要 API key），只留作最后的兜底。 */
+  /* 抓取链路。顺序很重要：
+     1) 直连：源站自己带 CORS 头时最快，也一定是最新的；
+     2) corsfix 代理：把源站原文原样转回来（不缓存、无需密钥），绝大多数源靠它拿到最新内容；
+     3) rss2json：把 RSS 转成 JSON，稳定但有自己的缓存（十几分钟），只作兜底；
+     4) allorigins / corsproxy：目前多半已失效，留作最后的尝试。
+     注：添加订阅源、手动刷新、自动刷新全都走这一条链路，不分叉。 */
   const ENDPOINT_PROXY_JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
+  const ENDPOINT_CORSFIX = 'https://proxy.corsfix.com/?';
 
-  /* rss2json 免费额度有限（约 60 次/窗口），被限流后先歇 10 分钟，别把额度耗光 */
+  /* rss2json 免费额度有限（约 60 次/分钟），被限流后先歇 10 分钟，别把额度耗光 */
   let rss2jsonDownUntil = 0;
 
   function fetchEndpoints(url) {
     const enc = encodeURIComponent(url);
-    const list = [{ kind: 'xml', tag: 'direct', timeout: 7000, href: url }];
+    const list = [
+      { kind: 'xml', tag: 'direct', timeout: 7000, href: url },
+      /* 这个代理要的是原样地址（不能再编码一次），带查询参数的源也能透传 */
+      { kind: 'xml', tag: 'corsfix', timeout: 14000, href: ENDPOINT_CORSFIX + url.replace(/ /g, '%20'), retry: true }
+    ];
     if (Date.now() > rss2jsonDownUntil) {
       list.push({ kind: 'json', tag: 'json', timeout: 11000, href: ENDPOINT_PROXY_JSON + enc + '&count=50' });
     }
     list.push(
-      { kind: 'xml', tag: 'allorigins', timeout: 7000, href: 'https://api.allorigins.win/raw?url=' + enc },
-      { kind: 'xml', tag: 'corsproxy', timeout: 6000, href: 'https://corsproxy.io/?url=' + enc }
+      { kind: 'xml', tag: 'allorigins', timeout: 5000, href: 'https://api.allorigins.win/raw?url=' + enc },
+      { kind: 'xml', tag: 'corsproxy', timeout: 5000, href: 'https://corsproxy.io/?url=' + enc }
     );
     return list;
-  }
-
-  /* 某一轮刷新里，某条代理连续失败 3 次就整轮跳过：几十个源时不用逐个等超时。
-     直连不参与跳过（有的源本来就没开 CORS，那是正常失败）。 */
-  function noteEndpoint(state, tag, ok) {
-    if (!state || !tag || tag === 'direct') return;
-    if (ok) {
-      delete state.fails[tag];
-      return;
-    }
-    state.fails[tag] = (state.fails[tag] || 0) + 1;
-    if (state.fails[tag] >= 3) state.skip.add(tag);
   }
 
   /* rss2json 的 JSON 转成统一的 items 结构 */
@@ -2300,12 +2298,11 @@
     };
   }
 
-  async function fetchFeed(url, netState) {
-    const endpoints = fetchEndpoints(url);
-
-    for (let i = 0; i < endpoints.length; i++) {
-      const ep = endpoints[i];
-      if (netState && ep.tag && netState.skip.has(ep.tag)) continue;
+  /* 只发一次请求，成功返回解析结果，失败返回 null。
+     corsfix 偶尔会甩 5xx，所以带了 retry 标记的通道再试一次。 */
+  async function tryEndpoint(ep, url) {
+    const attempts = ep.retry ? 2 : 1;
+    for (let n = 0; n < attempts; n++) {
       const controller = new AbortController();
       const timer = window.setTimeout(() => controller.abort(), ep.timeout);
       try {
@@ -2316,45 +2313,64 @@
           cache: 'no-store'
         });
         window.clearTimeout(timer);
+
         if (!res.ok) {
           if (ep.kind === 'json' && (res.status === 429 || res.status === 403)) {
             rss2jsonDownUntil = Date.now() + 10 * 60 * 1000;
           }
-          noteEndpoint(netState, ep.tag, false);
-          continue;
+          if (n < attempts - 1) continue;
+          return null;
         }
+
         if (ep.kind === 'json') {
           let data = null;
           try {
             data = await res.json();
           } catch (err) {
-            noteEndpoint(netState, ep.tag, false);
-            continue;
+            if (n < attempts - 1) continue;
+            return null;
           }
           const parsedJson = itemsFromRss2Json(data, url);
           if (parsedJson && parsedJson.items.length) {
             parsedJson.channel = ep.tag;
-            noteEndpoint(netState, ep.tag, true);
             return parsedJson;
           }
           if (data && data.status === 'error' && /limit|quota|rate/i.test(String(data.message || ''))) {
             rss2jsonDownUntil = Date.now() + 10 * 60 * 1000;
           }
-          noteEndpoint(netState, ep.tag, false);
-          continue;
+          if (n < attempts - 1) continue;
+          return null;
         }
+
         const text = await res.text();
+        /* 代理挂了有时会返回一个 HTML 错误页，别把它当订阅源解析 */
+        if (!/<\?xml|<rss|<feed|<rdf:RDF/i.test(text.slice(0, 600))) {
+          if (n < attempts - 1) continue;
+          return null;
+        }
         const parsed = parseFeedXml(text, url);
         if (parsed && parsed.items.length) {
           parsed.channel = ep.tag;
-          noteEndpoint(netState, ep.tag, true);
           return parsed;
         }
-        noteEndpoint(netState, ep.tag, false);
+        if (n < attempts - 1) continue;
+        return null;
       } catch (err) {
         window.clearTimeout(timer);
-        noteEndpoint(netState, ep.tag, false);
+        if (n < attempts - 1) continue;
+        return null;
       }
+    }
+    return null;
+  }
+
+  /* 所有抓取入口（添加订阅源 / 单源刷新 / 全部刷新 / 自动刷新）都调它，
+     保证行为完全一致：同一条链路、同样的解析、同样的去重。 */
+  async function fetchFeed(url) {
+    const endpoints = fetchEndpoints(url);
+    for (let i = 0; i < endpoints.length; i++) {
+      const result = await tryEndpoint(endpoints[i], url);
+      if (result) return result;
     }
     return null;
   }
@@ -2573,6 +2589,7 @@
       if (h) {
         const via =
           h.tag === 'direct' ? t('sync.viaDirect')
+          : h.tag === 'corsfix' ? t('sync.viaProxy')
           : h.tag === 'json' ? t('sync.viaJson')
           : '';
         hint = (h.ok ? '✓ ' : '✕ ') + fmtClock(h.at) + (h.ok ? ' · ' + h.items + (via ? ' · ' + via : '') : '');
@@ -2617,14 +2634,13 @@
 
     if (showProgress) toast(fmt(t('toast.refreshingAll'), { n: total }));
 
-    const netState = { fails: {}, skip: new Set() }; /* 本轮各代理的健康状况 */
     const queue = feeds.slice();
     const worker = async () => {
       for (;;) {
         const f = queue.shift();
         if (!f) return;
         if (!feedById(f.id)) continue; /* 抓取过程中被删除 */
-        const result = await fetchFeed(f.url, netState);
+        const result = await fetchFeed(f.url);
         if (result) {
           added += mergeFeedArticles(f, result);
           feedHealth[f.id] = { at: Date.now(), ok: true, tag: result.channel || '', items: result.items.length };
