@@ -6,8 +6,19 @@
     <atom:link href="https://jype.top/rss-en.xml" rel="self" type="application/rss+xml"/>
     <description>May we not ruin what we have, nor regret what we lose.</description>
     <language>en-US</language>
-    <lastBuildDate>Sat, 07 Nov 2026 00:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Sun, 08 Nov 2026 00:00:00 GMT</lastBuildDate>
     <generator>gen-blog-index.mjs</generator>
+    <item>
+      <title>Put RSS into the browser: I wrote a zero-dependency pure front-end reader</title>
+      <link>https://jype.top/#/blog/rss-reader-article</link>
+      <guid isPermaLink="false">https://jype.top/#/blog/rss-reader-article</guid>
+      <pubDate>Sun, 08 Nov 2026 00:00:00 GMT</pubDate>
+      <category>RSS</category>
+      <category>front end</category>
+      <category>tool</category>
+      <category>toss</category>
+      <description><![CDATA[<p><img src="https://jype.top/blog/thumbs/rss-reader-article-cover.webp" alt=""></p><p>No registration, no app installation, and no data leaving the browser. A Material Design RSS reader with only three files, how to solve cross-domain crawling, theme flashing and local storage in a pure front-end, and where is its honest boundary.</p><p><a href="https://jype.top/#/blog/rss-reader-article">Read more</a></p>]]></description>
+    </item>
     <item>
       <title>Bringing Mijia into the browser: I wrote a purely static Mijia web console</title>
       <link>https://jype.top/#/blog/%E7%B1%B3%E5%AE%B6%E7%BD%91%E9%A1%B5%E6%8E%A7%E5%88%B6%E5%8F%B0</link>
