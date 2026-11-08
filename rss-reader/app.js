@@ -961,14 +961,6 @@
       unreadByFeed.set(a.feedId, (unreadByFeed.get(a.feedId) || 0) + 1);
     });
 
-    const navActive =
-      S.ui.scope === 'all' ? S.ui.filter : (S.ui.scope === 'unread' ? 'unread' : S.ui.scope === 'starred' ? 'starred' : '');
-    $$('#bottomNav .bn-item[data-scope]').forEach((b) => {
-      const on = b.dataset.scope === navActive;
-      b.classList.toggle('is-active', on);
-      b.setAttribute('aria-current', on ? 'page' : 'false');
-    });
-
     /* 主卡片：固定显示「全部文章」，不跟随当前视图，点击可随时返回全部 */
     heroIconUse.setAttribute('href', '#i-rows');
     heroLabel.textContent = t('nav.all');
@@ -2524,19 +2516,6 @@
     $('#groupsToggle').setAttribute('aria-expanded', collapsed ? 'false' : 'true');
   });
 
-  $$('#bottomNav .bn-item[data-scope]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const scope = btn.dataset.scope;
-      setScope('all', scope);
-      if (!isMobile()) {
-        if (app.classList.contains('is-reading')) closeReader();
-        return;
-      }
-      /* 手机端：在二级列表 / 阅读页点底部导航 → 回到一级首页（主卡片跟随所选视图），
-         不直接跳进另一个二级列表 */
-      if (app.classList.contains('is-browsing') || app.classList.contains('is-reading')) goHome();
-    });
-  });
 
   $$('.chip[data-filter]').forEach((chip) => {
     chip.addEventListener('click', () => setFilter(chip.dataset.filter));
@@ -2909,7 +2888,7 @@
   /* 涟漪 */
   document.addEventListener('pointerdown', (e) => {
     if (reduceMotion()) return;
-    const target = e.target.closest('.btn-filled, .btn-tonal, .fab, .bn-item, .chip, .icon-btn, .hero-card');
+    const target = e.target.closest('.btn-filled, .btn-tonal, .fab, .chip, .icon-btn, .hero-card');
     if (!target) return;
     const rect = target.getBoundingClientRect();
     const size = Math.max(rect.width, rect.height) * 1.6;

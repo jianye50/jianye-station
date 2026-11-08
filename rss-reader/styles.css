@@ -1007,38 +1007,7 @@ kbd {
   opacity: 0.8;
 }
 
-/* ---------------- bottom nav / fab ---------------- */
-.bottom-nav {
-  display: none;
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  height: calc(64px + env(safe-area-inset-bottom, 0px));
-  padding: 0 6px env(safe-area-inset-bottom, 0px);
-  background: color-mix(in srgb, var(--surface-container) 92%, transparent);
-  backdrop-filter: blur(18px) saturate(1.3);
-  -webkit-backdrop-filter: blur(18px) saturate(1.3);
-  border-top: 1px solid var(--divider);
-  z-index: 45;
-  align-items: stretch;
-}
-.bn-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  color: var(--on-surface-variant);
-  border-radius: 16px;
-  margin: 6px 2px;
-  position: relative;
-  overflow: hidden;
-  transition: background-color 0.2s var(--ease), color 0.2s var(--ease);
-}
-.bn-item.is-active { color: var(--on-secondary-container); background: var(--secondary-container); }
-.bn-icon { position: relative; display: grid; place-items: center; height: 24px; }
-.bn-item .icon { width: 22px; height: 22px; }
-
+/* ---------------- fab ---------------- */
 .fab {
   position: fixed;
   right: 24px;
@@ -1523,18 +1492,6 @@ dialog {
     grid-template-columns: minmax(0, 1fr);
     height: 100dvh;
   }
-  .bottom-nav { display: flex; justify-content: space-evenly; z-index: 46; }
-  .bn-item { flex: none; width: 68px; margin: 8px 0; background: transparent; }
-  .bn-item.is-active { background: transparent; }
-  .bn-icon {
-    width: 58px;
-    height: 34px;
-    border-radius: 999px;
-    display: grid;
-    place-items: center;
-    transition: background-color 0.2s var(--ease), color 0.2s var(--ease);
-  }
-  .bn-item.is-active .bn-icon { background: var(--secondary-container); color: var(--on-secondary-container); }
 
   /* 手机端：首页（侧边栏）默认全屏，浏览列表时滑出 */
   .sidebar {
@@ -1545,7 +1502,7 @@ dialog {
     box-shadow: none;
     border-right: 0;
     z-index: 44;
-    padding: calc(10px + env(safe-area-inset-top, 0px)) 16px calc(86px + env(safe-area-inset-bottom, 0px));
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 16px calc(20px + env(safe-area-inset-bottom, 0px));
     overflow-y: auto;
     transition: transform 0.34s var(--ease-emph);
   }
@@ -1565,7 +1522,7 @@ dialog {
   .sheet-grab { display: block; width: 36px; height: 4px; border-radius: 999px; background: var(--outline-variant); margin: 0 auto 14px; }
   .list-pane { border-right: 0; }
   .list-header { padding-top: calc(8px + env(safe-area-inset-top, 0px)); }
-  .list-scroll { padding: 6px 6px calc(90px + env(safe-area-inset-bottom, 0px)); --list-px: 6px; }
+  .list-scroll { padding: 6px 6px calc(24px + env(safe-area-inset-bottom, 0px)); --list-px: 6px; }
   .ai-thumb { width: 64px; height: 64px; border-radius: 12px; }
   .list-title { font-size: 20px; }
   .search-wrap {
@@ -1609,7 +1566,7 @@ dialog {
   .doc-byline { font-size: 12px; }
   .shortcut-list { grid-template-columns: 1fr; }
   .reader-placeholder { min-height: 70vh; }
-  .snackbar { bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+  .snackbar { bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
   .dialog {
     margin: auto auto 0;
     width: 100%;
@@ -1742,11 +1699,6 @@ dialog {
 .feed-row { transition: background-color 0.18s var(--ease), transform 0.18s var(--ease-spring); }
 .feed-row:active { transform: scale(0.985); }
 .cat-head { transition: background-color 0.18s var(--ease), transform 0.18s var(--ease-spring); }
-.bn-icon {
-  transition: background-color 0.2s var(--ease), color 0.2s var(--ease), transform 0.26s var(--ease-spring);
-}
-.bn-item:active .bn-icon { transform: scale(0.88); }
-.bn-item.is-active .bn-icon { transform: scale(1.06); }
 .menu-item:active { background: var(--pressed-layer); }
 
 /* —— 空状态：图标缓慢浮动 —— */
@@ -1825,7 +1777,7 @@ html.reduce-motion .article-item { animation-delay: 0ms !important; }
 
 /* ---------------- print ---------------- */
 @media print {
-  .sidebar, .list-pane, .bottom-nav, .fab, .reader-toolbar, .snackbar { display: none !important; }
+  .sidebar, .list-pane, .fab, .reader-toolbar, .snackbar { display: none !important; }
   .app { display: block; height: auto; }
   .reader { position: static; transform: none; }
   .reader-scroll { overflow: visible; }
