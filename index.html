@@ -1861,12 +1861,12 @@ let PROJECTS=[];         /* 由 loadProjects() 从 projects.txt 读入 */
    关于页的个人介绍卡整体隐藏，页面其余功能不受影响。 */
 let PROFILE=null;        /* 由 loadProfile() 从 profile.txt 读入 */
 let quietRender=false;   /* 配置晚到触发的「静默重绘」：不播首屏入场动画，避免又闪一下 */
-let SITE={name:null,icon:"",bg:"",badge:null,desc:null,domain:"",footer:null,feed:""};   /* 站点级配置：站名/图标/背景/徽章/描述/域名/页脚/RSS */
+let SITE={name:null,icon:"",bg:"",badge:null,desc:null,domain:"",footer:null,feed:"",feedEn:""};   /* 站点级配置：站名/图标/背景/徽章/描述/域名/页脚/订阅源 */
 
 /* 解析 profile.txt 的行式配置（键名不区分大小写，中文英文键名都认） */
 function parseProfileText(text){
   const out={hello:null,tagline:null,bios:[],avatar:"",email:"",chips:[],socials:[],
-             name:null,icon:"",bg:"",badge:null,desc:null,domain:"",footer:null,feed:""};
+             name:null,icon:"",bg:"",badge:null,desc:null,domain:"",footer:null,feed:"",feedEn:""};
   String(text||"").split(/\r?\n/).forEach(raw=>{
     const line=raw.trim();
     if(!line||line.charAt(0)==="#")return;
@@ -1887,6 +1887,7 @@ function parseProfileText(text){
     else if(k==="域名"||k==="主域名"||k==="站点地址"||k==="domain"||k==="siteurl"||k==="url"){ if(p[1])out.domain=p[1]; }
     else if(k==="页脚"||k==="版权"||k==="footer"||k==="copyright"){ if(p[1]||p[2])out.footer={zh:p[1]||p[2],en:p[2]||p[1]}; }
     else if(k==="订阅"||k==="rss"||k==="feed"||k==="订阅地址"){ if(p[1])out.feed=p[1]; }
+    else if(k==="英文订阅"||k==="rss-en"||k==="feed-en"){ if(p[1])out.feedEn=p[1]; }
   });
   return out;
 }
@@ -1950,13 +1951,13 @@ function applySiteConfig(){
       if(ogu)ogu.content=origin+"/";
     }
   }
-  /* 订阅源地址也只认配置：<head> 里那条「发现」标签跟着「订阅」走，
-     哪天 RSS 不放在这个文件名下，阅读器照样能找到 */
-  const fd=feedHref();
-  if(fd){
-    const alt=document.querySelector("link[rel='alternate'][type='application/rss+xml'][hreflang='zh-CN']");
-    if(alt)alt.href=fd;
-  }
+  /* 订阅源地址也只认配置：<head> 里那两条「发现」标签跟着「订阅 / 英文订阅」走，
+     哪天订阅源不放在默认文件名上，阅读器照样能找到 */
+  const altOf=hl=>document.querySelector("link[rel='alternate'][type='application/rss+xml'][hreflang='"+hl+"']");
+  [["zh-CN",feedHref()],["en",feedHref(SITE.feedEn)]].forEach(([hl,u])=>{
+    const l=altOf(hl);
+    if(l&&u)l.href=u;
+  });
 }
 /* 从 profile.txt 的「社交」里按关键字找链接（如 steam）；找不到就返回空串，
    源码里不再写死任何个人主页地址 */
@@ -1973,11 +1974,11 @@ function pageTitle(page,brand){
   const a=String(page||"").trim(), b=String(brand||"").trim();
   return (a&&b)?(a+" · "+b):(a||b);
 }
-/* RSS 地址：只认 profile.txt「订阅」里域名后面的那段路径。
-   万一填进来的是完整网址，也把协议+域名剥掉 —— 以后换域名，按钮不会还指着旧站。
+/* 订阅地址：只认 profile.txt「订阅 / 英文订阅」里域名后面的那段路径。
+   万一填进来的是完整网址，也把协议+域名剥掉 —— 以后换域名，链接不会还指着旧站。
    没配 → 返回空串，页面上就不出现这个按钮 */
-function feedHref(){
-  let u=String((SITE&&SITE.feed)||"").trim();
+function feedHref(v){
+  let u=String(v===undefined?((SITE&&SITE.feed)||""):(v||"")).trim();
   if(!u)return "";
   if(/^[a-z][a-z0-9+.\-]*:\/\//i.test(u)){
     try{ const x=new URL(u); u=x.pathname+x.search+x.hash; }catch(e){ return ""; }
@@ -2002,11 +2003,11 @@ async function loadProfile(){
   }catch(e){}
   if(!j)return;
   const valid=j.hello||j.tagline||j.bios.length||j.avatar||j.email||j.chips.length||j.socials.length
-             ||j.name||j.icon||j.bg||j.badge||j.desc||j.domain||j.footer||j.feed;
+             ||j.name||j.icon||j.bg||j.badge||j.desc||j.domain||j.footer||j.feed||j.feedEn;
   if(!valid)return;
   PROFILE=j;
   /* 站点级字段单独存一份，回填到标题 / 图标 / meta / 首屏 / 页脚 */
-  SITE={name:j.name,icon:j.icon,bg:j.bg,badge:j.badge,desc:j.desc,domain:j.domain||"",footer:j.footer,feed:j.feed||""};
+  SITE={name:j.name,icon:j.icon,bg:j.bg,badge:j.badge,desc:j.desc,domain:j.domain||"",footer:j.footer,feed:j.feed||"",feedEn:j.feedEn||""};
   applySiteConfig();
   /* 配置到得比首屏晚、人已经停在博客页 → 只把 RSS 按钮补进搜索行，不重绘整页列表 */
   if(window.__JY_STARTED&&/^#\/blog/.test(location.hash)){

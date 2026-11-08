@@ -3,7 +3,8 @@
 #   （原文语言那一份没有外语段落时直接落副本，不花接口额度）。
 # 网站按访客的界面语言直接读对应文件，不再依赖浏览器临时机翻（机翻只是兜底）。
 #
-# 同一条链路还会重建 blog/index.json 与两份订阅源（rss.xml / rss-en.xml），
+# 同一条链路还会重建 blog/index.json 与两份订阅源（默认 rss.xml / rss-en.xml，
+# 实际位置与文件名跟着 profile.txt 的「订阅 / 英文订阅」走），
 # 都在 scripts/gen-blog-index.mjs 里一并产出，所以仓库始终只有一个写入者。
 #
 # 手动补翻历史文章：Actions → gen-blog-en → Run workflow（勾 force 可强制全部重译）。

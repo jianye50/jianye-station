@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /* =====================================================================
- * 生成博客清单 blog/index.json（部署加速用）+ 订阅源 rss.xml / rss-en.xml
+ * 生成博客清单 blog/index.json（部署加速用）+ 订阅源（默认 rss.xml / rss-en.xml）
  *
  * 作用：扫描 blog/ 里的文章文件夹（含 index.md）和散篇 .md，
  *       解析 front matter，输出整份列表清单。
  *       网站部署后优先读这份清单——一次几 KB 的请求就能渲染列表，
- *       顺手产出根目录的 rss.xml（中文）与 rss-en.xml（英文）：站点地址 /
- *       站名 / 描述取自 profile.txt，文章与清单同源，发文后一起自动更新。
+ *       顺手产出订阅源：中文 / 英文各一份，站点地址 / 站名 / 描述取自 profile.txt，
+ *       文件名与位置也认 profile.txt 的「订阅」「英文订阅」（默认仓库根目录的
+ *       rss.xml / rss-en.xml），文章与清单同源，发文后一起自动更新。
  *
  * 运行方式（二选一，都能实现「发文后自动更新」）：
  *   A. Cloudflare Pages 构建命令填：node scripts/gen-blog-index.mjs
@@ -240,9 +241,30 @@ const feedDomain = profCi("域名", "主域名", "站点地址", "domain", "site
 let origin = feedDomain.replace(/\/+$/, "");
 if (origin && !/^https?:\/\//i.test(origin)) origin = "https://" + origin;
 
+/* 订阅源放在仓库里的哪个文件：只认 profile.txt 写的路径（域名后面那段）。
+   允许写 /feeds/zh.xml，也允许误填完整网址，统一收敛成「仓库内相对路径」；
+   写错（含 .. 越界、空值）就当没写，退回默认文件名 */
+const feedPath = v => {
+  let s = String(v || "").trim();
+  if (!s) return "";
+  if (/^[a-z][a-z0-9+.\-]*:\/\//i.test(s)) {
+    try { s = new URL(s).pathname; } catch (e) { return ""; }
+  }
+  s = s.replace(/[?#].*$/, "").replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+$/, "");
+  if (!s || /(^|\/)\.\.(\/|$)/.test(s)) return "";   /* 不许跑出仓库根 */
+  return s;
+};
+let FEED_ZH = feedPath(profCi("订阅", "rss", "feed", "订阅地址")) || "rss.xml";
+let FEED_EN = feedPath(profCi("英文订阅", "rss-en", "feed-en")) || "rss-en.xml";
+if (FEED_EN === FEED_ZH) {
+  console.warn(`! 「订阅」与「英文订阅」指向同一个文件（${FEED_ZH}），英文源改用 rss-en.xml`);
+  FEED_EN = "rss-en.xml";
+}
+
 if (!origin) {
-  console.log("! profile.txt 里没有配置「域名」，跳过 rss.xml / rss-en.xml（订阅链接必须是绝对地址）");
+  console.log("! profile.txt 里没有配置「域名」，跳过订阅源（订阅链接必须是绝对地址）");
 } else {
+  console.log(`· 订阅源位置：${origin}/${FEED_ZH} 与 ${origin}/${FEED_EN}`);
   const esc = s => String(s == null ? "" : s)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
@@ -299,7 +321,7 @@ ${date ? `      <pubDate>${date}</pubDate>\n` : ""}${tags ? tags + "\n" : ""}   
   <channel>
     <title>${esc(chanTitle)}</title>
     <link>${esc(origin + "/")}</link>
-    <atom:link href="${esc(origin + "/" + file)}" rel="self" type="application/rss+xml"/>
+    <atom:link href="${esc(absPath(file))}" rel="self" type="application/rss+xml"/>
     <description>${esc(chanDesc)}</description>
     <language>${zh ? "zh-CN" : "en-US"}</language>
     <lastBuildDate>${(posts.length && rfc822(posts[0].date)) || new Date().toUTCString()}</lastBuildDate>
@@ -311,7 +333,7 @@ ${items}
   };
 
   const changed = [];
-  for (const [lang, file] of [["zh", "rss.xml"], ["en", "rss-en.xml"]]) {
+  for (const [lang, file] of [["zh", FEED_ZH], ["en", FEED_EN]]) {
     const path = join(root, file);
     const xml = buildFeed(lang, file);
     let prev = null;
@@ -320,13 +342,15 @@ ${items}
       console.log(`✓ ${file} 无变化（${Math.min(posts.length, RSS_LIMIT)} 条），跳过重写`);
       continue;
     }
+    /* 配置写到子目录（如 feeds/zh.xml）时先把目录建好 */
+    (await import("node:fs")).mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, xml, "utf8");
     changed.push(file);
     console.log(`✓ ${file} 已生成（${Math.min(posts.length, RSS_LIMIT)} 条 → ${origin}/${file}）`);
   }
   if (changed.length) {
     /* 自己把文件放进暂存区：两个 workflow 的提交步骤只 add 了 blog/ 下的路径，
-       这里主动 stage，根目录的订阅源才能跟同一批改动一起提交 */
+       这里主动 stage，根目录（或配置指定的子目录）里的订阅源才能跟同一批改动一起提交 */
     try {
       const { execSync } = await import("node:child_process");
       execSync(`git add -A ${changed.join(" ")}`, { cwd: root, stdio: "ignore" });
