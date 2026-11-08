@@ -8,16 +8,14 @@ cover: 1745835951361.jpg
 background: 1745835951361.jpg
 lang: en
 auto: true
-srcHash: 037b9c111948c8db
-translatedAt: 2026-11-08T10:21:39.919Z
+srcHash: 73f800321a76e18e
+translatedAt: 2026-11-08T11:24:32.626Z
 ---
 When it comes to subscribing, you should have the final say. But the reality is: if you want to read RSS, you must first install an app and then register an account. If you are unlucky, you have to pay a subscription fee - after paying the money, you will be given a "recommended reading" in the sidebar.
 
 The tool itself makes the decision for you, and that's not right.
 
-So I wrote one for myself: **Jianye Reading**, a pure front-end RSS reader. No framework, no build, no backend, no account, just open the browser and that's all. It has been deployed on my website and can be used by clicking the link below:
-
-**👉[Open Jianye Reading](https://jianye.pages.dev/rss-reader/)**
+So I wrote one for myself: **Jianye Reading**, a pure front-end RSS reader. No framework, no build, no backend, no account, just open the browser and that's all. It has been deployed on my website and can be accessed by viewing the small station project page.
 
 It looks like this when it opens, with a three-column layout: feed on the left, article list in the middle, and reading area on the right.
 
@@ -66,7 +64,7 @@ The interface defaults to Chinese, with a complete set of Chinese-English dictio
 
 ## 3. The most difficult thing is not parsing RSS, but cross-domain
 
-Directly `fetch` reading someone else's RSS address in the browser will most likely be blocked by CORS - the origin site will not open cross-domain permission for your personal webpage. This is a wall that all pure front-end readers cannot get around. My solution is a three-level solution:
+If you directly `fetch` access someone else's RSS address in your browser, it will most likely be blocked by CORS - the origin site will not open cross-domain permission for your personal webpage. This is a wall that all pure front-end readers cannot get around. My solution is a three-level solution:
 
 1. Try to crawl directly first (some sources actually have CORS enabled);
 2. If it fails, switch to the public CORS proxy (allorigins, corsproxy) relay;
@@ -98,8 +96,6 @@ Both RSS and Atom are parsed using the browser's native `DOMParser` and do not r
 
 This little thing does not have high technical content, but it solves a real awkwardness: **Subscription is originally a matter that you have the final say, and you should not go through a registration and a subscription fee first. **
 
-Now it is placed in my own browser tab. I open it every morning and take a look. I press the `J` key to scroll down and the `S` key to save the good articles. If you also want to move RSS into the browser, just use it directly:
-
-**👉[Open Jianye Reading](https://jianye.pages.dev/rss-reader/)**
+Now it is placed in my own browser tab. I open it every morning and take a look. I press the `J` key to scroll down and the `S` key to save the good articles. If you also want to move RSS into your browser, just use it directly.
 
 No registration required, just open it and use it, and the data will not leave your browser.
