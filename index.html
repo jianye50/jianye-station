@@ -421,6 +421,41 @@ img{display:block;max-width:100%}
 }
 .nav-link:hover{color:var(--text-1);background:var(--chip)}
 .nav-link.active{color:var(--accent);font-weight:600}
+/* ---------- 当前页的滑动胶囊 ----------
+   以前「当前在哪一页」只有文字变色，切页时是硬切。现在文字底下垫一块玻璃小胶囊，
+   换页时它从上一项滑到下一项（transform + width 一起插值），导航因此有了连续感。
+   位置/宽度由 syncNavHl() 按激活项实测写进来，窗口缩放与切语言都会重算 */
+.nav>.nav-hl{
+  position:absolute;left:0;top:50%;height:30px;width:0;
+  border-radius:999px;z-index:0;pointer-events:none;
+  opacity:0;
+  background:var(--chip);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),inset 0 1px 0 rgba(255,255,255,.12);
+  transform:translate3d(0,-50%,0);
+  transition:transform .44s cubic-bezier(.22,1,.28,1),
+             width .44s cubic-bezier(.22,1,.28,1),
+             opacity .28s ease;
+}
+.nav>.nav-hl.on{opacity:1}
+/* 首帧 / 窗口缩放时不许它自己从别处滑过来，必须立刻到位 */
+.nav>.nav-hl.jump{transition:none}
+@media (prefers-reduced-motion:reduce){
+  .nav>.nav-hl{transition:opacity .2s ease}
+}
+/* ---------- 文章阅读进度条 ----------
+   只有单篇文章页出现：一条贴着视口顶边的细光带，宽度 = 已读比例。
+   压在导航之上（z-index 101）但只有 3px，不抢视线；离开文章页立刻收掉 */
+.read-bar{
+  position:fixed;left:0;top:0;width:100%;height:3px;
+  z-index:101;pointer-events:none;
+  transform:scaleX(0);transform-origin:0 50%;
+  opacity:0;transition:opacity .3s ease;
+  background:linear-gradient(90deg,var(--accent) 0%,#7fb0ff 55%,#b79bff 100%);
+  box-shadow:0 0 10px rgba(77,141,255,.55);
+  will-change:transform;
+}
+.read-bar.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.read-bar{transition:none}}
 /* ---------- 「记录」下拉：鼠标悬浮或单击展开，展开 / 收起都带过渡 ---------- */
 /* 拉伸到导航满高：面板的 top:100% 才是「导航底边」，间距不随文字高低变化 */
 .nav-drop{position:relative;display:flex;align-items:center;align-self:stretch}
@@ -571,8 +606,29 @@ img{display:block;max-width:100%}
    文章页会先画骨架、拿到正文后再整块替换，如果两次都播 fadeUp，
    同一页会「滑上来」两遍，中间还夹一次 opacity:0 的黑闪 */
 .view.soft{animation:fadeIn .3s ease both}
-/* 原地换内容（切语言）：整页不重播入场动画，内容直接换掉 */
+/* 原地换内容（切语言）：整页不重播入场动画（换内容的过渡交给下面的整页溶解） */
 .view.no-in{animation:none}
+/* ---------- 切语言的整页溶解 ----------
+   旧画面由 JS 克隆一份贴成这一层（跟着文档滚动，所以用 absolute 而不是 fixed），
+   新内容在底下淡入、副本同时淡出，两边交叠 → 一次真正的溶解。
+   z-index 压在导航（100）之下：溶解过程中导航不该跟着一起呼吸。 */
+.xfade-layer{
+  position:absolute;left:0;right:0;z-index:60;
+  pointer-events:none;overflow:hidden;opacity:1;
+  will-change:opacity;contain:layout paint;
+}
+.xfade-layer.out{opacity:0;transition:opacity .4s cubic-bezier(.33,0,.2,1)}
+/* ---------- 进入视口才渐显（配合 revealOnScroll） ----------
+   .rv-block 是「还没轮到」的初始态，滚到眼前换成 .rv-in 淡入并归位。
+   只有渲染那一刻还在首屏之下的元素才会被挂上，所以一进页面不会看到东西挨个闪；
+   关掉动态效果时两个类都不生效，内容照常直接显示 */
+.rv-block{opacity:0;transform:translateY(14px)}
+.rv-in{opacity:1;transform:none;
+  transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.2,1)}
+@media (prefers-reduced-motion:reduce){
+  .rv-block{opacity:1;transform:none}
+  .rv-in{transition:none}
+}
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
@@ -1334,7 +1390,13 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 }
 .post-card:hover{transform:translateY(-2px);border-color:rgba(77,141,255,.4);box-shadow:var(--shadow)}
 .post-thumb{flex:none;width:104px;height:66px;border-radius:10px;overflow:hidden;background:var(--chip);display:grid;place-items:center;color:var(--text-3)}
-.post-thumb img,.post-thumb video{width:100%;height:100%;object-fit:cover;display:block}
+/* 悬停时封面轻轻推近一点（框本身不动，只有里面的图在缩放），列表因此有「活的」质感 */
+.post-thumb img,.post-thumb video{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.post-card:hover .post-thumb img,.post-card:hover .post-thumb video{transform:scale(1.07)}
+@media (prefers-reduced-motion:reduce){
+  .post-thumb img,.post-thumb video{transition:none}
+  .post-card:hover .post-thumb img,.post-card:hover .post-thumb video{transform:none}
+}
 .post-mid{min-width:0;flex:1}
 .post-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
 .tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
@@ -1345,7 +1407,9 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 .post-side svg{width:16px;height:16px;opacity:.55;margin-top:2px}
 .blog-empty{padding:60px 20px;text-align:center;color:var(--text-3);font-size:14px;line-height:2}
 /* ---------- 博客骨架屏扫光（加载动画） ---------- */
-#blogBody{position:relative}   /* 真实列表在骨架上层叠放淡入用 */
+/* 用类名而不是 id：切页的溶解副本会剥掉所有 id（避免和真页面抢 getElementById），
+   只写在 #id 上的样式在副本里会整段失效 —— 搜索框就是这么被画歪的 */
+.blog-body{position:relative}   /* 真实列表在骨架上层叠放淡入用 */
 .skl-wrap{position:relative;overflow:hidden;transition:opacity .3s ease}
 .skl-wrap.out{opacity:0;pointer-events:none}
 .skl{background:var(--chip);border-radius:8px}
@@ -1381,19 +1445,22 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 .bs-box>svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);
   width:16px;height:16px;color:var(--text-3);pointer-events:none;transition:color .2s}
 .bs-box:focus-within>svg{color:var(--accent)}
-#blogSearch{width:100%;padding:11px 40px;border-radius:12px;
+/* 输入框与清除按钮一律用类名选中：#blogSearch / #blogSearchClear 只在
+   「切语言溶解」的副本里会被剥掉（见 xfadeBegin），写成 id 选择器的话副本里的
+   搜索框会退化成浏览器默认样式，那个 ✕ 还会因为丢了 display:none 冒出来 */
+.bs-input{width:100%;padding:11px 40px;border-radius:12px;
   border:1px solid var(--card-border);background:var(--bg-2);
   color:var(--text-1);font-size:14px;font-family:inherit;outline:none;
   transition:border-color .2s,box-shadow .2s}
-#blogSearch::placeholder{color:var(--text-3)}
-#blogSearch:focus{border-color:rgba(77,141,255,.55);box-shadow:0 0 0 3px var(--accent-soft)}
-#blogSearch::-webkit-search-cancel-button,#blogSearch::-webkit-search-decoration{-webkit-appearance:none;display:none}
-#blogSearchClear{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+.bs-input::placeholder{color:var(--text-3)}
+.bs-input:focus{border-color:rgba(77,141,255,.55);box-shadow:0 0 0 3px var(--accent-soft)}
+.bs-input::-webkit-search-cancel-button,.bs-input::-webkit-search-decoration{-webkit-appearance:none;display:none}
+.bs-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);
   width:24px;height:24px;padding:0;border:none;border-radius:50%;
   background:var(--chip);color:var(--text-2);cursor:pointer;
   display:none;place-items:center;font-size:12px;line-height:1;transition:background .2s,color .2s}
-#blogSearchClear:hover{background:var(--accent-soft);color:var(--accent)}
-#blogSearchClear.on{display:grid}
+.bs-clear:hover{background:var(--accent-soft);color:var(--accent)}
+.bs-clear.on{display:grid}
 .bs-count{font-size:12.5px;color:var(--text-3);white-space:nowrap}
 .bs-kbd{flex:none;margin-left:auto;font-size:11.5px;color:var(--text-3);border:1px solid var(--card-border);
   border-radius:6px;padding:2px 7px;line-height:1.5;user-select:none}
@@ -1423,6 +1490,19 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 .post-back:hover svg{transform:translateX(-3px)}
 .post-back:active svg{transform:translateX(-1px)}
 @media (prefers-reduced-motion:reduce){.post-back svg{transition:none}.post-back:hover svg{transform:none}}
+/* 正文还没到时的占位（点开文章的头几百毫秒）：几张灰条按标题 / 段落的节奏排一版，
+   配上很轻的呼吸感，让人知道「在加载」而不是「打开了但是空的」。
+   正文上屏时整块被 section 替换掉，不需要额外的淡出 */
+.post-skl{margin:26px auto 0;max-width:760px;display:flex;flex-direction:column;gap:15px}
+.post-skl span{display:block;height:13px;border-radius:7px;background:var(--chip);
+  animation:pskl 1.5s ease-in-out infinite}
+.post-skl span:nth-child(1){height:28px;width:64%;border-radius:9px;margin-bottom:6px}
+.post-skl span:nth-child(2){width:96%}
+.post-skl span:nth-child(3){width:88%}
+.post-skl span:nth-child(4){width:92%}
+.post-skl span:nth-child(5){width:52%;animation-delay:.12s}
+@keyframes pskl{0%,100%{opacity:.55}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.post-skl span{animation:none}}
 .post-head{max-width:760px;margin:0 auto 6px}
 .post-head .post-tags{margin-bottom:10px}
 .post-head h1{font-size:clamp(26px,5vw,38px);font-weight:800;letter-spacing:-.02em;line-height:1.25;margin:0 0 10px}
@@ -1668,6 +1748,13 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
   transition:transform .25s,box-shadow .25s;
 }
 .proj:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+/* ---------- 按下反馈 ----------
+   卡片类元素（文章卡 / 项目卡 / 友链卡 / Steam 卡）点下去时回收一点点，
+   手指和鼠标都能收到「按到了」的回执；只在按下那一刻生效，松手就还原 */
+.post-card:active,.proj:active,.friend:active,.steam-game:active{
+  transform:translateY(0) scale(.994);
+  transition-duration:.09s;
+}
 .proj .ic{
   width:42px;height:42px;border-radius:12px;margin-bottom:14px;
   display:grid;place-items:center;font-size:19px;color:#fff;
@@ -1762,6 +1849,8 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 
 <!-- ============ 悬浮胶囊导航 ============ -->
 <nav class="nav" id="nav">
+  <!-- 当前页指示器：一块会跟着激活项滑动的玻璃胶囊（位置由 syncNavHl 写） -->
+  <span class="nav-hl" id="navHl" aria-hidden="true"></span>
   <a class="nav-brand" href="#/">
     <span class="dot"></span><span id="navBrand"></span>
   </a>
@@ -2496,8 +2585,12 @@ function setLang(v,persist){
   if(persist!==false){
     muteViewAnim=true;
     holdScroll(window.scrollY||0);
+    xfadeBegin();   /* 旧画面先原样贴住，等新内容上屏再交叉溶解（见 xfadeBegin） */
   }
   route(); // 重新渲染当前视图
+  /* 首页 / 项目 / 关于 / 相册是同步渲染的，route() 返回时新内容已经在底下了 → 立刻开始溶解。
+     博客列表 / 文章页要等数据回来，由 renderBlog / renderPost 渲染完成后自己收尾 */
+  if(persist!==false&&!/^#\/blog(\/|$)/.test(location.hash||""))xfadeReveal();
   /* 中英切换会改变导航宽度，「记录」按钮跟着挪位：面板开着就重摆一次 */
   const dd=document.getElementById("navDrop");
   if(dd&&dd.classList.contains("open")&&typeof placeNavMenu==="function"){
@@ -3291,6 +3384,7 @@ function renderHome(){
     nowImg.replaceWith(prevImg);
   }
   paintPhotoGrids();
+  revealSoon([...app.querySelectorAll(".section")]);   /* 首屏之下的相册 / 项目板块滚到再浮现 */
   setTimeout(prefetchBlog,600);   /* 闲时预取博客清单：点进博客秒开 */
 }
 
@@ -3468,6 +3562,7 @@ function renderAbout(){
     </div>
   </section>`;
   applyAboutCollapse();   /* 按上次的选择（或手机默认收起）应用折叠状态 */
+  revealSoon([...app.querySelectorAll(".about-card")]);   /* 首屏之外的卡片滚到再浮现 */
 }
 
 /* ---------- 项目页（导航「项目」） ----------
@@ -3488,6 +3583,7 @@ function renderProjects(){
       <div style="height:70px"></div>
     </div>
   </section>`;
+  revealSoon([...app.querySelectorAll(".proj")]);
 }
 
 /* ---------- 项目卡片网格 ----------
@@ -3590,14 +3686,49 @@ async function listingItems(base){
   }catch(e){return null;}
 }
 /* 把一篇 Markdown 读成文章对象（mdURL = 正文地址，imgBase = 图片前缀） */
+/* ---------- 文本请求的缓存与合并 ----------
+   文章正文和「列表里的每篇 front matter」读的是同一份 markdown。
+   以前两边各发一次请求：列表已经为了拿标题把正文整篇下载过一遍，
+   点开文章又从头下一遍 —— 本地 / 弱网取 raw.githubusercontent 常常 1s 以上，
+   这一秒就是「点开文章很慢」的全部来源。
+   现在统一走 fetchText：
+   · 同一个 url 只发一次（并发请求合并），拿到的文本留在会话缓存里
+     （LRU 上限 64 条 = 中英两份 × 三十来篇，单篇超 400KB 的极长文不进缓存），
+     返回列表再点开、切语言重读都是瞬开；
+   · 404 也记下来：静态的另一种语言版本没生成时，每次判断都要 404 一次，没必要反复问。
+     网络错误（断网、超时）不缓存，下次还应该能重试。 */
+const TEXT_CACHE=new Map();      /* url -> {ok,ct,text} */
+const TEXT_INFLIGHT=new Map();   /* url -> Promise（同一个 url 只发一次） */
+const TEXT_CACHE_MAX=64;
+const TEXT_CACHE_MAXLEN=400000;
+function fetchText(url){
+  const hit=TEXT_CACHE.get(url);
+  if(hit)return Promise.resolve(hit);
+  const busy=TEXT_INFLIGHT.get(url);
+  if(busy)return busy;
+  const q=fetch(url,{cache:"no-cache"}).then(async r=>{
+    const out={ok:r.ok,ct:(r.headers.get("content-type")||"").toLowerCase(),text:""};
+    if(r.ok)out.text=await r.text();
+    if(r.ok||r.status===404){
+      if(out.text.length>TEXT_CACHE_MAXLEN)return out;   /* 太长的正文不占内存 */
+      if(TEXT_CACHE.size>=TEXT_CACHE_MAX)TEXT_CACHE.delete(TEXT_CACHE.keys().next().value);
+      TEXT_CACHE.set(url,out);
+    }
+    return out;
+  });
+  /* 结束时摘掉「在飞」的登记：失败也要摘，否则这篇以后永远拿不到重试 */
+  q.then(()=>TEXT_INFLIGHT.delete(url),()=>TEXT_INFLIGHT.delete(url));
+  TEXT_INFLIGHT.set(url,q);
+  return q;
+}
 async function grabPost(slug,mdURL,imgBase,found){
   if(!slug||found.has(slug))return;
   let raw;
   try{
     /* no-cache：服务器没更新时走 304，不再每次全量拉正文 */
-    const r=await fetch(mdURL,{cache:"no-cache"});
+    const r=await fetchText(mdURL);
     if(!r.ok)return;
-    raw=await r.text();
+    raw=r.text;
     /* SPA 兜底把不存在的 md 也回 200 + index.html：跳过，别让站点源码混进文章列表 */
     if(isHTMLFallbackText(raw))return;
   }catch(e){return;}
@@ -4178,13 +4309,17 @@ function blogListHTML(list,q,stagger){
   const t=T();
   if(!list.length)return `<div class="blog-empty">${esc(t.blog.noResult(q||""))}</div>`;
   let html="",lastYear="",i=0;
+  /* 错峰延迟封顶：前 8 条每张 +60ms，之后一律 480ms 一起浮现。
+     以前是 i*60ms 一路累加，20 篇文章要等到 1.2s 以后才出完，
+     人停在页面底部时看到的就是「半天什么也没有，然后一张张慢慢冒」*/
+  const nextDelay=()=>stagger?` style="animation-delay:${Math.min(i++,8)*60}ms"`:"";
   list.forEach(p=>{
     const y=(p.date||"").slice(0,4)||"····";
     if(y!==lastYear){
-      html+=`<div class="blog-year ${stagger?"rv":""}"${stagger?` style="animation-delay:${(i++)*60}ms"`:""}>${y}</div>`;
+      html+=`<div class="blog-year ${stagger?"rv":""}"${nextDelay()}>${y}</div>`;
       lastYear=y;
     }
-    const dly=stagger?` style="animation-delay:${(i++)*60}ms"`:"";
+    const dly=nextDelay();
     /* 英文界面 + 有静态英文版 → 直接用英文标题/摘要/标签；
        中文界面 + 英文文章有静态中文版 → 同理，免得先闪原文再机翻 */
     const sm=lang==="en"
@@ -4292,15 +4427,15 @@ async function renderBlog(gen){
     <div class="blog-search">
       <div class="bs-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
-        <input id="blogSearch" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
+        <input id="blogSearch" class="bs-input" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search"
                placeholder="${esc(t.blog.searchPh)}" aria-label="${esc(t.blog.searchPh)}">
-        <button id="blogSearchClear" type="button" title="${esc(t.blog.clearTip)}" aria-label="${esc(t.blog.clearTip)}">✕</button>
+        <button id="blogSearchClear" class="bs-clear" type="button" title="${esc(t.blog.clearTip)}" aria-label="${esc(t.blog.clearTip)}">✕</button>
       </div>
       <span class="bs-count" id="bsCount"></span>
       <span class="bs-kbd" title="${esc(t.blog.kbdTip||"按 / 快速搜索")}">/</span>
       ${rssBtnHTML()}
     </div>
-    <div id="blogBody">${blogSkeletonHTML()}<div id="blogListMount"></div></div>
+    <div id="blogBody" class="blog-body">${blogSkeletonHTML()}<div id="blogListMount"></div></div>
   </div></section>`;
   const posts=await loadBlog();
   if(gen!==undefined&&gen!==routeGen)return;   /* await 期间用户已切走：别覆盖新页面 */
@@ -4313,14 +4448,17 @@ async function renderBlog(gen){
   if(blogErr){
     const bs=document.querySelector(".blog-search");
     if(bs)bs.style.display="none";   /* 读不到文章时搜索框没有绑定事件，留着只会让人白打字 */
-    body.innerHTML=`<div class="blog-empty">${t.blog.err}</div>`;return;
+    body.innerHTML=`<div class="blog-empty">${t.blog.err}</div>`;xfadeReveal();return;
   }
-  if(!posts.length){body.innerHTML=`<div class="blog-empty">${esc(t.blog.empty)}</div>`;return;}
+  if(!posts.length){body.innerHTML=`<div class="blog-empty">${esc(t.blog.empty)}</div>`;xfadeReveal();return;}
   bindBlogSearch();
   const mount=document.getElementById("blogListMount");
   const skl=body.querySelector(".skl-wrap");
   const list=posts.filter(p=>blogMatch(p,blogQuery));
-  mount.innerHTML=blogListHTML(list,blogQuery,!blogQuery);   /* 带搜索词时不播错峰，直接出结果 */
+  /* 错峰浮现只在「第一次进列表」时演：带搜索词是一次筛选、切语言是一次原地换字，
+     都不该让几十张卡按 60ms 一张排队往上冒（停在页面底部时等于长时间空白） */
+  const langSwap=(gen!==undefined&&gen===muteViewGen);
+  mount.innerHTML=blogListHTML(list,blogQuery,!blogQuery&&!langSwap);
   translateBlogList(list);
   const mountList=mount.firstElementChild;
   /* 骨架淡出与卡片浮现同步：真实列表先叠在骨架上层，骨架 0.3s 淡出后再摘除，全程不闪白 */
@@ -4340,6 +4478,7 @@ async function renderBlog(gen){
   }
   bsSync();
   applyScrollHold();   /* 切语言进来的：列表落定后把阅读位置补回去 */
+  xfadeReveal();       /* 列表上屏了 → 旧画面开始淡出（切语言时的整页溶解） */
 }
 
 /* ---------- 文章自动翻译：英文界面下把中文文章机器翻译成英文 ----------
@@ -5123,42 +5262,195 @@ function applyScrollHold(){
   try{ window.scrollTo(0,scrollHoldY); }catch(e){}
   root.style.scrollBehavior=prev;
 }
+/* ---------- 切语言的整页溶解（.xfade-layer 见 CSS） ----------
+   只用于「同一个页面换语言」：内容原地重绘、滚动位置要保住，
+   所以副本用文档坐标，并给 #app 撑住高度、先降到 opacity:0，等新文字上屏后交叉淡入。
+   【以前为什么切语言会闪】旧实现是「原地重绘 + 不播动画」，新文字一帧顶替旧文字；
+   文章页还要先等正文请求回来，中间那张空骨架一起贡献了一次闪屏。
+
+   【切页面不走这里】曾经给切页也套过一层克隆溶解，但列表页有几十张卡片时，
+   克隆 + 逐节点写内联样式要动上千个节点，点下去那一下明显掉帧；
+   而新页本来就有 fadeUp 入场，再叠一层只会更卡。切页仍用最初的方式：直接换页。 */
+const XFADE_MS=(typeof matchMedia==="function"&&matchMedia("(prefers-reduced-motion: reduce)").matches)?0:400;
+let xfade=null,xfadeTimer=0,xfadeToken=0;
+function xfadeBegin(){
+  xfadeAbort();
+  if(!XFADE_MS||!app)return;
+  const v=app.firstElementChild;
+  if(!v)return;
+  const r=v.getBoundingClientRect();
+  if(!r.height)return;
+  const layer=document.createElement("div");
+  layer.className="xfade-layer";
+  layer.setAttribute("aria-hidden","true");
+  layer.style.top=Math.round(window.scrollY+r.top)+"px";
+  layer.style.height=Math.round(r.height)+"px";
+  const copy=app.cloneNode(true);
+  copy.removeAttribute("id");
+  copy.querySelectorAll("[id]").forEach(n=>n.removeAttribute("id"));  /* 别和真页面抢 getElementById */
+  /* 副本只当「照片」用：动画 / 过渡全部定格，
+     否则刚插入的错峰卡片会在副本里从头演一遍（那段时间副本是空的 = 又闪一次） */
+  copy.querySelectorAll("*").forEach(n=>{ n.style.animation="none"; n.style.transition="none"; });
+  copy.querySelectorAll("video").forEach(n=>{ n.removeAttribute("autoplay"); try{ n.pause(); }catch(e){} });
+  layer.appendChild(copy);
+  /* inert：副本只当「照片」，不许被聚焦 / 读屏读到。它也绝对不会抢走 getElementById
+     （副本排在 #app 后面，文档顺序上真页面永远先命中），所以这里只做交互隔离 */
+  layer.setAttribute("inert","");
+  document.body.appendChild(layer);
+  xfade={layer:layer,tk:++xfadeToken};
+  /* 先把高度撑住：文章页重绘中间会缩成一张骨架，不撑住浏览器会把滚动位置夹回去，
+     副本就会跟着「跳」一下。撑住以后新旧两版是同一个滚动位置，溶解才对得齐 */
+  app.style.minHeight=app.offsetHeight+"px";
+  app.style.transition="none";
+  app.style.opacity="0";
+  /* 兜底：等不到正文（网络卡住）也别让旧画面一直盖着，2.4s 后照常溶解，露出骨架 */
+  xfadeTimer=setTimeout(xfadeReveal,2400);
+}
+function xfadeReveal(){
+  const f=xfade;
+  if(!f)return;                       /* 没有进行中的溶解：什么也不做（同步页 / 正常渲染都会走到这里） */
+  xfade=null;
+  clearTimeout(xfadeTimer);
+  const ms=XFADE_MS;
+  void app.offsetHeight;              /* 先把 opacity:0 冲刷出去，淡入才会真的从 0 开始播 */
+  app.style.transition="opacity "+ms+"ms cubic-bezier(.33,0,.2,1)";
+  app.style.opacity="1";
+  f.layer.classList.add("out");
+  const tk=f.tk;
+  setTimeout(()=>{
+    f.layer.remove();
+    if(tk!==xfadeToken||xfade)return; /* 期间又点了一次：新的那份自己会收尾，别把它的遮罩拆了 */
+    app.style.transition="";app.style.opacity="";app.style.minHeight="";
+  },ms+80);
+}
+function xfadeAbort(){
+  clearTimeout(xfadeTimer);
+  const f=xfade;
+  xfade=null;
+  if(f)f.layer.remove();
+  if(app){ app.style.transition="";app.style.opacity="";app.style.minHeight=""; }
+}
+/* ---------- 进入视口才渐显（.rv-block / .rv-in 见 CSS） ----------
+   传进来一组已经渲染好的元素，把「此刻还在首屏之下」的那些压成透明初始态，
+   等真正滚到眼前再淡入上浮。首屏已可见的元素完全不碰（否则一进页面就集体闪一下），
+   不支持 IntersectionObserver 或用户关了动态效果时整段跳过，什么也不做。 */
+function revealOnScroll(list){
+  if(!list||!list.length||!window.IntersectionObserver||!XFADE_MS)return;
+  const vh=window.innerHeight||1;
+  const io=new IntersectionObserver(items=>{
+    items.forEach(e=>{
+      if(!e.isIntersecting)return;
+      e.target.classList.remove("rv-block");
+      e.target.classList.add("rv-in");
+      io.unobserve(e.target);
+    });
+  },{rootMargin:"0px 0px -7% 0px",threshold:.01});
+  list.forEach(el=>{
+    if(!el||el.getBoundingClientRect().top<vh*0.92)return;
+    el.classList.add("rv-block");
+    io.observe(el);
+  });
+}
+/* 必须等下一帧再量：切页时 route() 要先画完内容、最后才把滚动位置归零，
+   在这中间测只会得到「上一页的滚动位置」，于是首屏之外的块全被误判成已可见、
+   渐显整个失效。放到 rAF 里，量到的就是新页面归零之后的真实位置。 */
+function revealSoon(list){
+  requestAnimationFrame(()=>{ try{ revealOnScroll(list); }catch(e){} });
+}
+/* 正文里的媒体块：媒体容器里还套着 img，只认外面那层，别给同一块挂两遍 */
+function revealPostMedia(root){
+  if(!root)return;
+  revealSoon([...root.querySelectorAll("img,pre,blockquote,.md-media,.md-table")]
+    .filter(el=>!(el.parentElement&&el.parentElement.closest(".md-media,.md-table"))));
+}
+/* ---------- 正文按语言取址 + 悬停预取 ----------
+   （正文文本的缓存 / 合并在 fetchText，定义在 grabPost 旁边：
+     列表抓 front matter 时读的就是同一份 markdown，共用缓存后同一篇不会下载两遍） */
+function postAltURL(post,want){
+  if(!post)return "";
+  return want==="en"?(post.mdURLEn||mdEnURL(post.mdURL)):(post.mdURLZh||mdZhURL(post.mdURL));
+}
+/* 预取一篇的正文：界面语言版优先，另一份（原文兜底）一起取 —— 两份都可能被用到，
+   命中缓存后点开就是瞬开；省流量模式（saveData）下整个跳过 */
+function prefetchPost(slug){
+  try{ if(navigator.connection&&navigator.connection.saveData)return; }catch(e){}
+  const post=blogPosts.find(p=>p.slug===slug);
+  if(!post)return;
+  const alt=postAltURL(post,lang==="en"?"en":"zh");
+  const urls=[...new Set([alt,post.mdURL].filter(Boolean))];
+  urls.forEach(u=>{ fetchText(u).catch(()=>{}); });
+}
+/* 委托到 document：列表每次渲染都会换掉节点，绑在 mount 上会丢；
+   pointerover 会冒泡（pointerenter 不会），所以这里用 pointerover */
+let pfSlug="",pfTimer=0;
+document.addEventListener("pointerover",e=>{
+  const card=e.target&&e.target.closest?e.target.closest(".post-card"):null;
+  if(!card)return;
+  const slug=card.getAttribute("data-slug");
+  if(!slug||slug===pfSlug)return;
+  pfSlug=slug;
+  clearTimeout(pfTimer);
+  pfTimer=setTimeout(()=>prefetchPost(slug),80);
+},{passive:true});
+document.addEventListener("focusin",e=>{
+  const card=e.target&&e.target.closest?e.target.closest(".post-card"):null;
+  const slug=card&&card.getAttribute("data-slug");
+  if(slug&&slug!==pfSlug){pfSlug=slug;prefetchPost(slug);}
+});
 async function renderPost(slug,gen){
   const t=T();
+  const sklBody=`<div class="post-skl" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>`;
   app.innerHTML=`<section class="${viewCls(gen)}">
     <div class="post-hero"></div>
-    <div class="wrap"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a></div>
+    <div class="wrap"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a>${sklBody}</div>
   </section>`;
   const stale=()=>gen!==undefined&&gen!==routeGen;   /* await 期间用户已切走 → 放弃渲染 */
+  /* 正文在「切页溶解」还没走完时就上屏了（缓存命中 / 很快的静态托管）：
+     这一版不要再播入场动画。否则整块从 opacity:0 重新淡入，
+     而旧副本同时在淡出，画面会瞬间塌黑一下。溶解没结束时就该「直接就在那儿」 */
+  const swapCls=()=>document.querySelector(".xfade-layer")?" no-in":"";
   const posts=await loadBlog();
   if(stale())return;
   const post=posts.find(p=>p.slug===slug);
-  const fail=msg=>{ if(stale())return; app.innerHTML=`<section class="${viewCls(gen)}"><div class="wrap">
+  const fail=msg=>{ if(stale())return; app.innerHTML=`<section class="${viewCls(gen)}${swapCls()}"><div class="wrap">
     <div class="page-head"><h1>${esc((post&&post.title)||t.blog.title)}</h1></div>
     <div class="blog-empty">${msg}</div>
     <div style="text-align:center"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a></div>
-  </div></section>`;};
+  </div></section>`; xfadeReveal(); };
   if(!post){fail(t.blog.err);return;}
+  /* 正文还得等网络时，先把「列表里已经有」的信息画上去：标签、标题、摘要、日期、时长。
+     这几项和正文 front matter 是同一份数据，稍后整篇重画时不会跳版式；
+     于是点开文章的第一帧就能看到标题，而不是满屏灰条 —— 等待感小很多 */
+  const postTags=Array.isArray(post.tags)?post.tags:[];
+  app.innerHTML=`<section class="${viewCls(gen)}${swapCls()}">
+    <div class="post-hero"></div>
+    <div class="wrap"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a>
+      <header class="post-head">
+        ${postTags.length?`<div class="post-tags">${postTags.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div>`:""}
+        <h1>${esc(post.title||t.blog.untitled)}</h1>
+        ${post.desc?`<p class="post-sub">${esc(post.desc)}</p>`:""}
+        <div class="post-meta">${post.date?`<span>${esc(fmtDate(post.date))}</span><span>·</span>`:""}<span>${esc(t.blog.minutes(post.minutes||1))}</span></div>
+      </header>
+      ${sklBody}
+    </div>
+  </section>`;
   /* 语言版本只看「界面语言」：界面是英文就读 index.en.md，界面是中文就读 index.zh.md。
      每篇文章都由 CI 预先产出中英两份（原文是哪种语言都产两份），所以正常情况下
      永远命中静态文件，页面从一开始就是访客要的语言——没有「先出原文、再等机翻」的跳变。
      命不中（还没生成 / 体检不合格）才退回原文，必要时后台机翻兜底。 */
   const want=lang==="en"?"en":"zh";
-  const altURL=want==="en"
-    ?(post.mdURLEn||mdEnURL(post.mdURL))
-    :(post.mdURLZh||mdZhURL(post.mdURL));
+  const altURL=postAltURL(post,want);
   let raw="",usedAlt=false;
   try{
     let r=null,text="";
     if(altURL){
-      try{ r=await fetch(altURL,{cache:"no-cache"}); }catch(e){ r=null; }
+      try{ r=await fetchText(altURL); }catch(e){ r=null; }
       if(r&&r.ok){
-        text=await r.text();
+        text=r.text;
         /* 关键防线：静态另一语言版还没生成时，SPA 兜底会返回 200 + index.html。
            开头是 HTML 或 content-type 是 text/html 的一律当「静态版缺失」，
            走下面的原文 + 后台机翻兜底，而不是把源码当正文渲染出来 */
-        if(isHTMLFallbackText(text)||
-           (r.headers.get("content-type")||"").toLowerCase().includes("text/html")){
+        if(isHTMLFallbackText(text)||r.ct.includes("text/html")){
           r=null;text="";
         }
         /* 第二道防线：文件在，但语言不对（自动翻译失败时写出过「只有 front matter
@@ -5172,9 +5464,9 @@ async function renderPost(slug,gen){
       }else r=null;                              /* 静态版缺失/没生成：原文兜底 */
     }
     if(!r){
-      r=await fetch(post.mdURL,{cache:"no-cache"});
-      if(!r.ok)throw new Error(r.status);
-      text=await r.text();
+      const fr=await fetchText(post.mdURL);
+      if(!fr.ok)throw new Error("http");
+      text=fr.text;
       if(isHTMLFallbackText(text))throw new Error("html-fallback");
     }
     raw=text;
@@ -5210,7 +5502,7 @@ async function renderPost(slug,gen){
     ?`<video class="post-bg" src="${esc(postSrc(post,bg))}" autoplay muted loop playsinline preload="metadata"></video>`
     :"";
   app.innerHTML=`
-  <section class="${viewCls(gen,"soft")}">
+  <section class="${viewCls(gen,"soft")}${swapCls()}">
     <div class="post-hero">${bgVideo||(bgImg?`<img class="post-bg" src="${bgImg}" alt="" decoding="async" onerror="this.remove()">`:"")}</div>
     <div class="wrap">
       <a class="post-back" href="#/blog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>${esc(t.blog.back)}</a>
@@ -5225,7 +5517,10 @@ async function renderPost(slug,gen){
     </div>
   </section>`;
   wirePostMedia(slug);
+  revealPostMedia(document.querySelector("#app .post-body"));   /* 首屏之下的图 / 视频块随滚动进场 */
   applyScrollHold();          /* 切语言进来的：正文上屏后把阅读位置补回去 */
+  xfadeReveal();              /* 正文真的上屏了 → 旧画面才开始淡出（切语言时的整页溶解） */
+  updateReadBar();            /* 进度条按新正文重算一次 */
   /* 翻译方向只由「访客界面语言」决定，不再看文章整体是什么语言。
      以前是「正文里出现过中文就当整篇是中文」，中英混排的文章会被判成 zh：
      中文界面下 lang===srcLang，整篇一次都不翻，英文段落永远留在英文界面里；
@@ -5346,6 +5641,46 @@ function glideTo(y,dur){
     else done();
   })(t0);
 }
+/* ---------- 文章阅读进度条（.read-bar 见 CSS） ----------
+   用「正文顶端越过视口中线 → 正文末端越过视口中线」这一段当 0→1，
+   比拿整页文档高度算更贴合「读了正文多少」；scroll 时按 rAF 节流写入。 */
+let readBarEl=null,readBarOn=false;
+function readBarInit(){
+  if(readBarEl&&readBarEl.isConnected)return readBarEl;
+  readBarEl=document.createElement("div");
+  readBarEl.className="read-bar";
+  readBarEl.setAttribute("aria-hidden","true");
+  document.body.appendChild(readBarEl);
+  return readBarEl;
+}
+function readBarToggle(on){
+  const el=readBarInit();
+  readBarOn=!!on;
+  el.classList.toggle("on",readBarOn);
+  if(readBarOn)updateReadBar();
+  else el.style.transform="scaleX(0)";
+}
+function updateReadBar(){
+  if(!readBarOn)return;
+  const el=readBarEl;
+  if(!el)return;
+  const body=document.querySelector("#app .post-body");
+  /* 正文还没上屏（正在加载 / 切语言重绘的中间态）：保持上一次的进度，别让它中途弹回 0
+     再涨回来 —— 进度条压在溶解遮罩之上，弹一下是看得见的 */
+  if(!body)return;
+  const vh=window.innerHeight||1;
+  const maxY=Math.max(0,(document.documentElement.scrollHeight||0)-vh);
+  const top=body.getBoundingClientRect().top+window.scrollY;
+  /* 0 = 正文顶端刚到视口中线；1 = 正文末尾贴近视口底部。
+     终点再和「实际能滚到的最远处」取小：文章后面还有页脚，
+     不这么夹一下，进度条走到 84% 就再也推不动了，读完了还差一截 */
+  const start=top-vh*0.5;
+  const end=Math.min(top+body.offsetHeight-vh*0.78,maxY);
+  if(end<=start){ el.style.transform="scaleX(1)"; return; }   /* 短文章一屏读完：直接算读完 */
+  const span=Math.max(1,end-start);
+  const p=Math.min(1,Math.max(0,(window.scrollY-start)/span));
+  el.style.transform="scaleX("+p.toFixed(4)+")";
+}
 function route(){
   /* 切换路由（含浏览器后退 / 前进）时灯箱还开着 → 先关掉。
      实测复现：在图库开灯箱后按浏览器返回键，背景已换成上一页，
@@ -5407,6 +5742,10 @@ function route(){
   document.querySelectorAll(".nav-menu-item").forEach(el=>{
     el.classList.toggle("cur",el.dataset.nav===active);
   });
+  /* 导航胶囊跟着激活项滑过去（首次进入没有起点，直接到位） */
+  try{ syncNavHl(false); }catch(e){}
+  /* 文章页才显示阅读进度条；其它页面立刻收起 */
+  try{ readBarToggle(!!(active==="blog"&&parts[1])); }catch(e){}
   closeNavDrop();   /* 切页后收起「记录」菜单，别让它悬在新页面上 */
   /* 页脚文案跟随语言：只认 profile.txt 的「页脚」。没配 → 整个页脚隐藏
      （hidden 属性连带那条上边框一起消失，不会留一条空的分隔线） */
@@ -5454,6 +5793,7 @@ function route(){
 }
 window.addEventListener("hashchange",()=>{
   scrollHoldY=null;      /* 真的跳页了：切语言留下的「守在原地」立即作废 */
+  xfadeAbort();          /* 语言的溶解还没走完就跳页了：撤掉遮罩，别盖在新页面上 */
   route();
 });
 
@@ -5478,6 +5818,31 @@ function placeNavMenu(){
   const gap=parseFloat(getComputedStyle(navMenu).getPropertyValue("--nav-gap"))||0;
   navMenu.style.left=(b.left+b.width/2).toFixed(1)+"px";
   navMenu.style.top=(edge+gap).toFixed(1)+"px";
+}
+/* ---------- 导航「当前项」滑动胶囊 ----------
+   按激活项实测的矩形写 transform / width，胶囊就会自己滑过去。
+   instant=true 用于首帧、窗口缩放、字体换行结算之后：那些时刻要「立刻到位」，
+   否则会看到胶囊从上一处莫名其妙地滑过来一遍。 */
+let navHlX=null;
+function syncNavHl(instant){
+  const hl=document.getElementById("navHl"),bar=document.getElementById("nav");
+  if(!hl||!bar)return;
+  const cur=bar.querySelector(".nav-link.active");
+  if(!cur||!cur.getBoundingClientRect().width){ hl.classList.remove("on"); return; }
+  const r=cur.getBoundingClientRect(),b=bar.getBoundingClientRect();
+  const x=r.left-b.left,w=r.width;
+  if(instant||navHlX==null){
+    hl.classList.add("jump");
+    hl.style.width=w.toFixed(1)+"px";
+    hl.style.transform="translate3d("+(x.toFixed(1))+"px,-50%,0)";
+    void hl.offsetWidth;                      /* 冲刷掉 jump，后面的移动才会走过渡 */
+    hl.classList.remove("jump");
+  }else{
+    hl.style.width=w.toFixed(1)+"px";
+    hl.style.transform="translate3d("+(x.toFixed(1))+"px,-50%,0)";
+  }
+  navHlX=x;
+  hl.classList.add("on");
 }
 function openNavDrop(){
   if(!navDrop)return;
@@ -5569,8 +5934,19 @@ function syncNavTop(onlyLabel){
 }
 window.addEventListener("scroll",()=>{
   if(navScrollRaf)return;
-  navScrollRaf=requestAnimationFrame(()=>{navScrollRaf=0;syncNavTop();});
+  navScrollRaf=requestAnimationFrame(()=>{navScrollRaf=0;syncNavTop();updateReadBar();});
 },{passive:true});
+/* 导航胶囊的位置依赖导航项的实际宽度：窗口缩放、字体替换、横竖屏切换都要重算一次。
+   这些时刻要「瞬移到位」，不然胶囊会从旧位置慢慢滑过来，像是页面自己动了一下 */
+let navHlRaf=0;
+function navHlRelayout(){
+  if(navHlRaf)return;
+  navHlRaf=requestAnimationFrame(()=>{navHlRaf=0;try{syncNavHl(true);}catch(e){}});
+}
+window.addEventListener("resize",navHlRelayout,{passive:true});
+window.addEventListener("orientationchange",navHlRelayout,{passive:true});
+window.addEventListener("load",navHlRelayout);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(navHlRelayout).catch(()=>{});
 syncNavTop();   /* 带锚点直接落进文章中部（或刷新时已在半途）也要一开始就对 */
 if(navDrop&&navDropBtn){
   /* 触屏点按后浏览器会补一轮 mouseenter，别让它把刚点开的菜单又抢着改状态 */
