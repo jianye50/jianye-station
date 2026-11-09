@@ -1557,7 +1557,7 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
    每个 h2~h4 末尾挂一个「#」，平时透明，悬停标题或键盘聚焦才浮现；
    点一下把「本文地址 + ?h=小节 id」复制走 —— 不进 hash 路由，所以不会把页面跳走。
    left:-20px 落在正文左内边距里，不占文字位置，标题对齐不会被它推歪 */
-.post-body h2,.post-body h3,.post-body h4,.post-body h5{position:relative;scroll-margin-top:96px}
+.post-body h2,.post-body h3,.post-body h4,.post-body h5{position:relative;scroll-margin-top:88px}
 .h-anchor{
   position:absolute;left:-20px;top:0;
   width:18px;height:1.45em;
@@ -1585,9 +1585,16 @@ h2:hover>.h-anchor,h3:hover>.h-anchor,h4:hover>.h-anchor,h5:hover>.h-anchor,
 .h-anchor.copied::after{transform:translate(-50%,3px)}
 /* 顺着分享链接定位到某一节时，标题轻轻亮一下，告诉人「就是这里」 */
 .post-body h2.h-flash,.post-body h3.h-flash,.post-body h4.h-flash,.post-body h5.h-flash{
-  animation:hFlash 1.6s ease both;border-radius:8px;
+  animation:hFlash 2.6s ease both;border-radius:8px;
 }
-@keyframes hFlash{0%,100%{background:transparent}22%{background:rgba(122,168,255,.12)}}
+/* 亮起来要快（0.26s），然后**停住**约 1.3 秒再慢慢退（1 秒）。
+   原来 1.6 秒里一直在淡出、最亮也只有 0.12，扫一眼就没了＝看不见 */
+@keyframes hFlash{
+  0%{background:rgba(122,168,255,0)}
+  10%{background:rgba(122,168,255,.18)}
+  62%{background:rgba(122,168,255,.18)}
+  100%{background:rgba(122,168,255,0)}
+}
 /* 触屏没有 hover：锚点常驻在标题末尾，做成一个很轻的小符号，直接点就行 */
 @media (hover:none){
   .h-anchor{position:static;width:auto;margin-left:.28em;opacity:.32;transform:none;font-size:.7em}
@@ -1905,6 +1912,13 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
   will-change:transform;
 }
 .hero-img{
+  /* 视差会把图往左右挪 ±9px、上下挪 ±7px，而图原本和 .hero 一样大（inset:0），
+     一挪开边缘就露出 .hero 的深色兜底 —— 屏幕边上那条竖着的暗带就是这么来的。
+     所以让图比 .hero 每边大 16px：挪到最偏也还剩 7~9px 余量，多的由 .hero 的
+     overflow:hidden 裁掉。用固定的 16px 而不是百分比缩放，窄屏矮窗口也不会缩水 */
+  inset:-16px;
+  width:calc(100% + 32px);
+  height:calc(100% + 32px);
   translate:calc(var(--hx,0)*-9px) calc(var(--hy,0)*-7px);
   transition:translate .8s cubic-bezier(.2,.7,.2,1);
 }
@@ -5685,45 +5699,273 @@ function copyText(str){
 }
 function headingFlash(el){
   if(!el)return;
+  clearTimeout(el._fT);
   el.classList.remove("h-flash");
   void el.offsetWidth;                 /* 强制回流：同一节连点两次也要重新亮一下 */
   el.classList.add("h-flash");
-  setTimeout(()=>el.classList.remove("h-flash"),1800);
+  el._fT=setTimeout(()=>el.classList.remove("h-flash"),2800);   /* 比动画（2.6s）略长，别提前掐断 */
 }
+/* 复制的链接：带上 ?h=小节 id（+ &hn=第几个标题），其余查询串原样保留 */
+function headingLink(id,ord){
+  try{
+    const u=new URL(location.href);
+    u.searchParams.set("h",id);
+    if(ord>=0)u.searchParams.set("hn",String(ord));   /* 兜底：界面语言不同 / 标题改过字，id 对不上时按序号找 */
+    else u.searchParams.delete("hn");
+    return u.href;
+  }catch(e){
+    return location.origin+location.pathname+"?h="+encodeURIComponent(id)+location.hash;
+  }
+}
+/* 只摘掉 h 这一个参数，别整段查询串清空 */
+function dropQuery(name){
+  try{
+    const u=new URL(location.href);
+    if(!u.searchParams.has(name))return;
+    u.searchParams.delete(name);
+    history.replaceState(null,"",u.pathname+(u.search||"")+u.hash);
+  }catch(e){}
+}
+
+/* ---------- 小节定位 ----------
+   两个坑都得兜住：
+   1) 正文图片是 loading="lazy"：目标上方那几张要等滚过去才开始下载，下完把版面撑高
+      （实测一张 760px 高的图就能把标题顶下去 758px），所以「滚一次就完事」的
+      scrollIntoView 落点一定是偏的；
+   2) 机翻会把整块正文换成新 DOM，标题 id 跟着文字一起变，只认 id 会直接丢掉目标。
+   做法：先滑过去（每帧重算目标，途中版面变高也跟着走），落位后再贴住目标：
+   版面一变就跟着修正，等图都下完、安静 1.5 秒才松手，人自己一动立刻松手（最长 8 秒）。 */
+const HEAD_GAP=26;              /* 标题顶端与导航底边的留白（和 CSS 的 scroll-margin-top 对齐） */
+function headTop(){
+  const nav=document.getElementById("nav");
+  const b=nav?nav.getBoundingClientRect().bottom:0;
+  return Math.round((b>0?b:62)+HEAD_GAP);   /* 导航还没上屏的首帧按 62 算 */
+}
+function headY(el){
+  /* 用 offsetTop 链取「布局坐标」：.view 的入场动画是 translateY，
+     getBoundingClientRect 会把这段位移算进去，跳完就会差几个像素 */
+  let y=0,n=el;
+  while(n){ y+=n.offsetTop; n=n.offsetParent; }
+  return Math.max(0,Math.round(y-headTop()));
+}
+function headList(){
+  return document.querySelectorAll("#app .post-body h2,#app .post-body h3,#app .post-body h4,#app .post-body h5");
+}
+/* 能滚到的最远处。文末几节的目标位置常常超过它 —— 那时只能停在文档末尾，
+   标题停在屏幕偏上一点，不去补留白（补出来的空白比「没顶到」更难看）。 */
+function scrollMax(){
+  const se=document.scrollingElement||document.documentElement;
+  return Math.max(0,se.scrollHeight-window.innerHeight);
+}
+/* 写到某个布局位置：超出滚动上限就停在末尾，绝不把文档撑高 */
+function headScrollTop(y){
+  const root=document.documentElement,prev=root.style.scrollBehavior;
+  root.style.scrollBehavior="auto";   /* html 上挂着 scroll-behavior:smooth，不关掉逐帧写会被它再动画一遍 */
+  try{ window.scrollTo(0,Math.max(0,Math.min(y,scrollMax()))); }catch(e){}
+  root.style.scrollBehavior=prev;
+}
+let headPin=null;
+/* 最近一次定位的目标：机翻把正文整块换掉后，靠这个把位置认回来（id 变了，序号没变） */
+let headWant=null;
+function headReapply(){
+  if(!headWant)return;
+  if(performance.now()-headWant.at>30000)return;      /* 半分钟前的事，人早就不在那儿了 */
+  if(Math.abs(window.scrollY-headWant.y)>140)return;  /* 这期间人自己滚走了：别拽回来 */
+  const el=(headWant.id&&document.getElementById(headWant.id))||headList()[headWant.ord]||null;
+  if(!el)return;
+  headWant.id=el.id||headWant.id;
+  headWant.y=headY(el);
+  headScrollTop(headWant.y);
+  headingFlash(el);
+}
+function headStop(){
+  const p=headPin;
+  if(!p)return;
+  headPin=null;
+  clearInterval(p.timer);
+  clearTimeout(p.guard);
+  if(p.ro)try{ p.ro.disconnect(); }catch(e){}
+  if(p.user){
+    window.removeEventListener("wheel",p.user,{passive:true});
+    window.removeEventListener("touchstart",p.user,{passive:true});
+    window.removeEventListener("pointerdown",p.user,{passive:true});
+    window.removeEventListener("keydown",p.user,{passive:true});
+  }
+}
+function jumpToHeading(el,opt){
+  if(!el||!el.isConnected)return;
+  opt=opt||{};
+  headStop();
+  const pin={
+    id:el.id||"",
+    ord:[].indexOf.call(headList(),el),   /* 机翻换 DOM 后按「第几个标题」认回来 */
+    el:el
+  };
+  headPin=pin;
+  headWant={id:pin.id,ord:pin.ord,y:headY(el),at:performance.now()};
+  const find=()=>{
+    let t=pin.id?document.getElementById(pin.id):null;
+    if(!t&&pin.ord>=0)t=headList()[pin.ord]||null;
+    if(t&&t!==pin.el){                    /* 正文被整块换过：认回同一节，并记下它新的 id */
+      pin.el=t;
+      if(t.id)pin.id=t.id;
+      headingFlash(t);                    /* 让眼睛重新落一次点 */
+    }
+    return t;
+  };
+  const reduce=!LB_MOTION;
+  const startY=window.scrollY,t0=performance.now();
+  const dist=Math.abs(Math.min(headY(el),scrollMax())-startY);
+  /* 要滑一段就先别亮（亮的时机见下面 flashNow）：滑动本身 300~820ms，
+     人在路上时高亮已经走掉大半，到了只剩一点余晖 —— 看起来就像「根本没亮」 */
+  const flashAtEnd=opt.flash!==false&&dist>24;
+  const dur=reduce?0:Math.min(820,300+dist*.5);
+  /* 接管更早的滑动（切页时的 glideTo）：两条 rAF 同时写滚动位置会互相拉扯 */
+  const my=++glideToken;
+  const root=document.documentElement,prevBeh=root.style.scrollBehavior;
+  if(glidePrevBehavior===null)glidePrevBehavior=prevBeh;
+  root.style.scrollBehavior="auto";
+  let stop=false;
+  /* 高亮的时机：原地不动（距离很近）就立刻亮；要滑动就等落位那一刻再亮，
+     保证人看到的是完整的一下。另配一个定时器兜底 —— 万一这次滑动被别的滑动接管
+     （route 的 glideTo），done() 不会执行，1 秒后也一定亮一次 */
+  let flashed=false,flashTimer=0;
+  const flashNow=()=>{
+    if(flashed||stop)return;
+    flashed=true;
+    clearTimeout(flashTimer);
+    headingFlash(find()||el);
+  };
+  if(opt.flash!==false){
+    if(!flashAtEnd)flashNow();
+    else flashTimer=setTimeout(flashNow,Math.min(dur+160,1000));
+  }
+  const onUser=()=>{ stop=true; if(headPin===pin)headStop(); };
+  const uOpt={passive:true};
+  pin.user=onUser;
+  window.addEventListener("wheel",onUser,uOpt);
+  window.addEventListener("touchstart",onUser,uOpt);
+  window.addEventListener("pointerdown",onUser,uOpt);
+  window.addEventListener("keydown",onUser,uOpt);
+  const detach=()=>{
+    window.removeEventListener("wheel",onUser,uOpt);
+    window.removeEventListener("touchstart",onUser,uOpt);
+    window.removeEventListener("pointerdown",onUser,uOpt);
+    window.removeEventListener("keydown",onUser,uOpt);
+  };
+  const done=landed=>{
+    if(my===glideToken&&glidePrevBehavior!==null){
+      root.style.scrollBehavior=glidePrevBehavior;
+      glidePrevBehavior=null;
+    }
+    detach();
+    if(landed&&!stop){
+      flashNow();                          /* 落位那一刻才亮：确保眼睛接住的是完整的一下 */
+      pinStart();
+    }
+  };
+  const target=()=>{
+    const t=find();
+    if(t)return headY(t);
+    return el.isConnected?headY(el):null;   /* 目标彻底没了（换页 / 换文章）：别往 0 滚 */
+  };
+  (function step(now){
+    if(my!==glideToken){ detach(); return; }  /* 被更新的一次滑动接管：静默退出 */
+    if(stop){ done(false); return; }
+    const y=target();
+    if(y==null){ done(false); return; }
+    /* 目标可能比文档能滚到的更远（文末几节）：逐帧夹到上限，
+       途中图片把版面撑高、上限变大了，就自然继续往下走 */
+    const goal=Math.min(y,scrollMax());
+    const p=dur?Math.min(1,(now-t0)/dur):1;
+    const e=1-Math.pow(1-p,3);               /* easeOutCubic：起步快、收得稳 */
+    window.scrollTo(0,Math.round(Math.min(startY+(goal-startY)*e,scrollMax())));
+    if(p<1)requestAnimationFrame(step);
+    else{ headScrollTop(target()||y); done(true); }
+  })(t0);
+
+  function pinStart(){
+    if(headPin!==pin)return;
+    pin.written=window.scrollY;
+    pin.t0=performance.now();
+    /* 目标上方还有没下完的图？那就还没到头，得继续贴着 */
+    pin.pending=()=>{
+      const t=find();
+      if(!t)return false;
+      const ty=t.getBoundingClientRect().top+window.scrollY;
+      return [...document.querySelectorAll("#app .post-body img")]
+        .some(i=>!i.complete&&(i.getBoundingClientRect().top+window.scrollY)<ty);
+    };
+    const fix=()=>{
+      if(headPin!==pin)return;
+      const t=find();
+      if(!t){ headStop(); return; }
+      /* 目标顶不到导航下面（文末几节）：按滚动上限比，停在末尾就算到位，
+         不再每 140ms 写一次 scrollTop 去撞底 */
+      const y=Math.min(headY(t),scrollMax());
+      if(Math.abs(y-window.scrollY)>3){ headScrollTop(y); pin.lastFix=performance.now(); }
+      else if(Math.abs(window.scrollY-pin.written)>3)pin.lastFix=performance.now();
+      pin.written=window.scrollY;
+      if(headWant&&headWant.ord===pin.ord)headWant.y=pin.written;
+    };
+    pin.lastFix=performance.now();
+    if(typeof ResizeObserver==="function"){
+      pin.ro=new ResizeObserver(fix);
+      pin.ro.observe(document.body);
+      const body=document.querySelector("#app .post-body");
+      if(body)pin.ro.observe(body);
+    }
+    pin.timer=setInterval(()=>{
+      if(headPin!==pin)return;
+      const t=find();
+      if(!t){ headStop(); return; }
+      const y=headY(t);
+      /* 目标没动、我们却在别处了 → 是人拖滚动条滚走的（拖滚动条不触发 wheel/touch），立刻松手 */
+      if(Math.abs(window.scrollY-pin.written)>6&&Math.abs(y-pin.written)<6){ headStop(); return; }
+      fix();
+      /* 版面安静了 1.5 秒、目标上方也没有还在下的图：收工。
+         不按固定时长收：网慢时一张图可能要好几秒，提前松手就又漂回去了 */
+      if(performance.now()-pin.lastFix>1500&&!pin.pending())headStop();
+    },140);
+    /* 兜底：图一直下不来（挂了 / 断网）也别无限期贴着，8 秒松手 */
+    pin.guard=setTimeout(()=>{ if(headPin===pin)headStop(); },8000);
+  }
+}
+
 document.addEventListener("click",e=>{
   const a=e.target.closest&&e.target.closest(".h-anchor");
   if(!a)return;
   e.preventDefault();e.stopPropagation();
   const id=a.dataset.h||"";
   const el=id?document.getElementById(id):null;
-  copyText(location.origin+location.pathname+"?h="+encodeURIComponent(id)+location.hash);
+  const ord=el?[].indexOf.call(headList(),el):-1;
+  copyText(headingLink(id,ord));
   a.textContent="✓";a.classList.add("copied");
   clearTimeout(a._t);
   a._t=setTimeout(()=>{a.textContent="#";a.classList.remove("copied");},1300);
-  if(el){
-    headingFlash(el);
-    /* 那一节已经在视野里就别动，避免点一下把人晃走 */
-    const r=el.getBoundingClientRect();
-    if(r.top<80||r.top>window.innerHeight*0.68){
-      try{ el.scrollIntoView({behavior:LB_MOTION?"smooth":"auto",block:"start"}); }
-      catch(err){ el.scrollIntoView(); }
-    }
-  }
+  if(!el)return;
+  /* 那一节已经在视野里就别动，避免点一下把人晃走 */
+  const r=el.getBoundingClientRect();
+  if(r.top>=headTop()-6&&r.top<=window.innerHeight*.6){ headingFlash(el); return; }
+  jumpToHeading(el,{flash:true});
 });
 /* 顺着别人分享的 ?h= 链接进来：正文上屏后滚到那一节，然后把这个参数从地址栏抹掉，
    免得之后在同一篇里翻来翻去又被拽回去 */
 function scrollToHashHeading(){
-  let id="";
-  try{ id=new URLSearchParams(location.search).get("h")||""; }catch(e){}
-  if(!id)return;
-  try{ history.replaceState(null,"",location.pathname+location.hash); }catch(e){}
-  const el=document.getElementById(id);
+  let id="",ord=-1;
+  try{
+    const q=new URLSearchParams(location.search);
+    id=q.get("h")||"";
+    ord=parseInt(q.get("hn"),10);
+  }catch(e){}
+  if(!id&&!(ord>=0))return;
+  dropQuery("h");
+  dropQuery("hn");
+  /* 先按 id 找；找不到（界面语言不同、标题事后改过字）就退回「第几个标题」 */
+  let el=id?document.getElementById(id):null;
+  if(!el&&ord>=0)el=headList()[ord]||null;
   if(!el)return;
-  requestAnimationFrame(()=>{
-    try{ el.scrollIntoView({behavior:LB_MOTION?"smooth":"auto",block:"start"}); }
-    catch(e){ el.scrollIntoView(); }
-    headingFlash(el);
-  });
+  jumpToHeading(el,{flash:true});
 }
 /* ---------- 首屏跟手视差（见 CSS .hero-glow / .hero-img / .hero-inner） ----------
    只在「精确指针 + 没关动态效果」时生效。每帧只写 --hx / --hy 两个自定义属性，
@@ -6014,6 +6256,7 @@ async function renderPost(slug,gen){
           /* 正文翻成了：整体替换 */
           if(art)art.innerHTML=mdToHTML(r.b,post.imgBase,post.imgMap);
           wirePostMedia(slug);   /* 整块换成新 DOM 了：动图视频要重新接上播放控制 */
+          headReapply();         /* 标题 id 随译文改了：按原来的序号把「正在看的那一节」重新对齐 */
           if(meta)meta.insertAdjacentHTML("beforeend",`<span class="tr-mt">${esc(t.blog.machineTrans)}</span>`);
         }else if(art&&body.trim()){
           /* 正文一行都没翻成（限流/网络问题），标题标签却翻好了：
@@ -6122,6 +6365,9 @@ function route(){
      灯箱却浮在新页面之上，还锁着滚动。 */
   const lbNow=$("#lightbox");
   if(lbNow&&lbNow.classList.contains("open"))closeLb();
+  /* 换页了：上一页的「贴住某一节」立即作废，否则它会接着在新页面里找同名/同序号的标题 */
+  headStop();
+  headWant=null;
   const gen=++routeGen;
   /* 切语言发起的重绘：这一代渲染出来的 .view 不播入场动画（见 viewCls） */
   if(muteViewAnim){ muteViewGen=gen; muteViewAnim=false; }
