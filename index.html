@@ -654,7 +654,14 @@ img{display:block;max-width:100%}
   background:linear-gradient(100deg,rgba(8,12,24,.62) 0%,rgba(8,12,24,.34) 46%,rgba(8,12,24,.14) 100%),
              linear-gradient(to top,rgba(8,12,24,.42),transparent 36%);
 }
-.hero-inner{position:relative;z-index:2;animation:fadeUp .9s .15s cubic-bezier(.2,.7,.2,1) both}
+/* 首屏不再是「一整块」上浮：徽标 → 标题 → 副标题 → 按钮 依次错开 70ms，
+   视线会顺着这个顺序落到按钮上。动画挂到子元素，容器只负责定位与视差位移 */
+.hero-inner{position:relative;z-index:2}
+.hero-inner>*{animation:fadeUp .8s cubic-bezier(.2,.7,.2,1) both}
+.hero-inner>:nth-child(1){animation-delay:.08s}
+.hero-inner>:nth-child(2){animation-delay:.15s}
+.hero-inner>:nth-child(3){animation-delay:.22s}
+.hero-inner>:nth-child(4){animation-delay:.29s}
 .hero-badge{
   display:inline-flex;align-items:center;gap:8px;
   padding:7px 15px;border-radius:999px;
@@ -987,6 +994,30 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 .lightbox.lb-zoom .lb-spin{position:fixed;left:50%;top:50%;margin:-18px 0 0 -18px}
 /* 只有一张时没有「上一张 / 下一张」可翻，箭头直接藏掉 */
 .lightbox.lb-single .lb-prev,.lightbox.lb-single .lb-next{display:none}
+/* ---------- 灯箱：从缩略图原位长大（FLIP） ----------
+   飞行层 #lbFly 是独立的 fixed 层，只装「瓷砖里那张已经解码好的位图」：
+   起点 = 被点瓷砖的矩形，终点 = 灯箱最终的显示框，全程 object-fit:cover。
+   终点框的比例就是图片本身的比例，所以 cover 在落位那一刻等于 contain，
+   放大过程中不会出现「先裁一块、落位后突然变全」的跳变。
+   真图在飞行期间先藏起来（它正按自己的节奏换 src），落位后再淡入接上。 */
+#lbFly{
+  position:fixed;z-index:210;pointer-events:none;overflow:hidden;
+  background:rgba(255,255,255,.03);
+  box-shadow:0 24px 70px rgba(0,0,0,.5);
+  will-change:left,top,width,height;
+}
+#lbFly img{width:100%;height:100%;object-fit:cover;display:block}
+.lightbox img.lb-flying-img{opacity:0}
+/* 关闭时走反向飞行：背景只淡自己的底色，控件同步收掉，照片原路回到那张小图里 */
+.lightbox.lb-flip-out{
+  background-color:rgba(3,7,20,0) !important;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  pointer-events:none;transition:background-color .3s ease;
+}
+.lightbox.lb-flip-out .lb-btn,
+.lightbox.lb-flip-out .lb-count,
+.lightbox.lb-flip-out .lb-motion{opacity:0;transition:opacity .16s ease}
+@media (prefers-reduced-motion:reduce){#lbFly{display:none}}
 @media (max-width:640px){
   .lb-prev{left:8px}.lb-next{right:8px}
   .lb-btn{width:42px;height:42px}
@@ -1522,6 +1553,46 @@ mark{background:rgba(77,141,255,.30);color:var(--text-1);border-radius:3px;paddi
 .post-body h2{font-size:22px;color:var(--text-1);margin:34px 0 12px;letter-spacing:-.01em}
 .post-body h3{font-size:18.5px;color:var(--text-1);margin:28px 0 10px}
 .post-body h4,.post-body h5{font-size:16px;color:var(--text-1);margin:22px 0 8px}
+/* ---------- 小节标题锚点 ----------
+   每个 h2~h4 末尾挂一个「#」，平时透明，悬停标题或键盘聚焦才浮现；
+   点一下把「本文地址 + ?h=小节 id」复制走 —— 不进 hash 路由，所以不会把页面跳走。
+   left:-20px 落在正文左内边距里，不占文字位置，标题对齐不会被它推歪 */
+.post-body h2,.post-body h3,.post-body h4,.post-body h5{position:relative;scroll-margin-top:96px}
+.h-anchor{
+  position:absolute;left:-20px;top:0;
+  width:18px;height:1.45em;
+  display:inline-flex;align-items:center;justify-content:center;
+  font:inherit;font-size:.76em;font-weight:700;line-height:1;
+  color:var(--accent);opacity:0;transform:translateX(-4px);
+  cursor:pointer;user-select:none;
+  transition:opacity .18s ease,transform .24s cubic-bezier(.2,.7,.2,1),color .18s;
+}
+h2:hover>.h-anchor,h3:hover>.h-anchor,h4:hover>.h-anchor,h5:hover>.h-anchor,
+.h-anchor:focus-visible{opacity:.72;transform:none}
+.h-anchor:hover{opacity:1;color:#7fb0ff}
+/* 复制成功：变成对勾 + 一个小气泡，1.2s 后自己复原 */
+.h-anchor.copied{opacity:1;transform:none;color:#35d07f}
+.h-anchor.copied::after{
+  content:attr(data-tip);
+  position:absolute;left:50%;top:100%;
+  padding:4px 9px;border-radius:7px;white-space:nowrap;
+  font-size:11.5px;font-weight:600;line-height:1.4;letter-spacing:0;
+  color:var(--text-1);background:rgba(20,26,40,.96);
+  border:1px solid var(--card-border);box-shadow:var(--shadow);
+  animation:hTipIn .18s ease both;
+}
+@keyframes hTipIn{from{opacity:0;transform:translate(-50%,-3px)}to{opacity:1;transform:translate(-50%,3px)}}
+.h-anchor.copied::after{transform:translate(-50%,3px)}
+/* 顺着分享链接定位到某一节时，标题轻轻亮一下，告诉人「就是这里」 */
+.post-body h2.h-flash,.post-body h3.h-flash,.post-body h4.h-flash,.post-body h5.h-flash{
+  animation:hFlash 1.6s ease both;border-radius:8px;
+}
+@keyframes hFlash{0%,100%{background:transparent}22%{background:rgba(122,168,255,.12)}}
+/* 触屏没有 hover：锚点常驻在标题末尾，做成一个很轻的小符号，直接点就行 */
+@media (hover:none){
+  .h-anchor{position:static;width:auto;margin-left:.28em;opacity:.32;transform:none;font-size:.7em}
+  .h-anchor:hover{opacity:.32}
+}
 .post-body p{margin:0 0 16px}
 .post-body a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 .post-body img{max-width:100%;border-radius:14px;display:block;margin:18px auto;border:1px solid var(--card-border)}
@@ -1787,10 +1858,14 @@ footer .heart{color:#ff5d7a}
    揭幕那一下才加 html.jy-go，两条动画从 0 帧开始播 —— 动画永远看得见，也不会缺失。
    加过之后一直保留，切页回首页照样有动画。 */
 html:not(.jy-go) .hero-img,
-html:not(.jy-go) .hero-inner{animation:none}
+html:not(.jy-go) .hero-inner,
+html:not(.jy-go) .hero-inner>*{animation:none}
 /* 配置晚到导致的「静默重绘」：不播入场动画，否则背景与文字会再演一遍（看着像闪） */
 .hero.quiet .hero-img,
-.hero.quiet .hero-inner{animation:none}
+.hero.quiet .hero-inner,
+.hero.quiet .hero-inner>*{animation:none}
+/* 同一页原地重绘（切语言 / 骨架换正文）：首屏元素也别再分组演一遍，否则溶解结束后还在冒 */
+.view.no-in .hero-inner>*{animation:none}
 /* 导航条跟着揭幕一起浮出来：加载屏还盖着时先不显示，掀开那一下才淡入。
    只动 opacity ——「记录」面板靠 JS 量按钮位置来定位，导航带 transform 会把它算歪 */
 html:not(.jy-go) .nav{opacity:0}
@@ -1810,6 +1885,68 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
   background:linear-gradient(90deg,transparent,var(--accent),transparent);
   animation:bootSlide 1.1s ease-in-out infinite}
 @keyframes bootSlide{from{transform:translateX(-130%)}to{transform:translateX(430%)}}
+
+/* ===================== 细处动效 =====================
+   原则：只做「跟着指针走」的连续反馈，不做一次性大动画；
+   全部落在 transform / opacity 上，不触发布局；系统「减少动态效果」一键全关 */
+
+/* ---------- 首屏跟手光斑 + 背景视差 ----------
+   .hero 上由 JS 写 --hx / --hy（-1~1，指针在首屏内的相对位置）。
+   光斑是一块固定尺寸的径向渐变，只移动 transform → 不重排、不重绘；
+   背景图与文字用独立的 translate 属性位移，和 heroIn 的 scale 动画互不抢 transform */
+.hero-glow{
+  position:absolute;left:50%;top:48%;
+  width:min(1200px,130vw);aspect-ratio:1;border-radius:50%;
+  z-index:1;pointer-events:none;mix-blend-mode:screen;opacity:.85;
+  background:radial-gradient(circle at 50% 50%,
+    rgba(126,166,255,.20) 0%,rgba(126,166,255,.10) 32%,rgba(126,166,255,0) 60%);
+  transform:translate3d(calc(-50% + var(--hx,0)*74px),calc(-50% + var(--hy,0)*48px),0);
+  transition:transform .5s cubic-bezier(.2,.7,.2,1);
+  will-change:transform;
+}
+.hero-img{
+  translate:calc(var(--hx,0)*-9px) calc(var(--hy,0)*-7px);
+  transition:translate .8s cubic-bezier(.2,.7,.2,1);
+}
+.hero-inner{
+  translate:calc(var(--hx,0)*4px) calc(var(--hy,0)*3px);
+  transition:translate .8s cubic-bezier(.2,.7,.2,1);
+}
+
+/* ---------- 卡片跟随指针的聚光 ----------
+   JS 把指针在卡片内的百分比写进 --mx / --my，底色上叠一层很淡的冷光；
+   指针离开时 --lit 归 0，光自然消失。只对鼠标生效 */
+.post-card,.proj{--mx:50%;--my:50%;--lit:0}
+.post-card,.proj{
+  background-image:radial-gradient(240px circle at var(--mx) var(--my),
+    rgba(122,168,255,calc(.13 * var(--lit))),rgba(122,168,255,0) 62%);
+  background-repeat:no-repeat;
+}
+
+/* ---------- 图片加载完成：轻轻浮上来 ----------
+   列表封面与正文插图都是边下边显，直接"啪"地出现太硬。
+   JS 在 load 那一刻补 .img-in；没补上的图照常显示，不影响可用性 */
+@keyframes imgIn{from{opacity:0}to{opacity:1}}
+.img-in{animation:imgIn .45s ease both}
+/* 既在等「滚到眼前」又刚好这时加载完的图：让位给 .rv-block/.rv-in 那一套。
+   否则 animation 的 opacity:1 会盖掉 .rv-block 的 opacity:0，图会自己提前冒出来 */
+.rv-block.img-in{animation:none}
+
+/* ---------- 文章卡箭头 / 项目卡图标：悬停给一点位移 ---------- */
+.post-side svg{transition:transform .28s cubic-bezier(.2,.7,.2,1),opacity .28s}
+.post-card:hover .post-side svg{transform:translateX(4px);opacity:1}
+.proj .ic{transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+.proj:hover .ic{transform:translateY(-2px) scale(1.06)}
+
+/* ---------- 照片墙：指到哪张，其余就让一让 ---------- */
+@media (hover:hover) and (pointer:fine){
+  .photo-grid .ph-tile{transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s,opacity .3s ease}
+  .photo-grid:hover .ph-tile:not(:hover){opacity:.58}
+}
+
+/* ---------- 搜索框聚焦：放大镜轻抬一下 ---------- */
+.bs-box>svg{transition:color .2s,transform .25s cubic-bezier(.2,.7,.2,1)}
+.bs-box:focus-within>svg{transform:translateY(-50%) scale(1.12)}
 
 /* ===================== 动效偏好 ===================== */
 @media (prefers-reduced-motion:reduce){
@@ -3256,19 +3393,15 @@ function setLbMedia(p){
   }
   lbAnimDir=0;    /* 方向只对本张生效，消费掉：之后的重渲染/动态补播不得再触发滑入 */
 }
-function openLb(items,i,grid){
+function openLb(items,i,grid,srcEl){
   lbItems=items||[];
   if(!lbItems.length)return;
   lbGrid=grid||null;                              /* 记住灯箱是从哪个网格打开的（找缓存位图要用） */
   lbIndex=(i+lbItems.length)%lbItems.length;
-  showLb();
-  /* 关掉灯箱后把焦点还给触发元素。已在灯箱内部（如用方向键切图时 openLb 被再次调用）
-     就保留最初记下的那个，别把焦点目标覆盖成灯箱里的按钮 */
-  if(!$("#lightbox").contains(document.activeElement))lbFocus=document.activeElement;
-  $("#lightbox").classList.add("open");
-  $("#lightbox").classList.remove("closing");      /* 快速开关：别让上一次的退场动画把入场顶掉 */
-  clearTimeout(lbCloseTimer);
-  $("#lightbox").classList.toggle("lb-single",lbItems.length<2);
+  /* 只有「从页面上第一次打开」才飞；方向键翻页走的是同一个 openLb，不能再飞一次 */
+  const wasOpen=$("#lightbox").classList.contains("open");
+  lbFlyCleanup();
+  lbSrcEl=lbSrcElFor(lbIndex)||srcEl||null;
   /* 先量出滚动条宽度再锁滚动：锁住后滚动条消失，网页会整体右移一截 */
   try{
     const g=Math.max(0,window.innerWidth-document.documentElement.clientWidth);
@@ -3276,7 +3409,128 @@ function openLb(items,i,grid){
     document.documentElement.style.setProperty("--lb-half",(g/2)+"px");
   }catch(e){}
   document.body.classList.add("lb-lock");         /* 锁住背景滚动 */
+  /* 必须锁完再量起点：锁滚动会让内容横向挪半格，先量的话飞行层和小图会差几个像素 */
+  const fromRect=(!wasOpen&&lbSrcEl)?lbSrcEl.getBoundingClientRect():null;
+  showLb();
+  /* 关掉灯箱后把焦点还给触发元素。已在灯箱内部（如用方向键切图时 openLb 被再次调用）
+     就保留最初记下的那个，别把焦点目标覆盖成灯箱里的按钮 */
+  if(!$("#lightbox").contains(document.activeElement))lbFocus=document.activeElement;
+  $("#lightbox").classList.add("open");
+  /* 快速开关：别让上一次的退场动画（淡出 / 反向飞行）把这次的入场顶掉 */
+  $("#lightbox").classList.remove("closing","lb-flip-out");
+  clearTimeout(lbCloseTimer);
+  $("#lightbox").classList.toggle("lb-single",lbItems.length<2);
   try{ $("#lbClose").focus(); }catch(e){}
+  if(!wasOpen)lbFlyOpen(fromRect,lbItems[lbIndex]);
+}
+/* ---------- 灯箱 FLIP 的实现（样式见 CSS #lbFly） ----------
+   取哪张缩略图当起点：图墙里有 data-idx 对应的瓷砖就用它；
+   正文图片没有网格，直接用这张图本身（items 里的 el） */
+function lbSrcElFor(i){
+  const p=lbItems[i];
+  if(lbGrid){
+    const t=lbGrid.querySelector(`.ph-tile[data-idx="${i}"]`);
+    if(t)return t.querySelector("img")||t;
+  }
+  return (p&&p.el&&p.el.getBoundingClientRect)?p.el:null;
+}
+let lbSrcEl=null,lbFlyTimer=0;
+/* 飞行层复用同一个 DOM，避免连续开关时堆积节点 */
+function lbFlyLayer(src,rect,radius){
+  let el=document.getElementById("lbFly");
+  if(!el){
+    el=document.createElement("div");
+    el.id="lbFly";
+    el.setAttribute("aria-hidden","true");
+    el.innerHTML='<img alt="">';
+    document.body.appendChild(el);
+  }
+  const im=el.querySelector("img");
+  if(im.getAttribute("src")!==src)im.setAttribute("src",src||"");
+  el.style.transition="none";
+  el.style.opacity="1";
+  el.style.left=rect.left+"px";el.style.top=rect.top+"px";
+  el.style.width=rect.width+"px";el.style.height=rect.height+"px";
+  el.style.borderRadius=radius+"px";
+  return el;
+}
+function lbFlyCleanup(){
+  clearTimeout(lbFlyTimer);
+  const el=document.getElementById("lbFly");
+  if(el)el.remove();
+  const img=document.getElementById("lbImg");
+  if(img)img.classList.remove("lb-flying-img");
+}
+/* 目标框：按图片真实比例塞进 88vw × 80vh 的中央（与 .lightbox img 的 max-* 一致） */
+function lbFlyTarget(p,ref){
+  let ar=0;
+  if(p&&p._vw&&p._vh)ar=p._vw/p._vh;
+  if(!ar&&lbSrcEl){
+    const im=lbSrcEl.tagName==="IMG"?lbSrcEl:lbSrcEl.querySelector("img");
+    if(im&&im.naturalWidth&&im.naturalHeight)ar=im.naturalWidth/im.naturalHeight;
+  }
+  if(!ar&&ref&&ref.width&&ref.height)ar=ref.width/ref.height;
+  if(!ar)return null;
+  const maxW=Math.min(window.innerWidth*0.88,window.innerWidth-28);
+  const maxH=window.innerHeight*0.8;
+  let w=maxW,h=w/ar;
+  if(h>maxH){h=maxH;w=h*ar;}
+  return {left:(window.innerWidth-w)/2,top:(window.innerHeight-h)/2,width:w,height:h};
+}
+function lbFlyOpen(from,p){
+  if(!LB_MOTION||!from||!p||p.type!=="image")return;
+  if(from.width<24||from.height<24||from.bottom<0||from.top>window.innerHeight)return;
+  const src=p._cache||p.thumb||p.view||p.src;
+  const to=lbFlyTarget(p,from);
+  if(!src||!to)return;
+  const img=$("#lbImg");
+  img.classList.add("lb-flying-img");        /* 真图先让位，落位后再接上 */
+  const fly=lbFlyLayer(src,from,14);
+  void fly.offsetWidth;
+  fly.style.transition="left .42s cubic-bezier(.2,.78,.2,1),top .42s cubic-bezier(.2,.78,.2,1),"+
+    "width .42s cubic-bezier(.2,.78,.2,1),height .42s cubic-bezier(.2,.78,.2,1),"+
+    "border-radius .42s ease,box-shadow .42s ease";
+  requestAnimationFrame(()=>{
+    fly.style.left=to.left+"px";fly.style.top=to.top+"px";
+    fly.style.width=to.width+"px";fly.style.height=to.height+"px";
+    fly.style.borderRadius="16px";
+    fly.style.boxShadow="0 40px 100px rgba(0,0,0,.6)";
+  });
+  clearTimeout(lbFlyTimer);
+  lbFlyTimer=setTimeout(()=>{
+    img.classList.remove("lb-flying-img");
+    fly.style.transition="opacity .16s ease";
+    fly.style.opacity="0";
+    lbFlyTimer=setTimeout(()=>{ if(fly.isConnected)fly.remove(); },180);
+  },440);
+}
+/* 关闭时反向飞回那张缩略图。返回时长（0 = 不飞，走原来的淡出） */
+function lbFlyClose(){
+  const img=$("#lbImg"),p=lbItems[lbIndex],lb=$("#lightbox");
+  if(!LB_MOTION||!img||!p||p.type!=="image")return 0;
+  if(lb.classList.contains("lb-zoom"))return 0;          /* 放大态下是另一套布局，别掺和 */
+  if(!lbSrcEl||!lbSrcEl.isConnected)return 0;
+  const to=lbSrcEl.getBoundingClientRect();
+  if(!to.width||to.bottom<-60||to.top>window.innerHeight+60)return 0;  /* 缩略图已滚出屏幕 */
+  /* 开着的飞行还没落地就按了 Esc：从它此刻的位置接着往回飞，别先跳回终点 */
+  const flying=document.getElementById("lbFly");
+  const cur=(flying&&flying.isConnected)?flying.getBoundingClientRect():img.getBoundingClientRect();
+  const src=img.currentSrc||img.getAttribute("src");
+  if(!cur.width||!cur.height||!src)return 0;
+  clearTimeout(lbFlyTimer);
+  img.classList.add("lb-flying-img");
+  const fly=lbFlyLayer(src,cur,16);
+  void fly.offsetWidth;
+  fly.style.transition="left .32s cubic-bezier(.4,0,.2,1),top .32s cubic-bezier(.4,0,.2,1),"+
+    "width .32s cubic-bezier(.4,0,.2,1),height .32s cubic-bezier(.4,0,.2,1),"+
+    "border-radius .32s ease,box-shadow .32s ease";
+  requestAnimationFrame(()=>{
+    fly.style.left=to.left+"px";fly.style.top=to.top+"px";
+    fly.style.width=to.width+"px";fly.style.height=to.height+"px";
+    fly.style.borderRadius="12px";
+    fly.style.boxShadow="0 6px 18px rgba(0,0,0,.28)";
+  });
+  return 340;
 }
 function showLb(){
   const p=lbItems[lbIndex];
@@ -3297,18 +3551,35 @@ function showLb(){
 }
 /* 灯箱退场动画时长（毫秒）：系统开了「减少动态效果」就立刻隐藏 */
 const LB_OUT_MS=(typeof matchMedia==="function"&&matchMedia("(prefers-reduced-motion: reduce)").matches)?0:180;
+const LB_MOTION=LB_OUT_MS>0;      /* 所有「飞行动画」的统一开关（关动效时一律走原来的淡入淡出） */
 let lbCloseTimer=0;
 function closeLb(){
-  lbImgToken++;                                   /* 作废还没回来的取图回调 */
-  $("#lightbox").classList.remove("lb-busy","lb-zoom");
-  try{ $("#lbVideo").pause(); }catch(e){}
   const lb=$("#lightbox");
-  lb.classList.remove("open");
-  document.body.classList.remove("lb-lock");
-  if(LB_OUT_MS>0){
-    lb.classList.add("closing");                  /* 先播完淡出再 display:none */
+  if(lb.classList.contains("lb-flip-out"))return;   /* 已经在收，别叠第二次 */
+  lbImgToken++;                                   /* 作废还没回来的取图回调 */
+  lb.classList.remove("lb-busy","lb-zoom");
+  try{ $("#lbVideo").pause(); }catch(e){}
+  /* 先试「原路缩回那张小图」；缩不回去（缩略图滚出屏幕 / 视频 / 放大态）就走原来的淡出 */
+  const ms=lbFlyClose();
+  if(ms>0){
+    lb.classList.add("lb-flip-out");
     clearTimeout(lbCloseTimer);
-    lbCloseTimer=setTimeout(()=>lb.classList.remove("closing"),LB_OUT_MS);
+    /* 滚动锁留到照片归位再解：中途解锁，页面会在飞行途中抽一下。
+       .open 也要留到最后 —— 一摘就 display:none，飞行直接看不见 */
+    lbCloseTimer=setTimeout(()=>{
+      lb.classList.remove("open","closing","lb-flip-out");
+      lbFlyCleanup();
+      document.body.classList.remove("lb-lock");
+    },ms+40);
+  }else{
+    lb.classList.remove("open");
+    document.body.classList.remove("lb-lock");
+    lbFlyCleanup();
+    if(LB_OUT_MS>0){
+      lb.classList.add("closing");                  /* 先播完淡出再 display:none */
+      clearTimeout(lbCloseTimer);
+      lbCloseTimer=setTimeout(()=>lb.classList.remove("closing"),LB_OUT_MS);
+    }
   }
   if(lbFocus&&typeof lbFocus.focus==="function"){ try{ lbFocus.focus(); }catch(e){} }
   lbFocus=null;
@@ -3328,12 +3599,17 @@ function renderHome(){
      每次新建 <img> 都要重新解码、重播 heroIn 放大动画 —— 那就是「背景闪一下」的来源。
      同一个 src 时把旧节点搬回去，浏览器沿用已解码的画面，稳如泰山 */
   const prevImg=app.querySelector("img.hero-img");
-  const quiet=quietRender;   /* 静默重绘：不再演入场动画 */
+  /* 两种「同一页重画」都不该再演入场动画：
+     ① 静默重绘（配置晚到）—— 否则背景与文字会再演一遍；
+     ② 切语言（muteViewGen 标了这一代）—— 否则溶解结束了，徽标/标题还在一个个往外冒 */
+  const quiet=quietRender||(muteViewGen>=0&&muteViewGen===routeGen);
   app.innerHTML=`
   <section class="view${quiet?" no-in":""}">
     <header class="hero${quiet?" quiet":""}">
       ${SITE.bg?`<img class="hero-img" src="${esc(SITE.bg)}"
            alt="" fetchpriority="high" decoding="async" onerror="this.remove()">`:/* 没配背景 → 用 CSS 里的 --hero-fallback 渐变兜底 */""}
+      <!-- 跟手光斑：一块固定尺寸的径向渐变，位置由 JS 写的 --hx/--hy 驱动 -->
+      <span class="hero-glow" aria-hidden="true"></span>
       <div class="wrap hero-inner">
         ${t.hero.badge?`<span class="hero-badge"><span class="pulse"></span>${esc(t.hero.badge)}</span>`:""}
         ${t.brand?`<h1>${esc(t.brand)}</h1>`:""}
@@ -3898,6 +4174,18 @@ function mdToHTML(md,imgBase,imgMap){
      查 imgMap / 拼地址前要先还原，否则带这些字符的文件名永远匹配不上 */
   const unesc=t=>String(t).replace(/&amp;/g,"&").replace(/&lt;/g,"<")
     .replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+  /* 标题 id：由标题文字生成，同一篇里重名自动加 -1/-2（只在本次渲染内计数，
+     每次重新渲染都从零开始，不会越滚越长）。中文保留，地址栏里是可读的 */
+  const slugSeen=Object.create(null);
+  const slugify=raw=>{
+    let s=String(raw||"").replace(/<[^>]*>/g,"").replace(/&[a-z#0-9]+;/gi," ")
+      .toLowerCase().replace(/[\s\u3000]+/g,"-")
+      .replace(/[^\w\u4e00-\u9fa5\-]+/g,"").replace(/-+/g,"-").replace(/^-+|-+$/g,"");
+    if(!s)s="section";
+    if(slugSeen[s]!=null){ slugSeen[s]+=1; s=s+"-"+(slugSeen[s]); }
+    else slugSeen[s]=0;
+    return s;
+  };
   const imgHit=src=>{
     if(!imgMap)return null;
     if(imgMap[src])return imgMap[src];
@@ -4162,7 +4450,18 @@ function mdToHTML(md,imgBase,imgMap){
       continue;
     }
     const h=L.match(/^(#{1,4})\s+(.*)/);
-    if(h){const lv=h[1].length+1;out.push(`<h${lv}>${inline(h[2])}</h${lv}>`);i++;continue;}
+    if(h){
+      const lv=h[1].length+1;
+      const id="h-"+slugify(h[2]);
+      /* 标题右侧带一个「#」锚点：悬停才浮现，点一下复制这一节的链接（?h=小节 id）。
+         用 button 而不是 <a href="#...">：站点走 hash 路由，href 里的 # 会直接把
+         路由搅乱；button 还能白拿键盘 Enter/Space 的焦点操作 */
+      const tip=lang==="zh"?"复制本节链接":"Copy link to this section";
+      out.push(`<h${lv} id="${id}">${inline(h[2])}`+
+        `<button class="h-anchor" type="button" data-h="${id}" data-tip="${esc(lang==="zh"?"已复制":"Copied")}" `+
+        `aria-label="${esc(tip)}" title="${esc(tip)}">#</button></h${lv}>`);
+      i++;continue;
+    }
     if(/^\s*(---+|\*\*\*+)\s*$/.test(L)){out.push("<hr>");i++;continue;}
     if(/^\s*>\s?/.test(L)){
       const buf=[];
@@ -5363,6 +5662,141 @@ function revealPostMedia(root){
   revealSoon([...root.querySelectorAll("img,pre,blockquote,.md-media,.md-table")]
     .filter(el=>!(el.parentElement&&el.parentElement.closest(".md-media,.md-table"))));
 }
+/* ---------- 小节标题锚点（.h-anchor 见 CSS） ----------
+   链接形如 https://站点/路径?h=h-小节id#/blog/文章 —— 锚点用查询串而不是 hash，
+   因为整站是 hash 路由，往 hash 里塞小节 id 会直接把路由打乱 */
+function copyTextFallback(str){
+  try{
+    const ta=document.createElement("textarea");
+    ta.value=str;ta.setAttribute("readonly","");
+    ta.style.cssText="position:fixed;left:-9999px;top:0;opacity:0";
+    document.body.appendChild(ta);
+    ta.select();ta.setSelectionRange(0,ta.value.length);
+    document.execCommand("copy");
+    ta.remove();
+  }catch(e){}
+}
+function copyText(str){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(str).catch(()=>copyTextFallback(str));
+  }
+  copyTextFallback(str);
+  return Promise.resolve();
+}
+function headingFlash(el){
+  if(!el)return;
+  el.classList.remove("h-flash");
+  void el.offsetWidth;                 /* 强制回流：同一节连点两次也要重新亮一下 */
+  el.classList.add("h-flash");
+  setTimeout(()=>el.classList.remove("h-flash"),1800);
+}
+document.addEventListener("click",e=>{
+  const a=e.target.closest&&e.target.closest(".h-anchor");
+  if(!a)return;
+  e.preventDefault();e.stopPropagation();
+  const id=a.dataset.h||"";
+  const el=id?document.getElementById(id):null;
+  copyText(location.origin+location.pathname+"?h="+encodeURIComponent(id)+location.hash);
+  a.textContent="✓";a.classList.add("copied");
+  clearTimeout(a._t);
+  a._t=setTimeout(()=>{a.textContent="#";a.classList.remove("copied");},1300);
+  if(el){
+    headingFlash(el);
+    /* 那一节已经在视野里就别动，避免点一下把人晃走 */
+    const r=el.getBoundingClientRect();
+    if(r.top<80||r.top>window.innerHeight*0.68){
+      try{ el.scrollIntoView({behavior:LB_MOTION?"smooth":"auto",block:"start"}); }
+      catch(err){ el.scrollIntoView(); }
+    }
+  }
+});
+/* 顺着别人分享的 ?h= 链接进来：正文上屏后滚到那一节，然后把这个参数从地址栏抹掉，
+   免得之后在同一篇里翻来翻去又被拽回去 */
+function scrollToHashHeading(){
+  let id="";
+  try{ id=new URLSearchParams(location.search).get("h")||""; }catch(e){}
+  if(!id)return;
+  try{ history.replaceState(null,"",location.pathname+location.hash); }catch(e){}
+  const el=document.getElementById(id);
+  if(!el)return;
+  requestAnimationFrame(()=>{
+    try{ el.scrollIntoView({behavior:LB_MOTION?"smooth":"auto",block:"start"}); }
+    catch(e){ el.scrollIntoView(); }
+    headingFlash(el);
+  });
+}
+/* ---------- 首屏跟手视差（见 CSS .hero-glow / .hero-img / .hero-inner） ----------
+   只在「精确指针 + 没关动态效果」时生效。每帧只写 --hx / --hy 两个自定义属性，
+   真正动的都是 transform / translate，不重排；指针离开首屏归零，回弹交给 CSS 的 transition */
+let heroEl=null,heroX=0,heroY=0,heroRaf=0;
+function heroPark(){
+  if(!heroEl)return;
+  heroEl.style.setProperty("--hx","0");
+  heroEl.style.setProperty("--hy","0");
+  heroEl=null;
+}
+document.addEventListener("pointermove",e=>{
+  if(e.pointerType!=="mouse"||!XFADE_MS)return;
+  const h=e.target&&e.target.closest?e.target.closest(".hero"):null;
+  if(!h){ heroPark(); return; }
+  const r=h.getBoundingClientRect();
+  if(!r.width||!r.height)return;
+  heroEl=h;
+  heroX=Math.max(-1,Math.min(1,((e.clientX-r.left)/r.width-.5)*2));
+  heroY=Math.max(-1,Math.min(1,((e.clientY-r.top)/r.height-.5)*2));
+  if(heroRaf)return;
+  heroRaf=requestAnimationFrame(()=>{
+    heroRaf=0;
+    if(!heroEl||!heroEl.isConnected)return;
+    heroEl.style.setProperty("--hx",heroX.toFixed(3));
+    heroEl.style.setProperty("--hy",heroY.toFixed(3));
+  });
+},{passive:true});
+/* ---------- 卡片聚光：把指针在卡片内的百分比写进 --mx / --my（见 CSS .post-card/.proj） ----------
+   委托到 document（列表每次渲染都会换节点）。位移不足 4px 不写，省掉大量无意义的重绘 */
+let spotEl=null,spotRaf=0,spotPt=null,spotLast=null;
+function spotClear(el){
+  if(el&&el.isConnected)el.style.setProperty("--lit","0");
+}
+document.addEventListener("pointermove",e=>{
+  if(e.pointerType!=="mouse"||!XFADE_MS)return;
+  const el=e.target&&e.target.closest?e.target.closest(".post-card,.proj"):null;
+  if(!el){
+    if(spotEl){ spotClear(spotEl); spotEl=null; spotLast=null; }
+    return;
+  }
+  if(spotEl&&spotEl!==el){ spotClear(spotEl); spotLast=null; }
+  spotEl=el;
+  spotPt={x:e.clientX,y:e.clientY,el};
+  if(spotRaf)return;
+  spotRaf=requestAnimationFrame(()=>{
+    spotRaf=0;
+    const p=spotPt;
+    if(!p||!p.el.isConnected)return;
+    if(spotLast&&Math.abs(p.x-spotLast.x)<4&&Math.abs(p.y-spotLast.y)<4)return;
+    spotLast={x:p.x,y:p.y};
+    const r=p.el.getBoundingClientRect();
+    if(!r.width||!r.height)return;
+    /* 夹在 0~100 之间：极端情况下（事件坐标恰好落在卡片外）也不让光斑飞到画面外 */
+    const px=Math.max(0,Math.min(100,(p.x-r.left)/r.width*100));
+    const py=Math.max(0,Math.min(100,(p.y-r.top)/r.height*100));
+    p.el.style.setProperty("--mx",px.toFixed(1)+"%");
+    p.el.style.setProperty("--my",py.toFixed(1)+"%");
+    p.el.style.setProperty("--lit","1");
+  });
+},{passive:true});
+/* ---------- 图片加载完成：补一个 .img-in 淡入（见 CSS） ----------
+   load 不冒泡，但捕获阶段能从 #app 统一收到；首屏背景图有自己的 heroIn，跳过。
+   缓存命中的图也会异步触发 load，不会漏；万一没收到也只是没有淡入，不影响显示 */
+app.addEventListener("load",e=>{
+  const t=e.target;
+  if(!t||t.tagName!=="IMG"||t.classList.contains("hero-img"))return;
+  /* 正在等「滚到眼前」的图不要插这一脚：.img-in 的 animation 会盖掉 .rv-block 的
+     opacity:0（动画优先于普通声明），那张图就会提前自己冒出来，进场渐显等于失效 */
+  if(t.classList.contains("rv-block")||(t.closest&&t.closest(".rv-block")))return;
+  if(t.classList.contains("img-in"))return;
+  t.classList.add("img-in");
+},true);
 /* ---------- 正文按语言取址 + 悬停预取 ----------
    （正文文本的缓存 / 合并在 fetchText，定义在 grabPost 旁边：
      列表抓 front matter 时读的就是同一份 markdown，共用缓存后同一篇不会下载两遍） */
@@ -5521,6 +5955,7 @@ async function renderPost(slug,gen){
   applyScrollHold();          /* 切语言进来的：正文上屏后把阅读位置补回去 */
   xfadeReveal();              /* 正文真的上屏了 → 旧画面才开始淡出（切语言时的整页溶解） */
   updateReadBar();            /* 进度条按新正文重算一次 */
+  scrollToHashHeading();      /* 分享链接带了 ?h=小节id → 滚过去（只生效一次） */
   /* 翻译方向只由「访客界面语言」决定，不再看文章整体是什么语言。
      以前是「正文里出现过中文就当整篇是中文」，中英混排的文章会被判成 zh：
      中文界面下 lang===srcLang，整篇一次都不翻，英文段落永远留在英文界面里；
