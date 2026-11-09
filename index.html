@@ -1914,11 +1914,17 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 .hero-img{
   /* 视差会把图往左右挪 ±9px、上下挪 ±7px，而图原本和 .hero 一样大（inset:0），
      一挪开边缘就露出 .hero 的深色兜底 —— 屏幕边上那条竖着的暗带就是这么来的。
-     所以让图比 .hero 每边大 16px：挪到最偏也还剩 7~9px 余量，多的由 .hero 的
-     overflow:hidden 裁掉。用固定的 16px 而不是百分比缩放，窄屏矮窗口也不会缩水 */
-  inset:-16px;
-  width:calc(100% + 32px);
-  height:calc(100% + 32px);
+     所以让图比 .hero 每边大 24px（固定像素，不随视口缩水）：挪到最偏还剩 15~17px 余量，
+     多出来的由 .hero 的 overflow:hidden 裁掉。
+     ⚠ max-width / max-height 必须显式写成 none：全局有 `img{max-width:100%}`，
+     它会把这里的 width:calc(100% + 48px) 再砍回 100%，于是 left:-24px 生效、
+     右边却少 24px —— 屏幕上就是「左边好了，右边冒出一条竖空白」。
+     同理，任何尺寸的图、任何视口都由 object-fit:cover 铺满，不依赖图片原始比例 */
+  inset:-24px;
+  width:calc(100% + 48px);
+  height:calc(100% + 48px);
+  max-width:none;
+  max-height:none;
   translate:calc(var(--hx,0)*-9px) calc(var(--hy,0)*-7px);
   transition:translate .8s cubic-bezier(.2,.7,.2,1);
 }
