@@ -995,19 +995,21 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 /* 只有一张时没有「上一张 / 下一张」可翻，箭头直接藏掉 */
 .lightbox.lb-single .lb-prev,.lightbox.lb-single .lb-next{display:none}
 /* ---------- 灯箱：从缩略图原位长大（FLIP） ----------
-   飞行层 #lbFly 是独立的 fixed 层，只装「瓷砖里那张已经解码好的位图」：
+   飞行层 #lbFly 是独立的 fixed 层，装「瓷砖里那张已经解码好的画面」：
    起点 = 被点瓷砖的矩形，终点 = 灯箱最终的显示框，全程 object-fit:cover。
-   终点框的比例就是图片本身的比例，所以 cover 在落位那一刻等于 contain，
+   终点框的比例就是素材本身的比例，所以 cover 在落位那一刻等于 contain，
    放大过程中不会出现「先裁一块、落位后突然变全」的跳变。
-   真图在飞行期间先藏起来（它正按自己的节奏换 src），落位后再淡入接上。 */
+   —— 图片用缩略图位图；视频/动态照片优先用它当前那一帧（canvas 抓帧或清单海报），
+      实在抓不到才在飞行层里放一个静音 <video>。真图/真视频在飞行期间先藏起来。 */
 #lbFly{
   position:fixed;z-index:210;pointer-events:none;overflow:hidden;
   background:rgba(255,255,255,.03);
   box-shadow:0 24px 70px rgba(0,0,0,.5);
   will-change:left,top,width,height;
 }
-#lbFly img{width:100%;height:100%;object-fit:cover;display:block}
-.lightbox img.lb-flying-img{opacity:0}
+#lbFly img,#lbFly video{width:100%;height:100%;object-fit:cover;display:block}
+#lbFly video{background:#000}
+.lightbox img.lb-flying-img,.lightbox video.lb-flying-img{opacity:0}
 /* 关闭时走反向飞行：背景只淡自己的底色，控件同步收掉，照片原路回到那张小图里 */
 .lightbox.lb-flip-out{
   background-color:rgba(3,7,20,0) !important;
@@ -3377,6 +3379,8 @@ function setLbMedia(p){
       vid.controls=true; vid.muted=false; vid.loop=false;   /* 只播一遍，播完停在结尾 */
     }
     lbWaitMedia(vid);             /* 转圈直到视频真正出画面（loadeddata），加载中不装作已就绪 */
+    /* 记下视频真实尺寸：下次再开这一条时，飞行动画第一次就能按正确比例展开 */
+    vid.onloadedmetadata=()=>{ if(vid.videoWidth&&vid.videoHeight){ p._vw=vid.videoWidth; p._vh=vid.videoHeight; } };
     vid.src=p.src;
     /* 打开视频默认自动播放一遍；带声播放被浏览器拦时先静音播起来 */
     vid.play().catch(()=>{ vid.muted=true; vid.play().catch(()=>{}); });
@@ -3455,18 +3459,28 @@ function lbSrcElFor(i){
   return (p&&p.el&&p.el.getBoundingClientRect)?p.el:null;
 }
 let lbSrcEl=null,lbFlyTimer=0;
-/* 飞行层复用同一个 DOM，避免连续开关时堆积节点 */
-function lbFlyLayer(src,rect,radius){
+/* 飞行层复用同一个 DOM，避免连续开关时堆积节点。
+   kind="image" 放静帧位图；kind="video" 放一个静音视频（只有拿不到首帧时才走这条） */
+function lbFlyLayer(src,rect,radius,kind){
   let el=document.getElementById("lbFly");
   if(!el){
     el=document.createElement("div");
     el.id="lbFly";
     el.setAttribute("aria-hidden","true");
-    el.innerHTML='<img alt="">';
+    el.innerHTML='<img alt=""><video muted playsinline preload="auto"></video>';
     document.body.appendChild(el);
   }
-  const im=el.querySelector("img");
-  if(im.getAttribute("src")!==src)im.setAttribute("src",src||"");
+  const im=el.querySelector("img"), vd=el.querySelector("video");
+  const isVid=kind==="video";
+  im.style.display=isVid?"none":"";
+  vd.style.display=isVid?"":"none";
+  if(isVid){
+    if(vd.getAttribute("src")!==src)vd.setAttribute("src",src||"");
+    try{ vd.currentTime=0.05; }catch(e){}
+    try{ vd.play().catch(()=>{}); }catch(e){}
+  }else if(im.getAttribute("src")!==src){
+    im.setAttribute("src",src||"");
+  }
   el.style.transition="none";
   el.style.opacity="1";
   el.style.left=rect.left+"px";el.style.top=rect.top+"px";
@@ -3474,17 +3488,50 @@ function lbFlyLayer(src,rect,radius){
   el.style.borderRadius=radius+"px";
   return el;
 }
+/* 从一段正在显示的视频里抓当前帧，当作飞行动画的贴图：
+   同源资源的 canvas 不会被污染；跨域或还没解出画面就返回空串，退回 <video> 方案 */
+function flyShot(v){
+  try{
+    if(!v||!v.videoWidth||!v.videoHeight||v.readyState<2)return "";
+    const w=Math.min(360,v.videoWidth);
+    const c=document.createElement("canvas");
+    c.width=w; c.height=Math.round(w*v.videoHeight/v.videoWidth);
+    c.getContext("2d").drawImage(v,0,0,c.width,c.height);
+    return c.toDataURL("image/jpeg",.8);
+  }catch(e){ return ""; }
+}
+/* 视频用什么当飞行贴图：清单海报帧 → 瓷砖里已解码的首帧 → 现场播的 <video> */
+function lbFlyStill(p,tile){
+  const poster=(p&&p.thumb&&!VID_RE.test(p.thumb))?p.thumb:"";
+  if(poster)return {kind:"image",src:poster};
+  const tv=tile&&tile.querySelector?tile.querySelector("video"):null;
+  const shot=flyShot(tv);
+  if(shot)return {kind:"image",src:shot};
+  return (p&&p.src)?{kind:"video",src:p.src}:null;
+}
+/* 飞行用的宽高比：清单原始尺寸 → 瓷砖视频元数据 → 图片自然尺寸（0 = 未知，不飞） */
+function lbFlyRatio(p,tile){
+  if(p&&p._vw&&p._vh)return p._vw/p._vh;
+  if(p&&p.w&&p.h)return p.w/p.h;
+  const v=tile&&tile.querySelector?tile.querySelector("video"):null;
+  if(v&&v.videoWidth&&v.videoHeight)return v.videoWidth/v.videoHeight;
+  const im=lbSrcEl&&(lbSrcEl.tagName==="IMG"?lbSrcEl:(lbSrcEl.querySelector&&lbSrcEl.querySelector("img")));
+  if(im&&im.naturalWidth&&im.naturalHeight)return im.naturalWidth/im.naturalHeight;
+  return 0;
+}
 function lbFlyCleanup(){
   clearTimeout(lbFlyTimer);
   const el=document.getElementById("lbFly");
   if(el)el.remove();
   const img=document.getElementById("lbImg");
   if(img)img.classList.remove("lb-flying-img");
+  const vid=document.getElementById("lbVideo");
+  if(vid)vid.classList.remove("lb-flying-img");
 }
-/* 目标框：按图片真实比例塞进 88vw × 80vh 的中央（与 .lightbox img 的 max-* 一致） */
-function lbFlyTarget(p,ref){
-  let ar=0;
-  if(p&&p._vw&&p._vh)ar=p._vw/p._vh;
+/* 目标框：按图片/视频真实比例塞进 88vw × 80vh 的中央（与 .lightbox img / video 的 max-* 一致） */
+function lbFlyTarget(p,ref,ratio){
+  let ar=ratio||0;
+  if(!ar&&p&&p._vw&&p._vh)ar=p._vw/p._vh;
   if(!ar&&lbSrcEl){
     const im=lbSrcEl.tagName==="IMG"?lbSrcEl:lbSrcEl.querySelector("img");
     if(im&&im.naturalWidth&&im.naturalHeight)ar=im.naturalWidth/im.naturalHeight;
@@ -3498,14 +3545,22 @@ function lbFlyTarget(p,ref){
   return {left:(window.innerWidth-w)/2,top:(window.innerHeight-h)/2,width:w,height:h};
 }
 function lbFlyOpen(from,p){
-  if(!LB_MOTION||!from||!p||p.type!=="image")return;
+  if(!LB_MOTION||!from||!p)return;
   if(from.width<24||from.height<24||from.bottom<0||from.top>window.innerHeight)return;
-  const src=p._cache||p.thumb||p.view||p.src;
-  const to=lbFlyTarget(p,from);
-  if(!src||!to)return;
-  const img=$("#lbImg");
-  img.classList.add("lb-flying-img");        /* 真图先让位，落位后再接上 */
-  const fly=lbFlyLayer(src,from,14);
+  /* 动态照片（live / motion）飞的是它的静态那一帧，和瓷砖上看到的一致；
+     视频优先用海报帧，拿不到才在飞行层里放 <video> */
+  const tile=(lbSrcEl&&lbSrcEl.closest)?lbSrcEl.closest(".ph-tile"):null;
+  const spec=(p.type==="video")?lbFlyStill(p,tile)
+    :((p._cache||p.thumb||p.view||p.src)?{kind:"image",src:p._cache||p.thumb||p.view||p.src}:null);
+  if(!spec||!spec.src)return;
+  const ratio=lbFlyRatio(p,tile)||(p.type==="video"?0:from.width/from.height);
+  if(!ratio)return;                       /* 视频又量不到比例：宁可不飞，也别飞成正方形再跳一下 */
+  const to=lbFlyTarget(p,from,ratio);
+  if(!to)return;
+  const img=$("#lbImg"), vid=$("#lbVideo");
+  if(spec.kind==="image")img.classList.add("lb-flying-img");   /* 真图先让位，落位后再接上 */
+  else if(vid)vid.classList.add("lb-flying-img");
+  const fly=lbFlyLayer(spec.src,from,14,spec.kind);
   void fly.offsetWidth;
   fly.style.transition="left .42s cubic-bezier(.2,.78,.2,1),top .42s cubic-bezier(.2,.78,.2,1),"+
     "width .42s cubic-bezier(.2,.78,.2,1),height .42s cubic-bezier(.2,.78,.2,1),"+
@@ -3519,6 +3574,7 @@ function lbFlyOpen(from,p){
   clearTimeout(lbFlyTimer);
   lbFlyTimer=setTimeout(()=>{
     img.classList.remove("lb-flying-img");
+    if(vid)vid.classList.remove("lb-flying-img");
     fly.style.transition="opacity .16s ease";
     fly.style.opacity="0";
     lbFlyTimer=setTimeout(()=>{ if(fly.isConnected)fly.remove(); },180);
@@ -3526,20 +3582,37 @@ function lbFlyOpen(from,p){
 }
 /* 关闭时反向飞回那张缩略图。返回时长（0 = 不飞，走原来的淡出） */
 function lbFlyClose(){
-  const img=$("#lbImg"),p=lbItems[lbIndex],lb=$("#lightbox");
-  if(!LB_MOTION||!img||!p||p.type!=="image")return 0;
+  const img=$("#lbImg"),vid=$("#lbVideo"),lb=$("#lightbox"),p=lbItems[lbIndex];
+  if(!LB_MOTION||!p)return 0;
   if(lb.classList.contains("lb-zoom"))return 0;          /* 放大态下是另一套布局，别掺和 */
   if(!lbSrcEl||!lbSrcEl.isConnected)return 0;
+  /* 当前屏幕上真正在显示的那一层：视频 / 动态照片的动态层 / 静态图 */
+  const vVisible=!!(vid&&vid.style.display!=="none"&&vid.getAttribute("src"));
+  const tile=(lbSrcEl.closest)?lbSrcEl.closest(".ph-tile"):null;
+  let spec=null,cur=null;
+  if(p.type==="video")spec=lbFlyStill(p,tile);
+  else if(vVisible){
+    /* 动态照片正在播：直接抓当前这一帧，缩回小图时和看到的画面完全一致 */
+    const shot=flyShot(vid);
+    spec=shot?{kind:"image",src:shot}
+      :((p._cache||p.thumb||p.view||p.src)?{kind:"image",src:p._cache||p.thumb||p.view||p.src}:null);
+  }else{
+    const s=img.currentSrc||img.getAttribute("src")||p._cache||p.thumb||p.view||p.src;
+    spec=s?{kind:"image",src:s}:null;
+  }
+  if(!spec||!spec.src)return 0;
   const to=lbSrcEl.getBoundingClientRect();
   if(!to.width||to.bottom<-60||to.top>window.innerHeight+60)return 0;  /* 缩略图已滚出屏幕 */
   /* 开着的飞行还没落地就按了 Esc：从它此刻的位置接着往回飞，别先跳回终点 */
   const flying=document.getElementById("lbFly");
-  const cur=(flying&&flying.isConnected)?flying.getBoundingClientRect():img.getBoundingClientRect();
-  const src=img.currentSrc||img.getAttribute("src");
-  if(!cur.width||!cur.height||!src)return 0;
+  if(flying&&flying.isConnected)cur=flying.getBoundingClientRect();
+  else if(vVisible)cur=vid.getBoundingClientRect();
+  else cur=img.getBoundingClientRect();
+  if(!cur.width||!cur.height)return 0;
   clearTimeout(lbFlyTimer);
-  img.classList.add("lb-flying-img");
-  const fly=lbFlyLayer(src,cur,16);
+  if(spec.kind==="image")img.classList.add("lb-flying-img");
+  if(vid)vid.classList.add("lb-flying-img");
+  const fly=lbFlyLayer(spec.src,cur,16,spec.kind);
   void fly.offsetWidth;
   fly.style.transition="left .32s cubic-bezier(.4,0,.2,1),top .32s cubic-bezier(.4,0,.2,1),"+
     "width .32s cubic-bezier(.4,0,.2,1),height .32s cubic-bezier(.4,0,.2,1),"+
