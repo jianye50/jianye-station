@@ -707,7 +707,7 @@ body.np-open .veil{opacity:0;visibility:hidden}
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="brand-ic">
-        <img src="头像.png" alt="鉴业音乐" onerror="this.remove()">
+        <img src="avatar.png" alt="鉴业音乐" onerror="if(!this.dataset.f){this.dataset.f=1;this.src='头像.png'}else{this.remove()}">
       </div>
       <div>
         <b>鉴业音乐</b>
@@ -1144,17 +1144,36 @@ function kgDiff(d){
   };
 }
 const kgRow=t=>t.artist&&t.artist!=='未知艺人'?t.name+'|'+t.artist:t.name;
+/* 没有本地快照（kugou-playlist.js 丢了/没部署）时，
+   也能用 /api/kg 的数据首次把歌单建出来 */
+function kgEnsure(d){
+  let p=PLAYLISTS.find(x=>x.id==='kg');
+  if(p) return {pl:p,fresh:false};
+  const tracks=kgBuild(d);
+  if(!tracks||!tracks.length) return null;
+  p={id:'kg',title:(d&&d.name)||'鉴业喜欢的音乐',tag:'酷狗 · 我喜欢的音乐',art:'rings',
+    pal:['#241040','#5c2470','#ff77b0'],
+    desc:'从酷狗音乐同步过来的歌单，播放时自动匹配网易云音源。',
+    tracks};
+  PLAYLISTS.unshift(p);
+  return {pl:p,fresh:true};
+}
 /* 一律以云端为准：直接覆盖本地歌单，只保留已经解析好的封面与音源 */
 function applyKg(d){
-  const p=PLAYLISTS.find(x=>x.id==='kg');
+  const ens=kgEnsure(d);
+  if(!ens) return null;
+  const p=ens.pl;
   const diff=kgDiff(d);
-  if(!p||!diff) return null;
+  if(!diff) return null;
   p.tracks=diff.fresh;
   if(d.name) p.title=d.name;
   kgMeta.cloud=true; kgMeta.at=d.at||Date.now(); kgMeta.syncedAt=Date.now();
   store.set('kg',{at:kgMeta.at,syncedAt:kgMeta.syncedAt,name:p.title,songs:diff.fresh.map(kgRow)});
   renderSidebarPlaylists();
-  if(currentView==='playlist'&&plCurId==='kg'){
+  if(ens.fresh&&currentView==='listen'){
+    /* 首次建出歌单：正停留在首页时刷新一下，让卡片出现 */
+    renderHome();
+  }else if(currentView==='playlist'&&plCurId==='kg'){
     const changed=diff.added||diff.removed;
     const ae=document.activeElement;
     if(!changed){
@@ -1175,7 +1194,7 @@ function applyKg(d){
 let kgSyncing=false, kgLastPull=0;
 async function pullKg(silent,force){
   if(kgSyncing) return null;
-  if(!KG) return null;
+  /* 即使没有快照（KG 为空）也继续：applyKg 里会用接口数据首次建出歌单 */
   if(location.protocol!=='http:'&&location.protocol!=='https:'){
     if(!silent) toast('本地打开没法联网同步，部署到线上才能自动更新');
     return null;
