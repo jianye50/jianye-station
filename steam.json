@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-14T02:06:24.014Z",
+  "updated": "2026-11-14T09:58:55.575Z",
   "source": "api",
   "player": {
     "name": "鉴业",
@@ -10,30 +10,30 @@
   "hours2weeks": 5.366666666666666,
   "friends": [
     {
-      "name": "唐人小陈cheems",
+      "name": "hhhx",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198738673677/",
+      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
       "state": 1,
-      "playing": "War Thunder"
+      "playing": "Party Animals"
+    },
+    {
+      "name": "chenchenwhr",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
+      "state": 1,
+      "playing": "Party Animals"
+    },
+    {
+      "name": "仙阁小斑",
+      "avatar": "https://avatars.steamstatic.com/51bb78fd07a616dffa959c285ad0951a7ece4680_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199768600704/",
+      "state": 0,
+      "playing": null
     },
     {
       "name": "shinglerdansbury6547",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
       "profile": "https://steamcommunity.com/profiles/76561198689034491/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "wjiazheng2026",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198721612997/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "UxwxU",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198774453253/",
       "state": 0,
       "playing": null
     },
@@ -45,16 +45,9 @@
       "playing": null
     },
     {
-      "name": "刘海柱",
-      "avatar": "https://avatars.steamstatic.com/5650a856c0bd7c678378e9895afec491786ce595_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199193111913/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "吻吻爱",
-      "avatar": "https://avatars.steamstatic.com/655d055db5b16899734d407e7c858cadde558703_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199376152675/",
+      "name": "绝世好人",
+      "avatar": "https://avatars.steamstatic.com/972f5af3d5b2fe6bcde047b47db3aef1ce942f40_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199767357806/",
       "state": 0,
       "playing": null
     },
@@ -66,30 +59,16 @@
       "playing": null
     },
     {
-      "name": "chenchenwhr",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
+      "name": "吻吻爱",
+      "avatar": "https://avatars.steamstatic.com/655d055db5b16899734d407e7c858cadde558703_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199376152675/",
       "state": 0,
       "playing": null
     },
     {
-      "name": "绝世好人",
-      "avatar": "https://avatars.steamstatic.com/972f5af3d5b2fe6bcde047b47db3aef1ce942f40_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199767357806/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "仙阁小斑",
-      "avatar": "https://avatars.steamstatic.com/51bb78fd07a616dffa959c285ad0951a7ece4680_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199768600704/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "lcyfdn",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199063272174/",
+      "name": "yaya",
+      "avatar": "https://avatars.steamstatic.com/443e8aae2dcccff76fecb2ae0fecbd051c9b9822_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199664593176/",
       "state": 0,
       "playing": null
     },
@@ -115,16 +94,37 @@
       "playing": null
     },
     {
-      "name": "yaya",
-      "avatar": "https://avatars.steamstatic.com/443e8aae2dcccff76fecb2ae0fecbd051c9b9822_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199664593176/",
+      "name": "唐人小陈cheems",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561198738673677/",
       "state": 0,
       "playing": null
     },
     {
-      "name": "hhhx",
+      "name": "wjiazheng2026",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
+      "profile": "https://steamcommunity.com/profiles/76561198721612997/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "刘海柱",
+      "avatar": "https://avatars.steamstatic.com/5650a856c0bd7c678378e9895afec491786ce595_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199193111913/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "UxwxU",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561198774453253/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "lcyfdn",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199063272174/",
       "state": 0,
       "playing": null
     }
