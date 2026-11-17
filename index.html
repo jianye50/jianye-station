@@ -1035,7 +1035,8 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
    · 普通公告：没确认过就每次进站都弹，确认后按内容指纹记住；
      以后改了标题或内容 → 指纹变化 → 当作新公告重新弹一次 */
 .ann-mask{
-  position:fixed;inset:0;z-index:900;   /* 压过灯箱(200)/音乐面板(121)，让位加载屏(9999) */
+  position:fixed;inset:0;z-index:95;   /* 高于正文内容、低于导航(100)：弹窗开着时右上角
+                                          中/EN 照常可点（切语言会原地重绘弹窗） */
   display:flex;align-items:center;justify-content:center;
   padding:22px;
   background:rgba(3,6,15,.62);backdrop-filter:blur(7px);
@@ -1076,6 +1077,17 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 @media (prefers-reduced-motion:reduce){
   .ann-mask,.ann-card{transition:none}
 }
+/* 关于页「历史公告」板块：确认过的公告，按确认时间倒序 */
+.ann-hist{display:flex;flex-direction:column;gap:14px;margin-top:6px}
+.ann-hist-item{
+  padding:14px 18px;border:1px solid var(--card-border);
+  border-radius:12px;background:var(--bg-2);
+}
+.ann-hist-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+.ann-hist-head h4{margin:0;font-size:14.5px;font-weight:700;color:var(--text-1)}
+.ann-hist-time{flex:none;font-size:12px;color:var(--text-3)}
+.ann-hist-item p{margin:0 0 6px;font-size:13.5px;line-height:1.75;color:var(--text-2);word-break:break-word}
+.ann-hist-item p:last-child{margin-bottom:0}
 
 /* ===================== 相册：子相册卡片 / 视频与 Live Photo ===================== */
 /* 瓷砖里的视频：抓首帧当封面，铺满正方形 */
@@ -2852,6 +2864,8 @@ function setLang(v,persist){
   if(dd&&dd.classList.contains("open")&&typeof placeNavMenu==="function"){
     requestAnimationFrame(placeNavMenu);
   }
+  /* 公告弹窗开着时 → 原地换成新语言（导航在遮罩之上，弹窗开着也能点中/EN） */
+  if(typeof annRepaint==="function")annRepaint();
 }
 
 /* =====================================================================
@@ -4025,6 +4039,9 @@ function renderAbout(){
 
       <!-- Steam 游戏模块：放友链之后，数据来自站点根目录 steam.json（GitHub Actions 定时生成），读不到时自动隐藏 -->
       ${STEAM?steamModuleHTML():""}
+
+      <!-- 历史公告：用户确认过的公告按时间倒序，存于浏览器 localStorage，没看过任何公告时整块隐藏 -->
+      ${annHistoryHTML()}
     </div>
   </section>`;
   applyAboutCollapse();   /* 按上次的选择（或手机默认收起）应用折叠状态 */
@@ -7093,11 +7110,19 @@ function revealSite(){
 }
 
 /* ---------- 站点公告模块（配置在站点根目录的 notice.txt，与 profile.txt 分开） ----------
-   · 首次公告|标题|内容   → 进站弹一次，用户确认（点「知道了」/ 按 Esc）后永久不再弹
-   · 公告|标题|内容       → 可配多条；没确认过就每次进站都弹，确认后按「标题+内容指纹」
-                            记进 localStorage，以后改了字 → 指纹变化 → 当成新公告重新弹
-   两类都没配 / 都看过 → 本模块静默，不建任何 DOM，零开销 */
-const ANN_KEY="jy_ann_seen";                    /* localStorage：记「已确认过的公告指纹」 */
+   · 首次公告 → 进站弹一次，用户确认（点「知道了」/ 按 Esc）后永久不再弹
+   · 公告     → 可配多条；没确认过就每次进站都弹，确认后按「标题+内容指纹」
+                记进 localStorage，以后改了字 → 指纹变化 → 当成新公告重新弹
+   弹窗的遮罩层级低于导航栏：弹窗开着时右上角 中/EN 照常可点，
+   切语言 → setLang 末尾调 annRepaint() 把弹窗原地换成新语言，不用关掉重弹。
+   确认过的公告会连同中英文全文 + 确认时间存进 localStorage，
+   关于页最底部的「历史公告」板块据此展示。 */
+const ANN_KEY="jy_ann_seen";        /* localStorage：记「已确认过的公告指纹」 */
+const ANN_HIST="jy_ann_history";    /* localStorage：历史公告（确认时间 + 中英文全文） */
+let annBusy=false;                  /* 揭幕 / 配置晚到两条路都可能触发，防重复弹 */
+let annMask=null;                   /* 当前打开的公告弹窗（切语言时原地重绘用） */
+let annClose=null;                  /* 当前弹窗的关闭动作（重绘后要重新绑到按钮上） */
+let annQueue=[];                    /* 当前弹窗里待确认的公告 */
 function annSeenMap(){
   try{ const v=JSON.parse(localStorage.getItem(ANN_KEY)||"{}"); return (v&&typeof v==="object")?v:{}; }
   catch(e){ return {}; }
@@ -7105,57 +7130,130 @@ function annSeenMap(){
 function annRemember(id){
   try{ const m=annSeenMap(); m[id]=1; localStorage.setItem(ANN_KEY,JSON.stringify(m)); }catch(e){}
 }
+function annHistoryMap(){
+  try{ const v=JSON.parse(localStorage.getItem(ANN_HIST)||"{}"); return (v&&typeof v==="object")?v:{}; }
+  catch(e){ return {}; }
+}
+/* 确认公告时写入历史（同一指纹只记一次，重复确认不刷时间） */
+function annRecord(id,n){
+  try{
+    const m=annHistoryMap();
+    if(m[id])return;
+    m[id]={tz:n.tz||"",te:n.te||"",cz:n.cz||"",ce:n.ce||"",at:Date.now()};
+    localStorage.setItem(ANN_HIST,JSON.stringify(m));
+  }catch(e){}
+}
 /* 轻量 djb2 哈希：只用来当指纹，不追求密码学强度 */
 function annFingerprint(s){
   const str=String(s||""); let h=5381;
   for(let i=0;i<str.length;i++)h=((h<<5)+h+str.charCodeAt(i))>>>0;
   return h.toString(36);
 }
-let annBusy=false;   /* 揭幕 / 配置晚到两条路都可能触发，防重复弹 */
+/* 渲染一条公告（标题 + 正文分段），弹窗与历史板块共用 */
+function annItemHTML(n,zh){
+  const title=zh?(n.tz||n.te):(n.te||n.tz);
+  const body=String((zh?(n.cz||n.ce):(n.ce||n.cz))||"").trim();
+  const paras=body.split(/\n+/).map(s=>s.trim()).filter(Boolean)
+                  .map(s=>"<p>"+esc(s)+"</p>").join("");
+  return '<h3>'+esc(title)+'</h3>'+(paras||'<p></p>');
+}
 function showAnnouncements(){
   if(annBusy||window.__JY_REDIRECTING)return;
   const N=NOTICES; if(!N||(!N.first&&!N.list.length))return;
-  const zh=lang==="zh", seen=annSeenMap(), queue=[];
+  const seen=annSeenMap(), queue=[];
   /* 指纹用中英双语拼在一起算：用户切语言不会把同一条公告当成新的再弹一遍 */
   const fp=n=>annFingerprint([n.tz,n.te,n.cz,n.ce].join("\u0000"));
   if(N.first&&!seen["f:"+fp(N.first)])queue.push({id:"f:"+fp(N.first),n:N.first});
   (N.list||[]).forEach(n=>{ const id="n:"+fp(n); if(!seen[id])queue.push({id,n}); });
   if(!queue.length)return;
-  annBusy=true;
+  annBusy=true; annQueue=queue;
   const mask=document.createElement("div");
   mask.className="ann-mask";
   mask.setAttribute("role","dialog");
   mask.setAttribute("aria-modal","true");
-  mask.setAttribute("aria-label",zh?"站点公告":"Announcements");
-  mask.innerHTML=
+  annMask=mask;
+  let closed=false;
+  const close=()=>{
+    if(closed)return; closed=true;
+    /* 确认即永久记住 + 进「历史公告」（之后不再弹，但关于页能翻到） */
+    queue.forEach(q=>{annRemember(q.id);annRecord(q.id,q.n);});
+    annMask=null;annClose=null;annQueue=[];
+    mask.classList.remove("on");
+    document.removeEventListener("keydown",onKey);
+    /* 人正停在关于页 → 历史公告多了一条，静默重绘把新记录刷出来 */
+    if(/^#\/about/.test(location.hash||"")&&typeof renderAbout==="function"){
+      quietRender=true; try{renderAbout();}finally{quietRender=false;}
+    }
+    setTimeout(()=>mask.remove(),280);
+  };
+  const onKey=e=>{ if(e.key==="Escape")close(); };
+  annClose=close;
+  /* paint：按当前语言重铺弹窗内容（showAnnouncements 首次 + annRepaint 切语言都走这里） */
+  const paint=()=>{
+    const zh=lang==="zh";
+    mask.setAttribute("aria-label",zh?"站点公告":"Announcements");
+    mask.innerHTML=
+      '<div class="ann-card">'+
+        '<div class="ann-head"><span class="ann-ico" aria-hidden="true">📢</span>'+
+          '<h2 class="ann-title">'+esc(zh?"站点公告":"Announcements")+'</h2></div>'+
+        '<div class="ann-body">'+
+          queue.map(q=>'<div class="ann-item">'+annItemHTML(q.n,zh)+'</div>').join("")+
+        '</div>'+
+        '<div class="ann-foot"><button type="button" class="ann-btn">'+esc(zh?"知道了":"Got it")+'</button></div>'+
+      '</div>';
+    mask.querySelector(".ann-btn").addEventListener("click",close);
+  };
+  paint();
+  document.addEventListener("keydown",onKey);
+  document.body.appendChild(mask);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>mask.classList.add("on")));
+}
+/* 切语言时弹窗若开着 → 原地换成新语言（setLang 末尾调用；弹窗没开则空转） */
+function annRepaint(){
+  if(!annMask)return;
+  const zh=lang==="zh";
+  annMask.setAttribute("aria-label",zh?"站点公告":"Announcements");
+  annMask.innerHTML=
     '<div class="ann-card">'+
       '<div class="ann-head"><span class="ann-ico" aria-hidden="true">📢</span>'+
         '<h2 class="ann-title">'+esc(zh?"站点公告":"Announcements")+'</h2></div>'+
       '<div class="ann-body">'+
-        queue.map(q=>{
-          const n=q.n;
-          const title=zh?(n.tz||n.te):(n.te||n.tz);
-          const body=String(zh?(n.cz||n.ce):(n.ce||n.cz)||"").trim();
-          const paras=body.split(/\n+/).map(s=>s.trim()).filter(Boolean)
-                          .map(s=>"<p>"+esc(s)+"</p>").join("");
-          return '<div class="ann-item"><h3>'+esc(title)+'</h3>'+paras+'</div>';
-        }).join("")+
+        annQueue.map(q=>'<div class="ann-item">'+annItemHTML(q.n,zh)+'</div>').join("")+
       '</div>'+
       '<div class="ann-foot"><button type="button" class="ann-btn">'+esc(zh?"知道了":"Got it")+'</button></div>'+
     '</div>';
-  document.body.appendChild(mask);
-  requestAnimationFrame(()=>requestAnimationFrame(()=>mask.classList.add("on")));
-  let closed=false;
-  const close=()=>{
-    if(closed)return; closed=true;
-    queue.forEach(q=>annRemember(q.id));       /* 确认即永久记住：之后不再弹 */
-    mask.classList.remove("on");
-    document.removeEventListener("keydown",onKey);
-    setTimeout(()=>mask.remove(),280);
+  annMask.querySelector(".ann-btn").addEventListener("click",()=>{ if(annClose)annClose(); });
+}
+/* 关于页「历史公告」板块：确认过的公告按确认时间倒序，内容跟随当前语言 */
+function annHistoryHTML(){
+  const list=Object.values(annHistoryMap()).sort((a,b)=>(b.at||0)-(a.at||0));
+  if(!list.length)return "";
+  const zh=lang==="zh";
+  const pad=x=>String(x).padStart(2,"0");
+  const fmt=at=>{
+    try{
+      const d=new Date(at);
+      return zh ? d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日 "+pad(d.getHours())+":"+pad(d.getMinutes())
+                : d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes());
+    }catch(e){ return ""; }
   };
-  const onKey=e=>{ if(e.key==="Escape")close(); };
-  mask.querySelector(".ann-btn").addEventListener("click",close);
-  document.addEventListener("keydown",onKey);
+  return `
+      <div class="about-card">
+        <div class="section-label">${esc(zh?"历史公告":"Announcement History")}</div>
+        <div class="ann-hist">
+          ${list.map(it=>{
+            const body=String((zh?(it.cz||it.ce):(it.ce||it.cz))||"").trim();
+            return `
+          <div class="ann-hist-item">
+            <div class="ann-hist-head">
+              <h4>${esc(zh?(it.tz||it.te):(it.te||it.tz))}</h4>
+              <span class="ann-hist-time">${esc(fmt(it.at))}</span>
+            </div>
+            ${body.split(/\n+/).map(s=>s.trim()).filter(Boolean).map(s=>"<p>"+esc(s)+"</p>").join("")}
+          </div>`;
+          }).join("")}
+        </div>
+      </div>`;
 }
 
 (async function(){
