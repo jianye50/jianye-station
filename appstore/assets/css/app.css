@@ -458,7 +458,8 @@ button { font-family: inherit; cursor: pointer; }
   position: absolute;
   left: 50%; top: 50%;
   transform: translate(-50%, -50%);
-  width: min(1040px, calc(100vw - 40px));
+  /* 两侧各留 48px，避免右上角关闭按钮贴着浏览器滚动条 */
+  width: min(1040px, calc(100vw - 96px));
   height: min(88vh, 920px);
   border-radius: var(--radius);
   background: var(--bg-2);
