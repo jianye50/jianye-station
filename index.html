@@ -2042,6 +2042,9 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 
 <!-- ============ 启动动画 / 加载屏（视频播完且站点就绪后淡出） ============
      进站先全屏播一段启动动画，取代原来的转圈加载屏：
+       · 先等 <head> 里的域名检测出结果：域名不最新要跳转 → 一帧不播直接跳走，
+         到正式域名那边才播，避免「旧域名播一遍 + 新域名又播一遍」的重复；
+       · 域名已是最新 → 才开始播放动画；
        · 按设备方向自动选片：竖屏设备播竖版视频，横屏设备（电脑）播横版视频；
        · 动画在后台播放的同时，配置 / 数据照常并行加载，两不耽误；
        · 站点就绪 + 动画播完 → 揭幕进入首页；动画先播完就停在最后一帧等数据；
@@ -2054,42 +2057,48 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 </div>
 <script>
 /* ---- 启动动画播放器：进站先播启动动画，取代原来的转圈加载动画 ----
-   按设备方向自动选片：
+   顺序很关键：<head> 里的域名检测先跑，检测结果出来之前一个帧都不播——
+     · 域名已是最新 → 才开始选片、播放动画；
+     · 域名不是最新（备用域名 / pages.dev 等）→ 页面马上跳转正式域名，
+       这里一帧不播、直接放行，跳过去之后由正式域名那边播，绝不会有「重复播两遍」。
+   选片按设备方向：
      · 竖屏设备（手机竖持）→ tyx-Jianye-portrait（portrait screen）.mp4
      · 横屏设备（电脑 / 手机横持）→ Startup animation（Landscape）.mp4
    播放的同时页面照常在后面拉配置 / 渲染首屏，两路并行；
-   结果统一收进 window.__JY_BOOT_VIDEO：resolve = 动画结束（播完 / 走了兜底），
+   结果统一收进 window.__JY_BOOT_VIDEO：resolve = 动画结束（播完 / 跳转放行 / 走了兜底），
    主脚本揭幕前会等它，保证「动画没放完不进站、页面没下完不进站」。 */
 window.__JY_BOOT_VIDEO=(function(){
   var boot=document.getElementById("boot");
   var video=document.getElementById("bootVideo");
   if(!boot||!video)return Promise.resolve();       /* 找不到视频元素：按无动画处理，照常揭幕 */
-  boot.classList.add("boot-video");
-  /* 选片：竖屏设备播竖版，横屏设备播横版。
-     先用系统的方向媒体查询判定，读不到就退回用窗口宽高比判定（高≥宽 = 竖屏） */
-  var LAN="Startup animation（Landscape）.mp4",
-      POR="tyx-Jianye-portrait（portrait screen）.mp4";
-  var portrait=false;
-  try{
-    if(window.matchMedia&&window.matchMedia("(orientation: portrait)").matches)portrait=true;
-  }catch(e){}
-  if(!portrait)portrait=window.innerHeight>window.innerWidth;
-  video.src=encodeURI(portrait?POR:LAN);           /* 文件名带全角括号，交给 encodeURI 处理 */
-  var settled=false,timer=null;
-  return new Promise(function(resolve){
-    var finish=function(){
-      if(settled)return; settled=true;
-      clearTimeout(timer);
-      try{video.pause();}catch(e){}
-      resolve();
-    };
-    /* 视频这条路走不通（加载失败 / 一直无法自动播放）→ 撤掉视频，
-       启动屏保持黑屏，站点就绪后照常揭幕（原来的转圈兜底已按需求移除） */
-    var fallback=function(){
-      if(settled)return;
-      try{video.remove();}catch(e){}
-      finish();
-    };
+  var settled=false,timer=null,resolveOuter;
+  var outer=new Promise(function(res){ resolveOuter=res; });
+  var finish=function(){
+    if(settled)return; settled=true;
+    clearTimeout(timer);
+    try{video.pause();}catch(e){}
+    resolveOuter();
+  };
+  /* 视频这条路走不通（加载失败 / 一直无法自动播放）→ 撤掉视频，
+     启动屏保持黑屏，站点就绪后照常揭幕（原来的转圈兜底已按需求移除） */
+  var fallback=function(){
+    if(settled)return;
+    try{video.remove();}catch(e){}
+    finish();
+  };
+  /* 真正的「选片 + 播放」逻辑：只在域名检测通过后才会被调用 */
+  var run=function(){
+    boot.classList.add("boot-video");
+    /* 选片：竖屏设备播竖版，横屏设备播横版。
+       先用系统的方向媒体查询判定，读不到就退回用窗口宽高比判定（高≥宽 = 竖屏） */
+    var LAN="Startup animation（Landscape）.mp4",
+        POR="tyx-Jianye-portrait（portrait screen）.mp4";
+    var portrait=false;
+    try{
+      if(window.matchMedia&&window.matchMedia("(orientation: portrait)").matches)portrait=true;
+    }catch(e){}
+    if(!portrait)portrait=window.innerHeight>window.innerWidth;
+    video.src=encodeURI(portrait?POR:LAN);         /* 文件名带全角括号，交给 encodeURI 处理 */
     /* 保险丝：40 秒还没有任何结果（视频卡死 / 元数据读不到）→ 强制放行 */
     timer=setTimeout(fallback,40000);
     video.addEventListener("error",fallback,{once:true});
@@ -2129,7 +2138,16 @@ window.__JY_BOOT_VIDEO=(function(){
     if(video.readyState>=1)tryPlay();
     else video.addEventListener("loadedmetadata",tryPlay,{once:true});
     video.addEventListener("ended",finish,{once:true});
-  });
+  };
+  /* 先等域名检测结果（__JY_DOMAIN_CHECK 在 <head> 里发起，这里只消费）：
+     判定要跳转 → 一帧不播、直接放行（页面随后跳走）；域名正确 → 开始播动画 */
+  if(window.__JY_DOMAIN_CHECK&&window.__JY_DOMAIN_CHECK.then){
+    window.__JY_DOMAIN_CHECK.then(function(res){
+      if(window.__JY_REDIRECTING||res==="redirect")finish();   /* 跳转中：动画不播了 */
+      else run();
+    },function(){ run(); });                        /* 检测出意外：当域名正确处理，照常播 */
+  }else run();                                      /* 没有域名检测（极罕见）：直接播 */
+  return outer;
 })();
 </script>
 <script>
@@ -7218,7 +7236,7 @@ document.addEventListener("keydown",e=>{
 /* ---------- 启动 ----------
    思路就一句话：加载屏（启动动画）掀开之前，把该准备的全准备好，页面已经是最终样子。
      1) <head> 里先做域名检测（__JY_DOMAIN_CHECK）：判定要跳转就立刻跳，
-        启动动画原地播着，绝不让人看到半成品首页；
+        启动屏黑屏等着、动画一帧不播（跳到正式域名后那边才播，避免重复）；
      2) 所有配置与数据一起拉（profile / 项目 / 友链 / 游戏 / 相册清单），
         统一等它们到位 —— 不设时间上限，全在启动动画后面读完；
      3) 配置齐了才做第一次、也是唯一一次渲染：站名、背景、板块一次到位；
