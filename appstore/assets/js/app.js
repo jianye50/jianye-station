@@ -10,6 +10,10 @@
   var DETAILS_URL = 'data/details.json';
   var PAGE_SIZE = 48;
 
+  // 上游（360 宝库）会把已下架/待清理的软件归到这些分类，它们不是真实的产品分类，
+  // 既不该出现在筛选条里，也不该被推荐，加载后直接剔除。
+  var HIDDEN_CATEGORIES = { '回收站': 1, '测试分类': 1 };
+
   var state = {
     apps: [],
     details: null,
@@ -138,7 +142,9 @@
             friendly: '服务器对 <code>' + esc(url) + '</code> 返回的是网页而不是 JSON。<br>' + hints.join('<br>')
           });
         }
-        state.apps = Array.isArray(json.apps) ? json.apps : [];
+        state.apps = (Array.isArray(json.apps) ? json.apps : []).filter(function (a) {
+          return !HIDDEN_CATEGORIES[a.category];
+        });
         $('#skeleton').hidden = true;
         renderChips();
         render();
@@ -450,7 +456,7 @@
       '复制链接</button>' +
       '</div>' +
       (a.downloadUrl
-        ? '<p class="dt-dl">点击「下载」获取官方安装包，下载完成后双击安装包手动完成安装。</p>'
+        ? '<p class="dt-dl">点击「下载」获取完整离线安装包（来源：360 软件宝库分发渠道），下载完成后双击安装包手动完成安装。</p>'
         : '<p class="dt-dl">该软件的安装包暂不可用，请稍后再试。</p>') +
 
       '<dl class="dt-info" id="dtInfo">' + infoHTML(a, d) + '</dl>' +

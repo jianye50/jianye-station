@@ -24,6 +24,11 @@ import urllib.request
 
 BASE = "https://baoku.360.cn"
 GETINFO = "https://cx.soft.360.cn/soft/getinfo"
+
+# 上游把已下架/待清理的软件挂在「回收站」这类分类里，它们不是真实的产品分类，
+# 既不抓取对应列表，也会在合并阶段把落进这些分类的条目剔除。
+HIDDEN_CATEGORIES = {"回收站", "测试分类"}
+
 UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
@@ -79,7 +84,7 @@ def fetch_categories():
         return cats
     for m in CATE_RE.finditer(page):
         cid, name = m.group("cid"), clean(m.group("name"))
-        if cid in seen or not name:
+        if cid in seen or not name or name in HIDDEN_CATEGORIES:
             continue
         seen.add(cid)
         cats.append({"id": int(cid), "slug": m.group("cname"), "name": name})
@@ -272,6 +277,8 @@ def main():
         if not rec["category"]:
             rec["category"] = row.get("_category", "")
         rec["rank"] = row.get("_rank", 0)
+        if rec["category"] in HIDDEN_CATEGORIES:
+            continue
         if not rec["name"] or not rec["icon"]:
             continue
         # 同名软件（常见于 32/64 位多包或跨分类重复收录）只保留榜位靠前的一条
