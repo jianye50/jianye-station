@@ -1136,6 +1136,10 @@ button { font-family: inherit; cursor: pointer; }
     transform: none;
     width: 100%;
     height: 92vh;
+    /* dvh 跟随浏览器工具栏伸缩的「动态视口」：页面滑到顶部、工具栏展开时
+       面板顶部（标题 / 关闭按钮）不会再被顶出屏幕外。不支持 dvh 的旧内核
+       会忽略这一行，继续用上面的 92vh，不受影响 */
+    height: 92dvh;
     border-radius: var(--radius) var(--radius) 0 0;
     animation: slideUp .34s var(--ease-spring) backwards;
   }
@@ -1154,7 +1158,7 @@ button { font-family: inherit; cursor: pointer; }
   .dt-shots img { height: 150px; }
 
   .lb { padding: 2vmin 2vmin 70px; }
-  .lb__stage img { max-width: 94vw; max-height: 76vh; border-radius: 10px; }
+  .lb__stage img { max-width: 94vw; max-height: 76vh; max-height: 76dvh; border-radius: 10px; }
   .lb__nav { width: 40px; height: 40px; }
   .lb__nav--prev { left: 8px; }
   .lb__nav--next { right: 8px; }
