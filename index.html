@@ -1945,15 +1945,16 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 #boot{position:fixed;inset:0;z-index:9999;background:var(--bg);
   display:grid;place-items:center;transition:opacity .28s ease}
 #boot.off{opacity:0;pointer-events:none}
-.boot-inner{display:flex;flex-direction:column;align-items:center;gap:24px}
-.boot-dot{width:14px;height:14px;border-radius:50%;background:var(--accent);
-  box-shadow:0 0 0 0 rgba(77,141,255,.5);animation:bootPulse 1.4s ease-out infinite}
-@keyframes bootPulse{70%{box-shadow:0 0 0 20px rgba(77,141,255,0)}100%{box-shadow:0 0 0 0 rgba(77,141,255,0)}}
-.boot-bar{width:170px;height:3px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
-.boot-bar i{display:block;width:42%;height:100%;border-radius:3px;
-  background:linear-gradient(90deg,transparent,var(--accent),transparent);
-  animation:bootSlide 1.1s ease-in-out infinite}
-@keyframes bootSlide{from{transform:translateX(-130%)}to{transform:translateX(430%)}}
+/* （原转圈加载动画 .boot-dot / .boot-bar 及其 keyframes 已删除，
+   启动屏现在只放启动动画视频，见下方「启动动画视频模式」） */
+/* ---- 启动动画视频模式：全屏铺满、黑底承载，播完由 JS 揭幕 ----
+   （原来的转圈加载动画已移除：视频万一放不出来就停在黑屏，站点就绪后照样揭幕）
+   （「点击跳过」提示也已按需求移除：动画必须完整播完） */
+#boot.boot-video{background:#000}
+#boot.boot-video video{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:center;
+}
 
 /* ===================== 细处动效 =====================
    原则：只做「跟着指针走」的连续反馈，不做一次性大动画；
@@ -2039,30 +2040,126 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 </head>
 <body>
 
-<!-- ============ 启动加载屏（站点就绪后淡出） ============ -->
+<!-- ============ 启动动画 / 加载屏（视频播完且站点就绪后淡出） ============
+     进站先全屏播一段启动动画，取代原来的转圈加载屏：
+       · 按设备方向自动选片：竖屏设备播竖版视频，横屏设备（电脑）播横版视频；
+       · 动画在后台播放的同时，配置 / 数据照常并行加载，两不耽误；
+       · 站点就绪 + 动画播完 → 揭幕进入首页；动画先播完就停在最后一帧等数据；
+       · 动画必须完整播完，不可跳过（没有跳过按钮，按键也不起作用）；
+       · 页面资源（配置 / 首屏 / 背景大图）也全部下载完成后才揭幕显示主页；
+       · 视频加载失败或浏览器拒绝自动播放 → 启动屏停在黑屏，站点就绪后照常揭幕。 -->
 <div id="boot" aria-hidden="true">
-  <div class="boot-inner">
-    <span class="boot-dot"></span>
-    <span class="boot-bar"><i></i></span>
-  </div>
+  <video id="bootVideo" preload="auto"
+         playsinline disablepictureinpicture tabindex="-1"></video>
 </div>
 <script>
-/* 兜底：主脚本出了意外（初始化卡死 / 脚本报错）时，启动屏也要能自己淡出，
-   别让人对着黑屏。但不能太急 —— 加载屏的职责就是盖住「配置未到 / 背景未加载」
-   的中间状态，主脚本会等 配置就绪 + 首屏渲染 + 背景大图加载完 才揭幕；
-   只有主脚本 12 秒还没接管（window.__JY_READY 一直没出现）才在这里强行揭开。 */
+/* ---- 启动动画播放器：进站先播启动动画，取代原来的转圈加载动画 ----
+   按设备方向自动选片：
+     · 竖屏设备（手机竖持）→ tyx-Jianye-portrait（portrait screen）.mp4
+     · 横屏设备（电脑 / 手机横持）→ Startup animation（Landscape）.mp4
+   播放的同时页面照常在后面拉配置 / 渲染首屏，两路并行；
+   结果统一收进 window.__JY_BOOT_VIDEO：resolve = 动画结束（播完 / 走了兜底），
+   主脚本揭幕前会等它，保证「动画没放完不进站、页面没下完不进站」。 */
+window.__JY_BOOT_VIDEO=(function(){
+  var boot=document.getElementById("boot");
+  var video=document.getElementById("bootVideo");
+  if(!boot||!video)return Promise.resolve();       /* 找不到视频元素：按无动画处理，照常揭幕 */
+  boot.classList.add("boot-video");
+  /* 选片：竖屏设备播竖版，横屏设备播横版。
+     先用系统的方向媒体查询判定，读不到就退回用窗口宽高比判定（高≥宽 = 竖屏） */
+  var LAN="Startup animation（Landscape）.mp4",
+      POR="tyx-Jianye-portrait（portrait screen）.mp4";
+  var portrait=false;
+  try{
+    if(window.matchMedia&&window.matchMedia("(orientation: portrait)").matches)portrait=true;
+  }catch(e){}
+  if(!portrait)portrait=window.innerHeight>window.innerWidth;
+  video.src=encodeURI(portrait?POR:LAN);           /* 文件名带全角括号，交给 encodeURI 处理 */
+  var settled=false,timer=null;
+  return new Promise(function(resolve){
+    var finish=function(){
+      if(settled)return; settled=true;
+      clearTimeout(timer);
+      try{video.pause();}catch(e){}
+      resolve();
+    };
+    /* 视频这条路走不通（加载失败 / 一直无法自动播放）→ 撤掉视频，
+       启动屏保持黑屏，站点就绪后照常揭幕（原来的转圈兜底已按需求移除） */
+    var fallback=function(){
+      if(settled)return;
+      try{video.remove();}catch(e){}
+      finish();
+    };
+    /* 保险丝：40 秒还没有任何结果（视频卡死 / 元数据读不到）→ 强制放行 */
+    timer=setTimeout(fallback,40000);
+    video.addEventListener("error",fallback,{once:true});
+    /* （按需求移除了「点击 / 按键跳过」：动画必须完整播完，中途不打断） */
+    var started=false;
+    /* 浏览器对「带声音的自动播放」卡得严：先尝试有声播放，
+       被拦就静音重试，还不行就等 canplay 再试一次，全失败走黑屏兜底 */
+    var tryPlay=function(){
+      var p;
+      try{p=video.play();}catch(e){return fallback();}
+      if(!p||typeof p.then!=="function"){started=true;return;}
+      p.then(function(){
+        started=true;
+      }).catch(function(){
+        if(started)return;
+        video.muted=true;
+        var p2;
+        try{p2=video.play();}catch(e){return fallback();}
+        if(!p2||typeof p2.then!=="function"){started=true;return;}
+        p2.then(function(){started=true;})
+          .catch(function(){
+            var retry=function(){
+              if(settled||started)return;
+              var p3;
+              try{p3=video.play();}catch(e){return fallback();}
+              if(p3&&typeof p3.then==="function"){
+                p3.then(function(){started=true;})
+                  .catch(fallback);
+              }else{started=true;}
+            };
+            if(video.readyState>=2)retry();
+            else video.addEventListener("canplay",retry,{once:true});
+            setTimeout(function(){ if(!started&&!settled)fallback(); },4000);
+          });
+      });
+    };
+    if(video.readyState>=1)tryPlay();
+    else video.addEventListener("loadedmetadata",tryPlay,{once:true});
+    video.addEventListener("ended",finish,{once:true});
+  });
+})();
+</script>
+<script>
+/* 兜底：主脚本出了意外（初始化卡死 / 脚本报错）时，启动屏也要能自己揭开。
+   按需求已取消「12 秒限时强揭」——现在统一规则：动画完整播完 + 页面下载完才揭幕，
+   所以这里只守最后一条底线：动画结束后若主脚本还没接管，留 0.8 秒缓冲再自行揭开。 */
 (function(){
-  var t0=Date.now();
-  function tick(){
-    var b=document.getElementById("boot");
-    if(!b||window.__JY_READY)return;                 /* 已接管 / 已移除 */
-    if(window.__JY_REDIRECTING)return;               /* 正在跳转到正式域名：加载屏留着，别揭开 */
-    if(document.readyState!=="complete"&&Date.now()-t0<15000)return setTimeout(tick,300);
-    if(Date.now()-t0<12000)return setTimeout(tick,300);
+  function forceReveal(){
     document.documentElement.classList.add("jy-go"); /* 顺手放行首屏入场动画，别留着空画面 */
-    b.classList.add("off");
+    var b=document.getElementById("boot");
+    if(b){ b.classList.add("off");
+      setTimeout(function(){ var x=document.getElementById("boot"); if(x)x.remove(); },450); }
   }
-  setTimeout(tick,300);
+  if(window.__JY_BOOT_VIDEO){
+    window.__JY_BOOT_VIDEO.then(function(){
+      setTimeout(function(){
+        if(!window.__JY_READY&&!window.__JY_REDIRECTING)forceReveal();
+      },800);
+    },function(){});
+  }else{
+    /* 没有启动动画（元素缺失等极端情况）：老规矩，主脚本 12 秒没接管就自行揭开 */
+    var t0=Date.now();
+    (function tick(){
+      var b=document.getElementById("boot");
+      if(!b||window.__JY_READY)return;
+      if(window.__JY_REDIRECTING)return;
+      if(Date.now()-t0<12000)return setTimeout(tick,300);
+      forceReveal();
+    })();
+  }
 })();
 </script>
 
@@ -7119,15 +7216,16 @@ document.addEventListener("keydown",e=>{
 });
 
 /* ---------- 启动 ----------
-   思路就一句话：加载屏掀开之前，把该准备的全准备好，页面已经是最终样子。
+   思路就一句话：加载屏（启动动画）掀开之前，把该准备的全准备好，页面已经是最终样子。
      1) <head> 里先做域名检测（__JY_DOMAIN_CHECK）：判定要跳转就立刻跳，
-        加载屏原地转圈，绝不让人看到半成品首页；
+        启动动画原地播着，绝不让人看到半成品首页；
      2) 所有配置与数据一起拉（profile / 项目 / 友链 / 游戏 / 相册清单），
-        统一等它们到位（最多 3.5 秒）—— 全在加载屏后面读完；
+        统一等它们到位 —— 不设时间上限，全在启动动画后面读完；
      3) 配置齐了才做第一次、也是唯一一次渲染：站名、背景、板块一次到位；
      4) 等背景大图解码完成 + 页面 load 完成；
-     5) 揭幕：加 html.jy-go 让「背景推近 + 文字上浮」两条动画从 0 帧开始播，
-        同时极短地淡出加载屏 —— 动画一定看得见。 */
+     5) 等启动动画完整播完（不可跳过）；
+     6) 揭幕：加 html.jy-go 让「背景推近 + 文字上浮」两条动画从 0 帧开始播，
+        同时极短地淡出启动屏 —— 动画一定看得见。 */
 window.__JY_PROFILE_DONE=loadProfile();   /* 站名 / 背景 / 域名 / 个人信息 */
 const bootLoads=[                          /* 揭幕前要一起等齐的几路数据 */
   window.__JY_PROFILE_DONE,
@@ -7152,30 +7250,38 @@ function heroBgReady(){
     if(img.complete)return finish();             /* 已加载完 / 已失败：都不必再等 */
     img.addEventListener("load",finish,{once:true});
     img.addEventListener("error",finish,{once:true});
-    setTimeout(finish,6000);                     /* 图太慢也别把人永远关在加载屏里 */
+    /* 不再设 6 秒上限：按需求「页面全部下载完才显示主页」，背景大图没下完就一直等
+       （加载失败也会触发 error 照常放行，不会永远卡住） */
   });
 }
-/* 等页面资源加载完（样式、字体、首屏图都在 load 里），最多等 6 秒 */
+/* 等页面资源加载完（样式、字体、首屏图都在 load 里），不设时间上限 */
 function pageLoaded(){
   return new Promise(res=>{
     if(document.readyState==="complete")return res();
     let done=false;
     const fin=()=>{ if(!done){done=true;res();} };
     window.addEventListener("load",fin,{once:true});
-    setTimeout(fin,6000);
+    /* 不再设 6 秒上限：load 事件一定会触发（资源失败也算加载完），页面下载完才揭幕 */
   });
 }
-/* 揭幕：放行动画 → 淡出加载屏 */
+/* 揭幕：等启动动画放完 + 放行动画 → 淡出加载屏
+   启动动画（#boot 里的视频）没播完 / 没被跳过之前，绝不揭开 —— 动画放完才进站 */
 function revealSite(){
   if(window.__JY_READY)return;
   window.__JY_READY=true;
-  /* 关键一步：加上 jy-go，两条入场动画此刻从 0 帧开始（之前一直是 animation:none，
-     所以不存在"在加载屏后面偷偷演完"或"演到一半被掐断"） */
-  document.documentElement.classList.add("jy-go");
-  const b=document.getElementById("boot");
-  if(!b)return;
-  b.classList.add("off");
-  setTimeout(()=>{const x=document.getElementById("boot");if(x)x.remove();},450);
+  const show=()=>{
+    if(window.__JY_REDIRECTING)return;             /* 极端情况：等动画时决定跳域名 → 直接跳，别揭幕 */
+    /* 关键一步：加上 jy-go，两条入场动画此刻从 0 帧开始（之前一直是 animation:none，
+       所以不存在"在加载屏后面偷偷演完"或"演到一半被掐断"） */
+    document.documentElement.classList.add("jy-go");
+    const b=document.getElementById("boot");
+    if(!b)return;
+    b.classList.add("off");
+    setTimeout(()=>{const x=document.getElementById("boot");if(x)x.remove();},450);
+  };
+  /* 启动动画可能根本没启用（元素缺失）→ 直接揭；否则等它播完 / 被跳过 / 走了兜底 */
+  if(window.__JY_BOOT_VIDEO&&window.__JY_BOOT_VIDEO.then)window.__JY_BOOT_VIDEO.then(show,show);
+  else show();
 }
 
 /* ---------- 站点公告模块（配置在站点根目录的 notice.txt，与 profile.txt 分开） ----------
@@ -7299,13 +7405,15 @@ function annHistoryHTML(){
 }
 
 (async function(){
-  /* 1+2. 域名检测 + 所有配置数据一起等（最多 3.5 秒，慢网也不把人晾着）。
-          判定要跳转 → 不渲染、不揭幕，加载屏保持转圈，页面直接跳走。 */
+  /* 1+2. 域名检测 + 所有配置数据一起等 —— 不再设 3.5 秒上限：
+          按需求「页面全部下载完才显示主页」，配置没读完就一直在启动动画后面等
+          （各路加载自身失败会触发 catch 放行，不会永远卡住）。
+          判定要跳转 → 不渲染、不揭幕，启动动画保持播放，页面直接跳走。 */
   try{
     const waits=[window.__JY_DOMAIN_CHECK||Promise.resolve("ok")]
       .concat(bootLoads)
       .map(p=>Promise.resolve(p).catch(()=>{}));
-    await Promise.race([Promise.all(waits),new Promise(r=>setTimeout(r,3500))]);
+    await Promise.all(waits);
   }catch(e){}
   if(window.__JY_REDIRECTING)return;
   /* 3. 第一次、也是唯一一次首屏渲染（配置齐了，一次画到位） */
