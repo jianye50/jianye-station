@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="鉴业软件商店">
+  <defs>
+    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="6" y1="1" x2="58" y2="63">
+      <stop offset="0" stop-color="#78acff"/>
+      <stop offset=".5" stop-color="#4d8dff"/>
+      <stop offset="1" stop-color="#2c58dc"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="15" fill="url(#bg)"/>
+
+  <!-- 提手 -->
+  <path d="M21 26v-2.4a11 11 0 0 1 22 0V26" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round"/>
+
+  <!-- 袋身 -->
+  <path d="M11.5 22.6h41v24.2a5.6 5.6 0 0 1-5.6 5.6H17.1a5.6 5.6 0 0 1-5.6-5.6V22.6Z" fill="#fff"/>
+</svg>

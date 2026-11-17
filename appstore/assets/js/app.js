@@ -13,6 +13,7 @@
   var state = {
     apps: [],
     details: null,
+    detailsPromise: null,
     q: '',
     cat: '全部',
     openId: null,
@@ -23,6 +24,7 @@
 
   var chipsBuilt = false;
   var closeTimer = null;
+  var lastFocus = null;
   var lb = { index: 0, open: false, timer: null };
 
   function reduceMotion() {
@@ -53,6 +55,12 @@
     });
   }
 
+  // 图标 / 截图来源是 http 的 CDN：在 https 页面上会被浏览器按混合内容拦掉，
+  // 这里统一升到 https（这些图床都支持），避免整排截图变成灰框
+  function httpsUrl(u) {
+    return String(u == null ? '' : u).replace(/^http:\/\//i, 'https://');
+  }
+
   var LETTER_COLORS = ['#4d8dff', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
   function letterColor(name) {
     var h = 0;
@@ -72,7 +80,7 @@
     var boxCls = kind === 'dt' ? 'dt-letter' : 'card__letter';
     if (app.icon) {
       // 名字通过 data 属性传递，避免中文/引号把 onerror 属性截断
-      return '<img class="' + imgCls + '" src="' + esc(app.icon) + '" alt="" loading="lazy" ' +
+      return '<img class="' + imgCls + '" src="' + esc(httpsUrl(app.icon)) + '" alt="" loading="lazy" ' +
         'data-name="' + esc(app.name) + '" data-box="' + boxCls + '" onerror="window.__iconFail(this)">';
     }
     return letterIcon(app.name, boxCls);
@@ -136,6 +144,8 @@
         render();
         var openId = routeAppId();
         if (openId) openDetail(openId, false);
+        // 首屏出来后再偷偷把详情数据取回来
+        prefetchDetails();
       })
       .catch(function (err) {
         $('#skeleton').hidden = true;
@@ -155,11 +165,29 @@
   }
 
   function ensureDetails() {
-    if (state.details) return Promise.resolve(state.details);
-    return fetch(DETAILS_URL)
+    if (state.detailsPromise) return state.detailsPromise;
+    state.detailsPromise = fetch(DETAILS_URL)
       .then(function (r) { return r.ok ? r.json() : {}; })
       .then(function (json) { state.details = json || {}; return state.details; })
       .catch(function () { state.details = {}; return state.details; });
+    return state.detailsPromise;
+  }
+
+  // 首屏渲染完成后空闲时预取详情数据：第一次点开软件就不会再等一个大 JSON
+  function prefetchDetails() {
+    var run = function () { ensureDetails(); };
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(run, { timeout: 2200 });
+    } else {
+      setTimeout(run, 1200);
+    }
+  }
+
+  function findApp(id) {
+    for (var i = 0; i < state.apps.length; i++) {
+      if (String(state.apps[i].id) === String(id)) return state.apps[i];
+    }
+    return null;
   }
 
   /* ------------------------------------------------------------- 筛选 */
@@ -286,10 +314,7 @@
   }
 
   function openDetail(id, push) {
-    var app = null;
-    for (var i = 0; i < state.apps.length; i++) {
-      if (String(state.apps[i].id) === String(id)) { app = state.apps[i]; break; }
-    }
+    var app = findApp(id);
     if (!app) {
       toast('没有找到这款软件');
       if (routeAppId()) history.replaceState({}, '', location.pathname + location.search);
@@ -299,67 +324,137 @@
     if (push !== false && routeAppId() !== String(id)) {
       history.pushState({ app: String(id) }, '', '#/app/' + id);
     }
-    state.openId = String(id);
 
-    var body = $('#sheetBody');
     var sheet = $('#sheet');
     clearTimeout(closeTimer);
     sheet.classList.remove('is-closing');
-    body.innerHTML = '<div class="dt-loading">加载详情中<span class="dots"><i></i><i></i><i></i></span></div>';
+
+    if (sheet.hidden) lastFocus = document.activeElement;
+    state.openId = String(id);
+
+    // 数据已在手里就直接一次画完；否则先用索引数据把"壳"画出来（图标 / 名称 / 下载按钮立刻可见）
+    // 清掉 appId 是为了让 renderSheet 走整块重绘：滚动位置、上一款的残留状态都会重置
+    var cached = state.details && state.details[String(id)];
+    $('#sheetBody').dataset.appId = '';
+    renderSheet(app, cached || null);
     sheet.hidden = false;
-    document.body.style.overflow = 'hidden';
+    document.documentElement.classList.add('no-scroll');
+
+    requestAnimationFrame(function () {
+      var panel = $('#sheetPanel');
+      var body = $('#sheetBody');
+      // 面板在隐藏状态下设置 scrollTop 是无效的（没有布局），所以显示出来的这一帧再回顶
+      body.scrollTop = 0;
+      if (panel && panel.focus) panel.focus({ preventScroll: true });
+      syncSheetFade();
+    });
+
+    if (cached) return;
 
     ensureDetails().then(function (det) {
       if (state.openId !== String(id)) return;
-      var d = det[String(id)] || {};
-      state.shots = Array.isArray(d.screenshots) ? d.screenshots : [];
-      body.innerHTML = detailHTML(app, d);
+      renderSheet(app, det[String(id)] || {});
+      requestAnimationFrame(syncSheetFade);
     });
   }
 
+  function syncSheetFade() {
+    var body = $('#sheetBody');
+    var panel = $('#sheetPanel');
+    if (!body || !panel) return;
+    // 滚动后才出现顶部蒙层，让内容从关闭按钮下方「淡出」，静止时不遮住图标
+    panel.classList.toggle('is-scrolled', body.scrollTop > 8);
+    panel.classList.toggle('is-more', body.scrollHeight - body.scrollTop - body.clientHeight > 28);
+  }
+
+  // d 传 null 表示详情数据还没到
+  function renderSheet(app, d) {
+    var body = $('#sheetBody');
+    var id = String(app.id);
+
+    if (d && body.dataset.appId === id && $('#dtExtra')) {
+      // 只替换信息格 + 附加内容，不整块重绘，保住已经播完的入场动画
+      state.shots = Array.isArray(d.screenshots) ? d.screenshots : [];
+      var info = $('#dtInfo');
+      if (info) info.innerHTML = infoHTML(app, d);
+      var extra = $('#dtExtra');
+      if (extra) {
+        extra.innerHTML = extraHTML(app, d);
+        extra.classList.add('dt-fresh');
+      }
+      syncSheetFade();
+      return;
+    }
+
+    body.dataset.appId = id;
+    body.innerHTML = detailHTML(app, d || {});
+    state.shots = (d && Array.isArray(d.screenshots)) ? d.screenshots : [];
+    body.scrollTop = 0;
+    syncSheetFade();
+  }
+
+  function infoHTML(a, d) {
+    var cat = a.category || (d && d.subCategory) || 'Windows 软件';
+    function cell(t, v) {
+      return '<div><dt>' + t + '</dt><dd>' + (v || '—') + '</dd></div>';
+    }
+    var html = cell('分类', esc(cat));
+    html += cell('版本', esc(a.version));
+    html += cell('大小', esc(a.size || (d && d.sizeBytes ? (d.sizeBytes / 1048576).toFixed(1) + ' MB' : '')));
+    html += cell('更新时间', esc(a.updated));
+    if (d && d.corp) html += cell('厂商', esc(d.corp));
+    if (d && d.fileName) html += cell('安装包', esc(d.fileName));
+    return html;
+  }
+
+  function extraHTML(a, d) {
+    // 详情还在路上：先摆几条骨架线，避免面板里出现一大片空白
+    if (!d) {
+      return '<div class="dt-pending" aria-hidden="true">' +
+        '<span class="dt-pending__bar"></span>' +
+        '<span class="dt-pending__shot"></span>' +
+        '<span class="dt-pending__bar"></span>' +
+        '<span class="dt-pending__bar dt-pending__bar--short"></span></div>';
+    }
+    var shots = '';
+    if (Array.isArray(d.screenshots) && d.screenshots.length) {
+      shots = '<section class="dt-sec"><h3>应用截图<small>共 ' + d.screenshots.length + ' 张 · 点击放大</small></h3>' +
+        '<div class="dt-shots">' +
+        d.screenshots.map(function (s, i) {
+          return '<img src="' + esc(httpsUrl(s)) + '" alt="' + esc(a.name) + ' 截图 ' + (i + 1) + '" loading="lazy" decoding="async" ' +
+            'data-shot="' + i + '" style="--i:' + i + '" onerror="this.remove()">';
+        }).join('') + '</div></section>';
+    }
+    return shots +
+      (d.description ? '<section class="dt-sec"><h3>软件简介</h3><p>' + esc(d.description) + '</p></section>' : '') +
+      (d.updateNote ? '<section class="dt-sec"><h3>更新说明</h3><p>' + esc(d.updateNote) + '</p></section>' : '');
+  }
+
   function detailHTML(a, d) {
-    var cat = a.category || d.subCategory || 'Windows 软件';
+    var cat = a.category || (d && d.subCategory) || 'Windows 软件';
     var tags = '';
     if (a.score) tags += '<span class="hl">评分 ' + esc(a.score) + '</span>';
     tags += '<span>' + esc(cat) + '</span>';
 
-    function infoCell(t, v) {
-      return '<div><dt>' + t + '</dt><dd>' + (v || '—') + '</dd></div>';
-    }
-    var info = infoCell('分类', esc(cat));
-    info += infoCell('版本', esc(a.version));
-    info += infoCell('大小', esc(a.size || (d.sizeBytes ? (d.sizeBytes / 1048576).toFixed(1) + ' MB' : '')));
-    info += infoCell('更新时间', esc(a.updated));
-    if (d.corp) info += infoCell('厂商', esc(d.corp));
-    if (d.fileName) info += infoCell('安装包', esc(d.fileName));
-
-    var shots = '';
-    if (Array.isArray(d.screenshots) && d.screenshots.length) {
-      shots = '<section class="dt-sec"><h3>应用截图<small>点击可放大</small></h3><div class="dt-shots">' +
-        d.screenshots.map(function (s, i) {
-          return '<img src="' + esc(s) + '" alt="' + esc(a.name) + ' 截图 ' + (i + 1) + '" loading="lazy" ' +
-            'data-shot="' + i + '" style="--i:' + i + '" onerror="this.remove()">';
-        }).join('') + '</div></section>';
-    }
-
     return '<div class="dt-head">' + iconHTML(a, 'dt') +
       '<div class="dt-title"><h2>' + esc(a.name) + '</h2>' +
-      (d.corp ? '<div class="dt-corp">' + esc(d.corp) + '</div>' : '') +
+      (d && d.corp ? '<div class="dt-corp">' + esc(d.corp) + '</div>' : '') +
       '<div class="dt-tags">' + tags + '</div></div></div>' +
 
       '<div class="dt-actions">' +
       (a.downloadUrl
         ? '<a class="btn-primary" href="' + esc(a.downloadUrl) + '" download rel="noopener">下载</a>'
         : '<button class="btn-primary" disabled>下载链接暂缺</button>') +
+      '<button class="btn-ghost btn-share" type="button" data-copy="1">' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.2 1.2"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7L12.7 18"/></svg>' +
+      '复制链接</button>' +
       '</div>' +
       (a.downloadUrl
         ? '<p class="dt-dl">点击「下载」获取官方安装包，下载完成后双击安装包手动完成安装。</p>'
         : '<p class="dt-dl">该软件的安装包暂不可用，请稍后再试。</p>') +
 
-      '<dl class="dt-info">' + info + '</dl>' + shots +
-
-      (d.description ? '<section class="dt-sec"><h3>软件简介</h3><p>' + esc(d.description) + '</p></section>' : '') +
-      (d.updateNote ? '<section class="dt-sec"><h3>更新说明</h3><p>' + esc(d.updateNote) + '</p></section>' : '');
+      '<dl class="dt-info" id="dtInfo">' + infoHTML(a, d) + '</dl>' +
+      '<div id="dtExtra">' + extraHTML(a, d) + '</div>';
   }
 
   function closeDetail() {
@@ -367,9 +462,15 @@
     state.openId = null;
     var sheet = $('#sheet');
     closeLightbox();
-    document.body.style.overflow = '';
+    document.documentElement.classList.remove('no-scroll');
     // 用 replace 而不是 push：否则关掉详情后再按浏览器后退会重新弹出详情
     if (routeAppId()) history.replaceState({}, '', location.pathname + location.search);
+
+    // 焦点还给刚才点开详情的那张卡片
+    if (lastFocus && lastFocus.focus) {
+      try { lastFocus.focus({ preventScroll: true }); } catch (e) {}
+    }
+    lastFocus = null;
 
     // 反向播放退场动画，播完再真正隐藏
     if (reduceMotion()) {
@@ -382,6 +483,47 @@
       sheet.hidden = true;
       sheet.classList.remove('is-closing');
     }, 230);
+  }
+
+  function trapFocus(e) {
+    var panel = $('#sheetPanel');
+    if (!panel) return;
+    var items = panel.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])');
+    if (!items.length) return;
+    var first = items[0], last = items[items.length - 1];
+    var active = document.activeElement;
+    if (!panel.contains(active)) {
+      e.preventDefault();
+      first.focus();
+      return;
+    }
+    if (e.shiftKey && active === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
+  }
+
+  function copyDetailLink() {
+    var url = location.origin + location.pathname + location.search + '#/app/' + state.openId;
+    var ok = function () { toast('详情链接已复制'); };
+    var fallback = function () {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = url;
+        ta.setAttribute('readonly', '');
+        ta.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        ok();
+      } catch (err) {
+        toast('复制失败，请直接复制地址栏链接');
+      }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(ok, fallback);
+    } else {
+      fallback();
+    }
   }
 
   /* ------------------------------------------------------------- 截图灯箱 */
@@ -406,7 +548,34 @@
     var shots = state.shots || [];
     if (!shots.length) return;
     var img = $('#lbImg');
-    img.src = shots[lb.index];
+    var stage = $('#lbStage');
+
+    var reveal = function () {
+      img.onload = img.onerror = null;
+      img.classList.remove('is-loading');
+      stage.classList.remove('is-loading');
+      stage.classList.remove('is-error');
+      img.classList.remove('sw', 'dir-next', 'dir-prev');
+      void img.offsetWidth;   // 强制重排，让滑动动画重新播放
+      if (dir) img.classList.add('sw', dir > 0 ? 'dir-next' : 'dir-prev');
+    };
+
+    // 图挂了也要给个交代，不能留一块空舞台
+    var fail = function () {
+      img.onload = img.onerror = null;
+      img.classList.remove('is-loading');
+      stage.classList.remove('is-loading');
+      stage.classList.add('is-error');
+    };
+
+    // 换图时先压暗，解码完再亮起来，避免旧图「啪」地消失
+    img.classList.add('is-loading');
+    stage.classList.add('is-loading');
+    img.onload = reveal;
+    img.onerror = fail;
+    img.src = httpsUrl(shots[lb.index]);
+    if (img.complete && img.naturalWidth) reveal();   // 命中缓存时 load 可能不触发
+
     img.alt = '截图 ' + (lb.index + 1);
     $('#lbCount').textContent = (lb.index + 1) + ' / ' + shots.length;
 
@@ -414,10 +583,12 @@
     $('#lbPrev').disabled = !multi;
     $('#lbNext').disabled = !multi;
 
-    if (dir) {
-      img.classList.remove('sw', 'dir-next', 'dir-prev');
-      void img.offsetWidth;   // 强制重排，让动画重新播放
-      img.classList.add('sw', dir > 0 ? 'dir-next' : 'dir-prev');
+    // 预取相邻两张：左右翻页基本是瞬时的
+    if (multi) {
+      [1, -1].forEach(function (k) {
+        var pre = new Image();
+        pre.src = httpsUrl(shots[(lb.index + k + shots.length) % shots.length]);
+      });
     }
   }
 
@@ -483,6 +654,13 @@
     });
 
     document.addEventListener('click', function (e) {
+      // 复制分享链接
+      var cp = e.target.closest('[data-copy]');
+      if (cp) {
+        e.preventDefault();
+        copyDetailLink();
+        return;
+      }
       // 截图 → 放大查看
       var shot = e.target.closest('[data-shot]');
       if (shot) {
@@ -524,11 +702,19 @@
         if (e.key === 'ArrowLeft') { e.preventDefault(); stepShot(-1); return; }
         if (e.key === 'ArrowRight') { e.preventDefault(); stepShot(1); return; }
       }
-      if (e.key === 'Enter') {
+      // 详情弹层打开时，Tab 只在面板内循环
+      if (e.key === 'Tab' && !$('#sheet').hidden) {
+        trapFocus(e);
+        return;
+      }
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
         // 焦点在按钮/链接上时交给它们自己的默认行为，避免「下载」同时打开详情
-        if (e.target.closest && e.target.closest('button, a')) return;
+        if (e.target.closest && e.target.closest('button, a, input, textarea')) return;
         var card = e.target.closest && e.target.closest('[data-open]');
-        if (card) openDetail(card.dataset.open, true);
+        if (card) {
+          e.preventDefault();
+          openDetail(card.dataset.open, true);
+        }
       }
       if (e.key === 'Escape') {
         if (!$('#sheet').hidden) closeDetail();
@@ -543,6 +729,13 @@
         search.focus();
       }
     });
+
+    // 详情面板滚动：顶部蒙层 / 底部渐隐随滚动出现
+    var sheetBody = $('#sheetBody');
+    sheetBody.addEventListener('scroll', syncSheetFade, { passive: true });
+    window.addEventListener('resize', function () {
+      if (!$('#sheet').hidden) syncSheetFade();
+    }, { passive: true });
 
     $('#sheetMask').addEventListener('click', closeDetail);
     $('#sheetClose').addEventListener('click', closeDetail);
