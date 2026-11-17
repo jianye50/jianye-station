@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-17T12:56:54.967Z",
+  "updated": "2026-11-17T21:39:47.153Z",
   "source": "api",
   "player": {
     "name": "鉴业",
@@ -7,56 +7,14 @@
     "url": "https://steamcommunity.com/id/aimjianye/"
   },
   "totalGames": 43,
-  "hours2weeks": 3.3333333333333335,
+  "hours2weeks": 3.783333333333333,
   "friends": [
     {
-      "name": "hhhx",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
+      "name": "粥粥",
+      "avatar": "https://avatars.steamstatic.com/ccd744edbb55a43da7f2d094a9c41949205ab8e9_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199511370772/",
       "state": 1,
       "playing": "Party Animals"
-    },
-    {
-      "name": "仙阁小斑",
-      "avatar": "https://avatars.steamstatic.com/51bb78fd07a616dffa959c285ad0951a7ece4680_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199768600704/",
-      "state": 1,
-      "playing": null
-    },
-    {
-      "name": "chenchenwhr",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
-      "state": 1,
-      "playing": null
-    },
-    {
-      "name": "昨夜星辰昨夜风",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199085560012/",
-      "state": 3,
-      "playing": null
-    },
-    {
-      "name": "shinglerdansbury6547",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198689034491/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "wjiazheng2026",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198721612997/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "唐人小陈cheems",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198738673677/",
-      "state": 0,
-      "playing": null
     },
     {
       "name": "绝世好人",
@@ -66,9 +24,16 @@
       "playing": null
     },
     {
-      "name": "Lu",
-      "avatar": "https://avatars.steamstatic.com/b72e7a6487c6bd07eb5e95c24474fed86f320b93_medium.jpg",
-      "profile": "https://steamcommunity.com/id/lunacult/",
+      "name": "yaya",
+      "avatar": "https://avatars.steamstatic.com/443e8aae2dcccff76fecb2ae0fecbd051c9b9822_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199664593176/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "shinglerdansbury6547",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561198689034491/",
       "state": 0,
       "playing": null
     },
@@ -80,23 +45,9 @@
       "playing": null
     },
     {
-      "name": "粥粥",
-      "avatar": "https://avatars.steamstatic.com/ccd744edbb55a43da7f2d094a9c41949205ab8e9_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199511370772/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "aztdndxg",
+      "name": "chenchenwhr",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199876617412/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "刘海柱",
-      "avatar": "https://avatars.steamstatic.com/5650a856c0bd7c678378e9895afec491786ce595_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199193111913/",
+      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
       "state": 0,
       "playing": null
     },
@@ -108,9 +59,44 @@
       "playing": null
     },
     {
-      "name": "吻吻爱",
-      "avatar": "https://avatars.steamstatic.com/655d055db5b16899734d407e7c858cadde558703_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199376152675/",
+      "name": "hhhx",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "Lu",
+      "avatar": "https://avatars.steamstatic.com/b72e7a6487c6bd07eb5e95c24474fed86f320b93_medium.jpg",
+      "profile": "https://steamcommunity.com/id/lunacult/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "昨夜星辰昨夜风",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199085560012/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "aztdndxg",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199876617412/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "仙阁小斑",
+      "avatar": "https://avatars.steamstatic.com/5fea668694c95ff82c2d9cc2b2afdb06a9d2bbb4_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199768600704/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "唐人小陈cheems",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561198738673677/",
       "state": 0,
       "playing": null
     },
@@ -122,9 +108,23 @@
       "playing": null
     },
     {
-      "name": "yaya",
-      "avatar": "https://avatars.steamstatic.com/443e8aae2dcccff76fecb2ae0fecbd051c9b9822_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199664593176/",
+      "name": "刘海柱",
+      "avatar": "https://avatars.steamstatic.com/5650a856c0bd7c678378e9895afec491786ce595_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199193111913/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "wjiazheng2026",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561198721612997/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "吻吻爱",
+      "avatar": "https://avatars.steamstatic.com/655d055db5b16899734d407e7c858cadde558703_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199376152675/",
       "state": 0,
       "playing": null
     }
@@ -135,8 +135,8 @@
       "name": "猛兽派对",
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/library_600x900.jpg",
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/header.jpg",
-      "hoursTotal": 480.7,
-      "hours2weeks": 3.3,
+      "hoursTotal": 481.1,
+      "hours2weeks": 3.7,
       "last": "11月17日"
     },
     {
@@ -155,7 +155,7 @@
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/431960/header.jpg",
       "hoursTotal": 29.2,
       "hours2weeks": 0,
-      "last": "11月7日"
+      "last": "11月17日"
     },
     {
       "appid": 880940,
@@ -219,11 +219,23 @@
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/library_600x900.jpg",
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/header.jpg",
       "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/1260320/capsule_184x69.jpg",
-      "hoursTotal": 480.7,
-      "hours2weeks": 3.3,
+      "hoursTotal": 481.1,
+      "hours2weeks": 3.7,
       "last": "",
       "achEarned": 116,
       "achTotal": 116
+    },
+    {
+      "appid": 945360,
+      "name": "Among Us",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/945360/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/945360/header.jpg",
+      "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/945360/capsule_184x69.jpg",
+      "hoursTotal": 2.6,
+      "hours2weeks": 0,
+      "last": "",
+      "achEarned": 6,
+      "achTotal": 33
     },
     {
       "appid": 1905180,
