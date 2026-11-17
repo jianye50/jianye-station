@@ -1030,6 +1030,53 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
   .lightbox video.lb-in-l,.lightbox video.lb-in-r{animation:none}
 }
 
+/* ===================== 站点公告弹窗（配置在站点根目录的 notice.txt） =====================
+   · 首次公告：进站弹一次，点了「知道了」写进 localStorage，永久不再弹
+   · 普通公告：没确认过就每次进站都弹，确认后按内容指纹记住；
+     以后改了标题或内容 → 指纹变化 → 当作新公告重新弹一次 */
+.ann-mask{
+  position:fixed;inset:0;z-index:900;   /* 压过灯箱(200)/音乐面板(121)，让位加载屏(9999) */
+  display:flex;align-items:center;justify-content:center;
+  padding:22px;
+  background:rgba(3,6,15,.62);backdrop-filter:blur(7px);
+  opacity:0;pointer-events:none;
+  transition:opacity .22s ease;
+}
+.ann-mask.on{opacity:1;pointer-events:auto}
+.ann-card{
+  width:min(500px,100%);
+  max-height:min(72vh,600px);
+  display:flex;flex-direction:column;
+  background:var(--card);border:1px solid var(--card-border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow),0 30px 80px rgba(0,0,0,.5);
+  transform:translateY(16px) scale(.97);
+  transition:transform .26s cubic-bezier(.22,1,.36,1);
+  overflow:hidden;
+}
+.ann-mask.on .ann-card{transform:none}
+.ann-head{display:flex;align-items:center;gap:10px;padding:22px 26px 0}
+.ann-ico{font-size:18px;line-height:1}
+.ann-title{margin:0;font-size:16.5px;font-weight:800;letter-spacing:.02em;color:var(--text-1)}
+.ann-body{padding:14px 26px 2px;overflow:auto;overscroll-behavior:contain}
+.ann-item+.ann-item{margin-top:6px;padding-top:14px;border-top:1px dashed var(--card-border)}
+.ann-item h3{margin:0 0 8px;font-size:15px;font-weight:700;color:var(--accent)}
+.ann-item p{margin:0 0 8px;font-size:14px;line-height:1.8;color:var(--text-2);word-break:break-word}
+.ann-item p:last-child{margin-bottom:0}
+.ann-foot{padding:18px 26px 22px;display:flex;justify-content:flex-end}
+.ann-btn{
+  appearance:none;border:0;cursor:pointer;
+  padding:9px 20px;border-radius:11px;
+  font-size:14px;font-weight:700;font-family:inherit;
+  color:#fff;background:var(--accent);
+  transition:transform .15s,box-shadow .15s,filter .15s;
+}
+.ann-btn:hover{filter:brightness(1.08);box-shadow:0 8px 22px rgba(77,141,255,.35)}
+.ann-btn:active{transform:scale(.96)}
+@media (prefers-reduced-motion:reduce){
+  .ann-mask,.ann-card{transition:none}
+}
+
 /* ===================== 相册：子相册卡片 / 视频与 Live Photo ===================== */
 /* 瓷砖里的视频：抓首帧当封面，铺满正方形 */
 .ph-tile video{
@@ -2279,6 +2326,55 @@ async function loadProfile(){
     window.scrollTo(0,y);
     root.style.scrollBehavior=prev;
   }
+}
+
+/* ---------- 站点公告：独立配置文件，放在站点根目录的 notice.txt ----------
+   和 profile.txt 完全分开，改公告只动这一个文件，两不干扰。
+   文件格式（每行一条，# 开头是注释）：
+     首次公告|标题|内容                       → 进站弹一次，确认后永久不再弹
+     公告|标题|内容                           → 未确认则每次进站都弹，确认后不再弹（可多条）
+     公告|中文标题|英文标题|中文内容|英文内容   → 双语写法
+   内容里想换行就写字面量 \n，渲染时会转成真正的换行分段。
+   文件读不到 / 是空的 → 一条公告都没有，弹窗模块整体静默。 */
+let NOTICES={first:null,list:[]};   /* 由 loadNotices() 从 notice.txt 读入 */
+
+/* 把一行公告配置整理成 {tz,te,cz,ce}（标题/内容各分中英）：
+   · 简单写法：公告|标题|内容   → 中英文都用同一份
+   · 双语写法：公告|中文标题|英文标题|中文内容|英文内容 */
+function noticeOf(p){
+  const full=p.length>=5, nl=s=>String(s||"").replace(/\\n/g,"\n");
+  return {
+    tz:nl(p[1]),
+    te:nl(full?(p[2]||p[1]||""):(p[1]||"")),
+    cz:nl(full?(p[3]||""):(p[2]||"")),
+    ce:nl(full?(p[4]||p[3]||""):(p[2]||""))
+  };
+}
+function parseNoticesText(text){
+  const out={first:null,list:[]};
+  String(text||"").split(/\r?\n/).forEach(raw=>{
+    const line=raw.trim();
+    if(!line||line.charAt(0)==="#")return;
+    const p=line.split("|").map(s=>s.trim());
+    const k=p[0].toLowerCase();
+    if(k==="首次公告"||k==="first-notice"||k==="firstnotice"){ if(p[2]&&!out.first)out.first=noticeOf(p); }
+    else if(k==="公告"||k==="notice"||k==="announcement"){ if(p[2])out.list.push(noticeOf(p)); }
+  });
+  return out;
+}
+/* 读取公告配置：no-cache 保证改完配置刷新立即生效。
+   文件不存在 / 404 兜底页（HTML）/ 空文件 → NOTICES 保持空，公告功能整体关闭 */
+async function loadNotices(){
+  try{
+    const r=await fetch("notice.txt",{cache:"no-cache"});
+    if(r.ok){
+      const text=await r.text();
+      if(!/^\s*</.test(text)){
+        const j=parseNoticesText(text);
+        if(j.first||j.list.length)NOTICES=j;
+      }
+    }
+  }catch(e){}
 }
 
 /* 解析 projects.txt 的行式配置（图标、渐变色可省略，省略时用默认值） */
@@ -6949,6 +7045,7 @@ document.addEventListener("keydown",e=>{
 window.__JY_PROFILE_DONE=loadProfile();   /* 站名 / 背景 / 域名 / 个人信息 */
 const bootLoads=[                          /* 揭幕前要一起等齐的几路数据 */
   window.__JY_PROFILE_DONE,
+  loadNotices(),     /* 公告配置（notice.txt） */
   loadPhotos(),      /* 相册清单：首屏图墙要用 */
   loadProjects(),    /* 项目板块 */
   loadFriends(),     /* 友链 */
@@ -6994,6 +7091,73 @@ function revealSite(){
   b.classList.add("off");
   setTimeout(()=>{const x=document.getElementById("boot");if(x)x.remove();},450);
 }
+
+/* ---------- 站点公告模块（配置在站点根目录的 notice.txt，与 profile.txt 分开） ----------
+   · 首次公告|标题|内容   → 进站弹一次，用户确认（点「知道了」/ 按 Esc）后永久不再弹
+   · 公告|标题|内容       → 可配多条；没确认过就每次进站都弹，确认后按「标题+内容指纹」
+                            记进 localStorage，以后改了字 → 指纹变化 → 当成新公告重新弹
+   两类都没配 / 都看过 → 本模块静默，不建任何 DOM，零开销 */
+const ANN_KEY="jy_ann_seen";                    /* localStorage：记「已确认过的公告指纹」 */
+function annSeenMap(){
+  try{ const v=JSON.parse(localStorage.getItem(ANN_KEY)||"{}"); return (v&&typeof v==="object")?v:{}; }
+  catch(e){ return {}; }
+}
+function annRemember(id){
+  try{ const m=annSeenMap(); m[id]=1; localStorage.setItem(ANN_KEY,JSON.stringify(m)); }catch(e){}
+}
+/* 轻量 djb2 哈希：只用来当指纹，不追求密码学强度 */
+function annFingerprint(s){
+  const str=String(s||""); let h=5381;
+  for(let i=0;i<str.length;i++)h=((h<<5)+h+str.charCodeAt(i))>>>0;
+  return h.toString(36);
+}
+let annBusy=false;   /* 揭幕 / 配置晚到两条路都可能触发，防重复弹 */
+function showAnnouncements(){
+  if(annBusy||window.__JY_REDIRECTING)return;
+  const N=NOTICES; if(!N||(!N.first&&!N.list.length))return;
+  const zh=lang==="zh", seen=annSeenMap(), queue=[];
+  /* 指纹用中英双语拼在一起算：用户切语言不会把同一条公告当成新的再弹一遍 */
+  const fp=n=>annFingerprint([n.tz,n.te,n.cz,n.ce].join("\u0000"));
+  if(N.first&&!seen["f:"+fp(N.first)])queue.push({id:"f:"+fp(N.first),n:N.first});
+  (N.list||[]).forEach(n=>{ const id="n:"+fp(n); if(!seen[id])queue.push({id,n}); });
+  if(!queue.length)return;
+  annBusy=true;
+  const mask=document.createElement("div");
+  mask.className="ann-mask";
+  mask.setAttribute("role","dialog");
+  mask.setAttribute("aria-modal","true");
+  mask.setAttribute("aria-label",zh?"站点公告":"Announcements");
+  mask.innerHTML=
+    '<div class="ann-card">'+
+      '<div class="ann-head"><span class="ann-ico" aria-hidden="true">📢</span>'+
+        '<h2 class="ann-title">'+esc(zh?"站点公告":"Announcements")+'</h2></div>'+
+      '<div class="ann-body">'+
+        queue.map(q=>{
+          const n=q.n;
+          const title=zh?(n.tz||n.te):(n.te||n.tz);
+          const body=String(zh?(n.cz||n.ce):(n.ce||n.cz)||"").trim();
+          const paras=body.split(/\n+/).map(s=>s.trim()).filter(Boolean)
+                          .map(s=>"<p>"+esc(s)+"</p>").join("");
+          return '<div class="ann-item"><h3>'+esc(title)+'</h3>'+paras+'</div>';
+        }).join("")+
+      '</div>'+
+      '<div class="ann-foot"><button type="button" class="ann-btn">'+esc(zh?"知道了":"Got it")+'</button></div>'+
+    '</div>';
+  document.body.appendChild(mask);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>mask.classList.add("on")));
+  let closed=false;
+  const close=()=>{
+    if(closed)return; closed=true;
+    queue.forEach(q=>annRemember(q.id));       /* 确认即永久记住：之后不再弹 */
+    mask.classList.remove("on");
+    document.removeEventListener("keydown",onKey);
+    setTimeout(()=>mask.remove(),280);
+  };
+  const onKey=e=>{ if(e.key==="Escape")close(); };
+  mask.querySelector(".ann-btn").addEventListener("click",close);
+  document.addEventListener("keydown",onKey);
+}
+
 (async function(){
   /* 1+2. 域名检测 + 所有配置数据一起等（最多 3.5 秒，慢网也不把人晾着）。
           判定要跳转 → 不渲染、不揭幕，加载屏保持转圈，页面直接跳走。 */
@@ -7012,6 +7176,8 @@ function revealSite(){
   if(window.__JY_REDIRECTING)return;
   /* 5. 揭幕 */
   revealSite();
+  /* 6. 公告：等揭幕动画落定再弹，别跟入场抢戏（没配 / 都看过 → 内部直接空转） */
+  setTimeout(showAnnouncements,500);
 })();
 </script>
 
