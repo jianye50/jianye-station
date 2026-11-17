@@ -1159,12 +1159,13 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
   border-radius:var(--radius);box-shadow:var(--shadow);
   padding:44px 42px;margin-bottom:26px;
 }
+/* 头像：只在 profile.txt 配了「头像」且图片真的加载成功时才出现，
+   不画任何文字 / 渐变兜底（没图就整块不显示） */
 .avatar{
   position:relative;overflow:hidden;
   width:84px;height:84px;border-radius:50%;
-  display:grid;place-items:center;
-  font-size:32px;font-weight:800;color:#fff;
-  background:linear-gradient(135deg,var(--accent),#7a3bff);
+  display:block;
+  background:transparent;
   box-shadow:0 12px 30px rgba(77,141,255,.35);
   margin-bottom:22px;
 }
@@ -3852,7 +3853,7 @@ function renderAbout(){
   const P=PROFILE;
   const introHTML=P?`
       <div class="about-card">
-        ${P.avatar?`<div class="avatar">${esc((t.brand||"").trim().charAt(0))}<img src="${esc(P.avatar)}" alt="" decoding="async" onerror="this.remove()"></div>`:""}
+        ${P.avatar?`<div class="avatar"><img src="${esc(P.avatar)}" alt="" decoding="async" onerror="var a=this.closest('.avatar')||this.parentNode;if(a){a.style.display='none';}"></div>`:""}
         ${P.hello?`<h2>${esc(lang==="zh"?P.hello.zh:P.hello.en)}</h2>`:""}
         ${P.tagline?`<p class="tagline">${esc(lang==="zh"?P.tagline.zh:P.tagline.en)}</p>`:""}
         ${P.bios.map(b=>`<p>${esc(lang==="zh"?b.zh:b.en)}</p>`).join("")}
