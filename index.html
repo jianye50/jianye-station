@@ -3181,7 +3181,8 @@ function mediaTileTag(p,i){
 }
 function photoTilesHtml(list,limit){
   if(photosStatus==="loading"){
-    const n=Math.min(limit||8,8);
+    /* 骨架屏张数跟预览张数走（窄屏 3 列时预览会补到 9 张），否则加载完会「多出一格」 */
+    const n=Math.max(1,Math.min(limit||8,9));
     return Array.from({length:n}).map(()=>`<div class="ph-tile ph-skel"></div>`).join("");
   }
   if(!list.length){
@@ -3222,22 +3223,53 @@ function albumStripHtml(){
     </button>`).join("")}
   </div>`;
 }
+/* 当前网格实际几列：读计算样式，读不到（隐藏/未布局）时按断点兜底 */
+function photoGridCols(el){
+  try{
+    const g=getComputedStyle(el).gridTemplateColumns;
+    const n=g&&g!=="none"?g.trim().split(/\s+/).length:0;
+    if(n>0)return n;
+  }catch(e){}
+  const w=window.innerWidth;
+  return w<=620?2:(w<=900?3:4);
+}
 /* 把页面上所有占位容器填上媒体（首页预览用 limit+全部，相册页用当前相册） */
 function paintPhotoGrids(){
   document.querySelectorAll("[data-photo-grid]").forEach(el=>{
-    const limit=Number(el.dataset.photoGrid)||0;
-    const list=limit>0?photos.filter(p=>!p.album):viewList();   /* 首页预览也只取根目录 */
+    const base=Number(el.dataset.photoGrid)||0;
+    const list=base>0?photos.filter(p=>!p.album):viewList();   /* 首页预览也只取根目录 */
+    /* 首页预览是「固定张数 + 最后一张盖 +N」：张数必须能被当前列数整除，
+       否则最后一行会空掉一格，看起来像少了一张图。
+       4 列 8 张正好两行；3 列时补到 9 张（+N 的数字自动跟着变） */
+    let limit=base;
+    if(base>0){
+      const cols=photoGridCols(el);
+      if(cols>1&&base%cols)limit=Math.min(cols*Math.ceil(base/cols),list.length);
+    }
     el.innerHTML=photoTilesHtml(list,limit);
     el._items=list;                     /* 灯箱要按这份清单导航 */
+    el._cols=photoGridCols(el);
   });
   const strip=$("#albumStrip");
   if(strip)strip.innerHTML=albumStripHtml();
   const sub=$("#gallerySub");
   if(sub){
     const list=viewList();
-    sub.textContent=list.length?T().gallery.sub(list.length):"";
+      sub.textContent=list.length?T().gallery.sub(list.length):"";
   }
 }
+/* 窗口缩放 / 横竖屏切换改了列数 → 整行补位的张数过期了，重摆一次（列数没变不动，避免无谓重绘） */
+let pgResizeRAF=0;
+window.addEventListener("resize",()=>{
+  cancelAnimationFrame(pgResizeRAF);
+  pgResizeRAF=requestAnimationFrame(()=>{
+    let need=false;
+    document.querySelectorAll("[data-photo-grid]").forEach(el=>{
+      if((Number(el.dataset.photoGrid)||0)>0&&photoGridCols(el)!==el._cols)need=true;
+    });
+    if(need)paintPhotoGrids();
+  });
+},{passive:true});
 
 /* ---------- 灯箱（图片 / 视频 / Live Photo） ---------- */
 let lbIndex=0, lbFocus=null, lbItems=[], lbGrid=null;
