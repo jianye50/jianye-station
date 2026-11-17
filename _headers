@@ -6,3 +6,13 @@
 
 /data/*
   Cache-Control: public, max-age=3600
+
+# ---- 软件商店（/appstore/）----
+/appstore/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/appstore/assets/*
+  Cache-Control: public, max-age=86400
+
+/appstore/data/*
+  Cache-Control: public, max-age=3600

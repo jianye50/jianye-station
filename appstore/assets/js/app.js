@@ -111,10 +111,25 @@
 
     fetch(DATA_URL)
       .then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
+        if (!r.ok) throw Object.assign(new Error('HTTP ' + r.status), { status: r.status });
+        return r.text();
       })
-      .then(function (json) {
+      .then(function (txt) {
+        var json;
+        try {
+          json = JSON.parse(txt);
+        } catch (e) {
+          // 拿到的是网页而不是 JSON：多半是 data 文件没上传、路径不对或被托管端兜底成了 404 页
+          var url = new URL(DATA_URL, location.href).href;
+          var hints = [];
+          if (location.protocol !== 'file:' && !/\/(?:[?#].*)?$/.test(location.pathname) && !/\.\w+$/.test(location.pathname)) {
+            hints.push('访问地址请带上末尾的 <code>/</code>（例如 <code>…/appstore/</code>），否则页面里的相对路径会指错位置');
+          }
+          hints.push('请确认 <code>data/software.json</code> 和 <code>data/details.json</code> 已上传到与本页面（index.html）相同的目录');
+          throw Object.assign(new Error('not-json'), {
+            friendly: '服务器对 <code>' + esc(url) + '</code> 返回的是网页而不是 JSON。<br>' + hints.join('<br>')
+          });
+        }
         state.apps = Array.isArray(json.apps) ? json.apps : [];
         $('#skeleton').hidden = true;
         renderChips();
@@ -125,9 +140,16 @@
       .catch(function (err) {
         $('#skeleton').hidden = true;
         $('#error').hidden = false;
-        var msg = location.protocol === 'file:'
-          ? '当前是通过 file:// 直接打开的页面，浏览器拦截了本地数据请求。请在项目目录运行 <code>python -m http.server 8000</code> 后访问 http://localhost:8000'
-          : '加载 data/software.json 失败（' + esc(err.message) + '），请稍后重试。';
+        var msg;
+        if (location.protocol === 'file:') {
+          msg = '当前是通过 file:// 直接打开的页面，浏览器拦截了本地数据请求。请在项目目录运行 <code>python -m http.server 8000</code> 后访问 http://localhost:8000';
+        } else if (err.friendly) {
+          msg = err.friendly;
+        } else if (err.status === 404) {
+          msg = '找不到 <code>' + esc(new URL(DATA_URL, location.href).href) + '</code>（404）。请确认 <code>data/</code> 目录已上传到与 index.html 相同的位置。';
+        } else {
+          msg = '加载 data/software.json 失败（' + esc(err.message) + '），请稍后重试。';
+        }
         $('#errorMsg').innerHTML = msg;
       });
   }
