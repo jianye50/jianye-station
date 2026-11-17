@@ -30,3 +30,4 @@
 # 公告|新功能上线|相册模块改版完成，欢迎围观！
 # 公告|维护通知|今晚 02:00-03:00 站点短暂维护，见谅。
 # 公告|双语示例|Bilingual sample|这是中文内容，\n支持多行。|This is English content,\nalso multi-line.
+公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
