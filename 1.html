@@ -2041,18 +2041,22 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 <body>
 
 <!-- ============ 启动动画 / 加载屏（视频播完且站点就绪后淡出） ============
-     进站先全屏播一段启动动画（Startup animation.mp4），取代原来的转圈加载屏：
+     进站先全屏播一段启动动画，取代原来的转圈加载屏：
+       · 按设备方向自动选片：竖屏设备播竖版视频，横屏设备（电脑）播横版视频；
        · 动画在后台播放的同时，配置 / 数据照常并行加载，两不耽误；
        · 站点就绪 + 动画播完 → 揭幕进入首页；动画先播完就停在最后一帧等数据；
        · 动画必须完整播完，不可跳过（没有跳过按钮，按键也不起作用）；
        · 页面资源（配置 / 首屏 / 背景大图）也全部下载完成后才揭幕显示主页；
        · 视频加载失败或浏览器拒绝自动播放 → 启动屏停在黑屏，站点就绪后照常揭幕。 -->
 <div id="boot" aria-hidden="true">
-  <video id="bootVideo" src="Startup%20animation.mp4" preload="auto"
+  <video id="bootVideo" preload="auto"
          playsinline disablepictureinpicture tabindex="-1"></video>
 </div>
 <script>
-/* ---- 启动动画播放器：进站先播 Startup animation.mp4，取代原来的转圈加载动画 ----
+/* ---- 启动动画播放器：进站先播启动动画，取代原来的转圈加载动画 ----
+   按设备方向自动选片：
+     · 竖屏设备（手机竖持）→ tyx-Jianye-portrait（portrait screen）.mp4
+     · 横屏设备（电脑 / 手机横持）→ Startup animation（Landscape）.mp4
    播放的同时页面照常在后面拉配置 / 渲染首屏，两路并行；
    结果统一收进 window.__JY_BOOT_VIDEO：resolve = 动画结束（播完 / 走了兜底），
    主脚本揭幕前会等它，保证「动画没放完不进站、页面没下完不进站」。 */
@@ -2061,6 +2065,16 @@ window.__JY_BOOT_VIDEO=(function(){
   var video=document.getElementById("bootVideo");
   if(!boot||!video)return Promise.resolve();       /* 找不到视频元素：按无动画处理，照常揭幕 */
   boot.classList.add("boot-video");
+  /* 选片：竖屏设备播竖版，横屏设备播横版。
+     先用系统的方向媒体查询判定，读不到就退回用窗口宽高比判定（高≥宽 = 竖屏） */
+  var LAN="Startup animation（Landscape）.mp4",
+      POR="tyx-Jianye-portrait（portrait screen）.mp4";
+  var portrait=false;
+  try{
+    if(window.matchMedia&&window.matchMedia("(orientation: portrait)").matches)portrait=true;
+  }catch(e){}
+  if(!portrait)portrait=window.innerHeight>window.innerWidth;
+  video.src=encodeURI(portrait?POR:LAN);           /* 文件名带全角括号，交给 encodeURI 处理 */
   var settled=false,timer=null;
   return new Promise(function(resolve){
     var finish=function(){
@@ -7202,15 +7216,16 @@ document.addEventListener("keydown",e=>{
 });
 
 /* ---------- 启动 ----------
-   思路就一句话：加载屏掀开之前，把该准备的全准备好，页面已经是最终样子。
+   思路就一句话：加载屏（启动动画）掀开之前，把该准备的全准备好，页面已经是最终样子。
      1) <head> 里先做域名检测（__JY_DOMAIN_CHECK）：判定要跳转就立刻跳，
-        加载屏原地转圈，绝不让人看到半成品首页；
+        启动动画原地播着，绝不让人看到半成品首页；
      2) 所有配置与数据一起拉（profile / 项目 / 友链 / 游戏 / 相册清单），
-        统一等它们到位（最多 3.5 秒）—— 全在加载屏后面读完；
+        统一等它们到位 —— 不设时间上限，全在启动动画后面读完；
      3) 配置齐了才做第一次、也是唯一一次渲染：站名、背景、板块一次到位；
      4) 等背景大图解码完成 + 页面 load 完成；
-     5) 揭幕：加 html.jy-go 让「背景推近 + 文字上浮」两条动画从 0 帧开始播，
-        同时极短地淡出加载屏 —— 动画一定看得见。 */
+     5) 等启动动画完整播完（不可跳过）；
+     6) 揭幕：加 html.jy-go 让「背景推近 + 文字上浮」两条动画从 0 帧开始播，
+        同时极短地淡出启动屏 —— 动画一定看得见。 */
 window.__JY_PROFILE_DONE=loadProfile();   /* 站名 / 背景 / 域名 / 个人信息 */
 const bootLoads=[                          /* 揭幕前要一起等齐的几路数据 */
   window.__JY_PROFILE_DONE,
@@ -7246,7 +7261,7 @@ function pageLoaded(){
     let done=false;
     const fin=()=>{ if(!done){done=true;res();} };
     window.addEventListener("load",fin,{once:true});
-    setTimeout(fin,6000);
+    /* 不再设 6 秒上限：load 事件一定会触发（资源失败也算加载完），页面下载完才揭幕 */
   });
 }
 /* 揭幕：等启动动画放完 + 放行动画 → 淡出加载屏
@@ -7390,13 +7405,15 @@ function annHistoryHTML(){
 }
 
 (async function(){
-  /* 1+2. 域名检测 + 所有配置数据一起等（最多 3.5 秒，慢网也不把人晾着）。
-          判定要跳转 → 不渲染、不揭幕，加载屏保持转圈，页面直接跳走。 */
+  /* 1+2. 域名检测 + 所有配置数据一起等 —— 不再设 3.5 秒上限：
+          按需求「页面全部下载完才显示主页」，配置没读完就一直在启动动画后面等
+          （各路加载自身失败会触发 catch 放行，不会永远卡住）。
+          判定要跳转 → 不渲染、不揭幕，启动动画保持播放，页面直接跳走。 */
   try{
     const waits=[window.__JY_DOMAIN_CHECK||Promise.resolve("ok")]
       .concat(bootLoads)
       .map(p=>Promise.resolve(p).catch(()=>{}));
-    await Promise.race([Promise.all(waits),new Promise(r=>setTimeout(r,3500))]);
+    await Promise.all(waits);
   }catch(e){}
   if(window.__JY_REDIRECTING)return;
   /* 3. 第一次、也是唯一一次首屏渲染（配置齐了，一次画到位） */
