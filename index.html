@@ -2350,16 +2350,21 @@ async function loadProfile(){
    文件读不到 / 是空的 → 一条公告都没有，弹窗模块整体静默。 */
 let NOTICES={first:null,list:[]};   /* 由 loadNotices() 从 notice.txt 读入 */
 
-/* 把一行公告配置整理成 {tz,te,cz,ce}（标题/内容各分中英）：
-   · 简单写法：公告|标题|内容   → 中英文都用同一份
-   · 双语写法：公告|中文标题|英文标题|中文内容|英文内容 */
+/* 把一行公告配置整理成 {d,tz,te,cz,ce}（日期 + 标题/内容各分中英）：
+   · 带日期：公告|2026-11-17 15:35:39|中文标题|英文标题|中文内容|英文内容
+   · 不带日期也兼容：公告|中文标题|英文标题|中文内容|英文内容
+     （第一个字段长得像日期 YYYY-MM-DD 开头就当日期，其余按双语五段解析）
+   配置按行解析，内容想换行就写字面量 \n，渲染时会转成真正的换行分段 */
 function noticeOf(p){
-  const full=p.length>=5, nl=s=>String(s||"").replace(/\\n/g,"\n");
+  let d="",i=1;
+  if(/^\s*\d{4}-\d{1,2}-\d{1,2}/.test(String(p[1]||""))){ d=p[1]; i=2; }
+  const r=p.slice(i), full=r.length>=4, nl=s=>String(s||"").replace(/\\n/g,"\n");
   return {
-    tz:nl(p[1]),
-    te:nl(full?(p[2]||p[1]||""):(p[1]||"")),
-    cz:nl(full?(p[3]||""):(p[2]||"")),
-    ce:nl(full?(p[4]||p[3]||""):(p[2]||""))
+    d:d,
+    tz:nl(r[0]),
+    te:nl(full?(r[1]||r[0]||""):(r[0]||"")),
+    cz:nl(full?(r[2]||""):(r[1]||"")),
+    ce:nl(full?(r[3]||r[2]||""):(r[1]||""))
   };
 }
 function parseNoticesText(text){
@@ -7115,10 +7120,8 @@ function revealSite(){
                 记进 localStorage，以后改了字 → 指纹变化 → 当成新公告重新弹
    弹窗的遮罩层级低于导航栏：弹窗开着时右上角 中/EN 照常可点，
    切语言 → setLang 末尾调 annRepaint() 把弹窗原地换成新语言，不用关掉重弹。
-   确认过的公告会连同中英文全文 + 确认时间存进 localStorage，
-   关于页最底部的「历史公告」板块据此展示。 */
+   关于页最底部的「历史公告」板块直接读 notice.txt 里配置的公告（含你写的日期）。 */
 const ANN_KEY="jy_ann_seen";        /* localStorage：记「已确认过的公告指纹」 */
-const ANN_HIST="jy_ann_history";    /* localStorage：历史公告（确认时间 + 中英文全文） */
 let annBusy=false;                  /* 揭幕 / 配置晚到两条路都可能触发，防重复弹 */
 let annMask=null;                   /* 当前打开的公告弹窗（切语言时原地重绘用） */
 let annClose=null;                  /* 当前弹窗的关闭动作（重绘后要重新绑到按钮上） */
@@ -7129,19 +7132,6 @@ function annSeenMap(){
 }
 function annRemember(id){
   try{ const m=annSeenMap(); m[id]=1; localStorage.setItem(ANN_KEY,JSON.stringify(m)); }catch(e){}
-}
-function annHistoryMap(){
-  try{ const v=JSON.parse(localStorage.getItem(ANN_HIST)||"{}"); return (v&&typeof v==="object")?v:{}; }
-  catch(e){ return {}; }
-}
-/* 确认公告时写入历史（同一指纹只记一次，重复确认不刷时间） */
-function annRecord(id,n){
-  try{
-    const m=annHistoryMap();
-    if(m[id])return;
-    m[id]={tz:n.tz||"",te:n.te||"",cz:n.cz||"",ce:n.ce||"",at:Date.now()};
-    localStorage.setItem(ANN_HIST,JSON.stringify(m));
-  }catch(e){}
 }
 /* 轻量 djb2 哈希：只用来当指纹，不追求密码学强度 */
 function annFingerprint(s){
@@ -7175,15 +7165,11 @@ function showAnnouncements(){
   let closed=false;
   const close=()=>{
     if(closed)return; closed=true;
-    /* 确认即永久记住 + 进「历史公告」（之后不再弹，但关于页能翻到） */
-    queue.forEach(q=>{annRemember(q.id);annRecord(q.id,q.n);});
+    /* 确认即永久记住：之后不再弹 */
+    queue.forEach(q=>annRemember(q.id));
     annMask=null;annClose=null;annQueue=[];
     mask.classList.remove("on");
     document.removeEventListener("keydown",onKey);
-    /* 人正停在关于页 → 历史公告多了一条，静默重绘把新记录刷出来 */
-    if(/^#\/about/.test(location.hash||"")&&typeof renderAbout==="function"){
-      quietRender=true; try{renderAbout();}finally{quietRender=false;}
-    }
     setTimeout(()=>mask.remove(),280);
   };
   const onKey=e=>{ if(e.key==="Escape")close(); };
@@ -7224,34 +7210,26 @@ function annRepaint(){
     '</div>';
   annMask.querySelector(".ann-btn").addEventListener("click",()=>{ if(annClose)annClose(); });
 }
-/* 关于页「历史公告」板块：确认过的公告按确认时间倒序，内容跟随当前语言 */
+/* 关于页「历史公告」板块：直接读 notice.txt 里配置的全部「公告」，
+   按你写的日期倒序展示（没写日期的排在最后），内容跟随当前语言。
+   「首次公告」是欢迎语，不算历史公告，不在这个板块里。 */
 function annHistoryHTML(){
-  const list=Object.values(annHistoryMap()).sort((a,b)=>(b.at||0)-(a.at||0));
+  const list=((NOTICES&&NOTICES.list)||[]).slice()
+    .sort((a,b)=>String(b.d||"").localeCompare(String(a.d||"")));
   if(!list.length)return "";
   const zh=lang==="zh";
-  const pad=x=>String(x).padStart(2,"0");
-  const fmt=at=>{
-    try{
-      const d=new Date(at);
-      return zh ? d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日 "+pad(d.getHours())+":"+pad(d.getMinutes())
-                : d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes());
-    }catch(e){ return ""; }
-  };
   return `
       <div class="about-card">
         <div class="section-label">${esc(zh?"历史公告":"Announcement History")}</div>
         <div class="ann-hist">
-          ${list.map(it=>{
-            const body=String((zh?(it.cz||it.ce):(it.ce||it.cz))||"").trim();
-            return `
+          ${list.map(it=>`
           <div class="ann-hist-item">
             <div class="ann-hist-head">
               <h4>${esc(zh?(it.tz||it.te):(it.te||it.tz))}</h4>
-              <span class="ann-hist-time">${esc(fmt(it.at))}</span>
+              ${it.d?`<span class="ann-hist-time">${esc(it.d)}</span>`:""}
             </div>
-            ${body.split(/\n+/).map(s=>s.trim()).filter(Boolean).map(s=>"<p>"+esc(s)+"</p>").join("")}
-          </div>`;
-          }).join("")}
+            ${String((zh?(it.cz||it.ce):(it.ce||it.cz))||"").split(/\n+/).map(s=>s.trim()).filter(Boolean).map(s=>"<p>"+esc(s)+"</p>").join("")}
+          </div>`).join("")}
         </div>
       </div>`;
 }

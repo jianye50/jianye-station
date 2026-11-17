@@ -15,7 +15,11 @@
 #
 #  写法格式（统一双语：中文标题 + 英文标题 + 中文内容 + 英文内容）：
 #    首次公告|中文标题|英文标题|中文内容|英文内容
-#    公告|中文标题|英文标题|中文内容|英文内容
+#    公告|日期|中文标题|英文标题|中文内容|英文内容
+#
+#  日期写法：2026-11-17 或 2026-11-17 15:35:39（以「公告」开头、
+#  第一个字段长得像 YYYY-MM-DD 开头就自动当作日期）。
+#  历史公告板块（关于页最底部）按这个日期倒序展示，没写日期的排在最后。
 #
 #  注意：
 #  · 配置按行解析，内容里想换行就写字面量 \n（渲染时会变成真正的换行）
@@ -25,63 +29,6 @@
 
 首次公告|欢迎来到鉴业の小站|Welcome to Jianye's Site|你好呀，这里是鉴业的个人小站——记录项目、相册，还有一些喜欢的光影想法。\n往下滑随便逛逛，有任何建议或想法，欢迎随时来邮箱聊聊 :)|Hi there! This is Jianye's personal space — a collection of projects, photo albums, and thoughts on light and shadow.\nScroll down and look around. Suggestions and ideas are always welcome — feel free to drop me an email :)
 
-# 公告|新功能上线|New features live|相册模块改版完成，欢迎围观！|The photo album module got a fresh look — check it out!
-# 公告|维护通知|Maintenance notice|今晚 02:00-03:00 站点短暂维护，见谅。|The site will be briefly offline tonight from 02:00 to 03:00. Thanks for your patience.
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-公告|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
-
+# 公告|2026-11-17 15:35:39|新功能上线|New features live|相册模块改版完成，欢迎围观！|The photo album module got a fresh look — check it out!
+# 公告|2026-11-17 15:35:39|维护通知|Maintenance notice|今晚 02:00-03:00 站点短暂维护，见谅。|The site will be briefly offline tonight from 02:00 to 03:00. Thanks for your patience.
+公告|2026-11-17 15:35:39|新功能上线|New feature launched|相册模块改版完成，欢迎围观！|The photo album module has been revamped. Feel free to check it out!
