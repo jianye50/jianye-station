@@ -2282,6 +2282,24 @@ function pageTitle(page,brand){
   const a=String(page||"").trim(), b=String(brand||"").trim();
   return (a&&b)?(a+" · "+b):(a||b);
 }
+/* 页脚年份实时跟随系统当前年份（跨年不用再改配置）：
+   · 配置写 © {year} 鉴业 → 换成当前年份
+   · 配置写 © 2026 鉴业（写死的老写法）→ 自动把 © 后面的四位年份也换成当前年份
+   · 配置写 © 2020–2026（区间）→ 保留起始年，只把结束年份换成当前年份 */
+function withYear(s){
+  const y=String(new Date().getFullYear());
+  return String(s||"")
+    .replace(/\{\{?\s*year\s*\}?\}/gi,y)
+    .replace(/(©\s*)(\d{4})(?:\s*[-–—~至]\s*(\d{4}))?/g,(m,head,y1,y2)=>
+      y2 ? (head+y1+"–"+y) : (head+y));
+}
+/* 页面长时间挂着跨年、或从后台切回来时，顺手把页脚年份再刷一遍
+   （正常切页/切语言时 route() 本来就会重写页脚，这里只兜「停在原地过了零点」的情况） */
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState!=="visible")return;
+  const ft=document.getElementById("siteFooter");
+  if(ft&&!ft.hidden)ft.textContent=withYear(T().footer||"");
+});
 /* 订阅地址：只认 profile.txt「订阅 / 英文订阅」里域名后面的那段路径。
    万一填进来的是完整网址，也把协议+域名剥掉 —— 以后换域名，链接不会还指着旧站。
    没配 → 返回空串，页面上就不出现这个按钮 */
@@ -6286,8 +6304,20 @@ async function renderPost(slug,gen){
   const posts=await loadBlog();
   if(stale())return;
   const post=posts.find(p=>p.slug===slug);
+  /* 列表口径的本地化标题/摘要/标签：清单里带了静态另一语言版的
+     titleZh/descZh/tagsZh（英文原文文章）或 titleEn/descEn/tagsEn（中文原文文章），
+     有就用 —— 骨架屏中间态、失败页、front matter 缺字段时的兜底都跟着界面语言走，
+     英文文章在中文界面加载时不再顶着英文标题（和博客列表卡的取法一致） */
+  const altMeta=lang==="en"
+    ?{t:post&&post.titleEn,d:post&&post.descEn,g:post&&post.tagsEn}
+    :{t:post&&post.titleZh,d:post&&post.descZh,g:post&&post.tagsZh};
+  const useAltMeta=!!(altMeta.t||altMeta.d);
+  const listTitle=(useAltMeta&&altMeta.t)||(post&&post.title)||t.blog.untitled;
+  const listDesc=(useAltMeta&&altMeta.d)||(post&&post.desc)||"";
+  const listTags=(useAltMeta&&(altMeta.g||[]).length)?altMeta.g
+                 :((post&&Array.isArray(post.tags))?post.tags:[]);
   const fail=msg=>{ if(stale())return; app.innerHTML=`<section class="${viewCls(gen)}${swapCls()}"><div class="wrap">
-    <div class="page-head"><h1>${esc((post&&post.title)||t.blog.title)}</h1></div>
+    <div class="page-head"><h1>${esc(post?listTitle:t.blog.title)}</h1></div>
     <div class="blog-empty">${msg}</div>
     <div style="text-align:center"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a></div>
   </div></section>`; xfadeReveal(); };
@@ -6295,14 +6325,13 @@ async function renderPost(slug,gen){
   /* 正文还得等网络时，先把「列表里已经有」的信息画上去：标签、标题、摘要、日期、时长。
      这几项和正文 front matter 是同一份数据，稍后整篇重画时不会跳版式；
      于是点开文章的第一帧就能看到标题，而不是满屏灰条 —— 等待感小很多 */
-  const postTags=Array.isArray(post.tags)?post.tags:[];
   app.innerHTML=`<section class="${viewCls(gen)}${swapCls()}">
     <div class="post-hero"></div>
     <div class="wrap"><a class="post-back" href="#/blog">${esc(t.blog.back)}</a>
       <header class="post-head">
-        ${postTags.length?`<div class="post-tags">${postTags.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div>`:""}
-        <h1>${esc(post.title||t.blog.untitled)}</h1>
-        ${post.desc?`<p class="post-sub">${esc(post.desc)}</p>`:""}
+        ${listTags.length?`<div class="post-tags">${listTags.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div>`:""}
+        <h1>${esc(listTitle)}</h1>
+        ${listDesc?`<p class="post-sub">${esc(listDesc)}</p>`:""}
         <div class="post-meta">${post.date?`<span>${esc(fmtDate(post.date))}</span><span>·</span>`:""}<span>${esc(t.blog.minutes(post.minutes||1))}</span></div>
       </header>
       ${sklBody}
@@ -6347,8 +6376,10 @@ async function renderPost(slug,gen){
   }catch(e){fail(t.blog.err);return;}
   if(stale())return;   /* 正文网络请求最慢，切走后回来绝不能覆盖新页面 */
   const {meta,body}=parsePost(raw);
-  const title=meta.title||post.title||t.blog.untitled;
-  const desc=meta.desc||post.desc||"";
+  /* front matter 缺 title/desc 时退回清单字段 —— 用上面取好的本地化版本，
+     英文文章在中文界面不会因为 front matter 漏写 title 就漏出英文标题 */
+  const title=meta.title||listTitle;
+  const desc=meta.desc||listDesc;
   /* 最后一道防线：正文本身就已经是访客要读的语言（中文界面看中文文章、
      英文界面看英文文章），那就没有「翻译」这回事。
      index.zh.md 还没生成时，中文文章会先命中上面「静态版缺失 → 原文兜底」，
@@ -6361,7 +6392,7 @@ async function renderPost(slug,gen){
   document.title=pageTitle(title,t.brand);   /* 浏览器标签页 / 历史记录显示文章标题 */
   /* 标签归一化：front matter 里「tags: a, b」这种逗号写法解析出来是字符串，
      直接 .map 会抛 TypeError 导致整篇文章页渲染失败 —— 列表页已归一化，这里补上 */
-  let tags=meta.tags||post.tags||[];
+  let tags=meta.tags||listTags;
   if(typeof tags==="string")tags=tags.split(/[,，]/).map(x=>x.trim()).filter(Boolean);
   if(!Array.isArray(tags))tags=[];
   const date=meta.date||post.date||"";
@@ -6627,10 +6658,11 @@ function route(){
   try{ readBarToggle(!!(active==="blog"&&parts[1])); }catch(e){}
   closeNavDrop();   /* 切页后收起「记录」菜单，别让它悬在新页面上 */
   /* 页脚文案跟随语言：只认 profile.txt 的「页脚」。没配 → 整个页脚隐藏
-     （hidden 属性连带那条上边框一起消失，不会留一条空的分隔线） */
+     （hidden 属性连带那条上边框一起消失，不会留一条空的分隔线）
+     文案里的年份走 withYear()：© 2026 / © {year} 都会渲染成当前年份，跨年自动更新 */
   const ft=$("#siteFooter");
   if(ft){
-    const ftext=T().footer||"";
+    const ftext=withYear(T().footer||"");
     ft.textContent=ftext;
     ft.hidden=!ftext;
   }
