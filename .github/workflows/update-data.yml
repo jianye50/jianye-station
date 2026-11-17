@@ -1,0 +1,79 @@
+name: Update software data
+
+# 每天从 360 软件宝库重新抓取数据并提交到仓库，
+# 提交会自动触发 Cloudflare Pages / GitHub Pages 重新发布，保证线上数据及时更新。
+#
+# 本工作流同时兼容两种目录结构（会自动识别）：
+#   A. 商店独立仓库：index.html 在仓库根目录
+#   B. 并入个人主页仓库：商店在 appstore/ 子目录
+# 注意：GitHub 只读取仓库根目录的 .github/workflows/，
+#      这个文件必须放在仓库根目录，不能放进 appstore/ 里面。
+
+on:
+  schedule:
+    - cron: "0 1,13 * * *"    # 每天 UTC 1:00 / 13:00（北京时间 9:00 与 21:00）各更新一次
+  workflow_dispatch: {}       # 允许在 Actions 页面手动触发
+  push:
+    paths:
+      - "scripts/fetch_data.py"
+      - "appstore/scripts/fetch_data.py"
+      - ".github/workflows/update-data.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: true
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 需要完整历史才能在 push 前 rebase
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 商店在 appstore/ 子目录时用 appstore，独立仓库时用 .
+      - name: Locate app directory
+        run: |
+          if [ -f appstore/index.html ]; then
+            echo "APP_DIR=appstore" >> "$GITHUB_ENV"
+          else
+            echo "APP_DIR=." >> "$GITHUB_ENV"
+          fi
+          echo "app dir = $(grep APP_DIR "$GITHUB_ENV" | cut -d= -f2)"
+
+      - name: Fetch data from 360 Baoku
+        run: python "$APP_DIR/scripts/fetch_data.py"
+
+      - name: Commit new data
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ -z "$(git status --porcelain "$APP_DIR/data/")" ]; then
+            echo "数据无变化，跳过提交"
+            exit 0
+          fi
+
+          git add "$APP_DIR/data/"
+          git commit -m "chore(data): refresh software data ($(date -u +%F))"
+
+          # 先 rebase 再推，避免和其它提交撞车导致 push 被拒
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME}" || true
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "推送成功"; exit 0
+            fi
+            echo "第 $i 次推送失败，5 秒后重试"
+            sleep 5
+          done
+          echo "多次重试仍失败，请检查分支保护规则"; exit 1
