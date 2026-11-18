@@ -95,6 +95,12 @@
 <!-- 语言：首次访问先按系统语言定好（中文→中文，其它语言→英文），
      免得英文用户先看到一闪而过的中文标题 / 语言标记。手动切换过的以本地保存为准。 -->
 <script>
+/* ---------- 抢跑脚本 ①：语言预判（全文件第一个脚本） ----------
+   为什么要抢跑：<html lang> 会影响浏览器的字体选择、无障碍朗读和 CSS 的
+   语言相关规则；主脚本加载完再设就晚了 —— 首帧可能已经按错误语言渲染过一次。
+   规则：localStorage 里存过就用存的；没存过按浏览器语言列表从上往下找，
+   zh* 算中文、en* 算英文，其余一律英文。结果写进 window.__JY_LANG，
+   供后续脚本（启动屏、主脚本 i18n）直接使用，不再重复探测。 */
 (function(){
   var s=null; try{ s=localStorage.getItem("jy-lang"); }catch(e){}
   if(s!=="zh"&&s!=="en"){
@@ -303,6 +309,22 @@ html.jy-guard-on,html.jy-guard-on body{overflow:hidden!important}
 }
 </style>
 <style>
+/* =====================================================================
+ *  主样式表（全站样式按「从外到内、从静到动」排列，查样式先看这张地图）
+ *  ---------------------------------------------------------------------
+ *  ① 主题变量            ：颜色 / 圆角 / 阴影等设计令牌（:root）
+ *  ② 导航                ：悬浮胶囊导航 + 「记录」二级菜单 + 滑动指示胶囊
+ *  ③ 视图容器            ：页面切换的入场动画（.view / fadeUp）
+ *  ④ 首页 Hero           ：大标题 / 徽章 / 背景大图 / 跟手光斑与视差
+ *  ⑤ 区块标题            ：.section-label（左侧小横线，悬停展开）
+ *  ⑥ 图库 / 灯箱         ：照片墙、灯箱（图片 / 视频 / 动态照片 FLIP）
+ *  ⑦ 站点公告弹窗        ：notice.txt 驱动的进站公告
+ *  ⑧ 细节动效增强        ：各卡片悬停微交互的汇总区（都在 transform/opacity 上）
+ *  ⑨ 相册子页 / 内页标题 / 关于页（含可折叠卡 .coll-*）
+ *  ⑩ Steam 模块 / 项目页 / 博客列表与文章（正文排版、锚点、翻译提示）
+ *  ⑪ 页脚 / 启动加载屏 / 细处动效 / 动效偏好（reduced-motion 全关）
+ *  注：迷你播放器、彩蛋终端的样式分别在各自 <style> 块里（紧跟对应脚本）。
+ * ===================================================================== */
 /* ===================== 主题变量 =====================
    站点固定深色（<html data-theme="dark">），不再有浅色皮肤，
    所以这里只保留深色一套变量。 */
@@ -711,7 +733,15 @@ img{display:block;max-width:100%}
 }
 .btn:hover{transform:translateY(-2px)}
 .btn:active{transform:scale(.97)}
-/* Gemini 同款彩虹光晕按钮：深色底 + 流动彩虹描边 + 彩虹外发光（形状不变） */
+/* Gemini 同款彩虹光晕按钮：深色底 + 流动彩虹描边 + 彩虹外发光（形状不变）
+   【有意保留的"不优化"项】这个动效有两处按性能标准看"不划算"：
+     · ::before 的模糊光晕（filter:blur(16px) + background-position 动画）
+       是模糊渲染里开销最大的用法，每帧都要重画；
+     · 动的又是 background-position（重绘属性），不是合成器属性。
+   但它仍然保留原样，原因：① 那圈流动光晕是这颗按钮的辨识度所在，
+   换成纯描边版按钮立刻"扁"掉（做过对比演示，观感差距明显）；
+   ② 全站只有这一颗这样的按钮，总量可控。
+   若日后想省这块性能：删掉 ::before 整段即可降级为纯描边流动版。 */
 .btn-primary{
   position:relative;z-index:0;
   color:#fff;
@@ -1721,7 +1751,11 @@ h2:hover>.h-anchor,h3:hover>.h-anchor,h4:hover>.h-anchor,h5:hover>.h-anchor,
 }
 @keyframes hTipIn{from{opacity:0;transform:translate(-50%,-3px)}to{opacity:1;transform:translate(-50%,3px)}}
 .h-anchor.copied::after{transform:translate(-50%,3px)}
-/* 顺着分享链接定位到某一节时，标题轻轻亮一下，告诉人「就是这里」 */
+/* 顺着分享链接定位到某一节时，标题轻轻亮一下，告诉人「就是这里」。
+   【有意保留的"不优化"项】这里动的是 background（重绘属性），按标准做法
+   应该垫一层 ::before 用 opacity 渐隐；但它是「点锚点复制链接 / 分享跳转」
+   才触发的一次性 2.6s 小面积效果，一天也难得几次，且重构要给每级标题
+   加定位上下文，收益约等于零 —— 保留原样，别动。 */
 .post-body h2.h-flash,.post-body h3.h-flash,.post-body h4.h-flash,.post-body h5.h-flash{
   animation:hFlash 2.6s ease both;border-radius:8px;
 }
@@ -1739,6 +1773,12 @@ h2:hover>.h-anchor,h3:hover>.h-anchor,h4:hover>.h-anchor,h5:hover>.h-anchor,
   .h-anchor:hover{opacity:.32}
 }
 .post-body p{margin:0 0 16px}
+/* 正文链接两层写法（拆开是为了照顾没有鼠标的设备）：
+   · 基础层（所有设备）：链接始终带静态下划线 —— 触屏没有「悬停」，
+     那条线是手机上唯一的「这是链接」暗示，绝不能丢；
+   · 增强层（仅 hover:hover + pointer:fine 的鼠标设备，见本样式块末尾「动效偏好」前）：
+     有鼠标时改为「悬停重描」——平时无线，悬停时下划线从左往右画出来（划过的手感），
+     移开再收回去。两层互不覆盖：浏览器按设备能力自动二选一 */
 .post-body a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 .post-body img{max-width:100%;border-radius:14px;display:block;margin:18px auto;border:1px solid var(--card-border)}
 .post-body blockquote{margin:18px 0;padding:12px 18px;border-left:3px solid var(--accent);
@@ -1997,7 +2037,12 @@ footer{
 }
 footer .heart{color:#ff5d7a}
 
-/* ===================== 启动加载屏 ===================== */
+/* ===================== 启动加载屏 =====================
+   两段式：这里先写「揭幕机制」（html.jy-go 如何放行首屏入场动画），
+   下面「启动加载屏（常驻转圈动画）」再写加载屏本身（#boot 与圆点/光条）。
+   【历史备注】这里曾两度改造：一度换成全屏启动视频、后又恢复转圈动画——
+   蓝点的呼吸光环因此特意保留了 box-shadow 版本（transform 硬边圆盘观感更差）。
+   box-shadow 动画虽是重绘属性，但元素只有 14px 且用完即焚，开销可忽略。 */
 /* 加载屏还盖着的时候，首屏（背景图 + 文字）提前渲染好、按最终样子摆在那儿，
    但**不播入场动画**（animation:none 比 paused 干净：不给浏览器留任何"演到一半"的机会）。
    揭幕那一下才加 html.jy-go，两条动画从 0 帧开始播 —— 动画永远看得见，也不会缺失。
@@ -2021,7 +2066,13 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 #boot{position:fixed;inset:0;z-index:9999;background:var(--bg);
   display:grid;place-items:center;transition:opacity .28s ease}
 #boot.off{opacity:0;pointer-events:none}
-/* ===================== 启动加载屏（常驻转圈动画） ===================== */
+/* ===================== 启动加载屏（常驻转圈动画） =====================
+   结构：#boot 全屏黑底盖板 > .boot-inner（竖排两件套）
+     · .boot-dot  蓝点呼吸（box-shadow 光环扩散，见上方历史备注）
+     · .boot-bar  光条来回扫（translateX 动画，合成器友好）
+   消失条件：主脚本「配置全读完 + 首屏渲染完 + 背景大图解码完 + 页面 load 完」
+   才加 .off 淡出并移除（见主脚本「启动」段）；主脚本意外死亡时由
+   #boot 标记后面的兜底脚本在 12 秒后强行揭开。 */
 .boot-inner{display:flex;flex-direction:column;align-items:center;gap:24px}
 .boot-dot{width:14px;height:14px;border-radius:50%;background:var(--accent);
   box-shadow:0 0 0 0 rgba(77,141,255,.5);animation:bootPulse 1.4s ease-out infinite}
@@ -2111,6 +2162,21 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
   html{scroll-behavior:auto}
+}
+
+/* ---- 正文链接「悬停重描」下划线（鼠标设备专用，基础层规则见 .post-body a） ----
+   原理：不用 text-decoration 画线，改用一条背景渐变当线：
+   默认宽度 0%（看不见），悬停时宽度涨到 100%，加上 transition 就是"从左往右画出来"。
+   只给「有鼠标的设备」用：手机 / 平板触屏没有悬停，这条线永远画不出来，
+   若也套这套规则，链接会默认没线、只在点按的一瞬间闪一下——所以触屏走上面的基础层 */
+@media (hover:hover) and (pointer:fine){
+  .post-body a{
+    text-decoration:none;
+    background:linear-gradient(90deg,currentColor,currentColor) no-repeat left bottom / 0% 1.5px;
+    transition:background-size .35s cubic-bezier(.2,.7,.2,1);
+    padding-bottom:1px;
+  }
+  .post-body a:hover{background-size:100% 1.5px}
 }
 </style>
 </head>
@@ -2230,8 +2296,23 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 
 <script>
 /* =====================================================================
- *  鉴业の小站（Jianye）
- *  单文件实现：hash 路由 / 明暗主题 / 中英切换 / 图库
+ *  鉴业の小站（Jianye）· 主脚本
+ *  单文件实现：hash 路由 / 中英切换 / 图库灯箱 / 博客 / 播放器 / 公告……
+ *  ---------------------------------------------------------------------
+ *  本脚本按「配置解析 → 全局状态 → 工具 → 组件 → 渲染 → 路由 → 启动」排列：
+ *    一、配置解析    projects.txt / profile.txt / notice.txt / friends.txt /
+ *                    steam.json / 相册清单（一切内容以根目录配置文件为准）
+ *    二、国际化      中英双语文案表 + 语言切换（切语言整页溶解、保持阅读位置）
+ *    三、全局状态    lang / SITE / NOTICES 等运行时状态
+ *    四、工具函数    文本转义 / 请求缓存合并 / 媒体兜底等
+ *    五、组件        动态照片 / 灯箱 / 公告弹窗 / 折叠卡 / 翻译
+ *    六、视图渲染    首页 / 项目 / 关于 / 记录（博客+相册）/ 单篇文章
+ *    七、动效接入    视差 / 卡片聚光 / 渐显（IntersectionObserver）/ 溶解
+ *    八、路由        hash 路由分发 + 阅读进度条 + 导航状态
+ *    九、交互绑定    全局事件委托（点击 / 键盘 / 指针）
+ *    十、启动        域名检测 → 配置全部读完 → 渲染 → 资源全部下载完 → 揭幕
+ *  头部更早的三个小脚本（开发者工具拦截 / 语言预判 / profile 预取）
+ *  属于「抢跑」逻辑：必须在主样式与首帧渲染前完成，见各自注释。
  * ===================================================================== */
 
 /* ---------- 项目：内容在站点根目录的 projects.txt 里配置 ----------
@@ -9106,7 +9187,11 @@ input[type=range].mp-range::-moz-range-thumb{
   flex:1;text-align:center;font-size:12.5px;color:#8b949e;letter-spacing:.03em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-/* 黄点：收起成一条标题栏；绿点：放大（mini 规则放在 big 之后，两者同时存在时收起优先） */
+/* 黄点：收起成一条标题栏；绿点：放大（mini 规则放在 big 之后，两者同时存在时收起优先）
+   【有意保留的"不优化"项】宽高过渡会触发布局重排，理论应换成 transform 缩放；
+   但终端窗口的语义就是「真的在变大变小」——宽高变化时文字随宽度重新换行，
+   这才是终端应有的行为；transform 缩放会把整个窗口连同文字拉伸变形（做过对比演示）。
+   加上这是藏起来的彩蛋、交互频率极低，重排开销可以忽略 —— 保留宽高过渡。 */
 .egg-term{transition:width .28s cubic-bezier(.3,1,.4,1),height .28s cubic-bezier(.3,1,.4,1)}
 .egg-term.egg-term-big{width:min(900px,96vw);height:calc(92vh - 40px)}
 .egg-term.egg-term-mini{height:39px}
@@ -9129,22 +9214,6 @@ input[type=range].mp-range::-moz-range-thumb{
 .t-input-row{display:flex;align-items:baseline}
 @media (max-width:560px){
   .egg-term-body{font-size:11.5px;padding:10px 12px}
-}
-</style>
-
-<style>
-/* ---- 正文链接下划线：悬停时下划线从左往右重新描一遍（划过的手感） ----
-   只给「有鼠标的设备」用：手机 / 平板触屏没有悬停，鼠标线画不出来，
-   若也套这套规则，链接会默认没线、只在点按的一瞬间闪一下——
-   所以触屏设备走下面的 @media 兜底：保持原来的常驻静态下划线不变 */
-@media (hover:hover) and (pointer:fine){
-  .post-body a{
-    text-decoration:none;
-    background:linear-gradient(90deg,currentColor,currentColor) no-repeat left bottom / 0% 1.5px;
-    transition:background-size .35s cubic-bezier(.2,.7,.2,1);
-    padding-bottom:1px;
-  }
-  .post-body a:hover{background-size:100% 1.5px}
 }
 </style>
 
