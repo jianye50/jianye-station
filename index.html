@@ -14,9 +14,18 @@
 <!-- ============ 强制站点域名 ============
      访客用「不是正式域名」的地址打开时（比如 xxx.pages.dev、旧域名、备用 CDN 域名），
      自动跳到 profile.txt 里「域名」那一行配置的正式网址，保证大家都停在同一个地方。
+     执行顺序是本功能的关键，分清「判定」和「动画」两件事：
+       ① 先判定域名（读 profile.txt 的「域名」并和当前 hostname 比）；
+       ② 判定要跳 → 立刻 replace 跳到正式域名，全程不出现加载动画
+          （圆点 / 光条的动画压根没启动，页面只是一块和 body 同色的挡板）；
+       ③ 判定通过（本来就在正式域名上）→ 不跳转，这时才放行动画：
+          .boot-inner 淡入 + 圆点 / 光条从第一帧开始播，绝不会「演到一半被打断」。
+     其它规则：
        · 路径 / ?参数 / #锚点 全部原样带过去，hash 路由的页面不会丢；
        · 只比域名（忽略大小写与 www.），同域名绝不跳，不会死循环；
        · 用 replace 跳转，不会在浏览器后退历史里留下那个错误域名；
+       · 一次访问只跳一次：__JY_REDIRECTING 一置位，后续任何判定都直接放弃；
+       · 弱网：profile.txt 8 秒还没回来就先放行动画（只影响动画，不参与判定）；
        · file:// 打开、localhost / 127.0.0.1 本地预览 一律不跳；
        · 地址后加 ?dev=1 或控制台执行 localStorage.setItem("jy-dev","1") 也不跳（站长自测用）；
        · profile.txt 读不到、或「域名」那行留空 / 删掉 → 功能整体关闭，绝不影响正常访问。
@@ -24,10 +33,26 @@
      请求存到 window.__JY_PROFILE_TEXT，主脚本直接复用，不会重复下载一次。 -->
 <script>
 (function(){
+  /* 加载动画的唯一开关：只有判定通过才加 html.jy-verdict。
+     CSS 里 html:not(.jy-verdict) 把 .boot-inner 透明掉、圆点 / 光条动画设为 none，
+     所以「动画提前显示 / 先闪一下再跳走」在结构上就不可能发生。 */
+  var bootPassed=false, bootTimer=0;
+  function passBoot(){
+    if(bootPassed)return;
+    bootPassed=true;
+    if(bootTimer){ clearTimeout(bootTimer); bootTimer=0; }
+    document.documentElement.classList.add("jy-verdict");
+  }
+
   var p;
   try{ p=fetch("profile.txt",{cache:"no-cache"}).then(function(r){ return r.ok?r.text():""; }); }
-  catch(e){ return; }
-  window.__JY_PROFILE_TEXT=p;      /* 主脚本 loadProfile() 复用这次请求 */
+  catch(e){ passBoot(); return; }        /* fetch 都起不来 → 按「不跳」处理，别把动画一起憋死 */
+  window.__JY_PROFILE_TEXT=p;            /* 主脚本 loadProfile() 复用这次请求 */
+
+  /* 弱网兜底：profile.txt 8 秒还没回（连接挂住那种），先把动画放出来，
+     别让人对着纯黑屏猜站点是不是坏了。这一路只决定「动画出不出」，
+     完全不参与判定 —— 结论后到该跳还是跳，所以不会出现「渲染一半再跳走」 */
+  bootTimer=setTimeout(passBoot,8000);
 
   /* 站长自测开关 / 本地环境：不跳 */
   var skip=false;
@@ -37,11 +62,12 @@
   }catch(e){}
   if(location.protocol==="file:")skip=true;
   if(/^(localhost|127\.0\.0\.1|::1|0\.0\.0\.0)$/.test(String(location.hostname).toLowerCase()))skip=true;
-  if(skip){ window.__JY_DOMAIN_CHECK=Promise.resolve("skip"); return; }
+  if(skip){ passBoot(); window.__JY_DOMAIN_CHECK=Promise.resolve("skip"); return; }
 
   /* 域名检测的结果承诺：主脚本揭幕前会等它 ——
-     判定要跳转就既不渲染也不揭幕，加载屏原地留着，直接跳走，绝不让人先看到半成品首页 */
+     判定要跳转就既不渲染也不揭幕，也不放行动画，直接跳走 */
   window.__JY_DOMAIN_CHECK=p.then(function(t){
+    if(window.__JY_REDIRECTING)return "redirect";        /* 已经在跳了 → 不重复判定、不重复跳 */
     if(!t||/^\s*</.test(t))return "ok";                  /* 读到的不是配置（404 兜底页等）→ 放弃 */
     var lines=String(t).split(/\r?\n/), target="", i;
     for(i=0;i<lines.length;i++){
@@ -63,11 +89,15 @@
     var base=u.origin+(u.pathname&&u.pathname!=="/"?u.pathname.replace(/\/+$/,""):"");
     var path=location.pathname||"/";
     var dest=base+(path.charAt(0)==="/"?path:"/"+path)+(location.search||"")+(location.hash||"");
-    /* 先打标记 → 主脚本看到就停止渲染/揭幕，加载屏保持转圈，然后立刻跳 */
+    /* 先打标记 → 主脚本看到就停止渲染/揭幕，动画也不会被放行，然后立刻跳（只跳这一次） */
     window.__JY_REDIRECTING=true;
     try{ location.replace(dest); }catch(e){ location.href=dest; }
     return "redirect";
-  },function(){ return "ok"; });
+  },function(){ return "ok"; }).then(function(v){
+    /* 判定出结果之后才碰动画：要跳 → 永远不放行；不跳 → 此刻放行，动画从第一帧起播 */
+    if(v!=="redirect")passBoot();
+    return v;
+  },function(){ passBoot(); return "ok"; });
 })();
 </script>
 <!-- 分享卡片预览（og 内容全部由 profile.txt 回填，这里只留空的属性位） -->
@@ -2062,7 +2092,9 @@ html:not(.jy-go) .nav{opacity:0}
 html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 @keyframes navFade{from{opacity:0}to{opacity:1}}
 /* 盖住初始化期间的一切闪烁（导航语言未统一、首屏未渲染），
-   站点就绪后由 JS 淡出移除 */
+   站点就绪后由 JS 淡出移除。
+   注意：挡板本身一直盖着，但里面的动画默认是「关」的 —— 域名判定通过
+   （html.jy-verdict，由 <head> 里那段脚本放行）之后才开播，见下一条 */
 #boot{position:fixed;inset:0;z-index:9999;background:var(--bg);
   display:grid;place-items:center;transition:opacity .28s ease}
 #boot.off{opacity:0;pointer-events:none}
@@ -2070,10 +2102,18 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
    结构：#boot 全屏黑底盖板 > .boot-inner（竖排两件套）
      · .boot-dot  蓝点呼吸（box-shadow 光环扩散，见上方历史备注）
      · .boot-bar  光条来回扫（translateX 动画，合成器友好）
+   【播放时机】域名判定没出结果之前，这里只当一块纯色挡板：
+     圆点 / 光条透明、两条动画 animation:none（不是 paused —— 不给浏览器留
+     任何「在挡板后面先演一遍」的机会）。判定通过那一刻 jy-verdict 一到，
+     它们才从第一帧开始播；判定要跳转的话就永远不播，直接换到正式域名。
+   挡板本身不跟着藏（display:none）：它盖的是「配置还没读、首屏还没渲染」的
+   空页面，藏了反而会先露出半成品；背景色与 body 同为 --bg，去留看不出变化。
    消失条件：主脚本「配置全读完 + 首屏渲染完 + 背景大图解码完 + 页面 load 完」
    才加 .off 淡出并移除（见主脚本「启动」段）；主脚本意外死亡时由
    #boot 标记后面的兜底脚本在 12 秒后强行揭开。 */
-.boot-inner{display:flex;flex-direction:column;align-items:center;gap:24px}
+.boot-inner{display:flex;flex-direction:column;align-items:center;gap:24px;
+  opacity:0;transition:opacity .2s ease}
+html.jy-verdict .boot-inner{opacity:1}
 .boot-dot{width:14px;height:14px;border-radius:50%;background:var(--accent);
   box-shadow:0 0 0 0 rgba(77,141,255,.5);animation:bootPulse 1.4s ease-out infinite}
 @keyframes bootPulse{70%{box-shadow:0 0 0 20px rgba(77,141,255,0)}100%{box-shadow:0 0 0 0 rgba(77,141,255,0)}}
@@ -2082,6 +2122,10 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
   background:linear-gradient(90deg,transparent,var(--accent),transparent);
   animation:bootSlide 1.1s ease-in-out infinite}
 @keyframes bootSlide{from{transform:translateX(-130%)}to{transform:translateX(430%)}}
+/* 域名判定未通过（未加 jy-verdict）：两条动画关掉，圆点 / 光条都不出现在画面上。
+   放在动画声明之后，覆盖更直观；选择器权重也更高，不依赖书写顺序 */
+html:not(.jy-verdict) .boot-dot,
+html:not(.jy-verdict) .boot-bar i{animation:none}
 
 /* ===================== 细处动效 =====================
    原则：只做「跟着指针走」的连续反馈，不做一次性大动画；
@@ -2183,8 +2227,10 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 <body>
 
 <!-- ============ 启动加载屏（站点就绪后淡出） ============
-     转圈加载动画盖住初始化过程；配置 / 数据 / 首屏 / 背景大图 / 页面 load
-     全部就绪后才揭幕显示主页。 -->
+     一块与页面同色的全屏挡板，先盖住「域名判定 / 配置读取 / 首屏渲染」的中间状态。
+     里面的转圈动画不是一上来就播：等 <head> 里域名判定通过、html 加上 jy-verdict
+     之后才出现（判定要跳转的话永远不出现，页面直接换到正式域名，不会先闪一下动画）。
+     配置 / 数据 / 首屏 / 背景大图 / 页面 load 全部就绪后才揭幕显示主页。 -->
 <div id="boot" aria-hidden="true">
   <div class="boot-inner">
     <span class="boot-dot"></span>
@@ -2310,7 +2356,7 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
  *    七、动效接入    视差 / 卡片聚光 / 渐显（IntersectionObserver）/ 溶解
  *    八、路由        hash 路由分发 + 阅读进度条 + 导航状态
  *    九、交互绑定    全局事件委托（点击 / 键盘 / 指针）
- *    十、启动        域名检测 → 配置全部读完 → 渲染 → 资源全部下载完 → 揭幕
+ *    十、启动        域名判定（通过才出加载动画）→ 配置全部读完 → 渲染 → 资源下载完 → 揭幕
  *  头部更早的三个小脚本（开发者工具拦截 / 语言预判 / profile 预取）
  *  属于「抢跑」逻辑：必须在主样式与首帧渲染前完成，见各自注释。
  * ===================================================================== */
@@ -7282,13 +7328,16 @@ document.addEventListener("keydown",e=>{
 
 /* ---------- 启动 ----------
    思路就一句话：加载屏掀开之前，把该准备的全准备好，页面已经是最终样子。
-     1) <head> 里先做域名检测（__JY_DOMAIN_CHECK）：判定要跳转就立刻跳，
-        加载屏原地转圈，绝不让人看到半成品首页；
-     2) 所有配置与数据一起拉（profile / 项目 / 友链 / 游戏 / 相册清单），
+     0) 【先判定，后动画】加载屏是一块与页面同色的挡板，里面的转圈动画默认不播；
+        <head> 里域名检测（__JY_DOMAIN_CHECK）一有结论就先分叉：
+          · 要跳转 → 一帧动画都不放，直接 replace 到正式域名（也不渲染首页）；
+          · 通过   → html 加 jy-verdict，动画这时才淡入、从第一帧开始播。
+        所以既不会「先闪一下动画再跳走」，也不会在跳转过程中转圈；
+     1) 所有配置与数据一起拉（profile / 项目 / 友链 / 游戏 / 相册清单），
         统一等它们到位 —— 不设时间上限，全在加载屏后面读完；
-     3) 配置齐了才做第一次、也是唯一一次渲染：站名、背景、板块一次到位；
-     4) 等背景大图解码完成 + 页面 load 完成；
-     5) 揭幕：加 html.jy-go 让「背景推近 + 文字上浮」两条动画从 0 帧开始播，
+     2) 配置齐了才做第一次、也是唯一一次渲染：站名、背景、板块一次到位；
+     3) 等背景大图解码完成 + 页面 load 完成；
+     4) 揭幕：加 html.jy-go 让「背景推近 + 文字上浮」两条动画从 0 帧开始播，
         同时极短地淡出加载屏 —— 动画一定看得见。 */
 window.__JY_PROFILE_DONE=loadProfile();   /* 站名 / 背景 / 域名 / 个人信息 */
 const bootLoads=[                          /* 揭幕前要一起等齐的几路数据 */
@@ -7474,16 +7523,17 @@ function annHistoryHTML(){
 
 (async function(){
   /* 1+2. 域名检测 + 所有配置数据一起等 —— 不再设 3.5 秒上限：
-          按需求「页面全部下载完才显示主页」，配置没读完就一直在启动动画后面等
+          按需求「页面全部下载完才显示主页」，配置没读完就一直等
           （各路加载自身失败会触发 catch 放行，不会永远卡住）。
-          判定要跳转 → 不渲染、不揭幕，启动动画保持播放，页面直接跳走。 */
+          域名检测的结论在 <head> 里就已经决定了「动画播不播」：
+          要跳转 → 这里必然拿到 redirect，直接返回，不渲染、不揭幕、不碰动画。 */
   try{
     const waits=[window.__JY_DOMAIN_CHECK||Promise.resolve("ok")]
       .concat(bootLoads)
       .map(p=>Promise.resolve(p).catch(()=>{}));
     await Promise.all(waits);
   }catch(e){}
-  if(window.__JY_REDIRECTING)return;
+  if(window.__JY_REDIRECTING)return;   /* 判定失败地址：什么都不做，让浏览器完成跳转 */
   /* 3. 第一次、也是唯一一次首屏渲染（配置齐了，一次画到位） */
   window.__JY_STARTED=true;
   if(!window.__JY_RENDERED)setLang(lang,false);
