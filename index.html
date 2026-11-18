@@ -681,20 +681,15 @@ img{display:block;max-width:100%}
   font-size:12.5px;letter-spacing:.14em;font-weight:600;
 }
 .hero-badge .pulse{
-  position:relative;width:7px;height:7px;border-radius:50%;
+  width:7px;height:7px;border-radius:50%;
   background:#35d07f;
-}
-/* 呼吸光环画在 ::after 上，只用 transform + opacity（合成器直出，不触发重绘）：
-   以前动 box-shadow 扩散，每帧都要整层重画，这个徽章在首页永远亮着，省下的是长尾开销 */
-.hero-badge .pulse::after{
-  content:"";position:absolute;inset:0;border-radius:50%;
-  background:#35d07f;will-change:transform,opacity;
-  animation:pulse 2.2s ease-out infinite;
+  box-shadow:0 0 0 0 rgba(53,208,127,.5);
+  animation:pulse 2.2s infinite;
 }
 @keyframes pulse{
-  0%{transform:scale(1);opacity:.5}
-  70%{transform:scale(3.5);opacity:0}
-  100%{transform:scale(3.5);opacity:0}
+  0%{box-shadow:0 0 0 0 rgba(53,208,127,.5)}
+  70%{box-shadow:0 0 0 9px rgba(53,208,127,0)}
+  100%{box-shadow:0 0 0 0 rgba(53,208,127,0)}
 }
 .hero h1{
   margin:26px 0 18px;
@@ -2028,19 +2023,9 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 #boot.off{opacity:0;pointer-events:none}
 /* ===================== 启动加载屏（常驻转圈动画） =====================
 .boot-inner{display:flex;flex-direction:column;align-items:center;gap:24px}
-.boot-dot{position:relative;width:14px;height:14px;border-radius:50%;background:var(--accent)}
-/* 呼吸光环走 ::after 的 transform + opacity（合成器直出）：
-   以前每帧重画 box-shadow 扩散，启动屏每次进站都要转，积少成多 */
-.boot-dot::after{
-  content:"";position:absolute;inset:0;border-radius:50%;
-  background:var(--accent);will-change:transform,opacity;
-  animation:bootPulse 1.4s ease-out infinite;
-}
-@keyframes bootPulse{
-  0%{transform:scale(1);opacity:.5}
-  70%{transform:scale(3.9);opacity:0}
-  100%{transform:scale(3.9);opacity:0}
-}
+.boot-dot{width:14px;height:14px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 0 0 rgba(77,141,255,.5);animation:bootPulse 1.4s ease-out infinite}
+@keyframes bootPulse{70%{box-shadow:0 0 0 20px rgba(77,141,255,0)}100%{box-shadow:0 0 0 0 rgba(77,141,255,0)}}
 .boot-bar{width:170px;height:3px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .boot-bar i{display:block;width:42%;height:100%;border-radius:3px;
   background:linear-gradient(90deg,transparent,var(--accent),transparent);
