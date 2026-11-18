@@ -2094,7 +2094,7 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
           视频完整播完 / 加载失败 → 也自动收起，同样回到加载动画；
         · 关 / 没配 → 不播视频，直接就是加载动画。
    选片按设备方向：
-     · 竖屏设备（手机竖持）→ tyx-Jianye-portrait（portrait screen）.mp4
+     · 竖屏设备（手机竖持）→ Startup animation（portrait screen）.mp4
      · 横屏设备（电脑 / 手机横持）→ Startup animation（Landscape）.mp4
    结果统一收进 window.__JY_BOOT_VIDEO：resolve = 视频层结束（播完 / 被点掉 / 没启用 /
    跳转放行），主脚本揭幕前会等它，保证「页面没下完不进站」；
@@ -2123,7 +2123,7 @@ window.__JY_BOOT_VIDEO=(function(){
     /* 选片：竖屏设备播竖版，横屏设备播横版。
        先用系统的方向媒体查询判定，读不到就退回用窗口宽高比判定（高≥宽 = 竖屏） */
     var LAN="Startup animation（Landscape）.mp4",
-        POR="tyx-Jianye-portrait（portrait screen）.mp4";
+        POR="Startup animation（portrait screen）.mp4";
     var portrait=false;
     try{
       if(window.matchMedia&&window.matchMedia("(orientation: portrait)").matches)portrait=true;

@@ -23,7 +23,7 @@
 
 # 加载视频|进站时加载屏上要不要播放启动动画视频（视频盖在加载动画上面）
 #     · 开（或 true / on / 1）→ 播放视频：横屏设备播 Startup animation（Landscape）.mp4，
-#       竖屏设备（手机竖持）播 tyx-Jianye-portrait（portrait screen）.mp4；
+#       竖屏设备（手机竖持）播 Startup animation（portrait screen）.mp4；
 #       不想看视频时点击一下视频，就会收起视频、露出底下的加载动画继续加载
 #     · 关（或 false / off / 0）、留空或删掉这一行 → 不播视频，直接显示加载动画
 #     · 用旧域名访问要跳转时视频不会播，跳到正式域名后才播，不会重复播两遍
