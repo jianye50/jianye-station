@@ -9130,59 +9130,7 @@ input[type=range].mp-range::-moz-range-thumb{
 </style>
 
 <style>
-/* ============ 全站动效补充：滚动进度条 / 返回顶部 / 卡片光晕 ============ */
-
-/* ---- 1) 全站顶部滚动进度条：页面往下滚，细光带从左往右涨。
-        文章页有自己的阅读进度条（.read-bar），那根亮起时这根自动让位隐藏 ---- */
-.scroll-bar{
-  position:fixed;left:0;top:0;height:2.5px;width:100%;
-  z-index:100;pointer-events:none;
-  transform:scaleX(0);transform-origin:0 50%;
-  background:linear-gradient(90deg,var(--accent),#7fb0ff 60%,#b79bff);
-  box-shadow:0 0 8px rgba(77,141,255,.5);
-  opacity:0;transition:opacity .25s ease;
-  will-change:transform;
-}
-.scroll-bar.on{opacity:1}
-
-/* ---- 2) 返回顶部悬浮按钮：滚过一屏后右下角浮出，点一下平滑回顶 ---- */
-.to-top{
-  position:fixed;right:22px;bottom:22px;z-index:90;
-  width:44px;height:44px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  background:rgba(20,24,32,.82);
-  border:1px solid rgba(255,255,255,.1);
-  color:var(--text-2);cursor:pointer;
-  box-shadow:0 6px 22px rgba(0,0,0,.35);
-  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-  opacity:0;visibility:hidden;transform:translateY(14px) scale(.9);
-  transition:opacity .3s ease,transform .3s cubic-bezier(.2,.7,.2,1),
-             visibility .3s,color .2s,border-color .2s,box-shadow .3s ease;
-}
-.to-top.show{opacity:1;visibility:visible;transform:none}
-.to-top:hover{
-  color:var(--accent);border-color:rgba(77,141,255,.45);
-  transform:translateY(-3px);box-shadow:0 10px 26px rgba(77,141,255,.18);
-}
-.to-top:active{transform:scale(.92)}
-.to-top svg{width:18px;height:18px;transition:transform .2s}
-.to-top:hover svg{animation:toTopBob .9s ease-in-out infinite}
-@keyframes toTopBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-
-/* ---- 3) 卡片鼠标跟随光晕：一张径向光斑跟着指针在卡片内游走。
-        只动 ::after 的透明度与渐变位置，不触发布局；
-        手机 / 触屏设备没有 hover，脚本不会挂监听，等于自动关闭 ---- */
-.proj,.post-card,.steam-game,.about-card,.friend{position:relative}
-.proj::after,.post-card::after,.steam-game::after,.about-card::after,.friend::after{
-  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-  opacity:0;transition:opacity .4s ease;
-  background:radial-gradient(240px circle at var(--mx,50%) var(--my,50%),
-             rgba(77,141,255,.14),transparent 65%);
-}
-.proj:hover::after,.post-card:hover::after,.steam-game:hover::after,
-.about-card:hover::after,.friend:hover::after{opacity:1}
-
-/* ---- 4) 正文链接下划线：悬停时下划线从左往右重新描一遍（划过的手感） ---- */
+/* ---- 正文链接下划线：悬停时下划线从左往右重新描一遍（划过的手感） ---- */
 .post-body a{
   text-decoration:none;
   background:linear-gradient(90deg,currentColor,currentColor) no-repeat left bottom / 0% 1.5px;
@@ -9190,82 +9138,7 @@ input[type=range].mp-range::-moz-range-thumb{
   padding-bottom:1px;
 }
 .post-body a:hover{background-size:100% 1.5px}
-
-/* ---- 减少动态效果：系统开了就只留功能、去掉动画 ---- */
-@media (prefers-reduced-motion:reduce){
-  .scroll-bar{transition:none}
-  .to-top{transition:opacity .2s ease,visibility .2s}
-  .to-top:hover{transform:none}
-  .to-top:hover svg{animation:none}
-  .proj::after,.post-card::after,.steam-game::after,.about-card::after,.friend::after{transition:none}
-}
 </style>
-
-<script>
-/* ---- 全站滚动动效（滚动进度条 / 返回顶部 / 卡片光晕）----
-   统一用 rAF 节流的 scroll 监听，指针光晕用事件委托，都不碰渲染主流程 */
-(function(){
-  var bar=null,btn=null,ticking=false;
-  function ensureEls(){
-    if(!bar){
-      bar=document.createElement("div");
-      bar.className="scroll-bar";
-      bar.setAttribute("aria-hidden","true");
-      document.body.appendChild(bar);
-    }
-    if(!btn){
-      btn=document.createElement("button");
-      btn.type="button";
-      btn.className="to-top";
-      btn.setAttribute("aria-label","回到顶部");
-      btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '+
-        'stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'+
-        '<path d="M12 19V5M5 12l7-7 7 7"/></svg>';
-      btn.addEventListener("click",function(){
-        try{window.scrollTo({top:0,behavior:"smooth"});}
-        catch(e){window.scrollTo(0,0);}
-      });
-      document.body.appendChild(btn);
-    }
-  }
-  function onScroll(){
-    if(ticking)return;
-    ticking=true;
-    requestAnimationFrame(function(){
-      ticking=false;
-      if(!bar)return;
-      var doc=document.documentElement;
-      var maxY=(doc.scrollHeight||0)-(window.innerHeight||1);
-      var p=maxY>0?Math.min(1,Math.max(0,(window.scrollY||0)/maxY)):0;
-      /* 文章页的阅读进度条亮着时，全站这根让位：只隐藏、不抢戏 */
-      var readOn=!!document.querySelector(".read-bar.on");
-      bar.classList.toggle("on",p>0.015&&!readOn);
-      if(!readOn)bar.style.transform="scaleX("+p.toFixed(4)+")";
-      if(btn)btn.classList.toggle("show",(window.scrollY||0)>(window.innerHeight||0)*0.9);
-    });
-  }
-  /* ---- 卡片光晕：委托到 document，卡片是每页重新渲染的，不用挨个挂 ---- */
-  var canHover=false;
-  try{canHover=matchMedia("(hover: hover) and (pointer: fine)").matches;}catch(e){}
-  function glowMove(e){
-    var el=e.target&&e.target.closest?e.target.closest(".glow-card"):null;
-    if(!el)return;
-    var r=el.getBoundingClientRect();
-    el.style.setProperty("--mx",(e.clientX-r.left)+"px");
-    el.style.setProperty("--my",(e.clientY-r.top)+"px");
-  }
-  function init(){
-    ensureEls();
-    window.addEventListener("scroll",onScroll,{passive:true});
-    window.addEventListener("resize",onScroll,{passive:true});
-    onScroll();
-    if(canHover)document.addEventListener("pointermove",glowMove,{passive:true});
-  }
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",init,{once:true});
-  }else init();
-})();
-</script>
 
 </body>
 </html>
