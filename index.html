@@ -681,15 +681,20 @@ img{display:block;max-width:100%}
   font-size:12.5px;letter-spacing:.14em;font-weight:600;
 }
 .hero-badge .pulse{
-  width:7px;height:7px;border-radius:50%;
+  position:relative;width:7px;height:7px;border-radius:50%;
   background:#35d07f;
-  box-shadow:0 0 0 0 rgba(53,208,127,.5);
-  animation:pulse 2.2s infinite;
+}
+/* 呼吸光环画在 ::after 上，只用 transform + opacity（合成器直出，不触发重绘）：
+   以前动 box-shadow 扩散，每帧都要整层重画，这个徽章在首页永远亮着，省下的是长尾开销 */
+.hero-badge .pulse::after{
+  content:"";position:absolute;inset:0;border-radius:50%;
+  background:#35d07f;will-change:transform,opacity;
+  animation:pulse 2.2s ease-out infinite;
 }
 @keyframes pulse{
-  0%{box-shadow:0 0 0 0 rgba(53,208,127,.5)}
-  70%{box-shadow:0 0 0 9px rgba(53,208,127,0)}
-  100%{box-shadow:0 0 0 0 rgba(53,208,127,0)}
+  0%{transform:scale(1);opacity:.5}
+  70%{transform:scale(3.5);opacity:0}
+  100%{transform:scale(3.5);opacity:0}
 }
 .hero h1{
   margin:26px 0 18px;
@@ -813,8 +818,12 @@ img{display:block;max-width:100%}
   margin-bottom:22px;
 }
 .section-label::before{
-  content:"";width:34px;height:2.5px;border-radius:99px;
+  content:"";width:50px;height:2.5px;border-radius:99px;
   background:var(--accent);
+  /* 固定 50px 宽、默认 scaleX(.68) 压成 34px，悬停展开到 1：
+     动 transform 不动 width，走合成器（.section-label:hover::before 的展开规则在细节动效区） */
+  transform:scaleX(.68);transform-origin:left center;
+  will-change:transform;
 }
 
 /* ===================== 图库：照片墙 ===================== */
@@ -1145,8 +1154,8 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 .avatar:hover{transform:scale(1.04);box-shadow:0 0 0 3px rgba(77,141,255,.24)}
 .avatar:hover img{transform:scale(1.06)}
 /* 区块标题前的小横线：悬停时向右延展，像给标题「划重点」 */
-.section-label::before{transition:width .35s cubic-bezier(.2,.7,.2,1)}
-.section-label:hover::before{width:50px}
+.section-label::before{transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+.section-label:hover::before{transform:scaleX(1)}
 /* 导航品牌圆点：悬停时轻轻放大、光环亮一圈 */
 .nav-brand .dot{transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s ease}
 .nav-brand:hover .dot{transform:scale(1.18);box-shadow:0 0 0 5px rgba(77,141,255,.2)}
@@ -1158,6 +1167,7 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
     transition:none;
   }
   .chips span:hover,.avatar:hover,.avatar:hover img,.nav-brand:hover .dot{transform:none}
+  .section-label:hover::before{transform:scaleX(.68)}   /* 横线保持默认长度，不展开 */
 }
 
 /* ===================== 相册：子相册卡片 / 视频与 Live Photo ===================== */
@@ -2016,13 +2026,21 @@ html.jy-go .nav{animation:navFade .5s .1s ease backwards}
 #boot{position:fixed;inset:0;z-index:9999;background:var(--bg);
   display:grid;place-items:center;transition:opacity .28s ease}
 #boot.off{opacity:0;pointer-events:none}
-/* （原转圈加载动画 .boot-dot / .boot-bar 及其 keyframes 已删除，
-   启动屏现在只放启动动画视频，见下方「启动动画视频模式」） */
-/* ===================== 启动加载屏（打底 + 常驻转圈动画） ===================== */
+/* ===================== 启动加载屏（常驻转圈动画） =====================
 .boot-inner{display:flex;flex-direction:column;align-items:center;gap:24px}
-.boot-dot{width:14px;height:14px;border-radius:50%;background:var(--accent);
-  box-shadow:0 0 0 0 rgba(77,141,255,.5);animation:bootPulse 1.4s ease-out infinite}
-@keyframes bootPulse{70%{box-shadow:0 0 0 20px rgba(77,141,255,0)}100%{box-shadow:0 0 0 0 rgba(77,141,255,0)}}
+.boot-dot{position:relative;width:14px;height:14px;border-radius:50%;background:var(--accent)}
+/* 呼吸光环走 ::after 的 transform + opacity（合成器直出）：
+   以前每帧重画 box-shadow 扩散，启动屏每次进站都要转，积少成多 */
+.boot-dot::after{
+  content:"";position:absolute;inset:0;border-radius:50%;
+  background:var(--accent);will-change:transform,opacity;
+  animation:bootPulse 1.4s ease-out infinite;
+}
+@keyframes bootPulse{
+  0%{transform:scale(1);opacity:.5}
+  70%{transform:scale(3.9);opacity:0}
+  100%{transform:scale(3.9);opacity:0}
+}
 .boot-bar{width:170px;height:3px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .boot-bar i{display:block;width:42%;height:100%;border-radius:3px;
   background:linear-gradient(90deg,transparent,var(--accent),transparent);
@@ -9130,14 +9148,19 @@ input[type=range].mp-range::-moz-range-thumb{
 </style>
 
 <style>
-/* ---- 正文链接下划线：悬停时下划线从左往右重新描一遍（划过的手感） ---- */
-.post-body a{
-  text-decoration:none;
-  background:linear-gradient(90deg,currentColor,currentColor) no-repeat left bottom / 0% 1.5px;
-  transition:background-size .35s cubic-bezier(.2,.7,.2,1);
-  padding-bottom:1px;
+/* ---- 正文链接下划线：悬停时下划线从左往右重新描一遍（划过的手感） ----
+   只给「有鼠标的设备」用：手机 / 平板触屏没有悬停，鼠标线画不出来，
+   若也套这套规则，链接会默认没线、只在点按的一瞬间闪一下——
+   所以触屏设备走下面的 @media 兜底：保持原来的常驻静态下划线不变 */
+@media (hover:hover) and (pointer:fine){
+  .post-body a{
+    text-decoration:none;
+    background:linear-gradient(90deg,currentColor,currentColor) no-repeat left bottom / 0% 1.5px;
+    transition:background-size .35s cubic-bezier(.2,.7,.2,1);
+    padding-bottom:1px;
+  }
+  .post-body a:hover{background-size:100% 1.5px}
 }
-.post-body a:hover{background-size:100% 1.5px}
 </style>
 
 </body>
