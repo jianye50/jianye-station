@@ -4338,7 +4338,9 @@ function projectsGridHTML(limit){
   const list=limit?PROJECTS.slice(0,limit):PROJECTS;
   return list.map(p=>`
   <a class="proj" href="${esc(p.u)}" target="_blank" rel="noopener">
-    <div class="ic" style="background:${p.c}">${p.ic}</div>
+    /* ic / c 来自 projects.txt 配置：转义后 emoji 原样、渐变色不变，
+       但配置里混进 HTML / 引号时不会注入标记或逃出 style 属性 */
+    <div class="ic" style="background:${esc(p.c)}">${esc(p.ic)}</div>
     <h4>${esc(lang==="zh"?p.zh:p.en)}</h4>
     <p>${esc(lang==="zh"?p.dzh:p.den)}</p>
   </a>`).join("");
@@ -4717,10 +4719,14 @@ function mdToHTML(md,imgBase,imgMap){
     warning:{icon:"⚠️",zh:"警告",en:"WARNING"},
     caution:{icon:"🚫",zh:"小心",en:"CAUTION"}
   };
-  /* 附件下载卡：左边是扩展名色块，右边文件名 + 原始路径 */
+  /* 附件下载卡：左边是扩展名色块，右边文件名 + 原始路径
+     与链接卡同标准：只放行 http(s) 与相对路径 —— data:/blob:/file:
+     一律不生成下载链接（file: 在网页上永远打不开，data: 可被拿来钓鱼） */
   const fileHTML=(name,src)=>{
+    const u=mediaURL(src,false);
+    if(/^(data|blob|file|javascript):/i.test(u))return "";
     const ext=(String(src).match(/\.([a-z0-9]+)(?=$|[?#])/i)||["","FILE"])[1].toUpperCase().slice(0,4);
-    return `<a class="md-file" href="${esc(mediaURL(src,false))}" download target="_blank" rel="noopener">`+
+    return `<a class="md-file" href="${esc(u)}" download target="_blank" rel="noopener">`+
       `<span class="mf-ico">${esc(ext)}</span>`+
       `<span class="mf-name">${esc(name||src)}<span class="mf-sub">${esc(src)}</span></span>`+
       `<span class="lc-arrow">⬇</span></a>`;
@@ -4835,7 +4841,8 @@ function mdToHTML(md,imgBase,imgMap){
       const u=href.trim();
       /* 协议白名单：禁掉 javascript: / vbscript: / data: 等危险 scheme，防止文章里藏 XSS 链接 */
       if(/^(javascript|vbscript|data)\s*:/i.test(u))return txt;
-      return `<a href="${u}" target="_blank" rel="noopener">${txt}</a>`;
+      /* href 必须转义：URL 里带双引号会逃出属性，攻击面同 XSS（txt 在上游已 esc，这里补 href） */
+      return `<a href="${esc(u)}" target="_blank" rel="noopener">${txt}</a>`;
     });
     s=s.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
        .replace(/\*([^*]+)\*/g,"<em>$1</em>");
@@ -5084,7 +5091,7 @@ function blogListHTML(list,q,stagger){
   list.forEach(p=>{
     const y=(p.date||"").slice(0,4)||"····";
     if(y!==lastYear){
-      html+=`<div class="blog-year ${stagger?"rv":""}"${nextDelay()}>${y}</div>`;
+      html+=`<div class="blog-year ${stagger?"rv":""}"${nextDelay()}>${esc(y)}</div>`;
       lastYear=y;
     }
     const dly=nextDelay();
@@ -8170,7 +8177,9 @@ input[type=range].mp-range::-moz-range-thumb{
     if(gdCache.has(key))return gdCache.get(key);
     const j=await gdFetch("types=search&source="+GD_SRC+"&name="+encodeURIComponent(kw)+"&count=20&pages="+(page||1));
     const list=Array.isArray(j)?j:[];
-    gdCache.set(key,list);
+    /* 只缓存「有结果」的搜索：空结果多半是限流/网络抽风，缓存住的话
+       这个词本会话就再也搜不出来了 */
+    if(list.length)gdCache.set(key,list);
     return list;
   }
   async function gdUrl(id,br){
