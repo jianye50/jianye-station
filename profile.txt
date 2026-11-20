@@ -31,8 +31,7 @@
 SEO描述|鉴业の小站（也叫鉴业小站）：鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。这里有一键重装、文件加密、Jianye PE、米家网页控制台、RSS 阅读器、在线音乐播放器等自制工具。|Jianye's Corner: Jianye's personal blog and digital space — project works, photo album, tech tinkering and daily notes.
 
 # 图标|浏览器标签页图标（favicon）地址，支持 .ico / .png
-图标|icon.png
-
+图标|icon-180.png
 # 背景|首页首屏大图背景地址（本地文件或外链都可以）
 背景|https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&q=78&auto=format
 
@@ -74,8 +73,7 @@ SEO描述|鉴业の小站（也叫鉴业小站）：鉴业的个人博客与数�
 简介|这个站点是我的数字空间——把项目、相册和喜欢的光影想法收进同一个地方，欢迎随便逛逛。|This site is my digital space — projects, photos and ideas I like, all in one place. Feel free to look around.
 
 # 头像|图片地址（相对站点根目录，如 avatar.png）
-头像|avatar.png
-
+头像|avatar-256.webp
 # 邮箱|联系邮箱（留空或删掉这一行可隐藏邮箱区域）
 邮箱|aimjianye@outlook.com
 
