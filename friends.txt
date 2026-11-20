@@ -1,5 +1,18 @@
-表单|https://example.com/form
-云年|YunNian|默认渐变|Default tile|https://blog.xiaoshiho.com|https://blog.xiaoshiho.com/logo.png
-白底站|Light Site|指定白底|Light tile specified|https://light.example.com|https://light.example.com/l.png|浅
-深底站|Dark Site|指定深底|Dark tile specified|https://dark.example.com|https://dark.example.com/d.png|dark
-长条浅底|Wide Light|长图加白底|Wide with light tile|https://wl.example.com|https://wl.example.com/wide.png|light
+# 友链配置（改完保存，刷新页面即生效，不用动 index.html）
+#
+# 每行一位朋友，用 | 隔开，顺序固定（共 7 栏，最后一栏可省略）：
+#   中文名|英文名|中文描述|英文描述|网址|图标地址|底色
+# 图标一栏可以不写；行首带 # 的行是注释，会被忽略；
+# 第 7 栏「底色」也是可选：图标是透明 PNG/SVG、压在默认蓝紫渐变上
+# 看不清时，填 浅（或 light）换成白底，填 深（或 dark）换成深灰玻璃底；
+# 不填就用默认渐变。名称和描述里请不要用 | 字符。
+#
+# ↓ 申请友链的表单地址（改 | 后面的网址即可）
+表单|https://my.feishu.cn/share/base/form/shrcn33uvUS0WgKehGEiDMxZAHe
+#
+# ↓ 在下面加朋友，一行一个，直接照抄上一行的格式换内容：
+小刚PE|XiaoGang PE|小刚PE 系统维护|XiaoGang PE · System maintenance|https://www.xgpe.top|https://www.xgpe.top/images/logo.jpg
+奶油小屋博客|Cream Cottage|这个博客存放我的日常、成长，还有我对自己的观察|My daily life, my growth, and how I see myself|https://abcdtfk.icu|https://abcdtfk.icu/IMG_1370.jpeg
+温鑫系统|WenXin System|温鑫系统-装机助理|WenXin System · Installation assistant|https://ai.sysvp.cn|https://ai.sysvp.cn/static/picture/wx.svg
+木易|Muyi|万般努力只为出人头地，低头弯腰只为爬得更高|All the striving to make a name; bowing low only to climb higher|https://blog.ldci.asia|https://blog.ldci.asia/uploads/image/308b2adf-a263-4a28-a94c-762afbd9dd81.webp
+云年|YunNian|记录生活、分享作品，也收集每一次有趣的相遇|Recording life, sharing works, and collecting every interesting encounter|https://blog.xiaoshiho.com|https://blog.xiaoshiho.com/logo.png
