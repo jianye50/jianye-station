@@ -4336,10 +4336,11 @@ function renderProjects(){
    不传则全部渲染（关于页用）。 */
 function projectsGridHTML(limit){
   const list=limit?PROJECTS.slice(0,limit):PROJECTS;
+  /* ic / c 来自 projects.txt 配置：转义后 emoji 原样、渐变色不变，
+     但配置里混进 HTML / 引号时不会注入标记或逃出 style 属性
+     —— 注释只能写在这里（模板字符串外面），写进模板里会被当成卡片内容渲染出来 */
   return list.map(p=>`
   <a class="proj" href="${esc(p.u)}" target="_blank" rel="noopener">
-    /* ic / c 来自 projects.txt 配置：转义后 emoji 原样、渐变色不变，
-       但配置里混进 HTML / 引号时不会注入标记或逃出 style 属性 */
     <div class="ic" style="background:${esc(p.c)}">${esc(p.ic)}</div>
     <h4>${esc(lang==="zh"?p.zh:p.en)}</h4>
     <p>${esc(lang==="zh"?p.dzh:p.den)}</p>
