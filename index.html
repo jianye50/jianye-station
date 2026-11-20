@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
-<title>鉴业の小站 · Jianye's Corner</title>
+<title>鉴业の小站</title>
 <!-- 标签页标题 / 描述 / 分享卡片 / 图标 静态兜底值供搜索引擎爬虫直接抓取，
      JS 启动后仍会按 profile.txt 覆盖为访客语言的版本 -->
 <meta name="description" content="鉴业の小站（也叫鉴业小站）：鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。这里有一键重装、文件加密、Jianye PE、米家网页控制台、RSS 阅读器、在线音乐播放器等自制工具。">
@@ -103,14 +103,14 @@
 <!-- 分享卡片预览（静态兜底值供爬虫抓取，JS 启动后按 profile.txt 覆盖） -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="鉴业の小站">
-<meta property="og:title" content="鉴业の小站 · Jianye's Corner">
+<meta property="og:title" content="鉴业の小站">
 <meta property="og:description" content="鉴业の小站（也叫鉴业小站）：鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。">
 <meta property="og:url" content="https://jype.top/">
 <meta property="og:image" content="https://jype.top/avatar.png">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="鉴业の小站 · Jianye's Corner">
+<meta name="twitter:title" content="鉴业の小站">
 <meta name="twitter:description" content="鉴业の小站：鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。">
 <meta name="twitter:image" content="https://jype.top/avatar.png">
 <script type="application/ld+json">
@@ -171,10 +171,12 @@
      浏览器这边在同一帧内按语言改掉，英文界面不会闪出中文标题；
      主脚本稍后仍会按 profile.txt 的「站名」再填一次，这里只是抢先占位。 */
   try{
+    var d=document.querySelector('meta[name="description"]');
     if(s==="en"){
       document.title="Jianye's Corner";
-      var d=document.querySelector('meta[name="description"]');
       if(d)d.setAttribute("content","Jianye's Corner \u2014 Jianye's personal blog and digital space: project works, photo album, tech tinkering and daily notes.");
+    }else{
+      document.title="鉴业の小站";
     }
   }catch(e){}
 })();
