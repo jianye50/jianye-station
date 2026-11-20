@@ -39,14 +39,28 @@ async function loadProfile(context) {
   const now = Date.now();
   if (cache.data && now - cache.at < CACHE_TTL_MS) return cache.data;
 
-  const assets = context.env && context.env.ASSETS;
-  if (!assets || typeof assets.fetch !== 'function') return null;   // 本地预览等场景直接跳过
-
   const origin = new URL(context.request.url).origin;
-  const res = await assets.fetch(new URL(PROFILE_PATH, origin).toString(), {
-    cf: { cacheTtl: 30, cacheEverything: true }
-  });
-  if (!res.ok) return null;
+  const target = new URL(PROFILE_PATH, origin).toString();
+
+  /* 首选 Pages 的静态资源绑定；某些项目里拿不到，就退回同源 fetch
+     （/profile.txt 不归本函数管，会被 catch-all 函数放行到静态资源，不会递归） */
+  let res = null;
+  const assets = context.env && context.env.ASSETS;
+  if (assets && typeof assets.fetch === 'function') {
+    try {
+      res = await assets.fetch(target, { cf: { cacheTtl: 30, cacheEverything: true } });
+    } catch (e) {
+      res = null;
+    }
+  }
+  if (!res || !res.ok) {
+    try {
+      res = await fetch(target, { cf: { cacheTtl: 30, cacheEverything: true } });
+    } catch (e) {
+      res = null;
+    }
+  }
+  if (!res || !res.ok) return null;
 
   const data = parseProfile(await res.text());
   cache = { at: now, data };
@@ -114,20 +128,22 @@ export async function onRequest(context) {
     if (!ct.includes('text/html')) return response;
 
     const profile = await loadProfile(context);
-    if (!profile) return response;
-
     const original = await response.text();
+
+    const headers = new Headers(response.headers);
+    headers.delete('content-length');
+    headers.set('content-type', 'text/html; charset=UTF-8');
+    headers.set('cache-control', 'public, max-age=0, must-revalidate');
+    headers.set('x-jy-seo', profile ? 'ok' : 'no-profile');
+
+    if (!profile) return new Response(original, { status: response.status, headers });
+
     let out = original;
     try {
       out = inject(original, profile);
     } catch (e) {
       out = original;                       // 注入失败也要把首页原样吐出去
     }
-
-    const headers = new Headers(response.headers);
-    headers.delete('content-length');
-    headers.set('content-type', 'text/html; charset=UTF-8');
-    headers.set('cache-control', 'public, max-age=0, must-revalidate');
     return new Response(out, { status: response.status, headers });
   } catch (e) {
     return response;
