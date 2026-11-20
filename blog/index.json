@@ -1,6 +1,41 @@
 {
-  "generated": "2026-11-20T17:21:43.520Z",
+  "generated": "2026-11-20T17:34:07.013Z",
   "posts": [
+    {
+      "slug": "Steamcommunity 302：跨平台 Steam 网络辅助工具介绍",
+      "md": "blog/Steamcommunity 302：跨平台 Steam 网络辅助工具介绍/index.md",
+      "imgBase": "blog/Steamcommunity 302：跨平台 Steam 网络辅助工具介绍/",
+      "title": "Steamcommunity 302：跨平台 Steam 网络辅助工具介绍",
+      "desc": "由羽翼城(Dogfight360)开发维护，是一款免费、跨平台的本地反代工具，主要用来解决国内环境下 Steam社区、创意工坊、个人资料页访问报错（118/105等）、加载缓慢、图片裂图等网络问题，同时也支持GitHub、Discord、EA等部分站点的网络优化",
+      "tags": [
+        "加速器",
+        "steam"
+      ],
+      "date": "2026-11-20",
+      "minutes": 4,
+      "cover": "1745762684695.jpg",
+      "bg": "1745762684695.jpg",
+      "mdEn": "blog/Steamcommunity 302：跨平台 Steam 网络辅助工具介绍/index.en.md",
+      "titleEn": "Steamcommunity 302: An introduction to cross-platform Steam network accessibility tools",
+      "descEn": "Developed and maintained by Dogfight360, it is a free, cross-platform local anti-generation tool. It is mainly used to solve network problems such as Steam community, creative workshop, and profile page access errors (118/105, etc.), slow loading, and cracked images in domestic environments. It also supports network optimization of some sites such as GitHub, Discord, and EA.",
+      "tagsEn": [
+        "accelerator",
+        "steam"
+      ],
+      "mdZh": "blog/Steamcommunity 302：跨平台 Steam 网络辅助工具介绍/index.zh.md",
+      "titleZh": "Steamcommunity 302：跨平台 Steam 网络辅助工具介绍",
+      "descZh": "由羽翼城(Dogfight360)开发维护，是一款免费、跨平台的本地反代工具，主要用来解决国内环境下 Steam社区、创意工坊、个人资料页访问报错（118/105等）、加载缓慢、图片裂图等网络问题，同时也支持GitHub、Discord、EA等部分站点的网络优化",
+      "tagsZh": [
+        "加速器",
+        "steam"
+      ],
+      "imgs": {
+        "1745762684695.jpg": "blog/thumbs/Steamcommunity_302：跨平台_Steam_网络辅助工具介绍-i0.webp",
+        "屏幕截图 2026-11-21 013240.png": "blog/thumbs/Steamcommunity_302：跨平台_Steam_网络辅助工具介绍-i4.webp"
+      },
+      "coverThumb": "blog/thumbs/Steamcommunity_302：跨平台_Steam_网络辅助工具介绍-cover.webp",
+      "bgThumb": "blog/thumbs/Steamcommunity_302：跨平台_Steam_网络辅助工具介绍-bg.webp"
+    },
     {
       "slug": "鉴业软件商店",
       "md": "blog/鉴业软件商店/index.md",
