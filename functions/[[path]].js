@@ -294,6 +294,117 @@ async function handle(request, env) {
   return null
 }
 
+
+// =====================================================================
+//  首页 head 注入：<title> / description / og:* 全部取自 profile.txt
+//  ---------------------------------------------------------------------
+//  爬虫不执行 JS，读不到运行时 fetch 的配置，所以标题与描述必须在
+//  HTML 出服务器之前填好。这里在 catch-all 的静态兜底出口上拦一下 "/"，
+//  把 profile.txt 的「站名」「SEO描述」写进 head，并把中英两份原文挂到
+//  <html data-brand-zh / data-brand-en / data-seo-zh / data-seo-en>，
+//  页面里的抢跑脚本据此按访客语言零延迟取用。
+//  改站名 / 描述只需改 profile.txt，不用碰 index.html。
+// =====================================================================
+
+const SEO_PROFILE_PATH = '/profile.txt'
+const SEO_CACHE_TTL_MS = 30 * 1000
+let seoCache = { at: 0, data: null }
+
+function seoParseProfile(text) {
+  const out = { brand: null, seo: null }
+  for (const raw of String(text).split(/\r?\n/)) {
+    const line = raw.trim()
+    if (!line || line.charAt(0) === '#') continue
+    const f = line.split('|')
+    const key = (f[0] || '').trim()
+    const zh = (f[1] || '').trim()
+    const en = (f[2] || '').trim() || zh
+    if (key === '站名') out.brand = { zh, en }
+    else if (key === 'SEO描述' || key === '搜索描述') out.seo = { zh, en }
+  }
+  return out
+}
+
+async function seoLoadProfile(origin, env) {
+  const now = Date.now()
+  if (seoCache.data && now - seoCache.at < SEO_CACHE_TTL_MS) return seoCache.data
+  const target = new URL(SEO_PROFILE_PATH, origin).toString()
+  let res = null
+  try {
+    res = await fetch(target, { cf: { cacheTtl: 30, cacheEverything: true } })
+  } catch (e) {
+    return null
+  }
+  if (!res || !res.ok) return null
+  const data = seoParseProfile(await res.text())
+  seoCache = { at: now, data }
+  return data
+}
+
+function seoEsc(v) {
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function seoSetContent(html, tagPattern, value) {
+  return html.replace(tagPattern, (tag) => {
+    if (/content="[^"]*"/.test(tag)) return tag.replace(/content="[^"]*"/, 'content="' + seoEsc(value) + '"')
+    return tag.replace(/>$/, ' content="' + seoEsc(value) + '">')
+  })
+}
+
+function seoInject(html, profile) {
+  const brand = profile.brand && profile.brand.zh
+  const seo = profile.seo && profile.seo.zh
+  if (!brand && !seo) return html
+  let out = html
+
+  if (brand) {
+    if (/<title>[\s\S]*?<\/title>/i.test(out)) {
+      out = out.replace(/<title>[\s\S]*?<\/title>/i, '<title>' + seoEsc(brand) + '</title>')
+    } else {
+      out = out.replace(/<head([^>]*)>/i, '<head$1><title>' + seoEsc(brand) + '</title>')
+    }
+    out = seoSetContent(out, /<meta\s+property="og:site_name"[^>]*>/i, brand)
+    out = seoSetContent(out, /<meta\s+property="og:title"[^>]*>/i, brand)
+    out = seoSetContent(out, /<meta\s+name="twitter:title"[^>]*>/i, brand)
+    out = out.replace(/<html([^>]*)>/i, (m, attrs) => '<html' + attrs +
+      (/(data-brand-zh=)/.test(attrs) ? '' : ' data-brand-zh="' + seoEsc(profile.brand.zh) + '" data-brand-en="' + seoEsc(profile.brand.en) + '"') + '>')
+  }
+
+  if (seo) {
+    out = seoSetContent(out, /<meta\s+name="description"[^>]*>/i, seo)
+    out = seoSetContent(out, /<meta\s+property="og:description"[^>]*>/i, seo)
+    out = seoSetContent(out, /<meta\s+name="twitter:description"[^>]*>/i, seo)
+    out = out.replace(/<html([^>]*)>/i, (m, attrs) => '<html' + attrs +
+      (/(data-seo-zh=)/.test(attrs) ? '' : ' data-seo-zh="' + seoEsc(profile.seo.zh) + '" data-seo-en="' + seoEsc(profile.seo.en) + '"') + '>')
+  }
+  return out
+}
+
+/* 读出 body → 改写 → 重新组装；任何异常都退回原文，绝不把首页搞白 */
+async function seoHead(resp, origin, env) {
+  const ct = resp.headers.get('content-type') || ''
+  if (!ct.includes('text/html')) return resp
+  const html = await resp.text()
+  let out = html
+  let state = 'no-profile'
+  try {
+    const profile = await seoLoadProfile(origin, env)
+    if (profile) {
+      out = seoInject(html, profile)
+      state = 'ok'
+    }
+  } catch (e) {
+    out = html
+  }
+  const headers = new Headers(resp.headers)
+  headers.delete('content-length')
+  headers.set('content-type', 'text/html; charset=UTF-8')
+  headers.set('cache-control', 'public, max-age=0, must-revalidate')
+  headers.set('x-jy-seo', state)
+  return new Response(out, { status: resp.status, headers })
+}
+
 export async function onRequest(context) {
   const { request, env } = context
   const u = new URL(request.url)
@@ -307,6 +418,15 @@ export async function onRequest(context) {
     if (resp) return resp
   } catch (e) {
     return json({ error: e.message }, 500)
+  }
+  /* 首页：把标题 / 描述按 profile.txt 注入后再返回，其余路径原样放行 */
+  if (u.pathname === '/' || u.pathname === '/index.html') {
+    const resp = await context.next()
+    try {
+      return await seoHead(resp, u.origin, env)
+    } catch (e) {
+      return resp
+    }
   }
   return context.next()
 }
