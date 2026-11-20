@@ -2968,14 +2968,18 @@ const T=()=>I18N[lang];
 function setLang(v,persist){
   lang=v;
   document.documentElement.lang=v==="zh"?"zh-CN":"en";
-  document.title=T().brand;
+  /* 站名只来自 profile.txt。配置读不到（文件被删 / CDN 出错）时别把标题清成空字符串 ——
+     退回服务端注入的 data-brand-*，再退回当前标题（静态兜底），至少标签页不会一片空白 */
+  const brandFallback=document.documentElement.getAttribute("data-brand-"+v)||"";
+  const brandText=T().brand||brandFallback||document.title||"";
+  document.title=brandText;
   /* 只有用户自己点 EN/中 才落盘（persist!==false）。启动时那句 setLang 不写，
      否则第一次访问就把「系统语言探测结果」固定下来，之后换系统语言也再不跟随 */
   if(persist!==false){ try{ localStorage.setItem("jy-lang",v); }catch(e){} }
   $("#langBtn").textContent=v==="zh"?"EN":"中";
   $("#langBtn").title=T().langTip||"Switch language";
   $("#langBtn").setAttribute("aria-label",$("#langBtn").title);
-  $("#navBrand").textContent=T().brand;
+  $("#navBrand").textContent=brandText;
   /* 导航标签：一级项 + 「记录」下拉里的两项（都挂了 data-navlabel） */
   document.querySelectorAll("[data-navlabel]").forEach(el=>{
     const k=el.dataset.navlabel,v=T().nav[k];
