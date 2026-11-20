@@ -113,7 +113,7 @@ jobs:
               echo "::error::拉取远端分支失败，本次译文没有推送"
               exit 1
             fi
-            if ! git reset --soft "origin/${GITHUB_REF_NAME}"; then
+            if ! git reset --mixed "origin/${GITHUB_REF_NAME}"; then
               echo "::error::对齐远端提交失败，本次译文没有推送"
               exit 1
             fi
