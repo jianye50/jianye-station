@@ -91,10 +91,17 @@
   catch(e){ passBoot(); return; }        /* fetch 都起不来 → 按「不跳」处理，别把动画一起憋死 */
   window.__JY_PROFILE_TEXT=p;            /* 主脚本 loadProfile() 复用这次请求 */
 
+  /* 重载豁免：本次标签页已经揭过幕（sessionStorage 有标记）却又整页重载
+     （iPadOS 内存吃紧时浏览器会杀页面重开，重载后还带着 #/blog 落回原页），
+     这种情况整个加载动画一律跳过 —— 纯色挡板盖到首屏画完就撤，不再重播进站动画 */
+  try{ window.__JY_REPLAY=!!sessionStorage.getItem("jy-booted"); }catch(e){ window.__JY_REPLAY=false; }
+  if(window.__JY_REPLAY)document.documentElement.classList.add("jy-replay");
+
   /* 弱网兜底：profile.txt 8 秒还没回（连接挂住那种），先把动画放出来，
      别让人对着纯黑屏猜站点是不是坏了。这一路只决定「动画出不出」，
      完全不参与判定 —— 结论后到该跳还是跳，所以不会出现「渲染一半再跳走」 */
-  bootTimer=setTimeout(passBoot,8000);
+  if(window.__JY_REPLAY)bootTimer=0;
+  else bootTimer=setTimeout(passBoot,8000);
 
   /* 站长自测开关 / 本地环境：不跳 */
   var skip=false;
@@ -136,10 +143,11 @@
     try{ location.replace(dest); }catch(e){ location.href=dest; }
     return "redirect";
   },function(){ return "ok"; }).then(function(v){
-    /* 判定出结果之后才碰动画：要跳 → 永远不放行；不跳 → 此刻放行，动画从第一帧起播 */
-    if(v!=="redirect")passBoot();
+    /* 判定出结果之后才碰动画：要跳 → 永远不放行；不跳 → 此刻放行，动画从第一帧起播
+       （重载豁免时例外：动画整个跳过，挡板保持纯色） */
+    if(v!=="redirect"&&!window.__JY_REPLAY)passBoot();
     return v;
-  },function(){ passBoot(); return "ok"; });
+  },function(){ if(!window.__JY_REPLAY)passBoot(); return "ok"; });
 })();
 </script>
 <!-- 分享卡片预览（静态兜底值供爬虫抓取，JS 启动后按 profile.txt 覆盖） -->
@@ -2007,6 +2015,10 @@ html.jy-verdict .boot-inner{opacity:1}
    放在动画声明之后，覆盖更直观；选择器权重也更高，不依赖书写顺序 */
 html:not(.jy-verdict) .boot-dot,
 html:not(.jy-verdict) .boot-bar i{animation:none}
+/* 重载豁免（html.jy-replay，<head> 里检测 sessionStorage 加上）：
+   本次标签页已经揭过幕又整页重载的，加载动画整个不演 —— 圆点/光条/提示全部隐藏，
+   #boot 只当一块与背景同色的挡板，盖到首屏画完由 revealSite 撤掉 */
+html.jy-replay .boot-inner{display:none!important}
 
 /* ---------- 「减少动态效果」下的加载屏（系统关了动画时的形态） ----------
    站点末尾有一条 `*{animation:none!important;transition:none!important}` 的
@@ -4542,8 +4554,19 @@ async function loadBlog(){
   /* 只认「非空」的缓存：之前失败过一次留下空数组，空数组是 truthy，
      会把后面的重试全部挡掉 —— 断网进来过就再也刷不出文章，只能整页刷新 */
   if(blogCache&&blogCache.length)return blogCache;
-  /* 部署环境：优先读静态清单（一次请求、走 CDN，最快） */
+  /* 部署环境：localStorage 里的旧列表先上屏（不再只当清单挂掉时的备胎）。
+     列表缓存写进 localStorage，跨标签页存活 —— 之前只存在内存变量里，
+     新开标签页（iPad Edge 上每次都要重新等一遍）就得重新等清单回来才出列表；
+     现在直接用上次缓存的列表秒开，后台静默刷新，有更新就地换掉（bloglist 事件）。
+     缓存最多信 7 天：太久没来就老实等一次清单，别给几个月前的旧列表 */
   if(!IS_LOCAL){
+    const ls0=lsRead();
+    if(ls0&&ls0.posts&&ls0.posts.length&&Date.now()-ls0.t<7*24*3600*1000){
+      blogCache=ls0.posts;blogErr=false;
+      refreshBlogInBackground();
+      return blogCache;
+    }
+    /* 优先读静态清单（一次请求、走 CDN，最快） */
     const m=await manifestPosts();
     if(m&&m.length){blogCache=m;blogErr=false;lsSave(m);return blogCache;}
   }
@@ -4566,12 +4589,18 @@ async function loadBlog(){
   else{blogCache=[];blogErr=true;}
   return blogCache;
 }
-/* 后台静默刷新：拿到新列表后就地更新（不重滚页面、不丢搜索词） */
+/* 后台静默刷新：拿到新列表后就地更新（不重滚页面、不丢搜索词）。
+   部署环境优先静态清单（一次几 KB）；清单挂了才退回扫目录的慢通道 */
 let blogBgBusy=false;
 async function refreshBlogInBackground(){
   if(blogBgBusy)return;blogBgBusy=true;
   try{
-    const r=await fetchBlogData();
+    let r=null;
+    if(!IS_LOCAL){
+      const m=await manifestPosts();
+      if(m&&m.length)r={posts:m,ok:true};
+    }
+    if(!r)r=await fetchBlogData();
     if(r.posts.length&&!samePosts(r.posts,blogCache)){
       blogCache=r.posts;
       if(!IS_LOCAL)lsSave(r.posts);
@@ -7380,6 +7409,10 @@ function pageLoaded(){
 function revealSite(){
   if(window.__JY_READY)return;
   window.__JY_READY=true;
+  /* 记下「这个标签页已经揭过幕」：之后同标签页若被浏览器整页重载
+     （iPadOS 内存吃紧杀页面那种），<head> 里检测到这个标记就跳过进站动画。
+     sessionStorage 只活在当前标签页 —— 关掉标签页再进站，动画照常完整播放 */
+  try{ sessionStorage.setItem("jy-booted","1"); }catch(e){}
   /* 关键一步：加上 jy-go，两条入场动画此刻从 0 帧开始（之前一直是 animation:none，
      所以不存在"在加载屏后面偷偷演完"或"演到一半被掐断"） */
   document.documentElement.classList.add("jy-go");
@@ -7586,8 +7619,12 @@ function annHistoryHTML(){
   window.__JY_STARTED=true;
   if(!window.__JY_RENDERED)setLang(lang,false);
   window.__JY_BOOTP&&window.__JY_BOOTP(80);   /* 首屏已渲染 */
-  /* 4. 等背景大图解码完成 + 页面 load 完成 */
-  try{ await Promise.all([heroBgReady(),pageLoaded()]); }catch(e){}
+  /* 4. 等背景大图解码完成 + 页面 load 完成
+     重载豁免：同标签页重载进来时不等这些（背景多半还在 HTTP 缓存里），
+     首屏一画完立刻揭幕，把「杀页面重开」的过程压到几乎无感 */
+  if(!window.__JY_REPLAY){
+    try{ await Promise.all([heroBgReady(),pageLoaded()]); }catch(e){}
+  }
   window.__JY_BOOTP&&window.__JY_BOOTP(94);   /* 背景大图 + 页面 load 都完成，只差揭幕 */
   if(window.__JY_REDIRECTING)return;
   /* 5. 揭幕 */
