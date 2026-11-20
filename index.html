@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
 <title>鉴业の小站</title>
-<!-- 标签页标题 / 描述 / 分享卡片 / 图标 静态兜底值供搜索引擎爬虫直接抓取，
-     JS 启动后仍会按 profile.txt 覆盖为访客语言的版本 -->
+<!-- 下面三行是「兜底值」：正常访问时由 functions/index.js 在服务器端
+     用 profile.txt 的「站名」「SEO描述」覆盖，改名字只需改配置文件；
+     只有 Function 未生效（如本地直接打开文件）时才会露出来。 -->
 <meta name="description" content="鉴业の小站（也叫鉴业小站）：鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。这里有一键重装、文件加密、Jianye PE、米家网页控制台、RSS 阅读器、在线音乐播放器等自制工具。">
 <!-- 语言：首次访问先按系统语言定好（中文→中文，其它语言→英文），
      免得英文用户先看到一闪而过的中文标题 / 语言标记。手动切换过的以本地保存为准。 -->
@@ -32,16 +33,19 @@
   }
   window.__JY_LANG=s;
   document.documentElement.lang=(s==="zh")?"zh-CN":"en";
-  /* 源码里的 <title> / description / og 是给爬虫的静态值（爬虫不执行 JS）。
-     浏览器这边在同一帧内按语言改掉，英文界面不会闪出中文标题；
-     主脚本稍后仍会按 profile.txt 的「站名」再填一次，这里只是抢先占位。 */
+  /* 站名与 SEO 描述由 functions/index.js 从 profile.txt 读出，注入到
+     <html data-brand-zh / data-brand-en / data-seo-zh / data-seo-en>。
+     这里按访客语言（含手动切换后存到 localStorage 的选择）取对应那份，
+     所以在同一帧内就能显示正确语言的标题，不会先闪一下另一种语言。
+     Function 未生效时这些属性不存在，保持源码里的静态兜底值。 */
   try{
-    var d=document.querySelector('meta[name="description"]');
-    if(s==="en"){
-      document.title="Jianye's Corner";
-      if(d)d.setAttribute("content","Jianye's Corner \u2014 Jianye's personal blog and digital space: project works, photo album, tech tinkering and daily notes.");
-    }else{
-      document.title="鉴业の小站";
+    var root=document.documentElement;
+    var brand=s==="en"?root.getAttribute("data-brand-en"):root.getAttribute("data-brand-zh");
+    var desc =s==="en"?root.getAttribute("data-seo-en") :root.getAttribute("data-seo-zh");
+    if(brand)document.title=brand;
+    if(desc){
+      var d=document.querySelector('meta[name="description"]');
+      if(d)d.setAttribute("content",desc);
     }
   }catch(e){}
 })();
