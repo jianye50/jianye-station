@@ -8,6 +8,44 @@
 <!-- 标签页标题 / 描述 / 分享卡片 / 图标 静态兜底值供搜索引擎爬虫直接抓取，
      JS 启动后仍会按 profile.txt 覆盖为访客语言的版本 -->
 <meta name="description" content="鉴业の小站（也叫鉴业小站）：鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。这里有一键重装、文件加密、Jianye PE、米家网页控制台、RSS 阅读器、在线音乐播放器等自制工具。">
+<!-- 语言：首次访问先按系统语言定好（中文→中文，其它语言→英文），
+     免得英文用户先看到一闪而过的中文标题 / 语言标记。手动切换过的以本地保存为准。 -->
+<script>
+/* ---------- 抢跑脚本 ①：语言预判（全文件第一个脚本） ----------
+   为什么要抢跑：<html lang> 会影响浏览器的字体选择、无障碍朗读和 CSS 的
+   语言相关规则；主脚本加载完再设就晚了 —— 首帧可能已经按错误语言渲染过一次。
+   规则：localStorage 里存过就用存的；没存过按浏览器语言列表从上往下找，
+   zh* 算中文、en* 算英文，其余一律英文。结果写进 window.__JY_LANG，
+   供后续脚本（启动屏、主脚本 i18n）直接使用，不再重复探测。 */
+(function(){
+  var s=null; try{ s=localStorage.getItem("jy-lang"); }catch(e){}
+  if(s!=="zh"&&s!=="en"){
+    var list=[], i;
+    try{ list=(navigator.languages&&navigator.languages.length)?navigator.languages:[navigator.language||""]; }
+    catch(e){ list=[""]; }
+    s="en";                                   /* 默认英文：非中文一律英文 */
+    for(i=0;i<list.length;i++){
+      var l=String(list[i]||"").replace(/_/g,"-").toLowerCase();
+      if(l.indexOf("zh")===0){ s="zh"; break; }   /* zh / zh-CN / zh-TW / zh-HK… 都算中文 */
+      if(l.indexOf("en")===0){ s="en"; break; }
+    }
+  }
+  window.__JY_LANG=s;
+  document.documentElement.lang=(s==="zh")?"zh-CN":"en";
+  /* 源码里的 <title> / description / og 是给爬虫的静态值（爬虫不执行 JS）。
+     浏览器这边在同一帧内按语言改掉，英文界面不会闪出中文标题；
+     主脚本稍后仍会按 profile.txt 的「站名」再填一次，这里只是抢先占位。 */
+  try{
+    var d=document.querySelector('meta[name="description"]');
+    if(s==="en"){
+      document.title="Jianye's Corner";
+      if(d)d.setAttribute("content","Jianye's Corner \u2014 Jianye's personal blog and digital space: project works, photo album, tech tinkering and daily notes.");
+    }else{
+      document.title="鉴业の小站";
+    }
+  }catch(e){}
+})();
+</script>
 <!-- 站名 / 描述 / 图标（favicon）都由 profile.txt 配置，JS 启动后填到这里 -->
 <!-- 移动端地址栏配色（站点固定深色） -->
 <meta name="theme-color" content="#0b0d12">
@@ -143,44 +181,6 @@
 <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
 <!-- 相册的 GitHub API 兜底通道，提前建连 -->
 <link rel="preconnect" href="https://api.github.com" crossorigin>
-<!-- 语言：首次访问先按系统语言定好（中文→中文，其它语言→英文），
-     免得英文用户先看到一闪而过的中文标题 / 语言标记。手动切换过的以本地保存为准。 -->
-<script>
-/* ---------- 抢跑脚本 ①：语言预判（全文件第一个脚本） ----------
-   为什么要抢跑：<html lang> 会影响浏览器的字体选择、无障碍朗读和 CSS 的
-   语言相关规则；主脚本加载完再设就晚了 —— 首帧可能已经按错误语言渲染过一次。
-   规则：localStorage 里存过就用存的；没存过按浏览器语言列表从上往下找，
-   zh* 算中文、en* 算英文，其余一律英文。结果写进 window.__JY_LANG，
-   供后续脚本（启动屏、主脚本 i18n）直接使用，不再重复探测。 */
-(function(){
-  var s=null; try{ s=localStorage.getItem("jy-lang"); }catch(e){}
-  if(s!=="zh"&&s!=="en"){
-    var list=[], i;
-    try{ list=(navigator.languages&&navigator.languages.length)?navigator.languages:[navigator.language||""]; }
-    catch(e){ list=[""]; }
-    s="en";                                   /* 默认英文：非中文一律英文 */
-    for(i=0;i<list.length;i++){
-      var l=String(list[i]||"").replace(/_/g,"-").toLowerCase();
-      if(l.indexOf("zh")===0){ s="zh"; break; }   /* zh / zh-CN / zh-TW / zh-HK… 都算中文 */
-      if(l.indexOf("en")===0){ s="en"; break; }
-    }
-  }
-  window.__JY_LANG=s;
-  document.documentElement.lang=(s==="zh")?"zh-CN":"en";
-  /* 源码里的 <title> / description / og 是给爬虫的静态值（爬虫不执行 JS）。
-     浏览器这边在同一帧内按语言改掉，英文界面不会闪出中文标题；
-     主脚本稍后仍会按 profile.txt 的「站名」再填一次，这里只是抢先占位。 */
-  try{
-    var d=document.querySelector('meta[name="description"]');
-    if(s==="en"){
-      document.title="Jianye's Corner";
-      if(d)d.setAttribute("content","Jianye's Corner \u2014 Jianye's personal blog and digital space: project works, photo album, tech tinkering and daily notes.");
-    }else{
-      document.title="鉴业の小站";
-    }
-  }catch(e){}
-})();
-</script>
 <style>
 /* =====================================================================
  *  主样式表（全站样式按「从外到内、从静到动」排列，查样式先看这张地图）
