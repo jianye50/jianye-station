@@ -5,11 +5,16 @@
 #
 #  支持两种公告：
 #
-#  1) 首次公告 —— 用户第一次进站时弹出，点了「知道了」之后
-#     永远不再弹（记录存在用户浏览器里，换浏览器/清缓存会再看一次）
+#  1) 首次公告 —— 用户第一次进站时弹出，点了「知道了」之后不再弹
+#     （记录存在浏览器里，换浏览器/清缓存会再看一次）；
+#     改了标题或内容 → 当作新公告，老访客会再看到一次。
 #
 #  2) 普通公告 —— 只要用户没确认过，不管什么时候进站都会弹；
-#     确认后不再弹。可配多条，弹窗里会分区一起展示。
+#     确认后不再弹。可配多条，未确认过的会合在一个弹窗里展示。
+#
+#  弹出顺序：两类不会挤在同一个弹窗里 —— 先单独弹「首次公告」，
+#  用户点「知道了」之后再弹没确认过的「普通公告」；
+#  首次公告没改过就跳过，直接弹普通公告。
 #     以后想发新公告：直接改某一行的标题或内容即可，
 #     内容变了会自动当作"新公告"，老访客会再收到一次弹窗。
 #
@@ -27,7 +32,7 @@
 #  · 下面所有示例都是注释状态（行首带 #），去掉行首的 "# " 即可启用
 # ============================================================
 
-首次公告|欢迎来到鉴业の小站|Welcome to Jianye's Site|你好呀，这里是鉴业的个人小站——记录项目、相册，还有一些喜欢的光影想法。\n往下滑随便逛逛，有任何建议或想法，欢迎随时来邮箱聊聊 :)|Hi there! This is Jianye's personal space — a collection of projects, photo albums, and thoughts on light and shadow.\nScroll down and look around. Suggestions and ideas are always welcome — feel free to drop me an email :)
+首次公告|欢迎来到鉴业の小站（改过）（改过）|Welcome to Jianye's Site|你好呀，这里是鉴业的个人小站——记录项目、相册，还有一些喜欢的光影想法。\n往下滑随便逛逛，有任何建议或想法，欢迎随时来邮箱聊聊 :)|Hi there! This is Jianye's personal space — a collection of projects, photo albums, and thoughts on light and shadow.\nScroll down and look around. Suggestions and ideas are always welcome — feel free to drop me an email :)
 
 # 公告|2026-11-17 15:35:39|新功能上线|New features live|相册模块改版完成，欢迎围观！|The photo album module got a fresh look — check it out!
 # 公告|2026-11-17 15:35:39|维护通知|Maintenance notice|今晚 02:00-03:00 站点短暂维护，见谅。|The site will be briefly offline tonight from 02:00 to 03:00. Thanks for your patience.
