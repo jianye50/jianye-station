@@ -16,3 +16,42 @@
 
 /appstore/data/*
   Cache-Control: public, max-age=3600
+
+# =====================================================================
+#  以下全部是「只给主站」。子应用、博客编辑器、独立页面都不希望被搜索引擎
+#  收录 —— 它们在主站里只是项目卡片，单独出现在搜索结果里会抢主站的权重，
+#  摘要也常常是界面提示语（比如编辑器的「文件要和 index.md 放在一起」）。
+#  X-Robots-Tag 是所有主流搜索引擎都认的标准响应头，比 robots.txt 更靠谱：
+#  robots.txt 只能阻止抓取，已经收录的条目反而更难下线；noindex 才能让
+#  爬虫重新抓一次之后把条目从索引里删掉。
+# =====================================================================
+/os/*
+  X-Robots-Tag: noindex, nofollow
+/jye/*
+  X-Robots-Tag: noindex, nofollow
+/pe/*
+  X-Robots-Tag: noindex, nofollow
+/ai/*
+  X-Robots-Tag: noindex, nofollow
+/rss-reader/*
+  X-Robots-Tag: noindex, nofollow
+/mijia-pages/*
+  X-Robots-Tag: noindex, nofollow
+/homepage/*
+  X-Robots-Tag: noindex, nofollow
+/blog/*
+  X-Robots-Tag: noindex, nofollow
+/drop
+  X-Robots-Tag: noindex, nofollow
+/drop.html
+  X-Robots-Tag: noindex, nofollow
+/music
+  X-Robots-Tag: noindex, nofollow
+/music.html
+  X-Robots-Tag: noindex, nofollow
+/card.html
+  X-Robots-Tag: noindex, nofollow
+/cloud.html
+  X-Robots-Tag: noindex, nofollow
+/coffee-shop-3d.html
+  X-Robots-Tag: noindex, nofollow
