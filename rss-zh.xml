@@ -6,8 +6,18 @@
     <atom:link href="https://jype.top/rss-zh.xml" rel="self" type="application/rss+xml"/>
     <description>愿我们拥有的时候不要毁，失去的时候不要悔。</description>
     <language>zh-CN</language>
-    <lastBuildDate>Sun, 08 Nov 2026 00:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Fri, 20 Nov 2026 00:00:00 GMT</lastBuildDate>
     <generator>gen-blog-index.mjs</generator>
+    <item>
+      <title>鉴业软件商店｜自研网页端Windows软件分发项目</title>
+      <link>https://jype.top/#/blog/%E9%89%B4%E4%B8%9A%E8%BD%AF%E4%BB%B6%E5%95%86%E5%BA%97</link>
+      <guid isPermaLink="false">https://jype.top/#/blog/%E9%89%B4%E4%B8%9A%E8%BD%AF%E4%BB%B6%E5%95%86%E5%BA%97</guid>
+      <pubDate>Fri, 20 Nov 2026 00:00:00 GMT</pubDate>
+      <category>软件</category>
+      <category>商店</category>
+      <category>win</category>
+      <description><![CDATA[<p><img src="https://jype.top/blog/thumbs/%E9%89%B4%E4%B8%9A%E8%BD%AF%E4%BB%B6%E5%95%86%E5%BA%97-cover.webp" alt=""></p><p>长期以来，Windows生态内软件分发链路存在诸多固有的痛点：官方分发链路带宽不稳定、大量服务商主推轻量在线引导安装程序、安装流程捆绑附加组件、…</p><p><a href="https://jype.top/#/blog/%E9%89%B4%E4%B8%9A%E8%BD%AF%E4%BB%B6%E5%95%86%E5%BA%97">阅读全文</a></p>]]></description>
+    </item>
     <item>
       <title>把 RSS 搬进浏览器：我写了一个零依赖的纯前端阅读器</title>
       <link>https://jype.top/#/blog/rss-reader-article</link>

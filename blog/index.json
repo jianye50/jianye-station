@@ -1,6 +1,44 @@
 {
-  "generated": "2026-11-20T08:18:46.439Z",
+  "generated": "2026-11-20T17:21:43.520Z",
   "posts": [
+    {
+      "slug": "鉴业软件商店",
+      "md": "blog/鉴业软件商店/index.md",
+      "imgBase": "blog/鉴业软件商店/",
+      "title": "鉴业软件商店｜自研网页端Windows软件分发项目",
+      "desc": "长期以来，Windows生态内软件分发链路存在诸多固有的痛点：官方分发链路带宽不稳定、大量服务商主推轻量在线引导安装程序、安装流程捆绑附加组件、…",
+      "tags": [
+        "软件",
+        "商店",
+        "win"
+      ],
+      "date": "2026-11-20",
+      "minutes": 4,
+      "cover": "1745835951347.jpg",
+      "bg": "1745835951347.jpg",
+      "mdEn": "blog/鉴业软件商店/index.en.md",
+      "titleEn": "Appraisal Software Store｜Self-developed web-based Windows software distribution project",
+      "descEn": "For a long time, there have been many inherent pain points in the software distribution link within the Windows ecosystem: the bandwidth of the official distribution link is unstable, a large number of service providers mainly promote lightweight online boot installers, the installation process bundles add-ons,...",
+      "tagsEn": [
+        "software",
+        "shop",
+        "win"
+      ],
+      "mdZh": "blog/鉴业软件商店/index.zh.md",
+      "titleZh": "鉴业软件商店｜自研网页端Windows软件分发项目",
+      "descZh": "长期以来，Windows生态内软件分发链路存在诸多固有的痛点：官方分发链路带宽不稳定、大量服务商主推轻量在线引导安装程序、安装流程捆绑附加组件、…",
+      "tagsZh": [
+        "软件",
+        "商店",
+        "win"
+      ],
+      "imgs": {
+        "1745835951347.jpg": "blog/thumbs/鉴业软件商店-i0.webp",
+        "ScreenShot_2026-11-21_011959_277.png": "blog/thumbs/鉴业软件商店-i1.webp"
+      },
+      "coverThumb": "blog/thumbs/鉴业软件商店-cover.webp",
+      "bgThumb": "blog/thumbs/鉴业软件商店-bg.webp"
+    },
     {
       "slug": "rss-reader-article",
       "md": "blog/rss-reader-article/index.md",

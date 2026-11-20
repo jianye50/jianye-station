@@ -6,8 +6,18 @@
     <atom:link href="https://jype.top/rss-en.xml" rel="self" type="application/rss+xml"/>
     <description>May we not ruin what we have, nor regret what we lose.</description>
     <language>en-US</language>
-    <lastBuildDate>Sun, 08 Nov 2026 00:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Fri, 20 Nov 2026 00:00:00 GMT</lastBuildDate>
     <generator>gen-blog-index.mjs</generator>
+    <item>
+      <title>Appraisal Software Store｜Self-developed web-based Windows software distribution project</title>
+      <link>https://jype.top/#/blog/%E9%89%B4%E4%B8%9A%E8%BD%AF%E4%BB%B6%E5%95%86%E5%BA%97</link>
+      <guid isPermaLink="false">https://jype.top/#/blog/%E9%89%B4%E4%B8%9A%E8%BD%AF%E4%BB%B6%E5%95%86%E5%BA%97</guid>
+      <pubDate>Fri, 20 Nov 2026 00:00:00 GMT</pubDate>
+      <category>software</category>
+      <category>shop</category>
+      <category>win</category>
+      <description><![CDATA[<p><img src="https://jype.top/blog/thumbs/%E9%89%B4%E4%B8%9A%E8%BD%AF%E4%BB%B6%E5%95%86%E5%BA%97-cover.webp" alt=""></p><p>For a long time, there have been many inherent pain points in the software distribution link within the Windows ecosystem: the bandwidth of the official distribution link is unstable, a large number of service providers mainly promote lightweight online boot installers, the installation process bundles add-ons,...</p><p><a href="https://jype.top/#/blog/%E9%89%B4%E4%B8%9A%E8%BD%AF%E4%BB%B6%E5%95%86%E5%BA%97">Read more</a></p>]]></description>
+    </item>
     <item>
       <title>Put RSS into the browser: I wrote a zero-dependency pure front-end reader</title>
       <link>https://jype.top/#/blog/rss-reader-article</link>
