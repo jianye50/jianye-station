@@ -942,9 +942,12 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 }
 
 /* ===================== 站点公告弹窗（配置在站点根目录的 notice.txt） =====================
-   · 首次公告：进站弹一次，点了「知道了」写进 localStorage，永久不再弹
+   · 首次公告：进站弹一次，点了「知道了」写进 localStorage，不再弹；
+     以后改了标题或内容 → 指纹变化 → 当作新公告重新弹一次
    · 普通公告：没确认过就每次进站都弹，确认后按内容指纹记住；
-     以后改了标题或内容 → 指纹变化 → 当作新公告重新弹一次 */
+     以后改了标题或内容 → 指纹变化 → 当作新公告重新弹一次
+   · 两类分两轮弹：先单独弹「首次公告」，确认后再弹没看过的「普通公告」，
+     不会挤在同一个弹窗里 */
 .ann-mask{
   position:fixed;inset:0;z-index:95;   /* 高于正文内容、低于导航(100)：弹窗开着时右上角
                                           中/EN 照常可点（切语言会原地重绘弹窗） */
@@ -2110,9 +2113,13 @@ html[lang="en"] .boot-tip .bt-en{display:inline}
 <script>
 /* 「减少动态效果」下的进度推进（只在系统关掉动画时生效）
    ---------------------------------------------------------------
-   这条路径不播任何循环动画：把 .boot-bar 变成真进度条，宽度写进 --boot-p，
-   按「已完成的加载阶段」一格一格往前走（配置判定 → 60%，揭幕 → 100%），
-   中间用小步长慢速爬行，让人看得出还在动，而不是卡死。
+   站点末尾有一条 `*{animation:none!important;transition:none!important}` 的总开关，
+   它一生效，圆点的呼吸和光条的扫动就一起停住。这里把 .boot-bar 换成一条真进度条：
+   宽度写进 --boot-p，由页面真实所处的加载阶段推动
+   （域名判定 → 配置读完 → 首屏渲染 → 背景大图 + load → 揭幕），
+   阶段之间只做极小的无动画爬行，让人看得出还在走，绝不假装已经加载到一半。
+   揭幕（revealSite，含 12 秒兜底）一定会推到 100%，并且先让这一格真的画到屏幕上、
+   停留一下再撤屏 —— 所以不会再出现「进度才一半 / 不到一半就进站」。
    没开 reduce 的用户完全不受影响：这段直接 return，圆点 / 光条照旧。 */
 (function(){
   var reduce=false;
@@ -2120,29 +2127,20 @@ html[lang="en"] .boot-tip .bt-en{display:inline}
   if(!reduce)return;
   var boot=document.getElementById("boot");
   if(!boot)return;
-  var p=8, cap=24, timer=0;
-  function paint(){ boot.style.setProperty("--boot-p", p.toFixed(1)+"%"); }
-  function step(){
-    if(window.__JY_READY||!document.getElementById("boot"))return;   /* 已揭幕 / 已移除 → 停 */
-    var d=(cap-p)*0.14; if(d<0.15)d=0.15;
-    p=Math.min(cap,p+d); paint();
-    timer=setTimeout(step,140);
-  }
-  paint(); step();
-  /* 域名判定有结果了：说明配置阶段已过，上限抬到 82%（要跳转就直接满格） */
-  try{
-    if(window.__JY_DOMAIN_CHECK&&window.__JY_DOMAIN_CHECK.then){
-      window.__JY_DOMAIN_CHECK.then(function(v){
-        if(v==="redirect"){ p=100; paint(); return; }
-        cap=82;
-      });
-    }
-  }catch(e){}
-  /* 揭幕那一刻拉满，随后 #boot 被移除，这段自然结束 */
-  var t=setInterval(function(){
-    if(window.__JY_READY){ if(timer)clearTimeout(timer); p=100; paint(); clearInterval(t); return; }
-    if(!document.getElementById("boot")){ if(timer)clearTimeout(timer); clearInterval(t); }
-  },200);
+  var p=10, cap=14, timer=0;     /* p：当前宽度；cap：当前阶段允许走到的上限 */
+  function paint(){ boot.style.setProperty("--boot-p",p.toFixed(1)+"%"); }
+  /* 阶段钩子：加载到达某个真实节点时调一下，进度立刻跳到该节点对应的值。
+     只增不减；传 100 就是收尾。非 reduce 环境下这个函数不存在，调用方用 && 保护 */
+  window.__JY_BOOTP=function(v){
+    v=+v||0; if(v>cap)cap=v;
+    if(v>p){ p=Math.min(100,v); paint(); }
+  };
+  paint();
+  /* 阶段之间的小爬行：每 320ms 挪一点，只提供「还在动」这个信息，绝不越过 cap */
+  timer=setInterval(function(){
+    if(window.__JY_READY||!document.getElementById("boot")){ clearInterval(timer); return; }
+    if(p<cap){ p=Math.min(cap,p+1.2); paint(); }
+  },320);
 })();
 </script>
 <script>
@@ -2159,7 +2157,10 @@ html[lang="en"] .boot-tip .bt-en{display:inline}
     if(document.readyState!=="complete"&&Date.now()-t0<15000)return setTimeout(tick,300);
     if(Date.now()-t0<12000)return setTimeout(tick,300);
     document.documentElement.classList.add("jy-go"); /* 顺手放行首屏入场动画，别留着空画面 */
-    b.classList.add("off");
+    /* 强行揭开也要先把进度条推满、并真的画出来，别让人看到半格就消失 */
+    if(typeof window.__JY_BOOTP==="function")window.__JY_BOOTP(100);
+    void b.offsetWidth;
+    setTimeout(function(){ b.classList.add("off"); },260);
   }
   setTimeout(tick,300);
 })();
@@ -7294,14 +7295,35 @@ function revealSite(){
   document.documentElement.classList.add("jy-go");
   const b=document.getElementById("boot");
   if(!b)return;
-  b.classList.add("off");
-  setTimeout(()=>{const x=document.getElementById("boot");if(x)x.remove();},450);
+  let gone=false;
+  const finish=()=>{
+    if(gone)return; gone=true;
+    b.classList.add("off");
+    setTimeout(()=>{const x=document.getElementById("boot");if(x)x.remove();},450);
+  };
+  let rm=false;
+  try{ rm=matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
+  if(rm&&typeof window.__JY_BOOTP==="function"){
+    /* 减少动效模式下加载屏没有淡出过渡（transition 被总开关关掉），
+       直接加 .off 会瞬间消失 —— 进度条停留在 40%~90% 之间就被盖掉了，
+       看起来就像"没加载完就进站"。所以：先推满 100%，强制重排让这一格真的画出来，
+       确认画完（双 rAF）再留 200ms 给人看，然后才撤屏。
+       rAF 在后台标签页会被节流，用 1.2s 的定时器兜底，绝不让加载屏挂住。 */
+    window.__JY_BOOTP(100);
+    void b.offsetWidth;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(finish,200)));
+    setTimeout(finish,1200);
+  }else{
+    finish();
+  }
 }
 
 /* ---------- 站点公告模块（配置在站点根目录的 notice.txt，与 profile.txt 分开） ----------
-   · 首次公告 → 进站弹一次，用户确认（点「知道了」/ 按 Esc）后永久不再弹
+   · 首次公告 → 进站弹一次，用户确认（点「知道了」/ 按 Esc）后永久不再弹；
+                以后改了标题或内容 → 指纹变化 → 当作新公告再弹一次
    · 公告     → 可配多条；没确认过就每次进站都弹，确认后按「标题+内容指纹」
                 记进 localStorage，以后改了字 → 指纹变化 → 当成新公告重新弹
+   两类不混在一个弹窗里：先单独弹「首次公告」，用户确认后再弹没看过的「普通公告」。
    弹窗的遮罩层级低于导航栏：弹窗开着时右上角 中/EN 照常可点，
    切语言 → setLang 末尾调 annRepaint() 把弹窗原地换成新语言，不用关掉重弹。
    关于页最底部的「历史公告」板块直接读 notice.txt 里配置的公告（含你写的日期）。 */
@@ -7331,16 +7353,33 @@ function annItemHTML(n,zh){
                   .map(s=>"<p>"+esc(s)+"</p>").join("");
   return '<h3>'+esc(title)+'</h3>'+(paras||'<p></p>');
 }
+/* 指纹用中英双语拼在一起算：用户切语言不会把同一条公告当成新的再弹一遍；
+   标题/正文任意一处改动 → 指纹变化 → 视为新公告，重新弹一次 */
+function annFp(n){ return annFingerprint([n.tz,n.te,n.cz,n.ce].join("\u0000")); }
+
+/* 入口：先算「首次公告」和「普通公告」两批，分两轮弹，不混在一个弹窗里。
+   顺序：首次公告（没看过 / 内容改过）单独弹一轮 → 用户点「知道了」→ 再弹没看过的普通公告。
+   首次公告看过且没改过 → 直接进普通公告那一轮。 */
 function showAnnouncements(){
   if(annBusy||window.__JY_REDIRECTING)return;
   const N=NOTICES; if(!N||(!N.first&&!N.list.length))return;
-  const seen=annSeenMap(), queue=[];
-  /* 指纹用中英双语拼在一起算：用户切语言不会把同一条公告当成新的再弹一遍 */
-  const fp=n=>annFingerprint([n.tz,n.te,n.cz,n.ce].join("\u0000"));
-  if(N.first&&!seen["f:"+fp(N.first)])queue.push({id:"f:"+fp(N.first),n:N.first});
-  (N.list||[]).forEach(n=>{ const id="n:"+fp(n); if(!seen[id])queue.push({id,n}); });
-  if(!queue.length)return;
-  annBusy=true; annQueue=queue;
+  const seen=annSeenMap();
+  const first=(N.first&&!seen["f:"+annFp(N.first)])?{id:"f:"+annFp(N.first),n:N.first}:null;
+  const rest=(N.list||[]).map(n=>({id:"n:"+annFp(n),n})).filter(q=>!seen[q.id]);
+  if(!first&&!rest.length)return;
+  annBusy=true;
+  if(first){
+    /* 首次公告单独一轮；它关掉之后如果还有普通公告没看，接着弹第二轮 */
+    openAnn([first], rest.length?()=>openAnn(rest,null):null);
+  }else{
+    openAnn(rest,null);
+  }
+}
+
+/* 打开一轮公告弹窗（queue 里通常只有一类：首次公告 或 普通公告）
+   after：这一轮关掉之后要接着做的事（传 null 表示到此结束，解除 annBusy） */
+function openAnn(queue,after){
+  annQueue=queue;
   const mask=document.createElement("div");
   mask.className="ann-mask";
   mask.setAttribute("role","dialog");
@@ -7349,12 +7388,21 @@ function showAnnouncements(){
   let closed=false;
   const close=()=>{
     if(closed)return; closed=true;
-    /* 确认即永久记住：之后不再弹 */
+    /* 确认即永久记住：只记这一轮（首次公告和普通公告各记各的，互不牵连） */
     queue.forEach(q=>annRemember(q.id));
     annMask=null;annClose=null;annQueue=[];
     mask.classList.remove("on");
     document.removeEventListener("keydown",onKey);
     setTimeout(()=>mask.remove(),280);
+    if(after){
+      /* 等上一轮淡出干净，再弹下一轮（首次公告 → 普通公告），两张卡片不会叠在一起 */
+      setTimeout(()=>{
+        if(window.__JY_REDIRECTING){ annBusy=false; return; }
+        try{ after(); }catch(e){ annBusy=false; }
+      },320);
+    }else{
+      annBusy=false;
+    }
   };
   const onKey=e=>{ if(e.key==="Escape")close(); };
   annClose=close;
@@ -7380,7 +7428,7 @@ function showAnnouncements(){
 }
 /* 切语言时弹窗若开着 → 原地换成新语言（setLang 末尾调用；弹窗没开则空转） */
 function annRepaint(){
-  if(!annMask)return;
+  if(!annMask||!annQueue.length)return;   /* 淡出过程中切语言：没内容可铺，直接跳过 */
   const zh=lang==="zh";
   annMask.setAttribute("aria-label",zh?"站点公告":"Announcements");
   annMask.innerHTML=
@@ -7442,11 +7490,15 @@ function annHistoryHTML(){
     await Promise.all(waits);
   }catch(e){}
   if(window.__JY_REDIRECTING)return;   /* 判定失败地址：什么都不做，让浏览器完成跳转 */
+  /* 减少动效模式下的进度：域名判定 + 配置已读完 */
+  window.__JY_BOOTP&&window.__JY_BOOTP(45);
   /* 3. 第一次、也是唯一一次首屏渲染（配置齐了，一次画到位） */
   window.__JY_STARTED=true;
   if(!window.__JY_RENDERED)setLang(lang,false);
+  window.__JY_BOOTP&&window.__JY_BOOTP(80);   /* 首屏已渲染 */
   /* 4. 等背景大图解码完成 + 页面 load 完成 */
   try{ await Promise.all([heroBgReady(),pageLoaded()]); }catch(e){}
+  window.__JY_BOOTP&&window.__JY_BOOTP(94);   /* 背景大图 + 页面 load 都完成，只差揭幕 */
   if(window.__JY_REDIRECTING)return;
   /* 5. 揭幕 */
   revealSite();
