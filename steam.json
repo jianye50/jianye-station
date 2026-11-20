@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-20T02:53:59.836Z",
+  "updated": "2026-11-20T11:08:35.389Z",
   "source": "api",
   "player": {
     "name": "鉴业",
@@ -7,8 +7,29 @@
     "url": "https://steamcommunity.com/id/aimjianye/"
   },
   "totalGames": 43,
-  "hours2weeks": 2.2666666666666666,
+  "hours2weeks": 2.316666666666667,
   "friends": [
+    {
+      "name": "昨夜星辰昨夜风",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199085560012/",
+      "state": 3,
+      "playing": "PUBG: BATTLEGROUNDS"
+    },
+    {
+      "name": "hhhx",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
+      "state": 1,
+      "playing": "Party Animals"
+    },
+    {
+      "name": "chenchenwhr",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
+      "state": 1,
+      "playing": "Party Animals"
+    },
     {
       "name": "仙阁小斑",
       "avatar": "https://avatars.steamstatic.com/5fea668694c95ff82c2d9cc2b2afdb06a9d2bbb4_medium.jpg",
@@ -17,9 +38,9 @@
       "playing": null
     },
     {
-      "name": "UxwxU",
+      "name": "唐人小陈cheems",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198774453253/",
+      "profile": "https://steamcommunity.com/profiles/76561198738673677/",
       "state": 0,
       "playing": null
     },
@@ -27,13 +48,6 @@
       "name": "lcyfdn",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
       "profile": "https://steamcommunity.com/profiles/76561199063272174/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "昨夜星辰昨夜风",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199085560012/",
       "state": 0,
       "playing": null
     },
@@ -52,9 +66,16 @@
       "playing": null
     },
     {
-      "name": "刘海柱",
-      "avatar": "https://avatars.steamstatic.com/5650a856c0bd7c678378e9895afec491786ce595_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199193111913/",
+      "name": "吻吻爱",
+      "avatar": "https://avatars.steamstatic.com/655d055db5b16899734d407e7c858cadde558703_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199376152675/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "HYJ",
+      "avatar": "https://avatars.steamstatic.com/6717ab4263dcfca8866a1d344f75e427acaf9a5b_medium.jpg",
+      "profile": "https://steamcommunity.com/id/JINGTIANHAOKUN123/",
       "state": 0,
       "playing": null
     },
@@ -73,13 +94,6 @@
       "playing": null
     },
     {
-      "name": "wjiazheng2026",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198721612997/",
-      "state": 0,
-      "playing": null
-    },
-    {
       "name": "Lu",
       "avatar": "https://avatars.steamstatic.com/b72e7a6487c6bd07eb5e95c24474fed86f320b93_medium.jpg",
       "profile": "https://steamcommunity.com/id/lunacult/",
@@ -87,16 +101,9 @@
       "playing": null
     },
     {
-      "name": "hhhx",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "HYJ",
-      "avatar": "https://avatars.steamstatic.com/6717ab4263dcfca8866a1d344f75e427acaf9a5b_medium.jpg",
-      "profile": "https://steamcommunity.com/id/JINGTIANHAOKUN123/",
+      "name": "刘海柱",
+      "avatar": "https://avatars.steamstatic.com/5650a856c0bd7c678378e9895afec491786ce595_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199193111913/",
       "state": 0,
       "playing": null
     },
@@ -108,23 +115,16 @@
       "playing": null
     },
     {
-      "name": "唐人小陈cheems",
+      "name": "UxwxU",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198738673677/",
+      "profile": "https://steamcommunity.com/profiles/76561198774453253/",
       "state": 0,
       "playing": null
     },
     {
-      "name": "chenchenwhr",
+      "name": "wjiazheng2026",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
-      "state": 0,
-      "playing": null
-    },
-    {
-      "name": "吻吻爱",
-      "avatar": "https://avatars.steamstatic.com/655d055db5b16899734d407e7c858cadde558703_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199376152675/",
+      "profile": "https://steamcommunity.com/profiles/76561198721612997/",
       "state": 0,
       "playing": null
     }
@@ -136,8 +136,8 @@
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/library_600x900.jpg",
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/header.jpg",
       "hoursTotal": 481.1,
-      "hours2weeks": 2.2,
-      "last": "11月17日"
+      "hours2weeks": 2.3,
+      "last": "11月20日"
     },
     {
       "appid": 728880,
@@ -220,7 +220,7 @@
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/header.jpg",
       "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/1260320/capsule_184x69.jpg",
       "hoursTotal": 481.1,
-      "hours2weeks": 2.2,
+      "hours2weeks": 2.3,
       "last": "",
       "achEarned": 116,
       "achTotal": 116
