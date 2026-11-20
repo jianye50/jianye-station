@@ -33,7 +33,9 @@ SEO描述|鉴业の小站（也叫鉴业小站）：鉴业的个人博客与数�
 # 图标|浏览器标签页图标（favicon）地址，支持 .ico / .png
 图标|icon-180.png
 # 背景|首页首屏大图背景地址（本地文件或外链都可以）
-背景|https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2000&q=78&auto=format
+背景|hero-1600.webp
+# 背景小图|可选。配了就给首屏图加 srcset：手机下 900 宽那档，桌面才拿 1600 的
+背景小图|hero-900.webp
 
 # 徽章|首页大标题上方那个玻璃小标签
 徽章|个人空间|PERSONAL SPACE
