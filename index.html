@@ -1360,6 +1360,26 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 .friend-logo.fit-contain{background:rgba(255,255,255,.93);box-shadow:0 6px 16px rgba(0,0,0,.3),inset 0 0 0 1px rgba(0,0,0,.07)}
 .friend-logo.fit-contain img{object-fit:contain;padding:5px}
 .friend:hover .friend-logo.fit-contain{box-shadow:0 10px 24px rgba(0,0,0,.4),inset 0 0 0 1px rgba(0,0,0,.07)}
+/* friends.txt 第 7 栏可给某位朋友的图标单独指定底色：
+   浅/light → 白底（深色 logo 清晰），深/dark → 深灰玻璃底（白色 logo 清晰），不填用默认蓝紫渐变 */
+.friend-logo.tile-light,
+.friend-logo.tile-light.fit-contain{
+  background:rgba(255,255,255,.93);
+  box-shadow:0 6px 16px rgba(0,0,0,.3),inset 0 0 0 1px rgba(0,0,0,.07);
+}
+.friend-logo.tile-dark,
+.friend-logo.tile-dark.fit-contain{
+  background:rgba(255,255,255,.08);
+  box-shadow:0 6px 16px rgba(0,0,0,.3),inset 0 0 0 1px rgba(255,255,255,.14);
+}
+.friend:hover .friend-logo.tile-light,
+.friend:hover .friend-logo.tile-light.fit-contain{
+  box-shadow:0 10px 24px rgba(0,0,0,.4),inset 0 0 0 1px rgba(0,0,0,.07);
+}
+.friend:hover .friend-logo.tile-dark,
+.friend:hover .friend-logo.tile-dark.fit-contain{
+  box-shadow:0 10px 24px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.14);
+}
 .friend:hover .friend-logo{
   transform:scale(1.07) rotate(-3deg);
   box-shadow:0 10px 24px rgba(77,141,255,.4),inset 0 0 0 1px rgba(255,255,255,.22);
@@ -2590,8 +2610,10 @@ async function loadProjects(){
 }
 /* ---------- 友情链接：内容在站点根目录的 friends.txt 里配置 ----------
    每行一位朋友，字段用 | 隔开，顺序固定：
-     中文名|英文名|中文描述|英文描述|网址|图标地址
-   图标一栏可省略；行首带 # 的是注释；「表单|网址」单独一行设置申请表单。
+     中文名|英文名|中文描述|英文描述|网址|图标地址|底色(可选)
+   图标一栏可省略；第 7 栏底色也是可选：浅/light → 白底、深/dark → 深灰玻璃底
+   （透明 logo 压默认蓝紫渐变看不清时用），不填走默认渐变；
+   行首带 # 的是注释；「表单|网址」单独一行设置申请表单。
    加朋友直接另起一行保存即可，不用动本文件（名称/描述里别用 | 字符）。
    本文件里不放任何友链数据，一切以 friends.txt 为准 */
 let FRIENDS=[];          /* 由 loadFriends() 从 friends.txt 读入 */
@@ -2605,8 +2627,12 @@ function parseFriendsText(text){
     const p=line.split("|").map(s=>s.trim());
     if(/^(表单|form)$/i.test(p[0])){ if(p[1])out.form=p[1]; return; }
     if(p.length>=5&&p[4]){
+      /* 第 7 栏（可选）：图标底色。透明 logo 压在默认蓝紫渐变上可能不清楚，
+         想单独给某位朋友换底就在行尾补一栏：浅/light → 白底，深/dark → 深灰玻璃底 */
+      const t7=p[6]||"";
+      const tile=/^(浅|light|white)$/i.test(t7)?"light":(/^(深|dark)$/i.test(t7)?"dark":"");
       out.friends.push({zh:p[0]||p[1],en:p[1]||p[0],
-        dzh:p[2]||p[3]||"",den:p[3]||p[2]||"",u:p[4],logo:p[5]||""});
+        dzh:p[2]||p[3]||"",den:p[3]||p[2]||"",u:p[4],logo:p[5]||"",tile});
     }
   });
   return (out.friends.length||out.form)?out:null;
@@ -4239,7 +4265,7 @@ function renderAbout(){
             const desc=(lang==="zh"?f.dzh:f.den)||"";
             return `
           <a class="friend" href="${esc(f.u)}" target="_blank" rel="noopener">
-            <div class="friend-logo"><span class="friend-fb">${esc(name.slice(0,1))}</span>
+            <div class="friend-logo${f.tile?" tile-"+f.tile:""}"><span class="friend-fb">${esc(name.slice(0,1))}</span>
               ${f.logo?`<img src="${esc(f.logo)}" alt="" loading="lazy" decoding="async"
                    referrerpolicy="no-referrer" onerror="this.remove()">`:""}
             </div>
