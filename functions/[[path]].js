@@ -16,12 +16,39 @@ const SPEC_HOST = 'https://miot-spec.org'
 const DEFAULT_UA = 'APP/com.xiaomi.mihome APPV/6.0.103 iosPassportSDK/3.9.0 iOS/14.4 miHSTS'
 const LP_TIMEOUT_MS = 60
 
+/* ---- CORS：只认自家来源 ----
+   以前一律回 *，等于任何网站都能在访客浏览器里跨域调米家代理（还带着 X-Access-Pin），
+   拿不到凭据的人也能借别人的浏览器当跳板。现在改成按 Origin 回显白名单：
+   只放行正式域名、Cloudflare 预览域名和本地开发端口。
+   不在白名单里 → 干脆不给 Access-Control-Allow-Origin，浏览器就拒绝跨域读取响应。 */
+const OWN_ORIGIN = [
+  /^https:\/\/([a-z0-9-]+\.)*jype\.top$/i,
+  /^https:\/\/([a-z0-9-]+\.)*jianye-station\.pages\.dev$/i,
+  /^http:\/\/localhost(:\d+)?$/i,
+  /^http:\/\/127\.0\.0\.1(:\d+)?$/i
+]
+
+function originAllowed(o) {
+  return !!o && OWN_ORIGIN.some(re => re.test(o))
+}
+
 function cors() {
   return {
-    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Access-Pin'
+    'Access-Control-Allow-Headers': 'Content-Type, X-Access-Pin',
+    'Access-Control-Max-Age': '600'
   }
+}
+
+/* 出口统一补 ACAO：只在这一处加，所有分支（json / 代理流 / 首页注入）都覆盖到 */
+function withCors(resp, request) {
+  const origin = request.headers.get('Origin') || ''
+  if (!originAllowed(origin)) return resp
+  const h = new Headers(resp.headers)
+  h.set('Access-Control-Allow-Origin', origin)
+  /* Vary: Origin —— 否则 CDN 可能把带 A 站 ACAO 的响应喂给 B 站 */
+  h.append('Vary', 'Origin')
+  return new Response(resp.body, { status: resp.status, statusText: resp.statusText, headers: h })
 }
 
 function json(obj, status = 200) {
@@ -400,7 +427,11 @@ async function seoHead(resp, origin, env) {
   const headers = new Headers(resp.headers)
   headers.delete('content-length')
   headers.set('content-type', 'text/html; charset=UTF-8')
-  headers.set('cache-control', 'public, max-age=0, must-revalidate')
+  /* 边缘缓存 5 分钟 + 后台刷新：注入要读 480 KB HTML 再跑正则，每次回源都白干一遍。
+     浏览器端仍然 max-age=0（每次拿到的都是最新一份），命中边缘时 TTFB 基本等于静态文件。
+     代价：改完 profile.txt 里的标题/描述/SEO 描述，最多 5 分钟才在线上生效；
+     想立刻看到就在地址后面加个 ?v=随便什么 绕过缓存。部署新版本时 Cloudflare 会自己失效缓存。 */
+  headers.set('cache-control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400')
   headers.set('x-jy-seo', state)
   return new Response(out, { status: resp.status, headers })
 }
@@ -441,21 +472,35 @@ export async function onRequest(context) {
   // 旧域名 / 预览域名整站跳到正式域名，保留路径与查询参数
   const jump = canonicalRedirect(u, request)
   if (jump) return jump
-  if (request.method === 'OPTIONS') return new Response(null, { headers: cors() })
-  try {
-    const resp = await handle(request, env)
-    if (resp) return resp
-  } catch (e) {
-    return json({ error: e.message }, 500)
+  /* 跨站发起的 /api/* 调用直接拒：浏览器虽然读不到响应，请求本身已经打到后端了
+     （米家代理还认 X-Access-Pin），所以别留「写了但读不到」的机会。
+     没有 Origin 头的请求（curl、服务端调用、同源导航）照常放行。 */
+  if (/^\/api\//.test(u.pathname)) {
+    const o = request.headers.get('Origin')
+    if (o && !originAllowed(o)) return json({ error: 'forbidden origin' }, 403)
   }
-  /* 首页：把标题 / 描述按 profile.txt 注入后再返回，其余路径原样放行 */
-  if (u.pathname === '/' || u.pathname === '/index.html') {
-    const resp = await context.next()
+  let resp
+  if (request.method === 'OPTIONS') {
+    resp = new Response(null, { status: 204, headers: cors() })
+  } else {
     try {
-      return await seoHead(resp, u.origin, env)
+      resp = await handle(request, env)
     } catch (e) {
-      return resp
+      resp = json({ error: e.message }, 500)
+    }
+    /* 首页：把标题 / 描述按 profile.txt 注入后再返回，其余路径原样放行 */
+    if (!resp) {
+      if (u.pathname === '/' || u.pathname === '/index.html') {
+        const r = await context.next()
+        try {
+          resp = await seoHead(r, u.origin, env)
+        } catch (e) {
+          resp = r
+        }
+      } else {
+        resp = await context.next()
+      }
     }
   }
-  return context.next()
+  return withCors(resp, request)
 }

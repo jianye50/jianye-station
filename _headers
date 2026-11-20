@@ -1,11 +1,15 @@
 /index.html
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=86400
 
 /assets/*
   Cache-Control: public, max-age=86400
 
 /data/*
   Cache-Control: public, max-age=3600
+
+# 首屏背景图（自托管 WebP）：不常改，给一天缓存，省掉每次进站的 304 往返
+/hero-*.webp
+  Cache-Control: public, max-age=86400
 
 # ---- 软件商店（/appstore/）----
 /appstore/index.html
