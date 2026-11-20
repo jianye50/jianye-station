@@ -405,13 +405,42 @@ async function seoHead(resp, origin, env) {
   return new Response(out, { status: resp.status, headers })
 }
 
+/* 站点唯一正式域名（与 profile.txt 的「域名」一行保持一致，换域名时两处一起改） */
+const CANONICAL_HOST = 'jype.top'
+
+function bareHost(h) {
+  return String(h || '').toLowerCase().replace(/^www\./, '')
+}
+
+/* 非正式域名（*.pages.dev、旧域名、备用 CDN 域名…）一律在边缘直接 301/308 到正式域名。
+   ------------------------------------------------------------------
+   为什么必须放在最前面、用服务端跳，而不是页面脚本跳：
+   页面脚本跳的场景下，浏览器已经收下并解析了整份 HTML —— <title> 一被解析就
+   立刻显示到标签页，那时语言预判脚本按「本域名的 localStorage / 系统语言」
+   取值，而正式域名的 localStorage 是另一个 origin，读不到，于是先显示中文；
+   跳过去之后正式域名按本地保存的偏好显示英文 —— 这就是「先中文后英文」的闪烁。
+   改由服务端返回 301 后，HTML 一个字节都不会发出去，浏览器只有一次渲染机会。
+   ------------------------------------------------------------------ */
+function canonicalRedirect(u, request) {
+  const host = bareHost(u.hostname)
+  if (host === CANONICAL_HOST) return null                       /* 正式域名 → 放行 */
+  if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0' || host === '[::1]') return null
+  if (u.pathname.indexOf('/api/') === 0) return null             /* 接口直连（设备调用 / 本地调试）不转 */
+  try { if (/[?&]dev=1(?:&|$)/.test(u.search)) return null } catch (e) {}   /* 站长自测开关 */
+  const method = String((request && request.method) || 'GET').toUpperCase()
+  const status = (method === 'GET' || method === 'HEAD') ? 301 : 308   /* 非 GET 用 308 保住方法 */
+  return new Response(null, {
+    status,
+    headers: { location: 'https://' + CANONICAL_HOST + u.pathname + u.search, 'cache-control': 'public, max-age=600' }
+  })
+}
+
 export async function onRequest(context) {
   const { request, env } = context
   const u = new URL(request.url)
-  // 旧域名整站 301 到新域名，保留路径、查询参数
-  if (u.hostname === 'aimjianye.top' || u.hostname === 'www.aimjianye.top') {
-    return Response.redirect('https://jype.top' + u.pathname + u.search, 301)
-  }
+  // 旧域名 / 预览域名整站跳到正式域名，保留路径与查询参数
+  const jump = canonicalRedirect(u, request)
+  if (jump) return jump
   if (request.method === 'OPTIONS') return new Response(null, { headers: cors() })
   try {
     const resp = await handle(request, env)
