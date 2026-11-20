@@ -408,10 +408,34 @@ function seoInject(html, profile) {
   return out
 }
 
+/* 首页注入结果的边缘缓存时长（秒）。
+   之所以要自己缓存：Cloudflare 默认只缓存静态扩展名的文件，HTML 一律 DYNAMIC（实测
+   cf-cache-status: DYNAMIC），响应头里的 s-maxage 对 HTML 不生效。所以用 Cache API
+   存一份注入完的结果，命中时连 HTML 都不用读、正则也不用跑。
+   想改完 profile.txt 立刻看到？地址后加 ?v= 任意值绕过缓存，或等这两分钟。 */
+const SEO_CACHE_TTL = 120
+
 /* 读出 body → 改写 → 重新组装；任何异常都退回原文，绝不把首页搞白 */
 async function seoHead(resp, origin, env) {
   const ct = resp.headers.get('content-type') || ''
   if (!ct.includes('text/html')) return resp
+
+  /* 缓存键带上静态文件的 etag：只要 index.html 重新部署了，etag 就变，
+     键跟着变 → 自动是一次全新缓存，不会把旧版 HTML 继续喂给访客 */
+  const cache = (typeof caches !== 'undefined' && caches.default) ? caches.default : null
+  const ver = resp.headers.get('etag') || ''
+  const key = cache ? new Request(origin + '/__jy_seo_home?v=' + encodeURIComponent(ver)) : null
+  if (cache) {
+    try {
+      const hit = await cache.match(key)
+      if (hit) {
+        const h = new Headers(hit.headers)
+        h.set('x-jy-seo', 'hit')
+        return new Response(hit.body, { status: hit.status, headers: h })
+      }
+    } catch (e) { /* 缓存不可用就当没有，继续走注入 */ }
+  }
+
   const html = await resp.text()
   let out = html
   let state = 'no-profile'
@@ -427,13 +451,14 @@ async function seoHead(resp, origin, env) {
   const headers = new Headers(resp.headers)
   headers.delete('content-length')
   headers.set('content-type', 'text/html; charset=UTF-8')
-  /* 边缘缓存 5 分钟 + 后台刷新：注入要读 480 KB HTML 再跑正则，每次回源都白干一遍。
-     浏览器端仍然 max-age=0（每次拿到的都是最新一份），命中边缘时 TTFB 基本等于静态文件。
-     代价：改完 profile.txt 里的标题/描述/SEO 描述，最多 5 分钟才在线上生效；
-     想立刻看到就在地址后面加个 ?v=随便什么 绕过缓存。部署新版本时 Cloudflare 会自己失效缓存。 */
-  headers.set('cache-control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400')
+  headers.set('cache-control', 'public, max-age=0, s-maxage=' + SEO_CACHE_TTL + ', stale-while-revalidate=86400')
   headers.set('x-jy-seo', state)
-  return new Response(out, { status: resp.status, headers })
+  const outResp = new Response(out, { status: resp.status, headers })
+  /* 只缓存注入成功的结果；profile 没读到就下一把再试，别把兜底页缓存两分钟 */
+  if (cache && state === 'ok') {
+    try { await cache.put(key, outResp.clone()) } catch (e) {}
+  }
+  return outResp
 }
 
 /* 站点唯一正式域名（与 profile.txt 的「域名」一行保持一致，换域名时两处一起改） */
