@@ -8843,20 +8843,80 @@ input[type=range].mp-range::-moz-range-thumb{
   "use strict";
   var NEEDED=7, GAP=1000, clicks=0, lastClick=0, opened=false;   /* 间隔超过 1s 即视为中断，重新计 */
 
+  /* 动效偏好：每次点击都实时读一次，用户中途改系统设置也能立刻切换反馈方式 */
+  function reduceMotion(){
+    try{ return matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; }
+  }
+
+  /* 关掉动效时，用「文字 + 状态」代替按压和涟漪：文案随连点次数递进，头像同步亮一圈描边 */
+  var TIP={zh:["咦？","有点意思","继续…","手感不错","快到了","再一下"],
+           en:["Hm?","Interesting","Keep going\u2026","Nice rhythm","Almost\u2026","One more"]};
+  var tipEl=null, tipTimer=0, hitTimer=0;
+
+  function clearTip(){
+    if(tipTimer){ clearTimeout(tipTimer); tipTimer=0; }
+    if(tipEl&&tipEl.parentNode)tipEl.parentNode.removeChild(tipEl);
+    tipEl=null;
+  }
+  function showTip(av,n){
+    clearTip();
+    var zh=true;
+    try{ zh=(document.documentElement.getAttribute("lang")||"zh").toLowerCase().indexOf("zh")===0; }catch(e){}
+    var arr=zh?TIP.zh:TIP.en;
+    var el=document.createElement("div");
+    el.className="egg-tip";
+    el.setAttribute("role","status");      /* 读屏软件也能念出这句提示 */
+    el.textContent=arr[Math.max(0,Math.min(arr.length-1,n-1))];
+    document.body.appendChild(el);
+    /* 默认贴在头像右侧并垂直居中；右边放不下就挪到头像下方居中（窄屏） */
+    var r=av.getBoundingClientRect(), w=el.offsetWidth;
+    if(r.right+14+w>window.innerWidth-8){
+      el.classList.add("below");
+      el.style.left=Math.round(Math.max(8,Math.min(window.innerWidth-8-w,r.left+r.width/2-w/2)))+"px";
+      el.style.top=Math.round(r.bottom+10)+"px";
+    }else{
+      el.style.left=Math.round(r.right+14)+"px";
+      el.style.top=Math.round(r.top+r.height/2)+"px";
+      el.style.transform="translateY(-50%)";
+    }
+    tipEl=el;
+    tipTimer=setTimeout(clearTip,2200);
+  }
+
   document.addEventListener("click",function(e){
     var av=e.target.closest(".avatar");
     if(!av)return;
     var now=Date.now();
     clicks=(now-lastClick<=GAP)?clicks+1:1;
     lastClick=now;
-    /* 弹性按压 + 涟漪反馈 */
-    av.classList.remove("egg-press"); void av.offsetWidth; av.classList.add("egg-press");
-    var s=document.createElement("span");
-    s.className="egg-ripple";
-    av.appendChild(s);
-    s.addEventListener("animationend",function(){ s.remove(); });
-    if(clicks>=NEEDED){ clicks=0; openTerm(); }
+    if(reduceMotion()){
+      /* 关动效：不插涟漪（动画被禁用会卡成一圈白），改为静态描边 + 文字提示 */
+      showTip(av,clicks);
+      av.classList.add("egg-hit");
+      if(hitTimer)clearTimeout(hitTimer);
+      hitTimer=setTimeout(function(){ av.classList.remove("egg-hit"); hitTimer=0; },2200);
+    }else{
+      /* 弹性按压 + 涟漪反馈 */
+      av.classList.remove("egg-press"); void av.offsetWidth; av.classList.add("egg-press");
+      var s=document.createElement("span");
+      s.className="egg-ripple";
+      av.appendChild(s);
+      /* animationend 正常时立刻移除；另加超时兜底——若动画被系统设置禁用或中途打断，
+         光靠 animationend 永远等不到，白环就会一直卡在头像上 */
+      var gone=false, kill=function(){ if(gone)return; gone=true; s.remove(); };
+      s.addEventListener("animationend",kill);
+      setTimeout(kill,800);
+    }
+    if(clicks>=NEEDED){
+      clicks=0;
+      clearTip(); av.classList.remove("egg-hit");
+      if(hitTimer){clearTimeout(hitTimer);hitTimer=0;}
+      openTerm();
+    }
   });
+
+  /* 气泡是按点击那一刻的头像位置算的，页面一滚滚就对不上，直接收掉 */
+  window.addEventListener("scroll",function(){ if(tipEl)clearTip(); },{passive:true});
 
   /* ---------- 终端 ---------- */
   function openTerm(){
@@ -9104,12 +9164,15 @@ input[type=range].mp-range::-moz-range-thumb{
     function closeTerm(){
       if(!opened||closing)return;
       closing=true;
-      ov.classList.add("egg-closing");
+      /* 关动效时没有淡出动画可等，直接撤掉，别让遮罩停在半透明状态 */
+      var wait=reduceMotion()?0:210;
+      if(!wait){ ov.classList.remove("egg-closing"); }
+      else{ ov.classList.add("egg-closing"); }
       document.removeEventListener("keydown",onKey);
       setTimeout(function(){
         ov.remove(); document.body.style.overflow="";
         opened=false; closing=false;
-      },210);
+      },wait);
     }
     function onKey(ev){ if(ev.key==="Escape")closeTerm(); }
     document.addEventListener("keydown",onKey);
@@ -9163,6 +9226,30 @@ input[type=range].mp-range::-moz-range-thumb{
   box-shadow:0 0 18px rgba(122,59,255,.55),inset 0 0 12px rgba(255,255,255,.35);
   animation:egg-rip .6s cubic-bezier(.2,.6,.35,1) forwards;
 }
+/* ---------- 关掉动效时的点击反馈：静态描边 + 文字气泡（代替按压与涟漪） ----------
+   不开动效时 animation 被全局 !important 关掉，涟漪会停在起始帧变成一圈卡住的白环，
+   所以这条路径完全不画动画：头像亮一圈描边表示「点到了」，旁边飘一句文字表示「第几下」。 */
+.avatar.egg-hit{
+  box-shadow:0 12px 30px rgba(77,141,255,.35),0 0 0 3px rgba(122,59,255,.62);
+}
+.egg-tip{
+  position:fixed;z-index:2147482000;pointer-events:none;white-space:nowrap;
+  max-width:70vw;overflow:hidden;text-overflow:ellipsis;
+  font-size:12.5px;line-height:1;letter-spacing:.02em;
+  color:var(--text-1);background:rgba(18,22,34,.94);
+  border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:8px 11px;
+  box-shadow:0 10px 26px rgba(0,0,0,.42);
+}
+.egg-tip::before{
+  content:"";position:absolute;left:-4px;top:50%;
+  width:7px;height:7px;margin-top:-3.5px;
+  transform:rotate(45deg);background:rgba(18,22,34,.94);
+  border-left:1px solid rgba(255,255,255,.16);border-bottom:1px solid rgba(255,255,255,.16);
+}
+.egg-tip.below::before{display:none}   /* 摆到头像下方时不画小三角 */
+/* 万一用户是在「动画开着」时点的、随后才在系统里关掉动效：残留的涟漪会因动画失效卡住，
+   这条媒体查询让它立刻隐藏（选择器命中即生效，不需要等 JS 兜底定时器） */
+@media (prefers-reduced-motion:reduce){ .egg-ripple{display:none!important} }
 @keyframes egg-rip{
   from{transform:scale(.72);opacity:.95}
   to{transform:scale(1.85);opacity:0}
