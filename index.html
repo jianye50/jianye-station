@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
-<title></title>
-<!-- 标签页标题 / 描述 / 分享卡片 / 图标 全部来自 profile.txt，这里不写任何兜底文案：
-     配置读不到就保持空白，绝不显示源码里写死的旧内容 -->
-<meta name="description" content="">
+<title>鉴业の小站｜鉴业小站 · 鉴业的个人博客</title>
+<!-- 标签页标题 / 描述 / 分享卡片 / 图标 静态兜底值供搜索引擎爬虫直接抓取，
+     JS 启动后仍会按 profile.txt 覆盖为访客语言的版本 -->
+<meta name="description" content="鉴业の小站（也叫鉴业小站）：鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。这里有一键重装、文件加密、Jianye PE、米家网页控制台、RSS 阅读器、在线音乐播放器等自制工具。">
 <!-- 站名 / 描述 / 图标（favicon）都由 profile.txt 配置，JS 启动后填到这里 -->
 <!-- 移动端地址栏配色（站点固定深色） -->
 <meta name="theme-color" content="#0b0d12">
@@ -100,16 +100,37 @@
   },function(){ passBoot(); return "ok"; });
 })();
 </script>
-<!-- 分享卡片预览（og 内容全部由 profile.txt 回填，这里只留空的属性位） -->
+<!-- 分享卡片预览（静态兜底值供爬虫抓取，JS 启动后按 profile.txt 覆盖） -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="">
-<meta property="og:title" content="">
-<meta property="og:description" content="">
-<meta property="og:url" content="">
-<meta property="og:image" content="">
+<meta property="og:site_name" content="鉴业の小站">
+<meta property="og:title" content="鉴业の小站｜鉴业小站 · 鉴业的个人博客">
+<meta property="og:description" content="鉴业の小站（也叫鉴业小站）：鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。">
+<meta property="og:url" content="https://jype.top/">
+<meta property="og:image" content="https://jype.top/avatar.png">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="鉴业の小站｜鉴业小站 · 鉴业的个人博客">
+<meta name="twitter:description" content="鉴业の小站：鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。">
+<meta name="twitter:image" content="https://jype.top/avatar.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "鉴业の小站",
+  "alternateName": ["鉴业小站", "鉴业的小站", "鉴业的博客", "鉴业个人博客", "鉴业", "Jianye's Corner", "jype.top"],
+  "url": "https://jype.top/",
+  "description": "鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。",
+  "inLanguage": "zh-CN",
+  "author": {
+    "@type": "Person",
+    "name": "鉴业",
+    "alternateName": "Jianye",
+    "url": "https://jype.top/",
+    "sameAs": ["https://github.com/jianye50"]
+  }
+}
+</script>
 <!-- 规范地址：hash 路由的 #/xxx 都是同一个文档，统一指向站点根。
      由 profile.txt 的「域名」在 JS 里生成；没配域名就不输出 canonical -->
 <!-- 订阅源：中文 rss-zh.xml / 英文 rss-en.xml，都由 GitHub Action 在每次发文后
