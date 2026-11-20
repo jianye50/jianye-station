@@ -167,16 +167,7 @@
   }
   window.__JY_LANG=s;
   document.documentElement.lang=(s==="zh")?"zh-CN":"en";
-  /* 源码里的 <title> / description / og 是给爬虫的中文静态值（爬虫不执行 JS）。
-     浏览器这边在同一帧内按语言改掉，避免英文界面闪出中文标题；
-     主脚本稍后仍会按 profile.txt 的「站名」再填一次，这里只是抢先占位。 */
-  try{
-    if(s==="en"){
-      document.title="Jianye's Corner";
-      var d=document.querySelector('meta[name="description"]');
-      if(d)d.setAttribute("content","Jianye's Corner — Jianye's personal blog and digital space: project works, photo album, tech tinkering and daily notes.");
-    }
-  }catch(e){}
+  /* 标签页标题等站名相关内容一律不在这里写死：等 profile.txt 的「站名」读进来再填 */
 })();
 </script>
 <style>
