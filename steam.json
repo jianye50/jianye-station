@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-21T17:14:27.675Z",
+  "updated": "2026-11-21T22:56:33.894Z",
   "source": "api",
   "player": {
     "name": "鉴业",
@@ -7,54 +7,26 @@
     "url": "https://steamcommunity.com/id/aimjianye/"
   },
   "totalGames": 43,
-  "hours2weeks": 5.25,
+  "hours2weeks": 13.1,
   "friends": [
-    {
-      "name": "yaya",
-      "avatar": "https://avatars.steamstatic.com/443e8aae2dcccff76fecb2ae0fecbd051c9b9822_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199664593176/",
-      "state": 1,
-      "playing": "Counter-Strike 2"
-    },
-    {
-      "name": "绝世好人",
-      "avatar": "https://avatars.steamstatic.com/972f5af3d5b2fe6bcde047b47db3aef1ce942f40_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199767357806/",
-      "state": 1,
-      "playing": "Pummel Party"
-    },
     {
       "name": "刘海柱",
       "avatar": "https://avatars.steamstatic.com/5650a856c0bd7c678378e9895afec491786ce595_medium.jpg",
       "profile": "https://steamcommunity.com/profiles/76561199193111913/",
-      "state": 1,
-      "playing": "Pummel Party"
-    },
-    {
-      "name": "粥粥",
-      "avatar": "https://avatars.steamstatic.com/ccd744edbb55a43da7f2d094a9c41949205ab8e9_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199511370772/",
-      "state": 1,
-      "playing": "Pummel Party"
-    },
-    {
-      "name": "chenchenwhr",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
       "state": 3,
       "playing": null
     },
     {
-      "name": "wjiazheng2026",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198721612997/",
+      "name": "仙阁小斑",
+      "avatar": "https://avatars.steamstatic.com/5fea668694c95ff82c2d9cc2b2afdb06a9d2bbb4_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199768600704/",
       "state": 0,
       "playing": null
     },
     {
-      "name": "唐人小陈cheems",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198738673677/",
+      "name": "yaya",
+      "avatar": "https://avatars.steamstatic.com/443e8aae2dcccff76fecb2ae0fecbd051c9b9822_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199664593176/",
       "state": 0,
       "playing": null
     },
@@ -66,16 +38,16 @@
       "playing": null
     },
     {
-      "name": "HYJ",
-      "avatar": "https://avatars.steamstatic.com/6717ab4263dcfca8866a1d344f75e427acaf9a5b_medium.jpg",
-      "profile": "https://steamcommunity.com/id/JINGTIANHAOKUN123/",
+      "name": "绝世好人",
+      "avatar": "https://avatars.steamstatic.com/972f5af3d5b2fe6bcde047b47db3aef1ce942f40_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199767357806/",
       "state": 0,
       "playing": null
     },
     {
-      "name": "UxwxU",
+      "name": "唐人小陈cheems",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561198774453253/",
+      "profile": "https://steamcommunity.com/profiles/76561198738673677/",
       "state": 0,
       "playing": null
     },
@@ -94,16 +66,23 @@
       "playing": null
     },
     {
-      "name": "hhhx",
-      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
+      "name": "HYJ",
+      "avatar": "https://avatars.steamstatic.com/6717ab4263dcfca8866a1d344f75e427acaf9a5b_medium.jpg",
+      "profile": "https://steamcommunity.com/id/JINGTIANHAOKUN123/",
       "state": 0,
       "playing": null
     },
     {
-      "name": "Lu",
-      "avatar": "https://avatars.steamstatic.com/b72e7a6487c6bd07eb5e95c24474fed86f320b93_medium.jpg",
-      "profile": "https://steamcommunity.com/id/lunacult/",
+      "name": "wjiazheng2026",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561198721612997/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "hhhx",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199629015617/",
       "state": 0,
       "playing": null
     },
@@ -115,6 +94,13 @@
       "playing": null
     },
     {
+      "name": "粥粥",
+      "avatar": "https://avatars.steamstatic.com/ccd744edbb55a43da7f2d094a9c41949205ab8e9_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199511370772/",
+      "state": 0,
+      "playing": null
+    },
+    {
       "name": "aztdndxg",
       "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
       "profile": "https://steamcommunity.com/profiles/76561199876617412/",
@@ -122,9 +108,23 @@
       "playing": null
     },
     {
-      "name": "仙阁小斑",
-      "avatar": "https://avatars.steamstatic.com/5fea668694c95ff82c2d9cc2b2afdb06a9d2bbb4_medium.jpg",
-      "profile": "https://steamcommunity.com/profiles/76561199768600704/",
+      "name": "UxwxU",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561198774453253/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "chenchenwhr",
+      "avatar": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
+      "profile": "https://steamcommunity.com/profiles/76561199550670553/",
+      "state": 0,
+      "playing": null
+    },
+    {
+      "name": "Lu",
+      "avatar": "https://avatars.steamstatic.com/b72e7a6487c6bd07eb5e95c24474fed86f320b93_medium.jpg",
+      "profile": "https://steamcommunity.com/id/lunacult/",
       "state": 0,
       "playing": null
     }
@@ -162,8 +162,8 @@
       "name": "Pummel Party",
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/880940/library_600x900.jpg",
       "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/880940/header.jpg",
-      "hoursTotal": 16.3,
-      "hours2weeks": 0.1,
+      "hoursTotal": 18.3,
+      "hours2weeks": 2,
       "last": "11月21日"
     },
     {
@@ -214,6 +214,18 @@
   ],
   "recent": [
     {
+      "appid": 1447430,
+      "name": "小黑盒加速器",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1447430/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1447430/header.jpg",
+      "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/1447430/capsule_184x69.jpg",
+      "hoursTotal": 5.9,
+      "hours2weeks": 5.9,
+      "last": "",
+      "achEarned": null,
+      "achTotal": null
+    },
+    {
       "appid": 1260320,
       "name": "猛兽派对",
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1260320/library_600x900.jpg",
@@ -226,6 +238,18 @@
       "achTotal": 116
     },
     {
+      "appid": 880940,
+      "name": "Pummel Party",
+      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/880940/library_600x900.jpg",
+      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/880940/header.jpg",
+      "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/880940/capsule_184x69.jpg",
+      "hoursTotal": 18.3,
+      "hours2weeks": 2,
+      "last": "",
+      "achEarned": 13,
+      "achTotal": 31
+    },
+    {
       "appid": 2527500,
       "name": "MiSide",
       "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/2527500/library_600x900.jpg",
@@ -236,18 +260,6 @@
       "last": "",
       "achEarned": null,
       "achTotal": null
-    },
-    {
-      "appid": 880940,
-      "name": "Pummel Party",
-      "cover": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/880940/library_600x900.jpg",
-      "header": "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/880940/header.jpg",
-      "capsule": "https://shared.cloudflare.steamstatic.com/steam/apps/880940/capsule_184x69.jpg",
-      "hoursTotal": 16.3,
-      "hours2weeks": 0.1,
-      "last": "",
-      "achEarned": 13,
-      "achTotal": 31
     },
     {
       "appid": 945360,
