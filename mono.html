@@ -9585,6 +9585,8 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{
   color:var(--text-2);font-size:11.5px;letter-spacing:.08em;
 }
 .nav-icon:hover{color:var(--text-1);background:rgba(245,242,236,.06)}
+/* 顶栏不画四边焦点框（否则点一下导航就套个白框）：焦点提示交给文字变色 */
+.nav-link:focus-visible,.nav-brand:focus-visible,.nav-icon:focus-visible,.nav-drop-btn:focus-visible{outline:none}
 .nav-icon.mp-nav-btn{width:36px}
 .nav-icon .mp-nav-ring{width:36px;height:36px}
 .nav-icon .mp-nav-ring-bg{stroke:rgba(245,242,236,.16)}
@@ -9719,11 +9721,11 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{
   background:#101012;
 }
 .ph-tile:hover{transform:none;box-shadow:none}
-.ph-tile img{
+.ph-tile img,.ph-tile video{
   filter:grayscale(1) contrast(1.03) brightness(.82);
   transition:transform 1s cubic-bezier(.2,.7,.2,1),filter .6s ease;
 }
-.ph-tile:hover img{transform:scale(1.035);filter:grayscale(.15) contrast(1.02) brightness(.98)}
+.ph-tile:hover img,.ph-tile:hover video{transform:scale(1.035);filter:grayscale(.15) contrast(1.02) brightness(.98)}
 .ph-tile::after{background:linear-gradient(to top,rgba(4,4,5,.78),rgba(4,4,5,0) 52%)}
 .ph-tile:focus-visible{outline:1px solid var(--paper);outline-offset:2px}
 .ph-cap{
@@ -9752,8 +9754,8 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{
   outline:1px solid rgba(245,242,236,.10);outline-offset:-1px;
 }
 .al-card:hover{transform:none;box-shadow:none;outline-color:rgba(245,242,236,.34)}
-.al-cover img{filter:grayscale(1) brightness(.82);transition:filter .5s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
-.al-card:hover .al-cover img{filter:grayscale(.2) brightness(.95);transform:scale(1.03)}
+.al-cover img,.al-cover video{filter:grayscale(1) brightness(.82);transition:filter .5s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
+.al-card:hover .al-cover img,.al-card:hover .al-cover video{filter:grayscale(.2) brightness(.95);transform:scale(1.03)}
 .al-name{
   margin:12px 14px 0;font-size:12.5px;font-weight:500;
   letter-spacing:.08em;color:var(--text-1);
