@@ -1,6 +1,43 @@
 {
-  "generated": "2026-11-20T17:34:07.013Z",
+  "generated": "2026-11-21T14:02:31.377Z",
   "posts": [
+    {
+      "slug": "墨白与黑金：同一个骨架里的两种气质",
+      "md": "blog/墨白与黑金：同一个骨架里的两种气质/index.md",
+      "imgBase": "blog/墨白与黑金：同一个骨架里的两种气质/",
+      "title": "墨白与黑金：同一个骨架里的两种气质",
+      "desc": "-- title: 墨白与黑金：同一个骨架里的两种气质 desc: 同一个站点，两套皮肤。一份讲纸与墨的克制，一份讲夜与灯的仪式感——记录这次只…",
+      "tags": [
+        "主题",
+        "配色",
+        "质感"
+      ],
+      "date": "2026-11-21",
+      "minutes": 5,
+      "cover": "1745762684622.jpg",
+      "bg": "1745762684622.jpg",
+      "mdEn": "blog/墨白与黑金：同一个骨架里的两种气质/index.en.md",
+      "titleEn": "Ink white and black gold: two temperaments in the same skeleton",
+      "descEn": "-- title: Ink White and Black Gold: Two Temperaments in the Same Skeleton desc: Same site, two sets of skins. One talks about the restraint of paper and ink, and the other talks about the ritual sense of night and lights - the record is only...",
+      "tagsEn": [
+        "theme",
+        "color matching",
+        "Texture"
+      ],
+      "mdZh": "blog/墨白与黑金：同一个骨架里的两种气质/index.zh.md",
+      "titleZh": "墨白与黑金：同一个骨架里的两种气质",
+      "descZh": "-- title: 墨白与黑金：同一个骨架里的两种气质 desc: 同一个站点，两套皮肤。一份讲纸与墨的克制，一份讲夜与灯的仪式感——记录这次只…",
+      "tagsZh": [
+        "主题",
+        "配色",
+        "质感"
+      ],
+      "imgs": {
+        "1745762684622.jpg": "blog/thumbs/墨白与黑金：同一个骨架里的两种气质-i0.webp"
+      },
+      "coverThumb": "blog/thumbs/墨白与黑金：同一个骨架里的两种气质-cover.webp",
+      "bgThumb": "blog/thumbs/墨白与黑金：同一个骨架里的两种气质-bg.webp"
+    },
     {
       "slug": "Steamcommunity 302：跨平台 Steam 网络辅助工具介绍",
       "md": "blog/Steamcommunity 302：跨平台 Steam 网络辅助工具介绍/index.md",
