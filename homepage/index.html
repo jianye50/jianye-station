@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>鉴业的浏览器主页</title>
-<link rel="icon" type="image/x-icon" href="/icon.ico">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23141414'/%3E%3Ccircle cx='32' cy='31' r='16' fill='none' stroke='%23ffffff' stroke-width='4.5'/%3E%3Cpath d='M32 20v11l7-4' fill='none' stroke='%23ffffff' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
   :root {
     --bg: #ffffff;
@@ -14,6 +14,7 @@
     --box-border: #e0e0e0;
     --btn-bg: #1f1f1f;
     --btn-text: #ffffff;
+    color-scheme: light;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -25,7 +26,31 @@
       --box-border: #3a3a3a;
       --btn-bg: #f3f3f3;
       --btn-text: #1f1f1f;
+      color-scheme: dark;
     }
+  }
+
+  /* 手动指定主题（右键菜单）：覆盖系统偏好 */
+  html[data-theme="light"] {
+    --bg: #ffffff;
+    --text: #1f1f1f;
+    --subtle: #666666;
+    --box-bg: #f3f3f3;
+    --box-border: #e0e0e0;
+    --btn-bg: #1f1f1f;
+    --btn-text: #ffffff;
+    color-scheme: light;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #1f1f1f;
+    --text: #f3f3f3;
+    --subtle: #9a9a9a;
+    --box-bg: #2b2b2b;
+    --box-border: #3a3a3a;
+    --btn-bg: #f3f3f3;
+    --btn-text: #1f1f1f;
+    color-scheme: dark;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -82,13 +107,17 @@
     border: 1px solid var(--box-border);
     border-radius: 999px;
     padding: 6px 8px 6px 22px;
-    transition: background .3s ease, border-color .3s ease, box-shadow .2s ease;
+    transition: background .3s ease, border-color .3s ease, box-shadow .2s ease, transform .25s cubic-bezier(.22, 1, .36, 1);
   }
 
   .search-box:focus-within {
     border-color: var(--subtle);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, .12);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .12), 0 0 0 4px rgba(128, 128, 128, .1);
+    transform: translateY(-1px);
   }
+
+  /* 空内容提交：轻轻晃一下作为提示，不打断操作 */
+  .search-box.shake { animation: search-shake .38s cubic-bezier(.36, .07, .19, .97); }
 
   .search-box svg {
     width: 18px;
@@ -134,12 +163,15 @@
   .engine-icon img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 5px; }
   /* Bing 官方图标是竖长比例，放大一点免得显小 */
   .engine-icon svg.bing-mark { width: auto; height: 110%; }
+  /* 秘塔官方 logo 是横宽比例，按宽度撑满免得显小 */
+  .engine-icon svg.metaso-mark { width: 108%; height: auto; }
   /* 默认放大镜图标留一点内边距，避免顶满 */
   .engine-icon svg.default-mark { width: 88%; height: 88%; }
 
   /* 搜索框内的图标规则会带上描边，品牌 logo 只填充不描边，这里覆盖掉 */
   #engine-btn svg { width: 20px; height: 20px; stroke: none; }
   #engine-btn svg.bing-mark { width: auto; height: 23px; }
+  #engine-btn svg.metaso-mark { width: 22px; height: auto; }
 
   /* 引擎选择面板：整体纵向布局，列表区可滚动，底部“添加”常驻可见 */
   #engine-panel {
@@ -147,6 +179,7 @@
     top: calc(100% + 8px);
     left: 0;
     min-width: 232px;
+    max-width: min(340px, calc(100vw - 24px));
     background: var(--box-bg);
     border: 1px solid var(--box-border);
     border-radius: 18px;
@@ -191,6 +224,12 @@
   }
 
   .engine-item:hover { background: var(--btn-bg); color: var(--btn-text); }
+  /* 自定义长名称不撑破面板，超出部分省略 */
+  .engine-item > span:nth-child(2) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .engine-item .check { margin-left: auto; font-size: 13px; opacity: 0; padding-left: 16px; }
   .engine-item.active .check { opacity: 1; }
 
@@ -278,6 +317,10 @@
 
   #engine-form {
     width: min(420px, 100%);
+    max-height: calc(100vh - 40px);
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     background: var(--box-bg);
     border: 1px solid var(--box-border);
     border-radius: 18px;
@@ -362,6 +405,47 @@
   }
 
   #search-input::placeholder { color: var(--subtle); }
+  /* body 上有 user-select:none（避免拖动时选中文字），输入框内要恢复可选择 */
+  #search-input,
+  #engine-form input { -webkit-user-select: text; user-select: text; }
+
+  /* Tab 键临时搜索提示：输入其他引擎的域名时显示在输入框右侧（Edge 同款交互） */
+  #tab-hint {
+    position: absolute;
+    right: 56px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    align-items: center;
+    gap: 6px;
+    color: var(--subtle);
+    font-size: 12px;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    z-index: 2;
+  }
+  #tab-hint.show { display: flex; }
+  #tab-hint .engine-icon { width: 14px; height: 14px; }
+  #tab-hint kbd {
+    font-family: inherit;
+    font-size: 11px;
+    line-height: 1;
+    border: 1px solid var(--box-border);
+    background: var(--bg);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+  .search-box.tab-active #search-input { padding-right: 132px; }
+  html[dir="rtl"] #tab-hint { right: auto; left: 56px; }
+  html[dir="rtl"] .search-box.tab-active #search-input { padding-right: 14px; padding-left: 132px; }
+
+  /* 触屏设备没有 Tab 键，提示无意义且占空间 */
+  @media (hover: none), (pointer: coarse) {
+    #tab-hint { display: none !important; }
+    .search-box.tab-active #search-input,
+    html[dir="rtl"] .search-box.tab-active #search-input { padding-right: 14px; padding-left: 14px; }
+  }
 
   #search-btn {
     border: none;
@@ -381,6 +465,19 @@
 
   #search-btn:hover { opacity: .85; }
 
+  /* 键盘可达性：只在键盘聚焦时显示清晰的焦点环 */
+  #engine-btn:focus-visible,
+  #search-btn:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 3px;
+  }
+  #ctx-menu .ctx-item:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+  }
+
   #search-btn svg {
     width: 16px;
     height: 16px;
@@ -396,10 +493,24 @@
     background: var(--box-bg);
     border: 1px solid var(--box-border);
     border-radius: 18px;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    max-height: min(52vh, 430px);
+    max-height: min(52dvh, 430px);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(128, 128, 128, .5) transparent;
     box-shadow: 0 10px 32px rgba(0, 0, 0, .16);
     display: none;
     z-index: 10;
+  }
+
+  #suggest-panel::-webkit-scrollbar { width: 8px; }
+  #suggest-panel::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, .45);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
   }
 
   #suggest-panel.show { display: block; }
@@ -428,11 +539,568 @@
   .sug-item.active svg, .sug-item:hover svg { stroke: var(--btn-text); }
 
   .sug-item b { font-weight: 600; }
+
+  /* ---------- 图片 / 视频背景 ---------- */
+  #bg-media {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    display: none;
+    overflow: hidden;
+    background: #111;
+  }
+  #bg-media.on { display: block; }
+  /* 首屏低清预览：垫在全量媒体下面，避免加载期间黑屏 */
+  #bg-media .bg-preview {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+  #bg-media img, #bg-media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    position: relative;
+    z-index: 1;
+  }
+  /* 半透明遮罩：保证背景再花也不影响文字可读性 */
+  #bg-media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, .34);
+    pointer-events: none;
+  }
+
+  /* 有媒体背景时：整体玻璃拟态 + 文字反白（时钟、搜索框透明化） */
+  html.bg-on {
+    background: #111;
+    color-scheme: dark;
+    --bg: transparent;
+    --text: #ffffff;
+    --subtle: rgba(255, 255, 255, .76);
+    --box-bg: rgba(255, 255, 255, .16);
+    --box-border: rgba(255, 255, 255, .30);
+    --btn-bg: #ffffff;
+    --btn-text: #1f1f1f;
+  }
+  html.bg-on body { background: transparent; }
+  html.bg-on #clock,
+  html.bg-on #date { text-shadow: 0 2px 18px rgba(0, 0, 0, .35); }
+  html.bg-on .search-box {
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    backdrop-filter: blur(18px) saturate(1.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .22);
+  }
+  html.bg-on .search-box:focus-within {
+    border-color: rgba(255, 255, 255, .55);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .30);
+  }
+  html.bg-on #suggest-panel,
+  html.bg-on #engine-panel {
+    background: var(--box-bg);
+    border-color: var(--box-border);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    backdrop-filter: blur(18px) saturate(1.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .22);
+  }
+  html.bg-on #engine-form {
+    background: var(--box-bg);
+    border-color: var(--box-border);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    backdrop-filter: blur(18px) saturate(1.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .22);
+  }
+  html.bg-on #tab-hint kbd {
+    background: var(--box-bg);
+    border-color: var(--box-border);
+  }
+
+  /* 亮色壁纸：canvas 采样平均亮度自动切换。
+     白字浮在白壁纸上不可读 → 玻璃面板从白色玻璃改为深色玻璃，
+     时钟/日期加强阴影，保证任意壁纸下都有足够对比度 */
+  html.bg-on.bg-bright {
+    --box-bg: rgba(24, 28, 40, .44);
+    --box-border: rgba(255, 255, 255, .26);
+    --subtle: rgba(255, 255, 255, .88);
+  }
+  html.bg-on.bg-bright #clock,
+  html.bg-on.bg-bright #date {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .62), 0 2px 14px rgba(0, 0, 0, .48), 0 4px 32px rgba(0, 0, 0, .35);
+  }
+
+  /* ---------- 右键菜单 ---------- */
+  #ctx-menu {
+    position: fixed;
+    z-index: 120;
+    min-width: 214px;
+    max-width: 264px;
+    padding: 6px;
+    background: var(--box-bg);
+    border: 1px solid var(--box-border);
+    border-radius: 14px;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, .28);
+    font-size: 14px;
+    color: var(--text);
+    display: none;
+    overflow: hidden;
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(128, 128, 128, .5) transparent;
+    /* 入场时从鼠标落点处展开（JS 会写入 --ctx-origin） */
+    transform-origin: var(--ctx-origin, 50% 0%);
+    will-change: transform, opacity;
+    -webkit-backdrop-filter: blur(22px) saturate(1.3);
+    backdrop-filter: blur(22px) saturate(1.3);
+  }
+  #ctx-menu.show { display: block; }
+  /* 语言列表需要更宽一点，容纳 Bahasa Indonesia 这类较长名称 */
+  #ctx-menu.lang-open {
+    width: min(320px, calc(100vw - 24px));
+    max-width: none;
+  }
+  html.bg-on #ctx-menu {
+    background: var(--box-bg);
+    border-color: var(--box-border);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    backdrop-filter: blur(18px) saturate(1.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .22);
+  }
+  #ctx-menu .ctx-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 10px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  #ctx-menu .ctx-item:hover,
+  #ctx-menu .ctx-item:focus-visible {
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    outline: none;
+  }
+  #ctx-menu .ctx-item .ctx-tick {
+    width: 16px;
+    flex-shrink: 0;
+    font-size: 12px;
+    text-align: center;
+    opacity: 0;
+  }
+  #ctx-menu .ctx-item.checked .ctx-tick { opacity: 1; }
+  #ctx-menu .ctx-sep {
+    height: 1px;
+    background: var(--box-border);
+    margin: 5px 6px;
+    transform-origin: center;
+  }
+  /* 语言切换：主菜单入口 + 二级语言列表 */
+  #ctx-menu .ctx-icon {
+    width: 16px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #ctx-menu .ctx-icon svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+  }
+  #ctx-menu .ctx-lang-cur {
+    margin-left: auto;
+    padding-left: 8px;
+    font-size: 12px;
+    opacity: .68;
+    white-space: nowrap;
+    max-width: 108px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #ctx-menu .ctx-chev {
+    margin-left: 2px;
+    font-size: 15px;
+    line-height: 1;
+    opacity: .5;
+  }
+  #ctx-menu .ctx-item:hover .ctx-lang-cur { opacity: .85; }
+  #ctx-menu .ctx-back {
+    width: 16px;
+    flex-shrink: 0;
+    text-align: center;
+    font-size: 18px;
+    line-height: 1;
+  }
+  /* 语言列表用两列网格，20 种语言不必滚很久 */
+  #ctx-menu .ctx-lang-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+  }
+  #ctx-menu .ctx-lang-grid .ctx-item { padding: 7px 8px; gap: 6px; font-size: 13px; }
+  /* 自动识别占满一整行，放在所有具体语言之前 */
+  #ctx-menu .ctx-lang-grid .ctx-lang-auto { grid-column: 1 / -1; }
+  #ctx-menu .ctx-lang-grid .ctx-tick { width: 12px; font-size: 11px; }
+  #ctx-menu .ctx-lang-grid .ctx-item > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* 背景调节：模糊 / 缩放 / 亮度 */
+  #ctx-menu .ctx-fx { padding: 2px 12px 4px; }
+  #ctx-menu .ctx-fx-row { margin-top: 10px; }
+  #ctx-menu .ctx-fx-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--subtle);
+    margin-bottom: 3px;
+    transition: color .18s ease;
+  }
+  #ctx-menu .ctx-fx-row:hover .ctx-fx-head { color: var(--text); }
+  #ctx-menu .ctx-fx-head b {
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    display: inline-block;
+    transform-origin: center;
+  }
+  /* 数值变化时轻轻弹一下，拖动滑块有即时反馈 */
+  #ctx-menu .ctx-fx-head b.bump { animation: value-bump .28s cubic-bezier(.34, 1.56, .64, 1); }
+
+  /* 自绘滑块：已选区间用文字色填充，进度一眼可见 */
+  #ctx-menu input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    --fx-pct: 0%;
+  }
+  #ctx-menu input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(to right,
+      var(--text) 0 var(--fx-pct),
+      rgba(128, 128, 128, .32) var(--fx-pct) 100%);
+  }
+  /* RTL：滑块从右往左增长，填充方向也要跟着翻转 */
+  html[dir="rtl"] #ctx-menu input[type="range"]::-webkit-slider-runnable-track {
+    background: linear-gradient(to left,
+      var(--text) 0 var(--fx-pct),
+      rgba(128, 128, 128, .32) var(--fx-pct) 100%);
+  }
+  #ctx-menu input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    margin-top: -4.5px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 2px solid var(--box-bg);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, .32);
+    transition: transform .16s cubic-bezier(.34, 1.56, .64, 1), box-shadow .16s ease;
+  }
+  #ctx-menu input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.16); }
+  #ctx-menu input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.28);
+    box-shadow: 0 0 0 6px rgba(128, 128, 128, .2), 0 1px 5px rgba(0, 0, 0, .32);
+  }
+  /* Firefox */
+  #ctx-menu input[type="range"]::-moz-range-track {
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(128, 128, 128, .32);
+  }
+  #ctx-menu input[type="range"]::-moz-range-progress {
+    height: 4px;
+    border-radius: 999px;
+    background: var(--text);
+  }
+  #ctx-menu input[type="range"]::-moz-range-thumb {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 2px solid var(--box-bg);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, .32);
+    transition: transform .16s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  #ctx-menu input[type="range"]:hover::-moz-range-thumb { transform: scale(1.16); }
+
+  /* 触屏：加大滑块热区，手指更容易拖动 */
+  @media (hover: none), (pointer: coarse) {
+    #ctx-menu input[type="range"] { height: 26px; }
+    #ctx-menu input[type="range"]::-webkit-slider-thumb {
+      width: 18px;
+      height: 18px;
+      margin-top: -7px;
+    }
+    #ctx-menu input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; }
+  }
+
+  /* 轻提示（文件过大、格式不支持等） */
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 36px;
+    max-width: min(86vw, 520px);
+    text-align: center;
+    transform: translate(-50%, 14px) scale(.96);
+    z-index: 200;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: rgba(20, 20, 20, .88);
+    color: #fff;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .22s ease, transform .25s cubic-bezier(.22, 1, .36, 1);
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+
+  /* ================= 动效体系 ================= */
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(-6px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes pop-up {
+    from { opacity: 0; transform: translateY(12px) scale(.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes item-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes icon-pop {
+    0%   { opacity: 0; transform: scale(.55); }
+    60%  { transform: scale(1.12); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes colon-blink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: .3; }
+  }
+
+  /* 右键菜单：整体从鼠标落点弹出（轻微回弹），内部条目（文字 + 滑块）一起上浮 */
+  @keyframes ctx-in {
+    0%   { opacity: 0; transform: translateY(10px) scale(.92); }
+    60%  { opacity: 1; }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes ctx-out {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateY(5px) scale(.96); }
+  }
+  @keyframes ctx-row-in {
+    from { opacity: 0; transform: translateY(9px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes ctx-sep-in {
+    from { opacity: 0; transform: scaleX(.15); }
+    to   { opacity: 1; transform: scaleX(1); }
+  }
+  @keyframes ctx-sheen {
+    from { transform: translateX(-130%); }
+    to   { transform: translateX(130%); }
+  }
+  @keyframes tick-pop {
+    0%   { opacity: 0; transform: scale(.4); }
+    60%  { opacity: 1; transform: scale(1.18); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes value-bump {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+  @keyframes search-shake {
+    0%, 100% { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    40%      { transform: translateX(5px); }
+    60%      { transform: translateX(-3px); }
+    80%      { transform: translateX(2px); }
+  }
+
+  /* 首屏入场：时钟/日期/搜索框依次浮现 */
+  .time-card { animation: fade-in .6s ease both; }
+  #clock { animation: rise-in .8s cubic-bezier(.22, 1, .36, 1) .05s both; }
+  #date { animation: rise-in .8s cubic-bezier(.22, 1, .36, 1) .18s both; }
+  .search-wrap { animation: rise-in .8s cubic-bezier(.22, 1, .36, 1) .28s both; }
+  /* 冒号缓慢呼吸，让时钟"活"起来 */
+  #clock .colon { display: inline-block; animation: colon-blink 2.4s ease-in-out infinite; }
+
+  /* 浮层弹入：联想面板 / 引擎面板 / 右键菜单 / 添加弹窗 */
+  #suggest-panel.show { animation: pop-in .18s cubic-bezier(.22, 1, .36, 1) both; transform-origin: top center; }
+  #engine-panel.show { animation: pop-in .18s cubic-bezier(.22, 1, .36, 1) both; transform-origin: top left; }
+  #engine-panel.up.show { transform-origin: bottom left; }
+  #ctx-menu.show { animation: ctx-in .36s cubic-bezier(.18, 1.22, .32, 1) both; }
+  #ctx-menu.closing { animation: ctx-out .15s cubic-bezier(.4, 0, .8, .4) both; pointer-events: none; }
+  #ctx-menu.closing > * { animation: none !important; }
+  /* 展开时一道微光扫过玻璃面板 */
+  #ctx-menu.show::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(110deg,
+      transparent 30%,
+      rgba(255, 255, 255, .2) 46%,
+      transparent 62%);
+    background: linear-gradient(110deg,
+      transparent 30%,
+      color-mix(in srgb, var(--text) 16%, transparent) 46%,
+      transparent 62%);
+    /* 默认停在屏外：动画被系统“减少动态效果”禁用时不会留下一条静态高光 */
+    transform: translateX(-130%);
+    animation: ctx-sheen .7s cubic-bezier(.3, .8, .4, 1) .1s both;
+  }
+  #engine-form-mask.show { animation: fade-in .2s ease both; }
+  #engine-form-mask.show #engine-form { animation: pop-up .26s cubic-bezier(.22, 1, .36, 1) both; }
+
+  /* 右键菜单逐块上浮：分隔线与滑块组作为整体参与，避免文字动、滑块不动 */
+  #ctx-menu.show > * { animation: ctx-row-in .34s cubic-bezier(.22, 1, .36, 1) both; }
+  #ctx-menu.show > :nth-child(1) { animation-delay: .04s; }
+  #ctx-menu.show > :nth-child(2) { animation-delay: .06s; }
+  #ctx-menu.show > :nth-child(3) { animation-delay: .08s; }
+  #ctx-menu.show > :nth-child(4) { animation-delay: .1s; }
+  #ctx-menu.show > :nth-child(5) { animation-delay: .12s; }
+  #ctx-menu.show > :nth-child(6) { animation-delay: .14s; }
+  #ctx-menu.show > :nth-child(7) { animation-delay: .16s; }
+  #ctx-menu.show > :nth-child(8) { animation-delay: .18s; }
+  #ctx-menu.show > :nth-child(9) { animation-delay: .2s; }
+  /* 语言列表：整块淡入，避免 20 行同时位移显得晃 */
+  #ctx-menu.show > .ctx-lang-grid { animation: fade-in .22s ease both; animation-delay: .06s; }
+  #ctx-menu.show > .ctx-sep { animation-name: ctx-sep-in; }
+  #ctx-menu.show .ctx-item.checked .ctx-tick { animation: tick-pop .34s cubic-bezier(.34, 1.56, .64, 1) .32s both; }
+
+  /* 列表级联：面板内条目依次浮现（延迟封顶，长列表不拖沓） */
+  #suggest-panel.show .sug-item,
+  #engine-panel.show .engine-item,
+  #engine-panel.show .engine-add { animation: item-in .24s cubic-bezier(.22, 1, .36, 1) both; }
+  #suggest-panel.show .sug-item:nth-child(2),
+  #engine-panel.show .engine-item:nth-child(2) { animation-delay: .03s; }
+  #suggest-panel.show .sug-item:nth-child(3),
+  #engine-panel.show .engine-item:nth-child(3) { animation-delay: .06s; }
+  #suggest-panel.show .sug-item:nth-child(4),
+  #engine-panel.show .engine-item:nth-child(4) { animation-delay: .09s; }
+  #suggest-panel.show .sug-item:nth-child(n+5),
+  #engine-panel.show .engine-item:nth-child(n+5) { animation-delay: .12s; }
+  #engine-panel.show .engine-add { animation-delay: .12s; }
+
+  /* 引擎图标切换：小弹跳（innerHTML 替换产生新节点时自动播放） */
+  #engine-btn > * { animation: icon-pop .26s cubic-bezier(.34, 1.56, .64, 1) both; }
+
+  /* Tab 提示浮现 */
+  #tab-hint.show { animation: fade-in .18s ease both; }
+
+  /* 背景媒体入场：淡入 + 轻微回落，切换模式/换图时不生硬 */
+  @keyframes bg-in {
+    from { opacity: 0; transform: scale(1.04); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  #bg-media.on { animation: bg-in .7s cubic-bezier(.22, 1, .36, 1) both; }
+
+  /* 微交互：按钮回弹、条目高亮过渡 */
+  #engine-btn { transition: background .2s ease, transform .18s cubic-bezier(.34, 1.56, .64, 1); }
+  #engine-btn:hover { transform: scale(1.08); }
+  #engine-btn:active { transform: scale(.9); }
+  #search-btn { transition: opacity .2s ease, background .3s ease, color .3s ease, transform .18s cubic-bezier(.34, 1.56, .64, 1); }
+  #search-btn:hover { opacity: .88; transform: scale(1.07); }
+  #search-btn:active { transform: scale(.93); }
+  .sug-item, .engine-item, .engine-add, #ctx-menu .ctx-item { transition: background .15s ease, color .15s ease; }
+  /* 右键菜单条目：悬停时文字轻轻右移，按下回弹 */
+  #ctx-menu .ctx-item > span:nth-child(2) {
+    transition: transform .2s cubic-bezier(.22, 1, .36, 1);
+  }
+  #ctx-menu .ctx-item:hover > span:nth-child(2) { transform: translateX(2px); }
+  #ctx-menu .ctx-item:active > span:nth-child(2) { transform: translateX(2px) scale(.97); }
+  #ctx-menu .ctx-item:active { background: var(--btn-bg); color: var(--btn-text); }
+  html[dir="rtl"] #ctx-menu .ctx-chev { transform: scaleX(-1); }
+  .ef-actions button { transition: opacity .2s ease, background .2s ease, transform .15s ease; }
+  .ef-actions button:hover { transform: translateY(-1px); }
+  .ef-actions button:active { transform: translateY(0); }
+
+  /* 主题切换时浮层底色也平滑过渡 */
+  #suggest-panel, #engine-panel, #ctx-menu, #engine-form, #tab-hint kbd {
+    transition: background .3s ease, border-color .3s ease;
+  }
+
+  /* 尊重系统"减少动态效果"偏好 */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    /* 扫光依赖动画移动，禁用动画后直接去掉，避免静态光带残留 */
+    #ctx-menu.show::after { display: none !important; }
+  }
 </style>
 </head>
 <body>
 
-  <div>
+  <!-- 图片 / 视频背景层（右键菜单里设置） -->
+  <div id="bg-media" aria-hidden="true"></div>
+  <script>
+    /* 首屏同步预览：背景文件存在 IndexedDB，异步读取 + 大图解码有延迟，
+       打开页面期间会黑屏。选背景时已缓存一张低清预览（homepage.bgpreview），
+       这里同步读出立即上屏，全量背景就绪后由主脚本无缝替换 */
+    (function () {
+      try {
+        var mode = localStorage.getItem('homepage.mode');
+        if (!localStorage.getItem('homepage.bgmeta')) return;
+        if (mode && mode !== 'media') return;
+        var raw = localStorage.getItem('homepage.bgpreview');
+        if (!raw) return;
+        var media = document.getElementById('bg-media');
+        var img = document.createElement('img');
+        img.className = 'bg-preview';
+        img.alt = '';
+        img.src = raw;
+        media.appendChild(img);
+        media.classList.add('on');
+        document.documentElement.classList.add('bg-on');
+        if (localStorage.getItem('homepage.bgbright') === '1') {
+          document.documentElement.classList.add('bg-bright'); // 亮壁纸：首帧就用暗色玻璃，避免闪白
+        }
+      } catch (err) {}
+    })();
+  </script>
+
+  <div class="time-card">
     <div id="clock">00:00</div>
     <div id="date"></div>
   </div>
@@ -441,6 +1109,7 @@
     <form class="search-box" id="search-form">
       <button id="engine-btn" type="button" title="切换搜索引擎"></button>
       <input id="search-input" type="text" placeholder="搜索网页…" autocomplete="off" autofocus>
+      <span id="tab-hint" aria-hidden="true"></span>
       <button id="search-btn" type="submit" title="搜索">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -466,6 +1135,12 @@
       </form>
     </div>
   </div>
+
+  <!-- 右键菜单 -->
+  <div id="ctx-menu" role="menu" aria-hidden="true"></div>
+  <!-- 背景媒体文件选择器（图片/视频共用，按文件类型自动识别） -->
+  <input type="file" id="bg-file-input" accept="image/*,video/*" hidden>
+  <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
   /* ---------- 多语言：自动识别系统/浏览器语言 ---------- */
@@ -504,6 +1179,9 @@
       dateFormat: (y, m, d, wd) => y + ' 年 ' + m + ' 月 ' + d + ' 日 · ' + wd,
       searchPlaceholder: '搜索网页…',
       searchWith: (n) => '用' + n + '搜索网页…',
+      searchWithTemp: (n) => '暂时使用' + n + '搜索网页…',
+      sugOpen: '打开', sugSearch: (n) => '用' + n + '搜索',
+      menu: { follow: '跟随系统', dark: '深色外观', light: '浅色外观', media: '图片或视频…', none: '默认背景', errType: '不支持的文件格式', errSize: '文件太大', errStore: '存储失败，可能空间不足' },
       searchTitle: '搜索',
       engineBtnLabel: '切换搜索引擎',
       engineBtnTitle: (n) => '切换搜索引擎（当前：' + n + '）',
@@ -517,7 +1195,7 @@
       btnCancel: '取消',
       btnSave: '保存',
       hintExample: '例如：知乎',
-      engineNames: { bing: '必应', baidu: '百度', google: '谷歌', sogou: '搜狗', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: '抖音', bilibili: 'B站' }
+      engineNames: { bing: '必应', baidu: '百度', google: '谷歌', sogou: '搜狗', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: '抖音', bilibili: 'B站', metaso: '秘塔' }
     },
     en: {
       htmlLang: 'en',
@@ -526,6 +1204,9 @@
       dateFormat: (y, m, d, wd) => fmt(wd, m, d, y, MONTHS.en),
       searchPlaceholder: 'Search the web…',
       searchWith: (n) => 'Search the web with ' + n + '…',
+      searchWithTemp: (n) => 'Temporarily searching with ' + n + '…',
+      sugOpen: 'Open', sugSearch: (n) => 'Search with ' + n,
+      menu: { follow: 'Follow system', dark: 'Dark theme', light: 'Light theme', media: 'Image or video…', none: 'Default background', errType: 'Unsupported file type', errSize: 'File is too large', errStore: 'Couldn\u2019t save the file — storage may be full' },
       searchTitle: 'Search',
       engineBtnLabel: 'Switch search engine',
       engineBtnTitle: (n) => 'Switch search engine (current: ' + n + ')',
@@ -539,7 +1220,7 @@
       btnCancel: 'Cancel',
       btnSave: 'Save',
       hintExample: 'e.g. Wikipedia',
-      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili' }
+      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili', metaso: 'Metaso' }
     },
     ja: {
       htmlLang: 'ja',
@@ -548,6 +1229,9 @@
       dateFormat: (y, m, d, wd) => y + '年' + m + '月' + d + '日 · ' + wd,
       searchPlaceholder: 'ウェブを検索…',
       searchWith: (n) => n + 'で検索…',
+      searchWithTemp: (n) => n + 'で一時的に検索…',
+      sugOpen: '開く', sugSearch: (n) => n + 'で検索',
+      menu: { follow: 'システムに従う', dark: 'ダーク外観', light: 'ライト外観', media: '画像または動画…', none: '既定の背景', errType: '未対応のファイル形式', errSize: 'ファイルが大きすぎます', errStore: '保存に失敗しました（容量不足の可能性）' },
       searchTitle: '検索',
       engineBtnLabel: '検索エンジンを切り替え',
       engineBtnTitle: (n) => '検索エンジンを切り替え（現在：' + n + '）',
@@ -561,7 +1245,7 @@
       btnCancel: 'キャンセル',
       btnSave: '保存',
       hintExample: '例：Wikipedia',
-      engineNames: { bing: 'Bing', baidu: '百度', google: 'Google', sogou: '搜狗', so360: '360', ddg: 'DuckDuckGo', yahoo: 'ヤフー', yandex: 'Yandex', douyin: '抖音', bilibili: 'ビリビリ' }
+      engineNames: { bing: 'Bing', baidu: '百度', google: 'Google', sogou: '搜狗', so360: '360', ddg: 'DuckDuckGo', yahoo: 'ヤフー', yandex: 'Yandex', douyin: '抖音', bilibili: 'ビリビリ', metaso: 'Metaso' }
     },
     ko: {
       htmlLang: 'ko',
@@ -570,6 +1254,9 @@
       dateFormat: (y, m, d, wd) => y + '년 ' + m + '월 ' + d + '일 · ' + wd,
       searchPlaceholder: '웹 검색…',
       searchWith: (n) => n + '으로 검색…',
+      searchWithTemp: (n) => n + '으로 임시 검색…',
+      sugOpen: '열기', sugSearch: (n) => n + '에서 검색',
+      menu: { follow: '시스템 설정 따르기', dark: '다크 테마', light: '라이트 테마', media: '이미지 또는 동영상…', none: '기본 배경', errType: '지원하지 않는 파일 형식', errSize: '파일이 너무 큽니다', errStore: '저장하지 못했습니다(공간 부족 가능)' },
       searchTitle: '검색',
       engineBtnLabel: '검색 엔진 전환',
       engineBtnTitle: (n) => '검색 엔진 전환 (현재: ' + n + ')',
@@ -583,7 +1270,7 @@
       btnCancel: '취소',
       btnSave: '저장',
       hintExample: '예: Wikipedia',
-      engineNames: { bing: 'Bing', baidu: '바이두', google: '구글', sogou: '搜狗', so360: '360', ddg: 'DuckDuckGo', yahoo: '야후', yandex: 'Yandex', douyin: '더우인', bilibili: '빌리빌리' }
+      engineNames: { bing: 'Bing', baidu: '바이두', google: '구글', sogou: '搜狗', so360: '360', ddg: 'DuckDuckGo', yahoo: '야후', yandex: 'Yandex', douyin: '더우인', bilibili: '빌리빌리', metaso: 'Metaso' }
     },
     fr: {
       htmlLang: 'fr',
@@ -592,6 +1279,9 @@
       dateFormat: (y, m, d, wd) => fmt(wd, m, d, y, MONTHS.fr, 'dmy'),
       searchPlaceholder: 'Rechercher sur le Web…',
       searchWith: (n) => 'Rechercher avec ' + n + '…',
+      searchWithTemp: (n) => 'Recherche temporaire avec ' + n + '…',
+      sugOpen: 'Ouvrir', sugSearch: (n) => 'Rechercher avec ' + n,
+      menu: { follow: 'Suivre le système', dark: 'Thème sombre', light: 'Thème clair', media: 'Image ou vidéo…', none: 'Arrière-plan par défaut', errType: 'Format non pris en charge', errSize: 'Fichier trop volumineux', errStore: 'Échec de l\u2019enregistrement (espace insuffisant)' },
       searchTitle: 'Rechercher',
       engineBtnLabel: 'Changer de moteur de recherche',
       engineBtnTitle: (n) => 'Changer de moteur (actuel : ' + n + ')',
@@ -605,7 +1295,7 @@
       btnCancel: 'Annuler',
       btnSave: 'Enregistrer',
       hintExample: 'ex. : Wikipédia',
-      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili' }
+      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili', metaso: 'Metaso' }
     },
     de: {
       htmlLang: 'de',
@@ -614,6 +1304,9 @@
       dateFormat: (y, m, d, wd) => fmt(wd, m, d, y, MONTHS.de, 'dmy'),
       searchPlaceholder: 'Das Web durchsuchen…',
       searchWith: (n) => 'Mit ' + n + ' suchen…',
+      searchWithTemp: (n) => 'Vorübergehend mit ' + n + ' suchen…',
+      sugOpen: 'Öffnen', sugSearch: (n) => 'Mit ' + n + ' suchen',
+      menu: { follow: 'Systemeinstellung folgen', dark: 'Dunkles Design', light: 'Helles Design', media: 'Bild oder Video…', none: 'Standardhintergrund', errType: 'Nicht unterstütztes Format', errSize: 'Datei zu groß', errStore: 'Speichern fehlgeschlagen (Speicher voll)' },
       searchTitle: 'Suchen',
       engineBtnLabel: 'Suchmaschine wechseln',
       engineBtnTitle: (n) => 'Suchmaschine wechseln (aktuell: ' + n + ')',
@@ -627,7 +1320,7 @@
       btnCancel: 'Abbrechen',
       btnSave: 'Speichern',
       hintExample: 'z. B. Wikipedia',
-      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili' }
+      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili', metaso: 'Metaso' }
     },
     es: {
       htmlLang: 'es',
@@ -636,6 +1329,9 @@
       dateFormat: (y, m, d, wd) => fmt(wd, m, d, y, MONTHS.es, 'dmy'),
       searchPlaceholder: 'Buscar en la web…',
       searchWith: (n) => 'Buscar con ' + n + '…',
+      searchWithTemp: (n) => 'Búsqueda temporal con ' + n + '…',
+      sugOpen: 'Abrir', sugSearch: (n) => 'Buscar con ' + n,
+      menu: { follow: 'Seguir el sistema', dark: 'Tema oscuro', light: 'Tema claro', media: 'Imagen o vídeo…', none: 'Fondo predeterminado', errType: 'Formato no compatible', errSize: 'Archivo demasiado grande', errStore: 'No se pudo guardar (espacio insuficiente)' },
       searchTitle: 'Buscar',
       engineBtnLabel: 'Cambiar de motor de búsqueda',
       engineBtnTitle: (n) => 'Cambiar de motor (actual: ' + n + ')',
@@ -649,7 +1345,7 @@
       btnCancel: 'Cancelar',
       btnSave: 'Guardar',
       hintExample: 'p. ej. Wikipedia',
-      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili' }
+      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili', metaso: 'Metaso' }
     },
     pt: {
       htmlLang: 'pt',
@@ -658,6 +1354,9 @@
       dateFormat: (y, m, d, wd) => fmt(wd, m, d, y, MONTHS.pt, 'dmy'),
       searchPlaceholder: 'Pesquisar na web…',
       searchWith: (n) => 'Pesquisar com ' + n + '…',
+      searchWithTemp: (n) => 'Pesquisa temporária com ' + n + '…',
+      sugOpen: 'Abrir', sugSearch: (n) => 'Pesquisar com ' + n,
+      menu: { follow: 'Seguir o sistema', dark: 'Tema escuro', light: 'Tema claro', media: 'Imagem ou vídeo…', none: 'Fundo padrão', errType: 'Formato não suportado', errSize: 'Arquivo muito grande', errStore: 'Falha ao salvar (espaço insuficiente)' },
       searchTitle: 'Pesquisar',
       engineBtnLabel: 'Alterar mecanismo de pesquisa',
       engineBtnTitle: (n) => 'Alterar mecanismo (atual: ' + n + ')',
@@ -671,7 +1370,7 @@
       btnCancel: 'Cancelar',
       btnSave: 'Salvar',
       hintExample: 'ex.: Wikipédia',
-      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili' }
+      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili', metaso: 'Metaso' }
     },
     ru: {
       htmlLang: 'ru',
@@ -680,6 +1379,9 @@
       dateFormat: (y, m, d, wd) => wd + ', ' + d + ' ' + MONTHS_RU[m - 1] + ' ' + y,
       searchPlaceholder: 'Поиск в интернете…',
       searchWith: (n) => 'Искать в ' + n + '…',
+      searchWithTemp: (n) => 'Временный поиск в ' + n + '…',
+      sugOpen: 'Открыть', sugSearch: (n) => 'Искать в ' + n,
+      menu: { follow: 'Как в системе', dark: 'Тёмное оформление', light: 'Светлое оформление', media: 'Изображение или видео…', none: 'Фон по умолчанию', errType: 'Неподдерживаемый формат', errSize: 'Файл слишком большой', errStore: 'Не удалось сохранить (возможно, мало места)' },
       searchTitle: 'Поиск',
       engineBtnLabel: 'Сменить поисковую систему',
       engineBtnTitle: (n) => 'Сменить поисковик (текущий: ' + n + ')',
@@ -693,7 +1395,7 @@
       btnCancel: 'Отмена',
       btnSave: 'Сохранить',
       hintExample: 'напр. Википедия',
-      engineNames: { bing: 'Bing', baidu: 'Байду', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Яндекс', douyin: 'Douyin', bilibili: 'Bilibili' }
+      engineNames: { bing: 'Bing', baidu: 'Байду', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Яндекс', douyin: 'Douyin', bilibili: 'Bilibili', metaso: 'Metaso' }
     },
     it: {
       htmlLang: 'it',
@@ -702,6 +1404,9 @@
       dateFormat: (y, m, d, wd) => fmt(wd, m, d, y, MONTHS.it, 'dmy'),
       searchPlaceholder: 'Cerca sul web…',
       searchWith: (n) => 'Cerca con ' + n + '…',
+      searchWithTemp: (n) => 'Ricerca temporanea con ' + n + '…',
+      sugOpen: 'Apri', sugSearch: (n) => 'Cerca con ' + n,
+      menu: { follow: 'Segui il sistema', dark: 'Tema scuro', light: 'Tema chiaro', media: 'Immagine o video…', none: 'Sfondo predefinito', errType: 'Formato non supportato', errSize: 'File troppo grande', errStore: 'Salvataggio non riuscito (spazio insufficiente)' },
       searchTitle: 'Cerca',
       engineBtnLabel: 'Cambia motore di ricerca',
       engineBtnTitle: (n) => 'Cambia motore (attuale: ' + n + ')',
@@ -715,7 +1420,7 @@
       btnCancel: 'Annulla',
       btnSave: 'Salva',
       hintExample: 'es. Wikipedia',
-      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili' }
+      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili', metaso: 'Metaso' }
     },
     ar: {
       htmlLang: 'ar',
@@ -725,6 +1430,9 @@
       dateFormat: (y, m, d, wd) => wd + '، ' + d + ' ' + MONTHS_AR[m - 1] + ' ' + y,
       searchPlaceholder: 'ابحث في الويب…',
       searchWith: (n) => 'ابحث باستخدام ' + n + '…',
+      searchWithTemp: (n) => 'بحث مؤقت باستخدام ' + n + '…',
+      sugOpen: 'فتح', sugSearch: (n) => 'البحث باستخدام ' + n,
+      menu: { follow: 'حسب النظام', dark: 'مظهر داكن', light: 'مظهر فاتح', media: 'صورة أو فيديو…', none: 'الخلفية الافتراضية', errType: 'تنسيق غير مدعوم', errSize: 'الملف كبير جدًا', errStore: 'تعذّر الحفظ (المساحة ممتلئة)' },
       searchTitle: 'بحث',
       engineBtnLabel: 'تغيير محرك البحث',
       engineBtnTitle: (n) => 'تغيير محرك البحث (الحالي: ' + n + ')',
@@ -738,7 +1446,7 @@
       btnCancel: 'إلغاء',
       btnSave: 'حفظ',
       hintExample: 'مثال: ويكيبيديا',
-      engineNames: { bing: 'Bing', baidu: 'بايدو', google: 'جوجل', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'ياهو', yandex: 'Yandex', douyin: 'دوين', bilibili: 'بيلي بيلي' }
+      engineNames: { bing: 'Bing', baidu: 'بايدو', google: 'جوجل', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'ياهو', yandex: 'Yandex', douyin: 'دوين', bilibili: 'بيلي بيلي', metaso: 'Metaso' }
     },
     nl: {
       htmlLang: 'nl',
@@ -747,6 +1455,9 @@
       dateFormat: (y, m, d, wd) => fmt(wd, m, d, y, MONTHS.nl, 'dmy'),
       searchPlaceholder: 'Zoek op het web…',
       searchWith: (n) => 'Zoeken met ' + n + '…',
+      searchWithTemp: (n) => 'Tijdelijk zoeken met ' + n + '…',
+      sugOpen: 'Openen', sugSearch: (n) => 'Zoeken met ' + n,
+      menu: { follow: 'Systeem volgen', dark: 'Donker thema', light: 'Licht thema', media: 'Afbeelding of video…', none: 'Standaardachtergrond', errType: 'Niet-ondersteund formaat', errSize: 'Bestand te groot', errStore: 'Opslaan mislukt (opslag vol)' },
       searchTitle: 'Zoeken',
       engineBtnLabel: 'Zoekmachine wijzigen',
       engineBtnTitle: (n) => 'Zoekmachine wijzigen (huidig: ' + n + ')',
@@ -760,7 +1471,7 @@
       btnCancel: 'Annuleren',
       btnSave: 'Opslaan',
       hintExample: 'bv. Wikipedia',
-      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili' }
+      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili', metaso: 'Metaso' }
     },
     pl: {
       htmlLang: 'pl',
@@ -769,6 +1480,9 @@
       dateFormat: (y, m, d, wd) => wd + ', ' + d + ' ' + MONTHS.pl[m - 1] + ' ' + y,
       searchPlaceholder: 'Przeszukaj sieć…',
       searchWith: (n) => 'Szukaj w ' + n + '…',
+      searchWithTemp: (n) => 'Tymczasowe wyszukiwanie w ' + n + '…',
+      sugOpen: 'Otwórz', sugSearch: (n) => 'Szukaj w ' + n,
+      menu: { follow: 'Zgodnie z systemem', dark: 'Ciemny motyw', light: 'Jasny motyw', media: 'Obraz lub wideo…', none: 'Domyślne tło', errType: 'Nieobsługiwany format', errSize: 'Plik zbyt duży', errStore: 'Nie udało się zapisać (brak miejsca)' },
       searchTitle: 'Szukaj',
       engineBtnLabel: 'Zmień wyszukiwarkę',
       engineBtnTitle: (n) => 'Zmień wyszukiwarkę (obecna: ' + n + ')',
@@ -782,7 +1496,7 @@
       btnCancel: 'Anuluj',
       btnSave: 'Zapisz',
       hintExample: 'np. Wikipedia',
-      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili' }
+      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili', metaso: 'Metaso' }
     },
     tr: {
       htmlLang: 'tr',
@@ -791,6 +1505,9 @@
       dateFormat: (y, m, d, wd) => d + ' ' + MONTHS.tr[m - 1] + ' ' + y + ', ' + wd,
       searchPlaceholder: 'Web\u2019de ara…',
       searchWith: (n) => n + ' ile ara…',
+      searchWithTemp: (n) => n + ' ile geçici arama…',
+      sugOpen: 'Aç', sugSearch: (n) => n + ' ile ara',
+      menu: { follow: 'Sistemi izle', dark: 'Koyu tema', light: 'Açık tema', media: 'Görsel veya video…', none: 'Varsayılan arka plan', errType: 'Desteklenmeyen biçim', errSize: 'Dosya çok büyük', errStore: 'Kaydedilemedi (alan yetersiz)' },
       searchTitle: 'Ara',
       engineBtnLabel: 'Arama motorunu değiştir',
       engineBtnTitle: (n) => 'Arama motorunu değiştir (mevcut: ' + n + ')',
@@ -804,7 +1521,7 @@
       btnCancel: 'İptal',
       btnSave: 'Kaydet',
       hintExample: 'örn. Wikipedia',
-      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili' }
+      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili', metaso: 'Metaso' }
     },
     th: {
       htmlLang: 'th',
@@ -813,6 +1530,9 @@
       dateFormat: (y, m, d, wd) => wd + 'ที่ ' + d + ' ' + MONTHS.th[m - 1] + ' ' + (y + 543),
       searchPlaceholder: 'ค้นหาเว็บ…',
       searchWith: (n) => 'ค้นหาด้วย ' + n + '…',
+      searchWithTemp: (n) => 'ค้นหาชั่วคราวด้วย ' + n + '…',
+      sugOpen: 'เปิด', sugSearch: (n) => 'ค้นหาด้วย ' + n,
+      menu: { follow: 'ตามระบบ', dark: 'ธีมมืด', light: 'ธีมสว่าง', media: 'รูปภาพหรือวิดีโอ…', none: 'พื้นหลังเริ่มต้น', errType: 'รูปแบบไม่รองรับ', errSize: 'ไฟล์ใหญ่เกินไป', errStore: 'บันทึกไม่สำเร็จ (พื้นที่อาจเต็ม)' },
       searchTitle: 'ค้นหา',
       engineBtnLabel: 'เปลี่ยนเครื่องมือค้นหา',
       engineBtnTitle: (n) => 'เปลี่ยนเครื่องมือค้นหา (ปัจจุบัน: ' + n + ')',
@@ -826,7 +1546,7 @@
       btnCancel: 'ยกเลิก',
       btnSave: 'บันทึก',
       hintExample: 'เช่น Wikipedia',
-      engineNames: { bing: 'Bing', baidu: 'ไป่ตู้', google: 'กูเกิล', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'ยาฮู', yandex: 'Yandex', douyin: 'โต่วอิน', bilibili: 'บิลิบิลิ' }
+      engineNames: { bing: 'Bing', baidu: 'ไป่ตู้', google: 'กูเกิล', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'ยาฮู', yandex: 'Yandex', douyin: 'โต่วอิน', bilibili: 'บิลิบิลิ', metaso: 'Metaso' }
     },
     vi: {
       htmlLang: 'vi',
@@ -835,6 +1555,9 @@
       dateFormat: (y, m, d, wd) => wd + ', ' + d + ' tháng ' + m + ' năm ' + y,
       searchPlaceholder: 'Tìm kiếm trên web…',
       searchWith: (n) => 'Tìm kiếm bằng ' + n + '…',
+      searchWithTemp: (n) => 'Tạm thời tìm kiếm bằng ' + n + '…',
+      sugOpen: 'Mở', sugSearch: (n) => 'Tìm kiếm bằng ' + n,
+      menu: { follow: 'Theo hệ thống', dark: 'Giao diện tối', light: 'Giao diện sáng', media: 'Ảnh hoặc video…', none: 'Nền mặc định', errType: 'Định dạng không hỗ trợ', errSize: 'Tệp quá lớn', errStore: 'Không lưu được (có thể hết dung lượng)' },
       searchTitle: 'Tìm kiếm',
       engineBtnLabel: 'Đổi công cụ tìm kiếm',
       engineBtnTitle: (n) => 'Đổi công cụ tìm kiếm (hiện tại: ' + n + ')',
@@ -848,7 +1571,7 @@
       btnCancel: 'Hủy',
       btnSave: 'Lưu',
       hintExample: 'vd: Wikipedia',
-      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Đậu Âm', bilibili: 'Bilibili' }
+      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Đậu Âm', bilibili: 'Bilibili', metaso: 'Metaso' }
     },
     id: {
       htmlLang: 'id',
@@ -857,6 +1580,9 @@
       dateFormat: (y, m, d, wd) => wd + ', ' + d + ' ' + MONTHS.id[m - 1] + ' ' + y,
       searchPlaceholder: 'Telusuri web…',
       searchWith: (n) => 'Telusuri dengan ' + n + '…',
+      searchWithTemp: (n) => 'Sementara menelusuri dengan ' + n + '…',
+      sugOpen: 'Buka', sugSearch: (n) => 'Telusuri dengan ' + n,
+      menu: { follow: 'Ikuti sistem', dark: 'Tema gelap', light: 'Tema terang', media: 'Gambar atau video…', none: 'Latar default', errType: 'Format tidak didukung', errSize: 'Berkas terlalu besar', errStore: 'Gagal menyimpan (ruang penuh)' },
       searchTitle: 'Telusuri',
       engineBtnLabel: 'Ganti mesin pencari',
       engineBtnTitle: (n) => 'Ganti mesin pencari (saat ini: ' + n + ')',
@@ -870,7 +1596,7 @@
       btnCancel: 'Batal',
       btnSave: 'Simpan',
       hintExample: 'mis. Wikipedia',
-      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili' }
+      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili', metaso: 'Metaso' }
     },
     hi: {
       htmlLang: 'hi',
@@ -879,6 +1605,9 @@
       dateFormat: (y, m, d, wd) => wd + ', ' + d + ' ' + MONTHS.hi[m - 1] + ' ' + y,
       searchPlaceholder: 'वेब पर खोजें…',
       searchWith: (n) => n + ' से खोजें…',
+      searchWithTemp: (n) => n + ' से अस्थायी रूप से खोजें…',
+      sugOpen: 'खोलें', sugSearch: (n) => n + ' से खोजें',
+      menu: { follow: 'सिस्टम के अनुसार', dark: 'डार्क थीम', light: 'लाइट थीम', media: 'चित्र या वीडियो…', none: 'डिफ़ॉल्ट बैकग्राउंड', errType: 'असमर्थित फ़ाइल फ़ॉर्मेट', errSize: 'फ़ाइल बहुत बड़ी है', errStore: 'सहेजा नहीं गया (जगह कम)' },
       searchTitle: 'खोजें',
       engineBtnLabel: 'सर्च इंजन बदलें',
       engineBtnTitle: (n) => 'सर्च इंजन बदलें (वर्तमान: ' + n + ')',
@@ -892,7 +1621,7 @@
       btnCancel: 'रद्द करें',
       btnSave: 'सहेजें',
       hintExample: 'उदा. Wikipedia',
-      engineNames: { bing: 'Bing', baidu: 'बाइडू', google: 'गूगल', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'याहू', yandex: 'Yandex', douyin: 'डॉयिन', bilibili: 'बिलिबिली' }
+      engineNames: { bing: 'Bing', baidu: 'बाइडू', google: 'गूगल', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'याहू', yandex: 'Yandex', douyin: 'डॉयिन', bilibili: 'बिलिबिली', metaso: 'Metaso' }
     },
     sv: {
       htmlLang: 'sv',
@@ -901,6 +1630,9 @@
       dateFormat: (y, m, d, wd) => wd + ' ' + d + ' ' + MONTHS.sv[m - 1] + ' ' + y,
       searchPlaceholder: 'Sök på webben…',
       searchWith: (n) => 'Sök med ' + n + '…',
+      searchWithTemp: (n) => 'Söker tillfälligt med ' + n + '…',
+      sugOpen: 'Öppna', sugSearch: (n) => 'Sök med ' + n,
+      menu: { follow: 'Följ systemet', dark: 'Mörkt tema', light: 'Ljust tema', media: 'Bild eller video…', none: 'Standardbakgrund', errType: 'Format som inte stöds', errSize: 'Filen är för stor', errStore: 'Kunde inte spara (utrymmet fullt)' },
       searchTitle: 'Sök',
       engineBtnLabel: 'Byt sökmotor',
       engineBtnTitle: (n) => 'Byt sökmotor (nuvarande: ' + n + ')',
@@ -914,7 +1646,7 @@
       btnCancel: 'Avbryt',
       btnSave: 'Spara',
       hintExample: 't.ex. Wikipedia',
-      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili' }
+      engineNames: { bing: 'Bing', baidu: 'Baidu', google: 'Google', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'Yahoo', yandex: 'Yandex', douyin: 'Douyin', bilibili: 'Bilibili', metaso: 'Metaso' }
     },
     he: {
       htmlLang: 'he',
@@ -924,6 +1656,9 @@
       dateFormat: (y, m, d, wd) => wd + ', ' + d + ' ב' + MONTHS.he[m - 1] + ' ' + y,
       searchPlaceholder: 'חיפוש באינטרנט…',
       searchWith: (n) => 'חיפוש עם ' + n + '…',
+      searchWithTemp: (n) => 'חיפוש זמני עם ' + n + '…',
+      sugOpen: 'פתח', sugSearch: (n) => 'חיפוש עם ' + n,
+      menu: { follow: 'לפי המערכת', dark: 'ערכת כהה', light: 'ערכת בהירה', media: 'תמונה או וידאו…', none: 'רקע ברירת מחדל', errType: 'פורמט לא נתמך', errSize: 'הקובץ גדול מדי', errStore: 'השמירה נכשלה (אין מקום)' },
       searchTitle: 'חיפוש',
       engineBtnLabel: 'החלף מנוע חיפוש',
       engineBtnTitle: (n) => 'החלף מנוע חיפוש (נוכחי: ' + n + ')',
@@ -937,7 +1672,7 @@
       btnCancel: 'ביטול',
       btnSave: 'שמירה',
       hintExample: 'למשל ויקיפדיה',
-      engineNames: { bing: 'Bing', baidu: 'באידו', google: 'גוגל', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'יאהו', yandex: 'Yandex', douyin: 'דואיין', bilibili: 'ביליבילי' }
+      engineNames: { bing: 'Bing', baidu: 'באידו', google: 'גוגל', sogou: 'Sogou', so360: '360', ddg: 'DuckDuckGo', yahoo: 'יאהו', yandex: 'Yandex', douyin: 'דואיין', bilibili: 'ביליבילי', metaso: 'Metaso' }
     }
   };
 
@@ -977,9 +1712,21 @@
 
   function tick() {
     const now = new Date();
-    clockEl.textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
-    dateEl.textContent = T.dateFormat(now.getFullYear(), now.getMonth() + 1, now.getDate(), weekDays[now.getDay()]);
+    // 冒号用 span 包起来做呼吸动画；仅在实际变化时重建 DOM，
+    // 避免每秒重写导致动画不断重置
+    const t = pad(now.getHours()) + ':' + pad(now.getMinutes());
+    if (clockEl._time !== t) {
+      clockEl._time = t;
+      clockEl.innerHTML = t.replace(':', '<span class="colon">:</span>');
+    }
+    // 日期一天只变一次，没必要每秒都写 DOM
+    const d = T.dateFormat(now.getFullYear(), now.getMonth() + 1, now.getDate(), weekDays[now.getDay()]);
+    if (d !== lastDateText) {
+      lastDateText = d;
+      dateEl.textContent = d;
+    }
   }
+  let lastDateText = '';
   tick();
   setInterval(tick, 1000);
 
@@ -1007,7 +1754,8 @@
     { id: 'yahoo',    zh: 'Yahoo',      en: 'Yahoo',       url: 'https://search.yahoo.com/search?p=%s' },
     { id: 'yandex',   zh: 'Yandex',     en: 'Yandex',      url: 'https://yandex.com/search/?text=%s' },
     { id: 'douyin',   zh: '抖音',       en: 'Douyin',      url: 'https://www.douyin.com/search/%s' },
-    { id: 'bilibili', zh: 'B站',        en: 'Bilibili',    url: 'https://search.bilibili.com/all?keyword=%s' }
+    { id: 'bilibili', zh: 'B站',        en: 'Bilibili',    url: 'https://search.bilibili.com/all?keyword=%s' },
+    { id: 'metaso',   zh: '秘塔',       en: 'Metaso',      url: 'https://metaso.cn/?q=%s' }
   ];
 
   /* ---------- 各引擎官方图标：官方 SVG 与应用图标，内联以免额外请求 ---------- */
@@ -1021,6 +1769,7 @@
     yahoo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#6001D2" d="m18.86 1.56l-4.59 10.31h5.13L24 1.56h-5.14M0 6.71l5.15 11.56l-1.85 4.17h4.53l6.86-15.73h-4.5l-2.8 6.73l-2.77-6.73H0m15.62 6.16c-1.67 0-2.91 1.25-2.91 2.71c0 1.42 1.2 2.61 2.79 2.61c1.68 0 2.93-1.23 2.93-2.69c0-1.47-1.2-2.63-2.81-2.63Z"/></svg>',
     yandex: '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAMAAAAKE/YAAAAAUVBMVEX8Px38Syv/8/H////9b1X9h3H9h3L9n47+z8b/5+P+t6r9q5z8Vzn8b1b8Y0f+z8f+29T9k4D9e2T/29T+w7j+n479e2P9Vzn9n43//v78Px3ocyNBAAAAG3RSTlP///////////////////////////////////59MdQuAAACH0lEQVR42u2ZC07DMBQEn2NomtS0FEL53P+gHMARK9VNWEszF2A7FR5jAgAAAAAAAAAAAAAAAECRhlzzFBWS51xziI0Yc80xKiRTrpj8VGvRc2zG6SGqj7mmxGaU/ADVLxuIFpLaf+Cca86xIU95hdT8bV0i9lY9Nos+ROytekhe513Nq1BtEJaa65rqRtFl+5Y3qXoTx49dy3VYPFtehGhL1XNLUVtIqy2/W/R77MJ8t+px1/NOt7wYhkW3vD0sni2fxDdko1pfpL1Vz7uL1l/09Y7zbgnB1temqS0sli0vg/icNi3X552fah0WN9Va9EfsTMkrnL0u0jWLSEVDWCwCo8Pi03L9QuOmWou+RVirTv953ulTbDALS82gt+iwWAZGP/37tFyHxVt1EaItVPuFRf/naPELix6UU8MLjUNg9Hln1HIdFj/VSnQKR9XyIu2kun4CWUzOO93oySwsNX8ERr7Q+LVcP/27tVycd56qRVg8VRc/0foad5IXadfAfK4QAp+Wa8xfm1D9cNXhziQON0uuq4ERmLbcnBHV/6l6tlctnkA8mWm5wd/lfal+D3vVPZ56t1yz9HhtGlKPgbn22PJj9Kg69aj6Fu6c1l5A3CmiL90EJvX4q3jucfShx9Fjj6PnHkcvPY6+9Dh6YvROo4ceR2dGM5rRjGY0oxnNaEYzmtGMZjSjGb0lX981AQAAAAAAAAAAAAAO/BjxC8MfQGWVu9gFAAAAAElFTkSuQmCC" alt="">',
     douyin: '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACdUlEQVR42s2XMWgTYRTH3+LSpTe4dIkHLi5C6VKEgufi4hKXDhXbmwQpYnByUHKrQ2nETdpeFmkHy5UgOEi5waXgENDNoYc4Wa2f1mprLsnr977krvflkkvurpf0wSOQ5N7/973ve/8vAWiFytPmyXjiENJqa/riwxIOJvMgrFSFar/kfPo4zvPU9ZQr4aJWs4ZOs9FK8y1aMB2nC+kB7KaLfrBDZMpsnBpnDECxXEENLo4QgIddfDFaAIqiuYpwKTc6AAo6oOr3r1HTkS2AF1Wz0ms6zhjA+dadwNxGhHxCAGUc4foMwvwcwoP78r52AhjryPSlMEgiABKmvdv7IoSU2m+cdA8wP7+IkzDeE8CGGdQhh472CPHhakucXmMB0Co/fxQCmvtHFtGfowlTkQBeHfKDElwV71XhxoAAAfHlxnF4P2MAJPOBKPHMAe7OiaJ6/Z/k72hsICp3xD7Sa3YAr1+JonSz+aE9EcJUOA8TqMKYyGwA+InPu4cBU/8kxP0V9/OB1AC8YKl+LBUkAH/FmQPwDpT3904Lliq9C9K0dAIUVlICfHiP5cZ/6QA6yu3uD5MrdgLw85IOgDuftAVtGw1tAVkz75ZaO5CnJTghiQB4W7XgIfRuM2cX1aVnLWt+98a3Zvvnj5DfL0AupRHx1lbZfgiCRtOoH6Hu/sVi40geVbp81HvowM24N2r3D7S1lzhwUOu5eILVR9+GhmH0FyefaIsbcCXJb4roLxTUa8hKm/wQ7CJj7LTd1o7vkJQFuJz0R03/v2U0AWV+sml/PUFKBrfEVdvTpAYEsOM8oMAF+S5Il1vn4s+pB2ENUdj2xE8AEXLTs55JCqoAAAAASUVORK5CYII=" alt="">',
+    metaso: '<svg class="metaso-mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 15" fill="none" aria-hidden="true"><path fill="url(#metasoGrad)" d="M7.027 6.885a.776.776 0 0 1 1.341 0l3.67 6.331a1.694 1.694 0 0 0 2.55.444c.646-.534.736-1.492.323-2.218l-5.767-9.91"></path><path fill="#175CD3" d="m21.41 11.523-3.538-6.12a1.693 1.693 0 0 0-2.309-.615 1.693 1.693 0 0 0-.614 2.309l3.538 6.12a1.693 1.693 0 0 0 2.309.614 1.693 1.693 0 0 0 .615-2.308M15.618 1.533A1.693 1.693 0 0 0 13.31.918a1.693 1.693 0 0 0-.615 2.309 1.693 1.693 0 0 0 2.308.615 1.686 1.686 0 0 0 .615-2.309M8.528.917c-.05-.03-.111-.06-.161-.08a1.67 1.67 0 0 0-2.057.554l-.01.01c-.01.02-.02.03-.03.05s-.03.05-.04.07l-5.747 9.91c-.111.192-.192.414-.222.626v.04a1.614 1.614 0 0 0 .544 1.552c.323.273.696.394 1.07.404h.06c.574 0 1.139-.303 1.451-.837l3.7-6.422 2.067-3.578A1.684 1.684 0 0 0 8.528.917"></path><defs><linearGradient id="metasoGrad" x1="7.027" x2="15.161" y1="7.793" y2="7.793" gradientUnits="userSpaceOnUse"><stop offset="0.144" stop-color="#194185"></stop><stop offset="0.218" stop-color="#1849A9"></stop><stop offset="0.375" stop-color="#175CD3"></stop><stop offset="0.579" stop-color="#175CD3"></stop><stop offset="1" stop-color="#175CD3"></stop></linearGradient></defs></svg>',
     bilibili: '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABQ0lEQVR42u2XMQ6CQBBFpzDaYavhRHgJE63FK2nnBfQGxsJCbTyBwURLLbTCWR2SQRaXUZYNicVLyDL7/2c3sAPEcQwuAZjudTSQCXJCZoiXU/cJj+aeSauhrcuZ3EdixlIYwqM5XKMvCTB4mywJoTNXDCUBmjkiaqz9hfmSNAsHMIm1S6jPBFAJQ2SFXDRCv3Ih7TC1GnThIxsLpnlsyBOSJ6/SPGGLtFSAkQPzhBHQvvDBBdL94sNjokva3GulbtzfBm2Y8xDc6waaZQHLpP3qECBAIiIoYGCqFweI2L2oQABTvTiAdItkenUIwJf0KNyCYxkBeiR0oGtTAFN9/V7DfwDrAao8jDqZLklzHM+psGxzn7Qzx3HosCEJ4dkWvdqjqs13SUvmoind8qaUt+VjZI1cLZheSXucasud/x27DvAAm/Mn32vYDaAAAAAASUVORK5CYII=" alt="">'
   };
 
@@ -1050,7 +1799,8 @@
     // 必须是数组，且每项含 id/name/url；同时做类型与长度收敛，防止脏数据破坏渲染
     if (Array.isArray(parsed)) {
       customEngines = parsed
-        .filter(e => e && typeof e === 'object' && e.id && e.name && e.url)
+        // 仅接受 http(s) 网址，避免手工改坏或历史脏数据把 javascript: 之类写进跳转
+        .filter(e => e && typeof e === 'object' && e.id && e.name && /^https?:\/\//i.test(String(e.url)))
         .map(e => ({
           // id 保留原值（避免失效已保存的 currentEngine），仅限制合法字符
           id: String(e.id).replace(/[^A-Za-z0-9_]/g, '').slice(0, 60),
@@ -1116,11 +1866,11 @@
     return allEngines().find(e => e.id === currentEngine) || engines[0];
   }
 
-  // 当前引擎显示名：自定义引擎用自己的名称，内置走语言包
-  function currentEngineLabel() {
-    const eng = currentEngineObj();
-    return isCustom(eng.id) ? eng.name : engineName(eng.id);
-  }
+  // Tab 临时搜索模式：输入其他引擎域名后按 Tab，临时改用该引擎搜索一次，
+  // 不改变默认引擎；Esc、失焦或重新选择引擎时退出
+  let tabMode = null;
+  function activeEngineObj() { return tabMode || currentEngineObj(); }
+  function engineLabelOf(eng) { return isCustom(eng.id) ? eng.name : engineName(eng.id); }
 
   // 默认图标：通用放大镜（纯填充，深浅色都清晰），自定义引擎没填图标时使用
   const DEFAULT_ICON = '<svg class="default-mark" viewBox="0 0 24 24" aria-hidden="true"><g fill="#9a9a9a"><path fill-rule="evenodd" d="M10.7 2.4a8.3 8.3 0 1 0 0 16.6 8.3 8.3 0 0 0 0-16.6Zm0 2.9a5.4 5.4 0 1 1 0 10.8 5.4 5.4 0 0 1 0-10.8Z"/><rect x="15.9" y="16.6" width="7.2" height="3" rx="1.5" transform="rotate(45 19.5 18.1)"/></g></svg>';
@@ -1133,12 +1883,15 @@
   }
 
   function renderEngineBtn() {
-    const eng = currentEngineObj();
+    // 临时搜索模式下按钮与占位符显示临时引擎，否则显示默认引擎
+    const eng = activeEngineObj();
+    const label = engineLabelOf(eng);
     // 按钮图标直接显示当前搜索引擎的 logo
     engineBtn.innerHTML = iconHTML(eng);
-    engineBtn.title = T.engineBtnTitle(currentEngineLabel());
+    engineBtn.title = T.engineBtnTitle(label);
     engineBtn.setAttribute('aria-label', T.engineBtnLabel);
-    input.placeholder = T.searchWith(currentEngineLabel());
+    // 临时搜索（Tab 切换）时文案明确标注“暂时”，避免误以为默认引擎被改掉
+    input.placeholder = (tabMode && T.searchWithTemp) ? T.searchWithTemp(label) : T.searchWith(label);
   }
 
   // 自定义图标失效（链接 404、base64 损坏、混合内容被拦截）时退回默认图标
@@ -1280,6 +2033,7 @@
     }
     const item = target.closest('.engine-item');
     if (!item) return;
+    tabMode = null; // 手动选择引擎 = 退出临时搜索模式
     currentEngine = item.dataset.id;
     try { localStorage.setItem(ENGINE_KEY, currentEngine); } catch (err) {}
     renderEngineBtn();
@@ -1347,6 +2101,7 @@
       url: '网址需以 http:// 或 https:// 开头',
       ph: '网址里需要用 %s 表示关键词位置',
       dup: '已有同名引擎，请换个名称',
+      domain: '该网站已有内置引擎，直接选择内置项即可',
       icon: '图标地址需是 http(s) 图片链接，或 data:image/ 开头的 base64'
     },
     en: {
@@ -1354,6 +2109,7 @@
       url: 'URL must start with http:// or https://',
       ph: 'The URL must contain %s for the keyword',
       dup: 'An engine with this name already exists',
+      domain: 'This site is already available as a built-in engine',
       icon: 'Icon must be an http(s) image link or a data:image/ base64 string'
     }
   };
@@ -1384,6 +2140,9 @@
       });
     });
     if (dup) { efMsg.textContent = E.dup; return; }
+    // 与内置引擎同域名的自定义项会被去重隐藏，加了也不会生效，这里直接拦下
+    const dom = rootDomain(url);
+    if (dom && builtinDomains.indexOf(dom) > -1) { efMsg.textContent = E.domain; return; }
 
     const id = 'custom_' + Date.now().toString(36);
     const eng = { id: id, name: name, url: url, icon: icon };
@@ -1407,19 +2166,158 @@
 
   renderEngineBtn();
 
-  function search(q) {
+  /* ---------- 网址直跳：像 Edge 地址栏一样，输入明显是网址时直接打开 ---------- */
+  // 常见顶级域名白名单（含 jype.top 这类新顶级域），避免把「报告.docx」之类的词误判成网址
+  const COMMON_TLDS = new Set(('com,cn,net,org,gov,edu,mil,int,io,me,top,xyz,cc,co,info,biz,ai,app,dev,site,online,tech,club,vip,shop,store,space,pro,art,design,live,tv,fm,gg,gl,im,in,it,nl,se,no,fi,dk,es,pt,pl,cz,at,ch,eu,ca,au,nz,br,mx,id,th,vn,my,ph,tr,za,moe,icu,fun,wiki,ink,ltd,group,pub,link,click,one,red,blue,pink,email,blog,news,cloud,digital,center,systems,tools,network,media,games,game,rocks,wtf,lol,moe,asia,name,tel,mobi,cn.net,com.cn,net.cn,org.cn,gov.cn,edu.cn,hk,tw,mo,jp,kr,uk,us,de,fr,ru').split(','));
+  function looksLikeUrl(q) {
+    if (/\s/.test(q)) return false;                                   // 含空格肯定不是网址
+    if (/^https?:\/\/\S+$/i.test(q)) return true;                     // 显式带协议
+    if (/^localhost(?::\d+)?(?:[\/?#]\S*)?$/i.test(q)) return true;   // localhost
+    if (/^\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?(?:[\/?#]\S*)?$/.test(q)) return true; // IP 地址
+    const host = q.split(/[\/?#]/)[0].split(':')[0];                  // 去掉路径、查询串和端口
+    const labels = host.toLowerCase().split('.');
+    if (labels.length < 2) return false;
+    const tld = labels[labels.length - 1];
+    if (!/^[a-z]{2,24}$/.test(tld) || !COMMON_TLDS.has(tld)) return false;
+    // 域名部分必须是合法的 label 序列（字母数字连字符，不以连字符开头结尾）
+    return labels.every(l => /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(l));
+  }
+
+  // 补全协议后的完整网址
+  function resolveUrl(q) {
+    return /^https?:\/\//i.test(q) ? q : 'https://' + q;
+  }
+  function openUrl(q) {
+    window.location.href = resolveUrl(q);
+  }
+  // 用当前引擎搜索（不包含网址判断——网址直跳只作为下拉框里的可选项）
+  // 传 eng 参数时用指定引擎搜索，不改变默认引擎
+  function doSearch(q, eng) {
     if (!q) return;
-    const eng = currentEngineObj();
-    // URL 中所有 %s 都替换为关键词（replaceAll 未兼容时用 split/join 兜底）
+    const e = eng || activeEngineObj();
+  // URL 中所有 %s 都替换为关键词（replaceAll 未兼容时用 split/join 兜底）
     const kw = encodeURIComponent(q);
-    const tmpl = String(eng.url || '');
+    const tmpl = String(e.url || '');
     const target = tmpl.indexOf('%s') < 0 ? tmpl : tmpl.split('%s').join(kw);
     window.location.href = target;
   }
+  // 执行一个联想条目（{type:'url'|'search', text}）
+  function runItem(item) {
+    if (!item) return;
+    if (item.type === 'url') openUrl(item.text);
+    else doSearch(item.text);
+  }
+
+  /* ---------- Tab 键临时搜索：输入某引擎的域名时，按 Tab 直接用它搜一次（不改默认引擎） ---------- */
+  let tabEngId = null;
+  const tabHintEl = document.getElementById('tab-hint');
+  const engHostCache = new Map();
+  function engineHost(eng) {
+    if (engHostCache.has(eng.id)) return engHostCache.get(eng.id);
+    let host = '';
+    try {
+      host = new URL(String(eng.url).replace('%s', 'x')).hostname.toLowerCase().replace(/^www\./, '');
+    } catch (err) {}
+    engHostCache.set(eng.id, host);
+    return host;
+  }
+  // 引擎可接受的输入别名：内置引擎汇总所有语言包里的名字 + 常用中英文名；自定义引擎用其名称
+  const aliasCache = new Map();
+  function engineAliases(eng) {
+    if (aliasCache.has(eng.id)) return aliasCache.get(eng.id);
+    const set = new Set();
+    const add = (v) => {
+      if (typeof v !== 'string') return;
+      const s = v.trim().toLowerCase();
+      if (s.length >= 2) set.add(s);
+    };
+    if (isCustom(eng.id)) {
+      add(eng.name);
+    } else {
+      add(eng.id); add(eng.zh); add(eng.en);
+      Object.keys(I18N).forEach(lang => {
+        const names = I18N[lang].engineNames;
+        if (names) add(names[eng.id]);
+      });
+    }
+    aliasCache.set(eng.id, set);
+    return set;
+  }
+
+  function detectTabEngine(q) {
+    const t = q.trim();
+    if (!t) return null;
+    // 1) 直接输入引擎名/别名也行（百度、google、必应、B站…），不必记域名
+    const lower = t.toLowerCase();
+    const byName = allEngines().find(e => e.id !== currentEngine && engineAliases(e).has(lower));
+    if (byName) return byName;
+    // 2) 输入该引擎的域名（含子域、地区后缀）
+    if (!looksLikeUrl(t)) return null;
+    let h;
+    try { h = new URL(resolveUrl(t)).hostname.toLowerCase().replace(/^www\./, ''); } catch (err) { return null; }
+    if (!h || h.indexOf('.') < 0) return null;
+    // 后缀/前缀互配：tieba.baidu.com 匹配 baidu.com，bilibili.com 匹配 search.bilibili.com，
+    // google.com.hk 匹配 google.com
+    return allEngines().find(e => {
+      if (e.id === currentEngine) return false; // 当前引擎不需要提示
+      const eh = engineHost(e);
+      if (!eh || eh.indexOf('.') < 0) return false;
+      return h === eh || h.endsWith('.' + eh) || eh.endsWith('.' + h) || h.startsWith(eh + '.');
+    }) || null;
+  }
+  function updateTabHint() {
+    // 临时搜索模式下不显示 Tab 提示
+    if (tabMode) {
+      tabEngId = null;
+      form.classList.remove('tab-active');
+      tabHintEl.classList.remove('show');
+      return;
+    }
+    const q = input.value.trim();
+    const eng = detectTabEngine(q);
+    tabEngId = eng ? eng.id : null;
+    const on = !!eng;
+    form.classList.toggle('tab-active', on);
+    tabHintEl.classList.toggle('show', on);
+    if (on) {
+      const label = engineLabelOf(eng);
+      tabHintEl.innerHTML = '<kbd>Tab</kbd>' + iconHTML(eng) + esc(T.sugSearch(label));
+    }
+  }
+  // 退出临时搜索模式，恢复默认引擎的图标与占位符
+  function exitTabMode() {
+    if (!tabMode) return;
+    tabMode = null;
+    renderEngineBtn();
+    updateTabHint();
+  }
+  input.addEventListener('blur', () => {
+    // 失焦时收起提示并退出临时搜索模式（点击联想条目已 preventDefault 不会触发 blur）
+    exitTabMode();
+    tabEngId = null;
+    form.classList.remove('tab-active');
+    tabHintEl.classList.remove('show');
+  });
+
+  // 点击提交按钮时不要先让输入框失焦：失焦会退出 Tab 临时搜索模式，
+  // 导致点箭头搜索变成用默认引擎（按回车没有这个问题）
+  document.getElementById('search-btn').addEventListener('mousedown', (e) => e.preventDefault());
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    search(input.value.trim());
+    const q = input.value.trim();
+    if (!q) {
+      // 空内容提交：晃一下提示，不打断输入
+      form.classList.remove('shake');
+      void form.offsetWidth;
+      form.classList.add('shake');
+      input.focus();
+      return;
+    }
+    doSearch(q);
+  });
+  form.addEventListener('animationend', (e) => {
+    if (e.animationName === 'search-shake') form.classList.remove('shake');
   });
 
   /* ---------- 实时联想（JSONP，避免跨域限制） ---------- */
@@ -1433,31 +2331,53 @@
     // 只隐藏面板，保留 sugItems 缓存，点击搜索框时可以直接恢复显示
     panel.classList.remove('show');
     panel.innerHTML = '';
+    actionItems = [];
     activeIdx = -1;
   }
 
+  const ICON_URL_JUMP = '<svg viewBox="0 0 24 24"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg>';
+  const ICON_SEARCH = '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>';
+
+  let actionItems = [];    // 面板上实际展示的条目（特殊项 + 联想词），点击/回车按 type 执行
+
   function renderSuggest() {
-    if (!sugItems.length) { hideSuggest(); return; }
     const q = input.value.trim();
-    panel.innerHTML = sugItems.map((s, i) => {
-      // 先转义再插入高亮标签，避免联想词里的 HTML 被当作标签解析（XSS）
-      let html;
-      const safe = esc(s);
-      if (q) {
-        const idx = s.toLowerCase().indexOf(q.toLowerCase());
-        if (idx >= 0) {
-          // 在转义后的文本上按相同位置切分（esc 不改变原有字符的相对顺序，
-          // 但会改变长度，故对三段分别转义后拼接更稳妥）
-          html = esc(s.slice(0, idx)) + '<b>' + esc(s.slice(idx, idx + q.length)) + '</b>' + esc(s.slice(idx + q.length));
-        } else {
-          html = safe;
-        }
+    // 输入疑似网址时，在热词上方固定给出「打开网址」「用当前引擎搜索」两个选项，
+    // 让用户自己决定是直跳还是搜索（联想词照常展示）；临时搜索模式下输入的是查询词，不显示
+    const special = [];
+    if (q && looksLikeUrl(q) && !tabMode) {
+      special.push({ type: 'url', text: q });
+      special.push({ type: 'search', text: q, isRaw: true });
+    }
+    if (!special.length && !sugItems.length) { hideSuggest(); return; }
+    actionItems = special.concat(sugItems.map(s => ({ type: 'search', text: s })));
+    const isUrlQ = q ? looksLikeUrl(q) : false;
+    panel.innerHTML = actionItems.map((item, i) => {
+      let icon = ICON_SEARCH, html;
+      if (item.type === 'url') {
+        // 特殊行：打开 <完整网址>
+        icon = ICON_URL_JUMP;
+        html = esc(T.sugOpen) + ' <b>' + esc(resolveUrl(item.text)) + '</b>';
+      } else if (item.isRaw) {
+        // 特殊行：<关键词> · 用当前引擎搜索
+        html = '<b>' + esc(item.text) + '</b> · ' + esc(T.sugSearch(engineLabelOf(activeEngineObj())));
       } else {
-        html = safe;
+        // 普通联想词：命中输入的部分加粗
+        const s = item.text;
+        if (q && !isUrlQ) {
+          const idx = s.toLowerCase().indexOf(q.toLowerCase());
+          if (idx >= 0) {
+            // 在转义后的文本上按相同位置切分（esc 不改变原有字符的相对顺序，
+            // 但会改变长度，故对三段分别转义后拼接更稳妥）
+            html = esc(s.slice(0, idx)) + '<b>' + esc(s.slice(idx, idx + q.length)) + '</b>' + esc(s.slice(idx + q.length));
+          } else {
+            html = esc(s);
+          }
+        } else {
+          html = esc(s);
+        }
       }
-      return '<div class="sug-item" data-i="' + i + '">' +
-        '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>' +
-        '<span>' + html + '</span></div>';
+      return '<div class="sug-item" data-i="' + i + '">' + icon + '<span>' + html + '</span></div>';
     }).join('');
     activeIdx = -1;
     panel.classList.add('show');
@@ -1467,7 +2387,11 @@
     const items = panel.querySelectorAll('.sug-item');
     items.forEach(el => el.classList.remove('active'));
     activeIdx = i;
-    if (i >= 0 && i < items.length) items[i].classList.add('active');
+    if (i >= 0 && i < items.length) {
+      items[i].classList.add('active');
+      // 面板过长被滚动时，让键盘高亮项始终可见
+      items[i].scrollIntoView({ block: 'nearest' });
+    }
   }
 
   function fetchSuggest(q) {
@@ -1496,16 +2420,18 @@
 
   input.addEventListener('focus', () => {
     closeEnginePanel(); // 聚焦搜索框时收起引擎面板，两个下拉不同时出现
+    updateTabHint();
     // 点击搜索框时：有内容就恢复联想（优先用缓存，无缓存则重新请求）
     const q = input.value.trim();
     if (q) {
-      if (sugItems.length) renderSuggest();
+      if (sugItems.length || looksLikeUrl(q)) renderSuggest();
       else fetchSuggest(q);
     }
   });
 
   input.addEventListener('input', () => {
     closeEnginePanel(); // 开始输入时引擎面板让位给联想词
+    updateTabHint();
     const q = input.value.trim();
     if (!q) {
       // 清空输入：除了隐藏面板，还要作废“迟到”的联想来源，
@@ -1513,27 +2439,53 @@
       lastQuery = '';
       clearTimeout(sugTimer); // 取消还没发出的防抖请求
       jsonpSeq++;             // 作废所有在途响应
+      sugItems = [];          // 清掉旧词缓存，避免再次聚焦时显示上一个词的结果
       hideSuggest();
       return;
     }
     if (q === lastQuery) { renderSuggest(); return; } // 同词重新聚焦/输入时直接恢复
     lastQuery = q;
+    // 疑似网址时立即显示「打开/搜索」两个固定选项，不等联想接口返回
+    if (looksLikeUrl(q)) { sugItems = []; renderSuggest(); }
     clearTimeout(sugTimer);
     sugTimer = setTimeout(() => fetchSuggest(q), 120); // 轻微防抖
   });
 
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { hideSuggest(); closeEnginePanel(); return; } // Esc 关闭所有弹层
+    // 中文/日文输入法组词中：回车、Tab、方向键都属于输入法，不要触发搜索或切引擎
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key === 'Escape') {
+      // Esc 同时退出临时搜索模式并关闭所有弹层
+      exitTabMode();
+      hideSuggest(); closeEnginePanel(); return;
+    }
+    // Tab：输入了其他引擎的域名时进入该引擎的临时搜索模式（Edge 同款）：
+    // 清空输入让你接着输入想搜的内容，回车后用该引擎搜索，不改变默认引擎
+    if (e.key === 'Tab' && tabEngId) {
+      e.preventDefault();
+      const eng = allEngines().find(x => x.id === tabEngId);
+      if (eng) {
+        tabMode = eng;
+        input.value = '';
+        lastQuery = '';
+        sugItems = [];
+        hideSuggest();
+        updateTabHint();
+        renderEngineBtn(); // 图标与占位符切到临时引擎
+        input.focus();
+      }
+      return;
+    }
     if (!panel.classList.contains('show')) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActive((activeIdx + 1) % sugItems.length);
+      setActive((activeIdx + 1) % actionItems.length);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setActive((activeIdx - 1 + sugItems.length) % sugItems.length);
+      setActive((activeIdx - 1 + actionItems.length) % actionItems.length);
     } else if (e.key === 'Enter' && activeIdx >= 0) {
       e.preventDefault();
-      search(sugItems[activeIdx]);
+      runItem(actionItems[activeIdx]);
     }
   });
 
@@ -1541,7 +2493,7 @@
     const item = e.target.closest('.sug-item');
     if (item) {
       e.preventDefault(); // 防止 input 失焦
-      search(sugItems[+item.dataset.i]);
+      runItem(actionItems[+item.dataset.i]);
     }
   });
 
@@ -1562,6 +2514,632 @@
     if (enginePanel.classList.contains('show')) { closeEnginePanel(); e.stopPropagation(); return; }
     hideSuggest();
   });
+
+  /* ================= 外观设置：主题三态 + 图片/视频背景（右键菜单） ================= */
+  const THEME_KEY = 'homepage.theme';       // 'system' | 'light' | 'dark'
+  const BGMETA_KEY = 'homepage.bgmeta';     // { type:'image'|'video', name:'...' }
+  const BGPREVIEW_KEY = 'homepage.bgpreview'; // 低清预览 data URL：首屏同步上屏用，防黑屏
+  const BGBRIGHT_KEY = 'homepage.bgbright';   // '1' = 壁纸偏亮：用暗色玻璃保证白字可读（首帧先用缓存值）
+  const root = document.documentElement;
+
+  /* ---- 主题 ---- */
+  let themeMode = 'system';
+  try {
+    const t = localStorage.getItem(THEME_KEY);
+    if (t === 'light' || t === 'dark' || t === 'system') themeMode = t;
+  } catch (err) {}
+
+  function applyTheme(mode) {
+    themeMode = mode;
+    // system 时移除 data-theme，交回给 prefers-color-scheme 媒体查询
+    if (mode === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', mode);
+    try { localStorage.setItem(THEME_KEY, mode); } catch (err) {}
+  }
+  applyTheme(themeMode);
+
+  /* ---- 显示模式（四选一，互斥）：system/light/dark = 纯色主题；media = 图片/视频背景 ---- */
+  const MODE_KEY = 'homepage.mode';
+  let displayMode = (() => {
+    try {
+      const m = localStorage.getItem(MODE_KEY);
+      if (m === 'system' || m === 'light' || m === 'dark' || m === 'media') return m;
+      // 旧版本没有 mode 键：如果存过背景媒体，视为正在使用媒体背景
+      return readBgMeta() ? 'media' : 'system';
+    } catch (err) { return 'system'; }
+  })();
+  function saveMode() {
+    try { localStorage.setItem(MODE_KEY, displayMode); } catch (err) {}
+  }
+  // 菜单点击：切到主题模式 → 停掉媒体背景显示（文件保留，随时可切回来）
+  function setThemeMode(mode) {
+    applyTheme(mode);
+    displayMode = mode;
+    saveMode();
+    stopBgDisplay();
+  }
+
+  /* ---- 背景媒体存储（IndexedDB 存 Blob，元信息存 localStorage） ---- */
+  const DB_NAME = 'homepage-bg';
+  const DB_STORE = 'media';
+  const BG_MAGIC = 'current';
+  let bgObjectUrl = null;
+
+  function idbOpen() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) { reject(new Error('no-idb')); return; }
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || new Error('idb-open'));
+    });
+  }
+  function idbRun(mode, fn) {
+    return idbOpen().then(db => new Promise((resolve, reject) => {
+      const tx = db.transaction(DB_STORE, mode);
+      const store = tx.objectStore(DB_STORE);
+      const req = fn(store);
+      tx.oncomplete = () => { db.close(); resolve(req && req.result); };
+      tx.onerror = () => { db.close(); reject(tx.error || new Error('idb-tx')); };
+    }));
+  }
+  const idbPut = (blob) => idbRun('readwrite', (s) => s.put(blob, BG_MAGIC));
+  const idbGet = () => idbRun('readonly', (s) => s.get(BG_MAGIC));
+  const idbDel = () => idbRun('readwrite', (s) => s.delete(BG_MAGIC));
+
+  function readBgMeta() {
+    try {
+      const raw = localStorage.getItem(BGMETA_KEY);
+      if (!raw) return null;
+      const m = JSON.parse(raw);
+      return m && (m.type === 'image' || m.type === 'video') ? m : null;
+    } catch (err) { return null; }
+  }
+  function saveBgMeta(meta) {
+    try {
+      if (meta) localStorage.setItem(BGMETA_KEY, JSON.stringify(meta));
+      else {
+        localStorage.removeItem(BGMETA_KEY);
+        localStorage.removeItem(BGPREVIEW_KEY); // 预览跟着 meta 一起失效，避免残留
+      }
+    } catch (err) {}
+  }
+
+  const bgMedia = document.getElementById('bg-media');
+
+  /* ---- 背景调节：模糊 / 缩放 / 亮度（持久化到 localStorage） ---- */
+  const BGFX_KEY = 'homepage.bgfx';
+  const BG_FX_DEFAULT = { blur: 0, scale: 100, bright: 100 };
+  const BG_FX_RANGE = { blur: [0, 24, 'px'], scale: [100, 200, '%'], bright: [40, 140, '%'] };
+
+  function readBgFx() {
+    try {
+      const o = JSON.parse(localStorage.getItem(BGFX_KEY) || 'null');
+      return o && typeof o === 'object' ? o : null;
+    } catch (err) { return null; }
+  }
+  const bgFx = Object.assign({}, BG_FX_DEFAULT, readBgFx() || {});
+  // 数值兜底，防止手工改坏 localStorage 后样式失效
+  Object.keys(BG_FX_RANGE).forEach((k) => {
+    const r = BG_FX_RANGE[k];
+    const v = Number(bgFx[k]);
+    bgFx[k] = isFinite(v) ? Math.min(r[1], Math.max(r[0], Math.round(v))) : BG_FX_DEFAULT[k];
+  });
+
+  function saveBgFx() {
+    try { localStorage.setItem(BGFX_KEY, JSON.stringify(bgFx)); } catch (err) {}
+  }
+
+  function applyBgFx() {
+    // 预览图和全量媒体都要应用，过渡切换时两者视觉保持一致
+    const els = bgMedia.querySelectorAll('img, video');
+    const blur = bgFx.blur, scale = bgFx.scale, bright = bgFx.bright;
+    // 模糊会让画面边缘渗出一圈透明，按模糊量补偿一点放大，避免出现暗边
+    const s = (scale / 100) * (1 + blur / 160);
+    const t = 'scale(' + s.toFixed(3) + ')';
+    const f = 'blur(' + blur + 'px) brightness(' + (bright / 100) + ')';
+    els.forEach((el) => {
+      el.style.transformOrigin = 'center center';
+      el.style.transform = t;
+      el.style.filter = f;
+    });
+    updateBrightClass(); // 用户调亮度会影响可读性，同步重判亮/暗玻璃
+  }
+
+  /* ---- 低清预览缓存：把背景缩成 1280px JPEG 存 localStorage，下次打开同步上屏 ---- */
+  function makePreviewDataUrl(el) {
+    try {
+      const w = el.naturalWidth || el.videoWidth;
+      const h = el.naturalHeight || el.videoHeight;
+      if (!w || !h) return null;
+      const MAX = 1280;
+      const scale = Math.min(1, MAX / Math.max(w, h));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(w * scale));
+      c.height = Math.max(1, Math.round(h * scale));
+      c.getContext('2d').drawImage(el, 0, 0, c.width, c.height);
+      let url = c.toDataURL('image/jpeg', 0.72);
+      if (url.length > 2 * 1024 * 1024) url = c.toDataURL('image/jpeg', 0.45);
+      if (url.length > 2 * 1024 * 1024) return null; // 超出预算就放弃缓存，宁缺勿溢
+      return url;
+    } catch (err) { return null; } // 跨域/编解码失败等情况，静默跳过
+  }
+  function saveBgPreview(url) {
+    if (!url) return;
+    try { localStorage.setItem(BGPREVIEW_KEY, url); } catch (err) {}
+  }
+  function paintPreviewFromCache() {
+    if (bgMedia.querySelector('.bg-preview')) return;
+    let raw = null;
+    try { raw = localStorage.getItem(BGPREVIEW_KEY); } catch (err) {}
+    if (!raw) return;
+    const img = document.createElement('img');
+    img.className = 'bg-preview';
+    img.alt = '';
+    img.src = raw;
+    bgMedia.appendChild(img);
+    bgMedia.classList.add('on');
+    root.classList.add('bg-on');
+    applyBgFx();
+  }
+  function clearBgPreview() {
+    const p = bgMedia.querySelector('.bg-preview');
+    if (p) p.remove();
+    if (!bgMedia.querySelector('img, video')) {
+      bgMedia.classList.remove('on');
+      root.classList.remove('bg-on');
+    }
+  }
+
+  /* ---- 壁纸亮度检测：亮壁纸时自动切到暗色玻璃（bg-bright），白字才看得清 ---- */
+  let bgLum = null;         // 当前壁纸平均亮度 0~1（Rec.709 加权）
+  let bgBrightTimer = null; // 视频背景定期复检
+
+  function sampleLuminance(el) {
+    try {
+      const w = el.naturalWidth || el.videoWidth;
+      const h = el.naturalHeight || el.videoHeight;
+      if (!w || !h) return null;
+      const c = document.createElement('canvas');
+      c.width = 32;
+      c.height = 32;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(el, 0, 0, 32, 32); // 缩成 32x32 采样，开销可忽略
+      const d = ctx.getImageData(0, 0, 32, 32).data;
+      let sum = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        sum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+      }
+      return sum / (d.length / 4) / 255;
+    } catch (err) { return null; }
+  }
+
+  function updateBrightClass() {
+    if (bgLum == null) return;
+    // 叠加用户调节的亮度后再判断；0.62 / 0.48 双阈值滞回，避免临界壁纸来回切换闪烁
+    const eff = bgLum * (bgFx.bright / 100);
+    const isBright = root.classList.contains('bg-bright');
+    if (!isBright && eff >= 0.62) root.classList.add('bg-bright');
+    else if (isBright && eff < 0.48) root.classList.remove('bg-bright');
+    try { localStorage.setItem(BGBRIGHT_KEY, root.classList.contains('bg-bright') ? '1' : '0'); } catch (err) {}
+  }
+
+  function refreshBgLuminance(el) {
+    const lum = sampleLuminance(el);
+    if (lum != null) { bgLum = lum; updateBrightClass(); }
+  }
+
+  function stopBgBrightWatch() {
+    if (bgBrightTimer) { clearInterval(bgBrightTimer); bgBrightTimer = null; }
+  }
+
+  function paintBg(type, blob, fresh) {
+    if (bgObjectUrl) { URL.revokeObjectURL(bgObjectUrl); bgObjectUrl = null; }
+    stopBgBrightWatch();
+    bgObjectUrl = URL.createObjectURL(blob);
+    const oldPreview = bgMedia.querySelector('.bg-preview'); // 首屏预览，垫底续显
+    bgMedia.innerHTML = '';
+    let el;
+    if (type === 'video') {
+      el = document.createElement('video');
+      el.autoplay = true; el.loop = true; el.muted = true; el.playsInline = true;
+    } else {
+      el = document.createElement('img');
+      el.alt = '';
+    }
+    el.src = bgObjectUrl;
+    if (oldPreview) bgMedia.appendChild(oldPreview); // 预览继续垫在底下，直到全量可显示
+    bgMedia.appendChild(el);
+    bgMedia.classList.add('on');
+    root.classList.add('bg-on'); // 搜索框 / 时钟透明化 + 文字反白
+    applyBgFx(); // 恢复上次的模糊/缩放/亮度
+    // 全量媒体可显示后再撤预览，避免切换瞬间闪黑
+    const dropPreview = () => { if (oldPreview && oldPreview.parentNode) oldPreview.remove(); };
+    const cachePreview = () => {
+      try { if (!fresh && localStorage.getItem(BGPREVIEW_KEY)) return; } catch (err) { return; }
+      saveBgPreview(makePreviewDataUrl(el));
+    };
+    // 壁纸亮度检测：全量媒体就绪后采样（比首屏预览更准），视频还要定期复检
+    const probe = () => { refreshBgLuminance(el); };
+    if (type === 'video') {
+      el.addEventListener('loadeddata', dropPreview, { once: true });
+      el.addEventListener('loadeddata', cachePreview, { once: true });
+      el.addEventListener('loadeddata', () => {
+        probe();
+        stopBgBrightWatch();
+        bgBrightTimer = setInterval(() => { refreshBgLuminance(el); }, 12000); // 视频画面会变，12s 复检一次
+      }, { once: true });
+    } else {
+      el.addEventListener('load', dropPreview, { once: true });
+      el.addEventListener('load', cachePreview, { once: true });
+      el.addEventListener('load', probe, { once: true });
+    }
+  }
+
+  // 停止显示媒体背景（仅隐藏，不删除已存储的文件与元信息）
+  function stopBgDisplay() {
+    stopBgBrightWatch();
+    if (bgObjectUrl) { URL.revokeObjectURL(bgObjectUrl); bgObjectUrl = null; }
+    bgMedia.innerHTML = '';
+    bgMedia.classList.remove('on');
+    root.classList.remove('bg-on');
+    root.classList.remove('bg-bright');
+    bgLum = null;
+  }
+
+  // 从 IndexedDB 重新加载已存储的背景并显示；没有可用文件时返回 false
+  function showStoredBg() {
+    const meta = readBgMeta();
+    if (!meta) return Promise.resolve(false);
+    paintPreviewFromCache(); // 先同步铺低清预览，避免等 IndexedDB + 解码期间黑屏
+    return idbGet().then(blob => {
+      if (blob) { paintBg(meta.type, blob); return true; }
+      saveBgMeta(null); // 元信息还在但文件没了，清掉避免残留
+      clearBgPreview();
+      return false;
+    }).catch(() => { clearBgPreview(); return false; });
+  }
+
+  function restoreBg() {
+    if (displayMode !== 'media') return; // 当前是主题模式，不显示媒体背景
+    const meta = readBgMeta();
+    if (!meta) return;
+    showStoredBg();
+  }
+  restoreBg();
+
+  // 轻提示
+  const toastEl = document.getElementById('toast');
+  let toastTimer = null;
+  function toast(msg) {
+    if (!msg) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2600);
+  }
+
+  /* ---- 选择本地文件作为背景（图片/视频共用一个选择器，按类型自动识别） ---- */
+  const bgFileInput = document.getElementById('bg-file-input');
+  const MAX_IMAGE = 30 * 1024 * 1024;    // 30 MB
+  const MAX_VIDEO = 400 * 1024 * 1024;   // 400 MB
+
+  function handleBgFile(file) {
+    if (!file) return;
+    let type = null;
+    if (/^image\//.test(file.type)) type = 'image';
+    else if (/^video\//.test(file.type)) type = 'video';
+    if (!type) { toast(T.menu.errType); return; }
+    if (file.size > (type === 'image' ? MAX_IMAGE : MAX_VIDEO)) { toast(T.menu.errSize); return; }
+    idbPut(file).then(() => {
+      saveBgMeta({ type: type, name: file.name || '' });
+      displayMode = 'media'; // 选完文件即进入媒体背景模式
+      saveMode();
+      paintBg(type, file, true); // fresh=true：新文件强制重新生成预览缓存
+    }).catch(() => { toast(T.menu.errStore); });
+  }
+
+  bgFileInput.addEventListener('change', () => {
+    handleBgFile(bgFileInput.files && bgFileInput.files[0]);
+    bgFileInput.value = ''; // 允许再次选择同一个文件
+  });
+
+  /* ---- 右键菜单 ---- */
+  const ctxMenu = document.getElementById('ctx-menu');
+  let ctxOpen = false;
+
+  function ctxItem(act, text, checked, isAction) {
+    const role = isAction ? 'menuitem' : 'menuitemradio';
+    return '<button type="button" class="ctx-item' + (checked ? ' checked' : '') +
+      '" role="' + role + '"' + (isAction ? '' : ' aria-checked="' + (checked ? 'true' : 'false') + '"') +
+      ' data-act="' + act + '"><span class="ctx-tick">✓</span><span>' + esc(text) + '</span></button>';
+  }
+
+  // 背景调节面板的文案（只在这里用到，单独维护，避免动 20 个语言包主体）
+  const FX_I18N = {
+    zh: { blur: '模糊程度', scale: '放大比例', bright: '亮度', reset: '恢复默认调节' },
+    en: { blur: 'Blur', scale: 'Zoom', bright: 'Brightness', reset: 'Reset adjustments' },
+    ja: { blur: 'ぼかし', scale: '拡大率', bright: '明るさ', reset: '調整をリセット' },
+    ko: { blur: '흐림 정도', scale: '확대 비율', bright: '밝기', reset: '조정 초기화' },
+    fr: { blur: 'Flou', scale: 'Zoom', bright: 'Luminosité', reset: 'Réinitialiser les réglages' },
+    de: { blur: 'Unschärfe', scale: 'Zoom', bright: 'Helligkeit', reset: 'Anpassungen zurücksetzen' },
+    es: { blur: 'Desenfoque', scale: 'Zoom', bright: 'Brillo', reset: 'Restablecer ajustes' },
+    pt: { blur: 'Desfoque', scale: 'Zoom', bright: 'Brilho', reset: 'Redefinir ajustes' },
+    ru: { blur: 'Размытие', scale: 'Масштаб', bright: 'Яркость', reset: 'Сбросить настройки' },
+    it: { blur: 'Sfocatura', scale: 'Zoom', bright: 'Luminosità', reset: 'Ripristina regolazioni' },
+    ar: { blur: 'درجة التمويه', scale: 'نسبة التكبير', bright: 'السطوع', reset: 'إعادة الضبط' },
+    nl: { blur: 'Vervaging', scale: 'Zoom', bright: 'Helderheid', reset: 'Aanpassingen herstellen' },
+    pl: { blur: 'Rozmycie', scale: 'Powiększenie', bright: 'Jasność', reset: 'Przywróć domyślne' },
+    tr: { blur: 'Bulanıklık', scale: 'Yakınlaştırma', bright: 'Parlaklık', reset: 'Ayarları sıfırla' },
+    th: { blur: 'ความเบลอ', scale: 'อัตราการขยาย', bright: 'ความสว่าง', reset: 'รีเซ็ตการปรับ' },
+    vi: { blur: 'Độ mờ', scale: 'Tỷ lệ phóng', bright: 'Độ sáng', reset: 'Đặt lại điều chỉnh' },
+    id: { blur: 'Tingkat buram', scale: 'Perbesaran', bright: 'Kecerahan', reset: 'Atur ulang penyesuaian' },
+    hi: { blur: 'धुंधलापन', scale: 'ज़ूम अनुपात', bright: 'चमक', reset: 'समायोजन रीसेट करें' },
+    sv: { blur: 'Oskärpa', scale: 'Zoom', bright: 'Ljusstyrka', reset: 'Återställ justeringar' },
+    he: { blur: 'טשטוש', scale: 'יחס הגדלה', bright: 'בהירות', reset: 'איפוס התאמות' }
+  };
+
+  function fxText() { return FX_I18N[LANG] || FX_I18N.en; }
+
+  /* ---- 右键菜单语言切换 ---- */
+  const LANG_ORDER = ['zh', 'en', 'ja', 'ko', 'fr', 'de', 'es', 'pt', 'ru', 'it',
+    'ar', 'nl', 'pl', 'tr', 'th', 'vi', 'id', 'hi', 'sv', 'he'];
+  // 各语言用母语显示，避免用户看不懂当前界面语言时也找不到自己的语言
+  const LANG_NAMES = {
+    zh: '简体中文', en: 'English', ja: '日本語', ko: '한국어', fr: 'Français',
+    de: 'Deutsch', es: 'Español', pt: 'Português', ru: 'Русский', it: 'Italiano',
+    ar: 'العربية', nl: 'Nederlands', pl: 'Polski', tr: 'Türkçe', th: 'ไทย',
+    vi: 'Tiếng Việt', id: 'Bahasa Indonesia', hi: 'हिन्दी', sv: 'Svenska', he: 'עברית'
+  };
+  const LANG_UI = {
+    zh: '语言', en: 'Language', ja: '言語', ko: '언어', fr: 'Langue', de: 'Sprache',
+    es: 'Idioma', pt: 'Idioma', ru: 'Язык', it: 'Lingua', ar: 'اللغة', nl: 'Taal',
+    pl: 'Język', tr: 'Dil', th: 'ภาษา', vi: 'Ngôn ngữ', id: 'Bahasa', hi: 'भाषा',
+    sv: 'Språk', he: 'שפה'
+  };
+  // 自动识别语言（跟随浏览器）
+  const LANG_AUTO = {
+    zh: '自动（跟随浏览器）', en: 'Auto (browser language)', ja: '自動（ブラウザ）',
+    ko: '자동(브라우저)', fr: 'Auto (navigateur)', de: 'Automatisch (Browser)',
+    es: 'Automático (navegador)', pt: 'Automático (navegador)', ru: 'Авто (браузер)',
+    it: 'Automatico (browser)', ar: 'تلقائي (المتصفح)', nl: 'Automatisch (browser)',
+    pl: 'Automatycznie (przeglądarka)', tr: 'Otomatik (tarayıcı)',
+    th: 'อัตโนมัติ (เบราว์เซอร์)', vi: 'Tự động (trình duyệt)',
+    id: 'Otomatis (browser)', hi: 'स्वचालित (ब्राउज़र)',
+    sv: 'Automatiskt (webbläsare)', he: 'אוטומטי (דפדפן)'
+  };
+  function langLabel() { return LANG_UI[LANG] || LANG_UI.en; }
+
+  // 主菜单入口右侧的短标签：自动模式下多显示一个「自动」提示
+  const LANG_AUTO_SHORT = {
+    zh: '自动', en: 'Auto', ja: '自動', ko: '자동', fr: 'Auto', de: 'Auto',
+    es: 'Auto', pt: 'Auto', ru: 'Авто', it: 'Auto', ar: 'تلقائي', nl: 'Auto',
+    pl: 'Auto', tr: 'Otomatik', th: 'อัตโนมัติ', vi: 'Tự động', id: 'Otomatis',
+    hi: 'स्वचालित', sv: 'Auto', he: 'אוטומטי'
+  };
+
+  // 没有存过语言偏好、存的是 auto、或存了不认识的值，都视为“自动”
+  function isAutoLang() {
+    let saved = '';
+    try { saved = localStorage.getItem('homepage.lang') || ''; } catch (err) {}
+    return !saved || saved === 'auto' || !I18N[saved];
+  }
+
+  function langEntryHTML() {
+    const cur = esc(LANG_NAMES[LANG] || LANG) +
+      (isAutoLang() ? ' · ' + esc(LANG_AUTO_SHORT[LANG] || 'Auto') : '');
+    return '<button type="button" class="ctx-item" role="menuitem" aria-haspopup="menu" data-act="lang">' +
+      '<span class="ctx-icon"><svg viewBox="0 0 24 24" aria-hidden="true">' +
+      '<circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path>' +
+      '<path d="M12 3c2.6 2.8 4 5.8 4 9s-1.4 6.2-4 9c-2.6-2.8-4-5.8-4-9s1.4-6.2 4-9z"></path>' +
+      '</svg></span><span>' + esc(langLabel()) + '</span>' +
+      '<span class="ctx-lang-cur">' + cur + '</span>' +
+      '<span class="ctx-chev">›</span></button>';
+  }
+
+  function fxPanelHTML() {
+    const F = fxText();
+    const row = (key, label) => {
+      const r = BG_FX_RANGE[key];
+      return '<div class="ctx-fx-row">' +
+        '<div class="ctx-fx-head"><span>' + esc(label) + '</span>' +
+        '<b data-val="' + key + '">' + bgFx[key] + r[2] + '</b></div>' +
+        '<input type="range" data-fx="' + key + '" min="' + r[0] + '" max="' + r[1] +
+        '" step="1" value="' + bgFx[key] + '" aria-label="' + esc(label) + '">' +
+        '</div>';
+    };
+    return '<div class="ctx-fx">' +
+      row('blur', F.blur) + row('scale', F.scale) + row('bright', F.bright) +
+      '</div>' +
+      ctxItem('fx:reset', F.reset, false, true);
+  }
+
+  function renderCtxMenu() {
+    const M = T.menu || I18N.zh.menu;
+    ctxMenu.classList.remove('lang-open');
+    // 语言切换放在最上方；下面是四选一互斥的显示模式
+    let html = langEntryHTML() + '<div class="ctx-sep"></div>' +
+      ctxItem('theme:system', M.follow, displayMode === 'system') +
+      ctxItem('theme:dark', M.dark, displayMode === 'dark') +
+      ctxItem('theme:light', M.light, displayMode === 'light') +
+      ctxItem('bg:media', M.media, displayMode === 'media');
+    if (displayMode === 'media') html += '<div class="ctx-sep"></div>' + fxPanelHTML();
+    ctxMenu.innerHTML = html;
+    ctxMenu.scrollTop = 0;
+    // 滑块进度填充（自绘轨道需要知道已选百分比）
+    ctxMenu.querySelectorAll('input[type="range"]').forEach(paintFxTrack);
+  }
+
+  // 二级视图：语言列表（自动识别 + 母语名称，当前项打勾）
+  function renderCtxLangMenu() {
+    const autoOn = isAutoLang();
+    const autoRow =
+      '<button type="button" class="ctx-item ctx-lang-auto' + (autoOn ? ' checked' : '') +
+      '" role="menuitemradio" aria-checked="' + autoOn + '" data-act="lang:auto">' +
+      '<span class="ctx-tick">✓</span><span>' + esc(LANG_AUTO[LANG] || LANG_AUTO.en) + '</span></button>';
+    const items = LANG_ORDER.map(id =>
+      '<button type="button" class="ctx-item' + (id === LANG && !autoOn ? ' checked' : '') +
+      '" role="menuitemradio" aria-checked="' + (id === LANG && !autoOn) + '" data-act="lang:' + id + '">' +
+      '<span class="ctx-tick">✓</span><span>' + esc(LANG_NAMES[id]) + '</span></button>'
+    ).join('');
+    ctxMenu.classList.add('lang-open');
+    ctxMenu.innerHTML =
+      '<button type="button" class="ctx-item ctx-lang-head" role="menuitem" data-act="lang:back">' +
+        '<span class="ctx-back">‹</span><span>' + esc(langLabel()) + '</span>' +
+      '</button>' +
+      '<div class="ctx-lang-grid">' + autoRow + items + '</div>';
+    ctxMenu.scrollTop = 0;
+    const cur = ctxMenu.querySelector('.ctx-lang-grid .ctx-item.checked');
+    if (cur) cur.scrollIntoView({ block: 'nearest' });
+  }
+
+  function paintFxTrack(r) {
+    const range = BG_FX_RANGE[r.dataset.fx];
+    if (!range) return;
+    const pct = (Number(r.value) - range[0]) / (range[1] - range[0]) * 100;
+    r.style.setProperty('--fx-pct', pct.toFixed(2) + '%');
+  }
+
+  let ctxCloseTimer = null;
+  let ctxAnchor = { x: 0, y: 0 };
+
+  // 按锚点摆放菜单：用布局尺寸（入场 scale 不会影响 offsetWidth/Height）
+  function placeCtxMenu() {
+    const pad = 8;
+    const mw = ctxMenu.offsetWidth;
+    const mh = ctxMenu.offsetHeight;
+    const left = Math.max(pad, Math.min(ctxAnchor.x, window.innerWidth - mw - pad));
+    const top = Math.max(pad, Math.min(ctxAnchor.y, window.innerHeight - mh - pad));
+    ctxMenu.style.left = left + 'px';
+    ctxMenu.style.top = top + 'px';
+    // 从鼠标落点处展开，而不是永远从左上角
+    ctxMenu.style.setProperty('--ctx-origin', (ctxAnchor.x - left) + 'px ' + (ctxAnchor.y - top) + 'px');
+  }
+
+  function openCtxMenu(x, y) {
+    clearTimeout(ctxCloseTimer);
+    ctxAnchor = { x: x, y: y };
+    // 重新打开时重置状态，让入场动画从头播放（避免菜单还开着时再次右键没有动效）
+    ctxMenu.classList.remove('show', 'closing');
+    renderCtxMenu();
+    void ctxMenu.offsetWidth;
+    ctxMenu.classList.add('show');
+    ctxMenu.setAttribute('aria-hidden', 'false');
+    ctxOpen = true;
+    placeCtxMenu();
+  }
+
+  function closeCtxMenu() {
+    if (!ctxOpen) return;
+    ctxOpen = false;
+    ctxMenu.setAttribute('aria-hidden', 'true');
+    // 尊重“减少动态效果”：直接收起，不做退场动画
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      ctxMenu.classList.remove('show', 'closing');
+      return;
+    }
+    ctxMenu.classList.add('closing');
+    clearTimeout(ctxCloseTimer);
+    ctxCloseTimer = setTimeout(() => {
+      ctxMenu.classList.remove('show', 'closing');
+    }, 180);
+  }
+
+  document.addEventListener('contextmenu', (e) => {
+    // 输入框里也接管，保持网页内体验统一
+    e.preventDefault();
+    // 添加引擎的表单是模态的，浮动菜单不应盖在它上面
+    if (formMask.classList.contains('show')) return;
+    hideSuggest();
+    closeEnginePanel();
+    openCtxMenu(e.clientX, e.clientY);
+  });
+
+  ctxMenu.addEventListener('click', (e) => {
+    const btn = e.target.closest('.ctx-item');
+    if (!btn) return;
+    const act = btn.dataset.act || '';
+    // 语言二级视图：进入 / 返回都不关闭菜单
+    if (act === 'lang') {
+      e.stopPropagation(); // 重渲染后 target 会脱离 DOM，不能让它冒泡到“点击外部关闭”的监听
+      renderCtxLangMenu();
+      placeCtxMenu();
+      return;
+    }
+    if (act === 'lang:back') {
+      e.stopPropagation();
+      renderCtxMenu();
+      placeCtxMenu();
+      return;
+    }
+    if (act === 'lang:auto') {
+      e.stopPropagation();
+      try { localStorage.removeItem('homepage.lang'); } catch (err) {}
+      location.reload(); // 清掉偏好，回到跟随浏览器
+      return;
+    }
+    if (act.indexOf('lang:') === 0) {
+      e.stopPropagation();
+      const id = act.slice(5);
+      if (I18N[id]) {
+        try { localStorage.setItem('homepage.lang', id); } catch (err) {}
+        location.reload(); // 整页文案与阅读方向都需要切换，直接重载最稳
+      }
+      return;
+    }
+    if (act.indexOf('theme:') === 0) {
+      setThemeMode(act.slice(6));
+    } else if (act === 'bg:media') {
+      if (displayMode === 'media') {
+        bgFileInput.click(); // 已在媒体模式 → 打开选择器换一个文件
+      } else {
+        // 从主题切回媒体模式：有存过的文件直接恢复显示，没有才弹选择器
+        showStoredBg().then(ok => {
+          if (ok) { displayMode = 'media'; saveMode(); }
+          else bgFileInput.click();
+        });
+      }
+    } else if (act === 'fx:reset') {
+      Object.keys(BG_FX_DEFAULT).forEach((k) => { bgFx[k] = BG_FX_DEFAULT[k]; });
+      applyBgFx();
+      saveBgFx();
+    }
+    closeCtxMenu();
+  });
+
+  // 拖动滑块：实时生效 + 持久化（不重渲染菜单，避免拖动被打断）
+  ctxMenu.addEventListener('input', (e) => {
+    const r = e.target;
+    const key = r && r.dataset ? r.dataset.fx : '';
+    if (!key || !BG_FX_RANGE[key]) return;
+    bgFx[key] = Number(r.value);
+    paintFxTrack(r);
+    const out = ctxMenu.querySelector('[data-val="' + key + '"]');
+    if (out) {
+      out.textContent = r.value + BG_FX_RANGE[key][2];
+      // 重启数值弹跳动画（强制回流，连续拖动每次都有反馈）
+      out.classList.remove('bump');
+      void out.offsetWidth;
+      out.classList.add('bump');
+    }
+    applyBgFx();
+    saveBgFx();
+  });
+
+  document.addEventListener('click', (e) => {
+    // 菜单内部交互可能重渲染内容，target 已脱离文档时不能当成“点了外面”
+    if (e.target && e.target.closest && e.target.closest('#ctx-menu')) return;
+    if (e.target instanceof Node && !e.target.isConnected) return;
+    closeCtxMenu();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && ctxOpen) { closeCtxMenu(); e.stopPropagation(); }
+  }, true);
+  window.addEventListener('resize', () => { closeCtxMenu(); closeEnginePanel(); });
+  window.addEventListener('blur', closeCtxMenu);
 </script>
 </body>
 </html>
