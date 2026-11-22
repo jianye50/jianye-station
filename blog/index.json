@@ -1,6 +1,44 @@
 {
-  "generated": "2026-11-21T14:02:31.377Z",
+  "generated": "2026-11-22T15:58:50.819Z",
   "posts": [
+    {
+      "slug": "新浏览器标签页支持视频图片",
+      "md": "blog/新浏览器标签页支持视频图片/index.md",
+      "imgBase": "blog/新浏览器标签页支持视频图片/",
+      "title": "新标签页更新：壁纸自由、直达上网、右键快捷设置，新增秘塔AI搜索",
+      "desc": "写在前面： 这一版的更新，核心想法很简单——减少繁琐操作，让每次打开新标签都顺手、好看、高效。没有复杂的深层改动，全部是日常使用里最能感知到的优…",
+      "tags": [
+        "浏览器",
+        "标签页",
+        "Edge"
+      ],
+      "date": "2026-11-22",
+      "minutes": 2,
+      "cover": "mmexport1743076617137.jpeg",
+      "bg": "mmexport1743076617137.jpeg",
+      "mdEn": "blog/新浏览器标签页支持视频图片/index.en.md",
+      "titleEn": "New tab page update: free wallpapers, direct access to the Internet, right-click shortcut settings, new secret tower AI search",
+      "descEn": "Written before: The core idea of ​​this version of the update is simple - reduce tedious operations and make every time you open a new tab smooth, beautiful and efficient. There are no complicated deep changes, all are the most perceptible advantages in daily use...",
+      "tagsEn": [
+        "Browser",
+        "tab page",
+        "Edge"
+      ],
+      "mdZh": "blog/新浏览器标签页支持视频图片/index.zh.md",
+      "titleZh": "新标签页更新：壁纸自由、直达上网、右键快捷设置，新增秘塔AI搜索",
+      "descZh": "写在前面： 这一版的更新，核心想法很简单——减少繁琐操作，让每次打开新标签都顺手、好看、高效。没有复杂的深层改动，全部是日常使用里最能感知到的优…",
+      "tagsZh": [
+        "浏览器",
+        "标签页",
+        "Edge"
+      ],
+      "imgs": {
+        "ScreenShot_2026-11-22_235458_458.png": "blog/thumbs/新浏览器标签页支持视频图片-i0.webp",
+        "mmexport1743076617137.jpeg": "blog/thumbs/新浏览器标签页支持视频图片-i4.webp"
+      },
+      "coverThumb": "blog/thumbs/新浏览器标签页支持视频图片-cover.webp",
+      "bgThumb": "blog/thumbs/新浏览器标签页支持视频图片-bg.webp"
+    },
     {
       "slug": "墨白与黑金：同一个骨架里的两种气质",
       "md": "blog/墨白与黑金：同一个骨架里的两种气质/index.md",
