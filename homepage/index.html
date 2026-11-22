@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>鉴业的浏览器主页</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23141414'/%3E%3Ccircle cx='32' cy='31' r='16' fill='none' stroke='%23ffffff' stroke-width='4.5'/%3E%3Cpath d='M32 20v11l7-4' fill='none' stroke='%23ffffff' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23141414'/%3E%3Ccircle cx='28' cy='28' r='14' fill='none' stroke='%23ffffff' stroke-width='5'/%3E%3Cpath d='M38.5 38.5L51 51' fill='none' stroke='%23ffffff' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
   :root {
     --bg: #ffffff;
@@ -650,7 +650,6 @@
     overflow: hidden;
     max-height: calc(100vh - 16px);
     max-height: calc(100dvh - 16px);
-    overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
     scrollbar-color: rgba(128, 128, 128, .5) transparent;
@@ -661,6 +660,8 @@
     backdrop-filter: blur(22px) saturate(1.3);
   }
   #ctx-menu.show { display: block; }
+  /* 只有内容真的放不下时才启用滚动，避免入场动画的位移临时撑出滚动条 */
+  #ctx-menu.scrollable { overflow-y: auto; }
   /* 语言列表需要更宽一点，容纳 Bahasa Indonesia 这类较长名称 */
   #ctx-menu.lang-open {
     width: min(320px, calc(100vw - 24px));
@@ -2992,6 +2993,7 @@
       '</button>' +
       '<div class="ctx-lang-grid">' + autoRow + items + '</div>';
     ctxMenu.scrollTop = 0;
+    syncCtxScroll(); // 先按最终内容决定是否启用滚动，再定位当前语言
     const cur = ctxMenu.querySelector('.ctx-lang-grid .ctx-item.checked');
     if (cur) cur.scrollIntoView({ block: 'nearest' });
   }
@@ -3019,6 +3021,19 @@
     ctxMenu.style.setProperty('--ctx-origin', (ctxAnchor.x - left) + 'px ' + (ctxAnchor.y - top) + 'px');
   }
 
+  // 用 offsetTop/offsetHeight 计算真实内容高度：这两个值不受入场动画的
+  // translateY 影响，因此不会出现“动画时先闪一下滚动条、展开后又消失”
+  function syncCtxScroll() {
+    if (!ctxOpen) return;
+    const padBottom = parseFloat(getComputedStyle(ctxMenu).paddingBottom) || 0;
+    let contentH = 0;
+    for (let i = 0; i < ctxMenu.children.length; i++) {
+      const el = ctxMenu.children[i];
+      contentH = Math.max(contentH, el.offsetTop + el.offsetHeight);
+    }
+    ctxMenu.classList.toggle('scrollable', contentH + padBottom > ctxMenu.clientHeight + 1);
+  }
+
   function openCtxMenu(x, y) {
     clearTimeout(ctxCloseTimer);
     ctxAnchor = { x: x, y: y };
@@ -3030,6 +3045,7 @@
     ctxMenu.setAttribute('aria-hidden', 'false');
     ctxOpen = true;
     placeCtxMenu();
+    syncCtxScroll();
   }
 
   function closeCtxMenu() {
@@ -3073,6 +3089,7 @@
       e.stopPropagation();
       renderCtxMenu();
       placeCtxMenu();
+      syncCtxScroll();
       return;
     }
     if (act === 'lang:auto') {
