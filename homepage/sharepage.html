@@ -4,266 +4,334 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jianye's Homepage — A minimalist, clean and efficient new tab</title>
-<meta name="description" content="Jianye's Homepage is a minimalist browser new tab extension. No pop-ups, no redundant recommendations, no flashy ads — just a clean, fast and efficient search start page. Available for Microsoft Edge.">
+<meta name="description" content="Jianye's Browser Homepage is a minimalist new tab for Microsoft Edge. 11 built-in search engines, live suggestions, direct URL opening, custom image or video wallpapers, light and dark themes, and 20 languages. Free, no ads.">
 <link rel="canonical" href="https://jype.top/homepage/sharepage">
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1b1c1f">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1f1f1f">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><style>rect{fill:%23202124}.j{fill:%23e8eaed}@media (prefers-color-scheme:light){rect{fill:%23ffffff}.j{fill:%231f1f1f}}</style><rect width='100' height='100' rx='22'/><text class='j' x='50' y='68' font-size='52' text-anchor='middle' font-family='Segoe UI,sans-serif' font-weight='300'>J</text></svg>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Jianye's Homepage — A minimal, fast new tab">
+<meta property="og:description" content="11 search engines, live suggestions, direct URLs, custom wallpapers, dark mode and 20 languages. Free for Microsoft Edge.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23141414'/%3E%3Ccircle cx='28' cy='28' r='14' fill='none' stroke='%23ffffff' stroke-width='5'/%3E%3Cpath d='M38.5 38.5L51 51' fill='none' stroke='%23ffffff' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
-  /* ---------- Theme tokens: dark (default) ---------- */
+  /* ---------- 主题变量：与新标签页保持一致，跟随系统深浅色 ---------- */
   :root{
-    color-scheme:dark;
-    --bg:#1b1c1f;
-    --bg-top:#17181b;
-    --bg-bottom:#1d1e22;
-    --panel:#282a2d;
-    --panel2:#303134;
-    --text:#e8eaed;
-    --text-dim:#9aa0a6;
-    --text-faint:#6f7378;
-    --accent:#8ab4f8;
-    --accent-soft:rgba(138,180,248,.10);
-    --border:rgba(255,255,255,.07);
-    --border-soft:rgba(255,255,255,.05);
-    --border-strong:rgba(255,255,255,.20);
-    --nav-bg:rgba(23,24,27,.72);
-    --btn-bg:#ffffff;
-    --btn-fg:#111111;
-    --btn-hover:#ffffff;
-    --shadow-soft:0 4px 24px rgba(0,0,0,.35);
-    --shadow-lift:0 10px 30px rgba(255,255,255,.14);
-    --shadow-nav:0 6px 18px rgba(255,255,255,.12);
-    --focus-ring:rgba(138,180,248,.45);
-    --dot:#81c995;
-    --radius:14px;
+    color-scheme:light;
+    --bg:#ffffff;
+    --text:#1f1f1f;
+    --subtle:#666666;
+    --faint:#8a8f94;
+    --box-bg:#f3f3f3;
+    --box-border:#e0e0e0;
+    --line-strong:rgba(0,0,0,.22);
+    --btn-bg:#1f1f1f;
+    --btn-text:#ffffff;
+    --card-bg:#f7f7f8;
+    --nav-bg:rgba(255,255,255,.82);
+    --shadow-soft:0 4px 20px rgba(0,0,0,.12);
+    --shadow-lift:0 14px 34px rgba(0,0,0,.12);
+    --focus-ring:0 0 0 4px rgba(128,128,128,.10);
+    --dot:#2f9e44;
+    --radius:18px;
   }
-  /* ---------- Theme tokens: light (follows system color scheme) ---------- */
-  @media (prefers-color-scheme: light){
+  @media (prefers-color-scheme: dark){
     :root{
-      color-scheme:light;
-      --bg:#ffffff;
-      --bg-top:#ffffff;
-      --bg-bottom:#eceef1;
-      --panel:#f6f7f9;
-      --panel2:#f1f3f4;
-      --text:#1f1f1f;
-      --text-dim:#5f6368;
-      --text-faint:#80868b;
-      --accent:#1a73e8;
-      --accent-soft:rgba(26,115,232,.10);
-      --border:rgba(0,0,0,.10);
-      --border-soft:rgba(0,0,0,.06);
-      --border-strong:rgba(0,0,0,.22);
-      --nav-bg:rgba(255,255,255,.78);
-      --btn-bg:#1f1f1f;
-      --btn-fg:#ffffff;
-      --btn-hover:#000000;
-      --shadow-soft:0 4px 20px rgba(0,0,0,.10);
-      --shadow-lift:0 10px 26px rgba(0,0,0,.14);
-      --shadow-nav:0 6px 18px rgba(0,0,0,.10);
-      --focus-ring:rgba(26,115,232,.45);
-      --dot:#1e8e3e;
+      color-scheme:dark;
+      --bg:#1f1f1f;
+      --text:#f3f3f3;
+      --subtle:#9a9a9a;
+      --faint:#7f8489;
+      --box-bg:#2b2b2b;
+      --box-border:#3a3a3a;
+      --line-strong:rgba(255,255,255,.28);
+      --btn-bg:#f3f3f3;
+      --btn-text:#1f1f1f;
+      --card-bg:#262626;
+      --nav-bg:rgba(31,31,31,.78);
+      --shadow-soft:0 4px 22px rgba(0,0,0,.45);
+      --shadow-lift:0 14px 36px rgba(0,0,0,.50);
+      --focus-ring:0 0 0 4px rgba(255,255,255,.08);
+      --dot:#81c995;
     }
     .lang-select{
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f6368' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9a9a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
     }
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{
-    background:linear-gradient(180deg,var(--bg-top) 0%,var(--bg) 45%,var(--bg-bottom) 100%);
+    background:var(--bg);
     color:var(--text);
-    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans",sans-serif;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
     min-height:100vh;
     -webkit-font-smoothing:antialiased;
     overflow-x:hidden;
-    transition:background-color .25s ease,color .25s ease;
+    transition:background-color .3s ease,color .3s ease;
   }
-  [dir="rtl"] .search-icon,[dir="rtl"] .search-btn{transform:scaleX(-1)}
 
-  /* ---------- Nav ---------- */
+  /* ---------- 导航 ---------- */
   nav{
     position:fixed;top:0;left:0;right:0;z-index:100;
     display:flex;align-items:center;justify-content:space-between;
-    padding:16px 32px;
+    padding:14px 28px;
     background:var(--nav-bg);
-    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-    border-bottom:1px solid var(--border-soft);
-    transition:background-color .25s ease,border-color .25s ease;
+    backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);
+    border-bottom:1px solid var(--box-border);
+    transition:background-color .3s ease,border-color .3s ease;
   }
-  .brand{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;letter-spacing:.2px;color:var(--text);text-decoration:none}
+  .brand{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;letter-spacing:.1px;color:var(--text);text-decoration:none}
   .brand-logo{
-    width:26px;height:26px;border-radius:7px;background:var(--panel2);
+    width:28px;height:28px;border-radius:8px;
+    background:var(--btn-bg);color:var(--btn-text);
     display:flex;align-items:center;justify-content:center;
-    font-weight:300;font-size:15px;color:var(--text);
-    border:1px solid var(--border);
+    transition:background-color .3s ease,color .3s ease;
   }
-  .nav-right{display:flex;align-items:center;gap:12px}
+  .brand-logo svg{width:15px;height:15px;display:block}
+  .nav-right{display:flex;align-items:center;gap:10px}
   .lang-select{
     appearance:none;-webkit-appearance:none;
-    background-color:var(--panel2);
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239aa0a6' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-color:var(--box-bg);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
     background-repeat:no-repeat;background-position:right 12px center;
-    border:1px solid var(--border);
-    color:var(--text-dim);
+    border:1px solid var(--box-border);
+    color:var(--subtle);
     font-size:13px;font-family:inherit;
-    padding:8px 32px 8px 14px;
+    padding:8px 32px 8px 13px;
     border-radius:999px;cursor:pointer;
-    transition:border-color .2s,color .2s,background-color .25s ease;
+    max-width:190px;
+    transition:border-color .2s,color .2s,background-color .3s ease;
   }
-  [dir="rtl"] .lang-select{padding:8px 14px 8px 32px;background-position:left 12px center}
-  .lang-select:hover{border-color:var(--border-strong);color:var(--text)}
-  .lang-select option{background:var(--panel);color:var(--text)}
+  .lang-select:hover{border-color:var(--line-strong);color:var(--text)}
+  .lang-select option{background:var(--box-bg);color:var(--text)}
   .nav-cta{
     display:inline-block;text-decoration:none;
-    background:var(--btn-bg);color:var(--btn-fg);
+    background:var(--btn-bg);color:var(--btn-text);
     font-size:13px;font-weight:600;
-    padding:9px 18px;border-radius:999px;
-    transition:transform .15s ease,box-shadow .15s ease,background-color .25s ease,color .25s ease;
+    padding:9px 18px;border-radius:999px;white-space:nowrap;
+    transition:transform .15s ease,box-shadow .15s ease,background-color .3s ease,color .3s ease;
   }
-  .nav-cta:hover{transform:translateY(-1px);box-shadow:var(--shadow-nav)}
+  .nav-cta:hover{transform:translateY(-1px);box-shadow:var(--shadow-soft)}
 
-  /* ---------- Hero ---------- */
+  /* ---------- 首屏：复刻新标签页的时钟 / 日期 / 搜索框 ---------- */
   .hero{
     min-height:100vh;
+    min-height:100svh;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    padding:110px 24px 60px;
-    position:relative;
+    padding:110px 24px 72px;
+    text-align:center;
   }
-  .clock{
-    font-size:clamp(64px,10vw,104px);
-    font-weight:200;letter-spacing:1px;
-    color:var(--text);line-height:1;
+  #clock{
+    font-size:clamp(56px,10vw,110px);
+    font-weight:200;letter-spacing:2px;line-height:1;
     font-variant-numeric:tabular-nums;
+    animation:rise .8s cubic-bezier(.22,1,.36,1) .04s both;
   }
-  .date{
+  #clock .colon{display:inline-block;animation:colon-blink 2.4s ease-in-out infinite}
+  #date{
     margin-top:14px;
-    font-size:14px;color:var(--text-faint);letter-spacing:.5px;
+    font-size:15px;font-weight:300;letter-spacing:1px;
+    color:var(--subtle);
+    animation:rise .8s cubic-bezier(.22,1,.36,1) .12s both;
   }
   .search-wrap{
-    margin-top:44px;width:min(560px,100%);
-    animation:rise .7s .1s ease both;
+    position:relative;
+    z-index:5; /* 保证引擎下拉菜单盖在下方标题之上 */
+    width:min(620px,100%);
+    margin-top:48px;
+    animation:rise .8s cubic-bezier(.22,1,.36,1) .2s both;
   }
   .search-box{
-    display:flex;align-items:center;gap:12px;
-    background:var(--panel2);
-    border:1px solid var(--border);
+    position:relative; /* 引擎下拉菜单贴着搜索框展开 */
+    display:flex;align-items:center;
+    background:var(--box-bg);
+    border:1px solid var(--box-border);
     border-radius:999px;
-    padding:9px 9px 9px 20px;
-    transition:border-color .2s,box-shadow .2s,background-color .25s ease;
+    padding:6px 8px 6px 22px;
+    transition:background .3s ease,border-color .3s ease,box-shadow .2s ease,transform .25s cubic-bezier(.22,1,.36,1);
   }
-  .search-box:focus-within{border-color:var(--focus-ring);box-shadow:var(--shadow-soft)}
-  .search-icon{flex:none;color:var(--text-faint);display:flex}
-  .search-box input{
-    flex:1;min-width:0;background:none;border:none;outline:none;
-    color:var(--text);font-size:15px;font-family:inherit;
+  .search-box:focus-within{
+    border-color:var(--subtle);
+    box-shadow:var(--shadow-soft),var(--focus-ring);
+    transform:translateY(-1px);
   }
-  .search-box input::placeholder{color:var(--text-faint)}
-  .search-btn{
-    flex:none;width:38px;height:38px;border-radius:50%;
-    border:none;cursor:pointer;background:var(--text);color:var(--bg);
+  .engine-btn{
+    border:none;outline:none;background:transparent;
+    width:34px;height:34px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
-    transition:transform .15s ease,background-color .2s ease,color .25s ease;
+    flex-shrink:0;margin-left:-7px;cursor:pointer;
+    transition:background .2s ease,transform .18s cubic-bezier(.34,1.56,.64,1);
   }
-  .search-btn:hover{transform:scale(1.07);background:var(--btn-hover);color:var(--btn-fg)}
-  .demo-tag{
-    margin-top:12px;text-align:center;
-    font-size:12px;color:var(--text-faint);
+  .engine-btn:hover{background:rgba(128,128,128,.18);transform:scale(1.08)}
+  .engine-btn:active{transform:scale(.9)}
+  .engine-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .engine-icon svg{width:100%;height:100%;display:block}
+  .engine-icon svg.bing-mark{width:auto;height:111%}
+  .engine-icon img{width:100%;height:100%;object-fit:contain;display:block;border-radius:3px}
+  #searchInput{
+    flex:1;min-width:0;
+    background:none;border:none;outline:none;
+    color:var(--text);
+    font-size:16px;font-family:inherit;
+    padding:12px 14px;
   }
-  .hero-text{margin-top:40px;text-align:center;animation:rise .7s .2s ease both}
-  .tagline{
-    font-size:clamp(20px,3vw,28px);
-    font-weight:600;letter-spacing:.3px;
+  #searchInput::placeholder{color:var(--subtle)}
+  #searchBtn{
+    flex:none;width:38px;height:38px;border-radius:50%;
+    border:none;cursor:pointer;
+    background:var(--btn-bg);color:var(--btn-text);
+    display:flex;align-items:center;justify-content:center;
+    transition:opacity .2s ease,background-color .3s ease,color .3s ease,transform .18s cubic-bezier(.34,1.56,.64,1);
   }
-  .subtagline{
-    margin-top:12px;font-size:15px;color:var(--text-dim);line-height:1.7;max-width:620px;
+  #searchBtn:hover{opacity:.88;transform:scale(1.07)}
+  #searchBtn:active{transform:scale(.93)}
+  #searchBtn svg{width:16px;height:16px;stroke:currentColor}
+
+  /* 搜索引擎选择面板 */
+  #enginePanel{
+    position:absolute;
+    top:calc(100% + 8px);left:0;
+    min-width:232px;
+    background:var(--box-bg);
+    border:1px solid var(--box-border);
+    border-radius:var(--radius);
+    box-shadow:0 12px 36px rgba(0,0,0,.18);
+    overflow:hidden;
+    display:none;
+    z-index:20;
+    text-align:left;
   }
-  .cta-row{margin-top:28px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;animation:rise .7s .3s ease both}
+  #enginePanel.show{display:block;animation:pop-in .18s cubic-bezier(.22,1,.36,1) both;transform-origin:top left}
+  .engine-item{
+    display:flex;align-items:center;gap:12px;
+    padding:10px 16px;
+    font-size:15px;color:var(--text);
+    cursor:pointer;white-space:nowrap;
+    transition:background .15s ease,color .15s ease;
+  }
+  .engine-item:hover{background:var(--btn-bg);color:var(--btn-text)}
+  .engine-item .check{margin-left:auto;padding-left:14px;font-size:13px;opacity:0}
+  .engine-item.active .check{opacity:1}
+  .demo-tag{margin-top:12px;font-size:12.5px;color:var(--faint);transition:opacity .15s ease}
+  /* 引擎面板展开时收起提示文字，避免从面板右侧露出一截 */
+  .search-wrap.panel-open .demo-tag{opacity:0}
+
+  .hero-text{margin-top:46px;animation:rise .8s cubic-bezier(.22,1,.36,1) .28s both}
+  .tagline{font-size:clamp(22px,3vw,30px);font-weight:600;letter-spacing:.2px;max-width:820px;margin:0 auto}
+  .subtagline{margin:14px auto 0;font-size:15px;line-height:1.75;color:var(--subtle);max-width:640px}
+  .cta-row{margin-top:30px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;animation:rise .8s cubic-bezier(.22,1,.36,1) .36s both}
   .btn-primary{
-    display:inline-flex;align-items:center;gap:8px;
-    background:var(--btn-bg);color:var(--btn-fg);text-decoration:none;
+    display:inline-flex;align-items:center;gap:8px;text-decoration:none;
+    background:var(--btn-bg);color:var(--btn-text);
     font-size:15px;font-weight:600;
     padding:13px 28px;border-radius:999px;
-    transition:transform .15s ease,box-shadow .15s ease,background-color .25s ease,color .25s ease;
+    transition:transform .15s ease,box-shadow .15s ease,background-color .3s ease,color .3s ease;
   }
   .btn-primary:hover{transform:translateY(-2px);box-shadow:var(--shadow-lift)}
   .btn-secondary{
-    display:inline-flex;align-items:center;gap:8px;
-    background:transparent;color:var(--text-dim);text-decoration:none;
+    display:inline-flex;align-items:center;gap:8px;text-decoration:none;
+    background:transparent;color:var(--subtle);
     font-size:15px;font-weight:500;
     padding:13px 28px;border-radius:999px;
-    border:1px solid var(--border-strong);
+    border:1px solid var(--line-strong);
     transition:border-color .2s,color .2s;
   }
-  .btn-secondary:hover{border-color:var(--text-dim);color:var(--text)}
+  .btn-secondary:hover{border-color:var(--subtle);color:var(--text)}
   .badge-free{
     display:inline-flex;align-items:center;gap:6px;
     margin-top:22px;
-    font-size:12.5px;color:var(--text-faint);
+    font-size:12.5px;color:var(--faint);
+    animation:rise .8s cubic-bezier(.22,1,.36,1) .44s both;
   }
   .badge-free .dot{width:6px;height:6px;border-radius:50%;background:var(--dot)}
 
-  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-
-  /* ---------- Features ---------- */
-  .features{
-    max-width:1080px;margin:0 auto;
-    padding:40px 24px 110px;
-  }
-  .features-title{
-    text-align:center;font-size:clamp(22px,3vw,30px);font-weight:600;
-    margin-bottom:44px;
-  }
-  .feature-grid{
-    display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;
-  }
+  /* ---------- 功能 ---------- */
+  .features{max-width:1180px;margin:0 auto;padding:24px 24px 120px}
+  .features-title{text-align:center;font-size:clamp(22px,3vw,30px);font-weight:600;margin-bottom:42px}
+  /* 8 张卡片：桌面 4×2，平板 2×4，手机单列 */
+  .feature-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  @media (max-width:980px){ .feature-grid{grid-template-columns:repeat(2,1fr)} }
   .feature-card{
-    background:var(--panel);
-    border:1px solid var(--border-soft);
+    background:var(--card-bg);
+    border:1px solid var(--box-border);
     border-radius:var(--radius);
-    padding:28px 24px;
-    transition:transform .2s ease,border-color .2s,background-color .25s ease;
-    opacity:0;transform:translateY(24px);
+    padding:26px 24px;
+    text-align:left;
+    opacity:0;transform:translateY(20px);
+    transition:opacity .6s ease,transform .6s ease,box-shadow .25s ease,border-color .25s ease,background-color .3s ease;
   }
-  .feature-card.visible{opacity:1;transform:none;transition:opacity .6s ease,transform .6s ease,border-color .2s}
-  .feature-card:hover{transform:translateY(-4px);border-color:var(--focus-ring)}
+  .feature-card.visible{opacity:1;transform:none}
+  .feature-card.visible:hover{transform:translateY(-4px);box-shadow:var(--shadow-lift);border-color:var(--line-strong)}
   .feature-icon{
     width:42px;height:42px;border-radius:12px;
-    background:var(--accent-soft);color:var(--accent);
-    display:flex;align-items:center;justify-content:center;margin-bottom:18px;
-    transition:background-color .25s ease,color .25s ease;
+    background:rgba(128,128,128,.13);color:var(--text);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:18px;
+    transition:background-color .3s ease,color .3s ease;
   }
+  .feature-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .feature-card h3{font-size:16px;font-weight:600;margin-bottom:10px}
-  .feature-card p{font-size:13.5px;line-height:1.75;color:var(--text-dim)}
+  .feature-card p{font-size:13.5px;line-height:1.75;color:var(--subtle)}
 
-  /* ---------- Footer ---------- */
+  /* ---------- 页脚 ---------- */
   footer{
-    border-top:1px solid var(--border-soft);
+    border-top:1px solid var(--box-border);
     padding:36px 24px 44px;
     text-align:center;
-    transition:border-color .25s ease;
+    transition:border-color .3s ease;
   }
   .footer-links{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
   .footer-links a{
-    color:var(--text-dim);text-decoration:none;font-size:13.5px;
+    color:var(--subtle);text-decoration:none;font-size:13.5px;
     display:inline-flex;align-items:center;gap:6px;
     transition:color .2s;
   }
   .footer-links a:hover{color:var(--text)}
-  .footer-note{font-size:12.5px;color:var(--text-faint);line-height:1.8}
+  .footer-note{font-size:12.5px;color:var(--faint);line-height:1.8}
 
-  @media (max-width:560px){
+  /* ---------- 动效 ---------- */
+  @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  @keyframes pop-in{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+  @keyframes colon-blink{0%,100%{opacity:1}50%{opacity:.3}}
+  @keyframes item-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  #enginePanel.show .engine-item{animation:item-in .24s cubic-bezier(.22,1,.36,1) both}
+  #enginePanel.show .engine-item:nth-child(2){animation-delay:.03s}
+  #enginePanel.show .engine-item:nth-child(3){animation-delay:.06s}
+  #enginePanel.show .engine-item:nth-child(4){animation-delay:.09s}
+
+  /* 键盘焦点 */
+  .engine-btn:focus-visible,#searchBtn:focus-visible,.nav-cta:focus-visible,
+  .btn-primary:focus-visible,.btn-secondary:focus-visible,.lang-select:focus-visible{
+    outline:2px solid var(--text);outline-offset:3px;
+  }
+
+  /* 尊重系统“减少动态效果” */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important}
+    .feature-card{opacity:1;transform:none}
+  }
+
+  @media (max-width:600px){
     nav{padding:12px 16px}
-    .brand span{display:none}
-    .hero{padding-top:90px}
+    .brand span:last-child{display:none}
+    .lang-select{max-width:132px;padding-right:28px}
+    .hero{padding:96px 16px 64px}
+    .search-wrap{margin-top:40px}
+    .hero-text{margin-top:38px}
+    .subtagline{font-size:14px}
     .cta-row .btn-secondary{padding:13px 20px}
+    .features{padding:12px 16px 88px}
+    .feature-grid{grid-template-columns:1fr}
   }
 </style>
 </head>
 <body>
 
 <nav>
-  <a class="brand" href="#"><span class="brand-logo">J</span><span>Jianye's Homepage</span></a>
+  <a class="brand" href="#">
+    <span class="brand-logo" aria-hidden="true">
+      <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="6"><circle cx="28" cy="28" r="14"/><path d="M38.5 38.5 51 51" stroke-linecap="round"/></svg>
+    </span>
+    <span id="brandName">Jianye's Homepage</span>
+  </a>
   <div class="nav-right">
     <select class="lang-select" id="langSelect" aria-label="Language"></select>
     <a class="nav-cta" data-i18n="addToEdge" href="https://microsoftedge.microsoft.com/addons/detail/hlaliccifhdnccgkmbjijpjanfngkdpg" target="_blank" rel="noopener">Add to Edge</a>
@@ -271,18 +339,17 @@
 </nav>
 
 <header class="hero">
-  <div class="clock" id="clock">--:--</div>
-  <div class="date" id="date"></div>
+  <div id="clock">--:--</div>
+  <div id="date"></div>
 
   <div class="search-wrap">
     <form class="search-box" id="searchForm">
-      <span class="search-icon" aria-hidden="true">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-      </span>
-      <input type="text" id="searchInput" autocomplete="off" spellcheck="false">
-      <button class="search-btn" type="submit" aria-label="Search">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      <button class="engine-btn" id="engineBtn" type="button" aria-label="Switch search engine" title="Switch search engine"></button>
+      <input id="searchInput" type="text" autocomplete="off" spellcheck="false" aria-label="Search">
+      <button id="searchBtn" type="submit" aria-label="Search" title="Search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </button>
+      <div id="enginePanel" role="menu" aria-label="Search engines"></div>
     </form>
     <div class="demo-tag" data-i18n="demoTag"></div>
   </div>
@@ -306,20 +373,36 @@
   <h2 class="features-title" data-i18n="featuresTitle"></h2>
   <div class="feature-grid">
     <div class="feature-card">
-      <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 9h8M8 13h5"/></svg></div>
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="4"/><path d="M3 9h18"/><path d="M7 13h6M7 16h4"/></svg></div>
       <h3 data-i18n="f1t"></h3><p data-i18n="f1d"></p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13.5H11L9.5 22 19.5 9.5H13L13 2z"/></svg></div>
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L9.5 22 19.5 9.5H13L13 2z"/></svg></div>
       <h3 data-i18n="f2t"></h3><p data-i18n="f2d"></p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></div>
       <h3 data-i18n="f3t"></h3><p data-i18n="f3d"></p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5.3 5.5.7-4 4 1 5.6-5-2.8-5 2.8 1-5.6-4-4 5.5-.7L12 3z"/></svg></div>
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M8 11h6"/><path d="M11 8v6"/></svg></div>
       <h3 data-i18n="f4t"></h3><p data-i18n="f4d"></p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16.5 16 11l-4 4-2-2-5 5"/></svg></div>
+      <h3 data-i18n="f5t"></h3><p data-i18n="f5d"></p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.8 4 5.8 4 9s-1.4 6.2-4 9c-2.6-2.8-4-5.8-4-9s1.4-6.2 4-9z"/></svg></div>
+      <h3 data-i18n="f6t"></h3><p data-i18n="f6d"></p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M5 3l14 8-6.4 1.5L9.2 19z"/></svg></div>
+      <h3 data-i18n="f7t"></h3><p data-i18n="f7d"></p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9.3 12l1.9 1.9L15 10.3"/></svg></div>
+      <h3 data-i18n="f8t"></h3><p data-i18n="f8d"></p>
     </div>
   </div>
 </section>
@@ -339,285 +422,368 @@
 </footer>
 
 <script>
-/* ============ 20-language i18n ============ */
+/* ============ 20 语言文案 ============ */
 const I18N = {
   "zh-CN": {
+    brand:"鉴业的浏览器主页",
     tagline:"极简、纯净、高效的新标签页",
     subtagline:"告别拥挤的弹窗、冗余的推荐和花哨的广告。清爽克制的页面设计，为你打造纯净高效的上网入口。",
-    searchPlaceholder:"用必应搜索网页…",
-    demoTag:"↑ 试试看 — 这就是插件的默认界面",
+    ph:"搜索网页…",
+    demoTag:"↑ 试试看 — 这就是新标签页的真实界面",
     addToEdge:"添加到 Edge", tryWeb:"在线体验网页版", free:"完全免费 · 无广告",
-    featuresTitle:"为什么选择 Jianye's Homepage？",
+    featuresTitle:"为什么选择鉴业的浏览器主页？",
     f1t:"极简设计", f1d:"去除弹窗、冗余推荐和花哨广告，版面清爽克制，没有任何多余干扰，让你专注于自己真正需要的信息。",
     f2t:"极速加载", f2d:"无需等待大量资源渲染，在各种网络环境下都能快速响应，秒开新标签页。",
-    f3t:"一触即达", f3d:"搜索框居于页面中心，打开即自动聚焦，输入关键词立刻开始搜索，无需多层跳转。",
-    f4t:"简单实用", f4d:"保留实用基础功能，去除无用内容，回归搜索本质，让每一次查询都直接高效。",
+    f3t:"11 个引擎，一点即换", f3d:"内置必应、百度、谷歌、搜狗、DuckDuckGo、秘塔等 11 个搜索引擎，点图标即可切换；也能添加任意自定义引擎。",
+    f4t:"实时联想 · 网址直达", f4d:"输入即出现联想词，识别到网址会直接打开；按 Tab 还能临时换一个引擎搜索一次，不改默认设置。",
+    f5t:"换成你的壁纸", f5d:"支持本地图片和视频作为背景，模糊、缩放、亮度随手调；浅色壁纸会自动换成深色玻璃，文字依旧清晰。",
+    f6t:"主题与 20 种语言", f6d:"明暗主题跟随系统，也可手动指定；界面支持 20 种语言，包括从右到左的阿拉伯语和希伯来语。",
+    f7t:"右键即设置", f7d:"外观、语言、背景和壁纸调节都在右键菜单里，点一下就能切换，无需进入设置页。",
+    f8t:"数据只留在本地", f8d:"自定义引擎、壁纸和偏好全部保存在本机浏览器中，无需账号，也不会上传到任何服务器。",
     download:"下载插件", footerMade:"为高效浏览而生",
-    dateFmt:"yyyy年M月d日 EEEE"
+    dateFmt:"yyyy 年 M 月 d 日 · EEEE"
   },
   "zh-TW": {
+    brand:"鑑業的瀏覽器主頁",
     tagline:"極簡、純淨、高效的新分頁",
     subtagline:"告別擁擠的彈窗、冗餘的推薦和花哨的廣告。清爽克制的頁面設計，為你打造純淨高效的上網入口。",
-    searchPlaceholder:"用 Bing 搜尋網頁…",
-    demoTag:"↑ 試試看 — 這就是擴充功能的預設介面",
+    ph:"搜尋網頁…",
+    demoTag:"↑ 試試看 — 這就是新分頁的真實介面",
     addToEdge:"加入 Edge", tryWeb:"線上體驗網頁版", free:"完全免費 · 無廣告",
-    featuresTitle:"為什麼選擇 Jianye's Homepage？",
+    featuresTitle:"為什麼選擇鑑業的瀏覽器主頁？",
     f1t:"極簡設計", f1d:"去除彈窗、冗餘推薦和花哨廣告，版面清爽克制，沒有任何多餘干擾，讓你專注於真正需要的資訊。",
     f2t:"極速載入", f2d:"無需等待大量資源渲染，在各種網路環境下都能快速回應，秒開新分頁。",
-    f3t:"一觸即達", f3d:"搜尋框位於頁面中央，開啟即自動聚焦，輸入關鍵字立刻開始搜尋，無需多層跳轉。",
-    f4t:"簡單實用", f4d:"保留實用基礎功能，去除無用內容，回歸搜尋本質，讓每一次查詢都直接高效。",
+    f3t:"11 個引擎，一點即換", f3d:"內建 Bing、百度、Google、搜狗、DuckDuckGo、秘塔等 11 個搜尋引擎，點圖示即可切換；也能新增任意自訂引擎。",
+    f4t:"即時聯想 · 網址直達", f4d:"輸入即出現聯想詞，辨識到網址會直接開啟；按 Tab 還能臨時換一個引擎搜尋一次，不改預設設定。",
+    f5t:"換成你的桌布", f5d:"支援本機圖片和影片作為背景，模糊、縮放、亮度隨手調；淺色桌布會自動換成深色玻璃，文字依舊清晰。",
+    f6t:"主題與 20 種語言", f6d:"明暗主題跟隨系統，也可手動指定；介面支援 20 種語言，包括從右到左的阿拉伯語和希伯來語。",
+    f7t:"右鍵即設定", f7d:"外觀、語言、背景和桌布調節都在右鍵選單裡，點一下就能切換，無需進入設定頁。",
+    f8t:"資料只留在本機", f8d:"自訂引擎、桌布和偏好全部保存在本機瀏覽器中，無需帳號，也不會上傳到任何伺服器。",
     download:"下載擴充功能", footerMade:"為高效瀏覽而生",
-    dateFmt:"yyyy年M月d日 EEEE"
+    dateFmt:"yyyy 年 M 月 d 日 · EEEE"
   },
   "en": {
+    brand:"Jianye's Homepage",
     tagline:"A minimalist, clean and efficient new tab",
     subtagline:"Ditch cluttered pop-ups, redundant recommendations and flashy ads. A clean, restrained design that gives you a pure and efficient gateway to the web.",
-    searchPlaceholder:"Search the web with Bing…",
-    demoTag:"↑ Try it out — this is the extension's default view",
+    ph:"Search the web…",
+    demoTag:"↑ Try it — this is the real new tab interface",
     addToEdge:"Add to Edge", tryWeb:"Try the web version", free:"Completely free · No ads",
     featuresTitle:"Why Jianye's Homepage?",
     f1t:"Minimalist Design", f1d:"No pop-ups, redundant recommendations or flashy ads. A clean, restrained layout with zero distractions so you can focus on what you actually need.",
     f2t:"Lightning Fast", f2d:"No waiting for heavy assets to render — responds quickly under all kinds of network conditions and opens instantly.",
-    f3t:"Search Instantly", f3d:"The search box sits at the center of the page, focused the moment you open a tab. Type keywords and search right away — no multi-step redirects.",
-    f4t:"Simple & Useful", f4d:"Keeps practical essentials while removing the useless. Back to the essence of search — every query is direct and efficient.",
+    f3t:"11 Engines, One Click", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso and more — switch engines with a click, or add any custom search engine.",
+    f4t:"Suggestions & Direct URLs", f4d:"Live suggestions appear as you type, and anything that looks like a URL opens directly. Press Tab to search once with another engine.",
+    f5t:"Your Own Wallpaper", f5d:"Set a local image or video as the background and fine-tune blur, zoom and brightness. Bright wallpapers switch to dark glass automatically.",
+    f6t:"Themes & 20 Languages", f6d:"Follows your system light or dark theme — or set it manually. The interface supports 20 languages, including right-to-left Arabic and Hebrew.",
+    f7t:"Right-Click to Customize", f7d:"Theme, language, background and wallpaper adjustments all live in the right-click menu — switch in one click without opening a settings page.",
+    f8t:"Data Stays on Your Device", f8d:"Custom engines, wallpapers and preferences are stored in your browser only. No account, nothing uploaded to any server.",
     download:"Download", footerMade:"Built for focused browsing",
     dateFmt:"EEEE, MMMM d, yyyy"
   },
   "ja": {
     tagline:"ミニマルで純粋、効率的な新規タブ",
     subtagline:"散らかったポップアップ、余計なおすすめ、派手な広告を排除。すっきりと控えめなデザインで、純粋で効率的なウェブの入口をお届けします。",
-    searchPlaceholder:"Bing でウェブを検索…",
-    demoTag:"↑ ぜひお試しください — これが拡張機能の既定の画面です",
+    ph:"ウェブを検索…",
+    demoTag:"↑ ぜひお試しください — 実際の新規タブ画面です",
     addToEdge:"Edge に追加", tryWeb:"ウェブ版を試す", free:"完全無料 · 広告なし",
     featuresTitle:"Jianye's Homepage の特徴",
     f1t:"ミニマルデザイン", f1d:"ポップアップ、余計なおすすめ、派手な広告を排除した、清々しく控えめなレイアウト。気が散る要素がなく、本当に必要な情報に集中できます。",
     f2t:"高速読み込み", f2d:"大量のリソースのレンダリングを待つ必要がなく、さまざまなネットワーク環境でも素早く応答します。",
-    f3t:"すぐ検索", f3d:"検索ボックスはページの中央にあり、タブを開くと自動的にフォーカスされます。キーワードを入力すればすぐに検索でき、何段階ものリダイレクトはありません。",
-    f4t:"シンプルで実用的", f4d:"実用的な基本機能を残しつつ不要なものを排除。検索の本質に立ち返り、すべての検索を直接かつ効率的にします。",
+    f3t:"11 エンジンをワンクリック", f3d:"Bing、百度、Google、Sogou、DuckDuckGo、Metaso など 11 の検索エンジンを内蔵。アイコンをクリックするだけで切り替えられ、独自のエンジンも追加できます。",
+    f4t:"サジェストと URL 直開き", f4d:"入力するとすぐに候補が表示され、URL はそのまま開きます。Tab キーで一時的に別のエンジンで検索することもできます。",
+    f5t:"好きな壁紙に", f5d:"ローカルの画像や動画を背景に設定でき、ぼかし・拡大・明るさを調整できます。明るい壁紙では自動的にダークガラスに切り替わり、文字が読みやすく保たれます。",
+    f6t:"テーマと 20 言語", f6d:"システムのライト／ダークテーマに追従し、手動での切り替えも可能。右から左に書くアラビア語・ヘブライ語を含む 20 言語に対応します。",
+    f7t:"右クリックで設定", f7d:"テーマ、言語、背景、壁紙の調整は右クリックメニューにまとまっています。設定画面を開かずにワンクリックで切り替えられます。",
+    f8t:"データは端末内だけに", f8d:"カスタムエンジン、壁紙、設定はすべてブラウザ内に保存されます。アカウント不要で、サーバーへのアップロードもありません。",
     download:"拡張機能をダウンロード", footerMade:"集中するブラウジングのために",
     dateFmt:"yyyy年M月d日 EEEE"
   },
   "ko": {
     tagline:"미니멀하고 깔끔하며 효율적인 새 탭",
     subtagline:"복잡한 팝업, 불필요한 추천, 화려한 광고를 걷어냈습니다. 깔끔하고 절제된 디자인으로 순수하고 효율적인 웹의 시작점을 만들어 드립니다.",
-    searchPlaceholder:"Bing으로 웹 검색…",
-    demoTag:"↑ 직접 사용해 보세요 — 확장 프로그램의 기본 화면입니다",
+    ph:"웹 검색…",
+    demoTag:"↑ 사용해 보세요 — 실제 새 탭 화면입니다",
     addToEdge:"Edge에 추가", tryWeb:"웹 버전 체험", free:"완전 무료 · 광고 없음",
     featuresTitle:"왜 Jianye's Homepage인가?",
     f1t:"미니멀 디자인", f1d:"팝업, 불필요한 추천, 화려한 광고 없이 깔끔하고 절제된 레이아웃. 방해 요소 없이 정말 필요한 정보에 집중할 수 있습니다.",
     f2t:"빠른 속도", f2d:"대용량 리소스 렌더링을 기다릴 필요 없이 다양한 네트워크 환경에서도 빠르게 반응합니다.",
-    f3t:"즉시 검색", f3d:"검색창이 페이지 중앙에 있어 탭을 열면 바로 포커스됩니다. 키워드를 입력하면 즉시 검색되며 여러 단계의 이동이 없습니다.",
-    f4t:"단순하고 실용적", f4d:"실용적인 기본 기능은 남기고 불필요한 것은 제거. 검색의 본질로 돌아가 모든 검색을 직관적이고 효율적으로 만듭니다.",
+    f3t:"11개 엔진, 클릭 한 번", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso 등 11개 검색 엔진을 내장했습니다. 아이콘을 클릭해 전환하고, 원하는 엔진을 직접 추가할 수도 있습니다.",
+    f4t:"실시간 추천 · 주소 바로 열기", f4d:"입력하는 즉시 추천어가 나타나고, 주소는 바로 열립니다. Tab 키로 다른 엔진에서 한 번만 검색할 수도 있습니다.",
+    f5t:"나만의 배경 화면", f5d:"로컬 이미지나 동영상을 배경으로 설정하고 흐림, 확대, 밝기를 조절하세요. 밝은 배경은 자동으로 다크 글래스로 전환되어 글자가 선명하게 보입니다.",
+    f6t:"테마와 20개 언어", f6d:"시스템의 라이트/다크 테마를 따르거나 직접 지정할 수 있습니다. 아랍어·히브리어의 RTL 배열을 포함해 20개 언어를 지원합니다.",
+    f7t:"우클릭으로 설정", f7d:"테마, 언어, 배경, 배경 화면 조정이 모두 우클릭 메뉴에 있습니다. 설정 페이지를 열지 않고 클릭 한 번으로 전환하세요.",
+    f8t:"데이터는 기기에만", f8d:"사용자 엔진, 배경 화면, 환경설정은 모두 브라우저에만 저장됩니다. 계정이 필요 없고 서버로 업로드되지 않습니다.",
     download:"다운로드", footerMade:"집중력 있는 브라우징을 위해",
     dateFmt:"yyyy년 M월 d일 EEEE"
   },
   "es": {
     tagline:"Una pestaña nueva minimalista, limpia y eficiente",
     subtagline:"Olvídate de las ventanas emergentes, las recomendaciones redundantes y los anuncios llamativos. Un diseño limpio y contenido que convierte tu navegador en un portal puro y eficiente.",
-    searchPlaceholder:"Busca en la web con Bing…",
-    demoTag:"↑ Pruébalo — esta es la vista predeterminada de la extensión",
+    ph:"Buscar en la web…",
+    demoTag:"↑ Pruébalo — esta es la interfaz real de la pestaña nueva",
     addToEdge:"Añadir a Edge", tryWeb:"Probar la versión web", free:"Totalmente gratis · Sin anuncios",
     featuresTitle:"¿Por qué Jianye's Homepage?",
     f1t:"Diseño minimalista", f1d:"Sin ventanas emergentes, recomendaciones redundantes ni anuncios llamativos. Un diseño limpio y contenido, sin distracciones.",
     f2t:"Carga ultrarrápida", f2d:"Sin esperar a renderizar recursos pesados: responde rápido en todo tipo de redes y abre al instante.",
-    f3t:"Búsqueda al instante", f3d:"El cuadro de búsqueda está en el centro de la página y se enfoca al abrir una pestaña. Escribe y busca al instante, sin redirecciones.",
-    f4t:"Sencillo y útil", f4d:"Conserva lo esencial y elimina lo inútil. Vuelve a la esencia de la búsqueda: cada consulta es directa y eficiente.",
+    f3t:"11 motores, un clic", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso y más: cambia de motor con un clic o añade el que quieras.",
+    f4t:"Sugerencias y URL directas", f4d:"Las sugerencias aparecen mientras escribes y las URL se abren directamente. Pulsa Tab para buscar una vez con otro motor.",
+    f5t:"Tu propio fondo", f5d:"Usa una imagen o un vídeo local como fondo y ajusta desenfoque, zoom y brillo. Los fondos claros cambian a cristal oscuro automáticamente.",
+    f6t:"Temas y 20 idiomas", f6d:"Sigue el tema claro u oscuro del sistema o elígelo manualmente. La interfaz admite 20 idiomas, incluidos el árabe y el hebreo (RTL).",
+    f7t:"Ajustes con clic derecho", f7d:"Tema, idioma, fondo y ajustes del fondo de pantalla están en el menú contextual: cambia con un clic sin abrir una página de ajustes.",
+    f8t:"Tus datos se quedan contigo", f8d:"Los motores personalizados, los fondos y las preferencias se guardan solo en tu navegador. Sin cuenta y sin subir nada a ningún servidor.",
     download:"Descargar", footerMade:"Hecho para una navegación enfocada",
     dateFmt:"EEEE, d 'de' MMMM 'de' yyyy"
   },
   "fr": {
     tagline:"Un nouvel onglet minimaliste, épuré et efficace",
     subtagline:"Fini les pop-ups envahissants, les recommandations superflues et les publicités criardes. Un design épuré et sobre pour un point d'entrée pur et efficace sur le web.",
-    searchPlaceholder:"Rechercher sur le web avec Bing…",
-    demoTag:"↑ Essayez — voici l'affichage par défaut de l'extension",
+    ph:"Rechercher sur le Web…",
+    demoTag:"↑ Essayez — voici la véritable interface du nouvel onglet",
     addToEdge:"Ajouter à Edge", tryWeb:"Essayer la version web", free:"Gratuit · Sans publicité",
     featuresTitle:"Pourquoi Jianye's Homepage ?",
     f1t:"Design minimaliste", f1d:"Sans pop-ups, recommandations superflues ni publicités criardes. Une mise en page épurée et sobre, sans aucune distraction.",
     f2t:"Chargement ultra-rapide", f2d:"Aucune attente de rendu de ressources lourdes — réagit rapidement quel que soit le réseau et s'ouvre instantanément.",
-    f3t:"Recherche instantanée", f3d:"La barre de recherche est au centre de la page et est active dès l'ouverture d'un onglet. Tapez et lancez votre recherche, sans redirections.",
-    f4t:"Simple et utile", f4d:"Garde l'essentiel, supprime l'inutile. Retour à l'essence de la recherche — chaque requête est directe et efficace.",
+    f3t:"11 moteurs, un clic", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso et d'autres : changez de moteur d'un clic ou ajoutez le vôtre.",
+    f4t:"Suggestions et URL directes", f4d:"Les suggestions s'affichent pendant la saisie et les URL s'ouvrent directement. Appuyez sur Tab pour lancer une recherche avec un autre moteur.",
+    f5t:"Votre propre fond d'écran", f5d:"Utilisez une image ou une vidéo locale en arrière-plan et réglez flou, zoom et luminosité. Les fonds clairs passent automatiquement en verre sombre.",
+    f6t:"Thèmes et 20 langues", f6d:"Suit le thème clair ou sombre du système, ou se règle manuellement. L'interface prend en charge 20 langues, dont l'arabe et l'hébreu (RTL).",
+    f7t:"Réglages au clic droit", f7d:"Thème, langue, arrière-plan et réglages du fond d'écran sont dans le menu contextuel : changez d'un clic, sans ouvrir de page de réglages.",
+    f8t:"Vos données restent locales", f8d:"Moteurs personnalisés, fonds d'écran et préférences sont stockés uniquement dans votre navigateur. Sans compte et sans envoi vers un serveur.",
     download:"Télécharger", footerMade:"Conçu pour une navigation concentrée",
     dateFmt:"EEEE d MMMM yyyy"
   },
   "de": {
     tagline:"Ein minimalistischer, aufgeräumter und effizienter New-Tab",
     subtagline:"Schluss mit überladenen Pop-ups, redundanten Empfehlungen und greller Werbung. Ein klares, zurückhaltendes Design für einen reinen und effizienten Einstieg ins Web.",
-    searchPlaceholder:"Das Web mit Bing durchsuchen…",
-    demoTag:"↑ Probieren Sie es aus — die Standardansicht der Erweiterung",
+    ph:"Das Web durchsuchen…",
+    demoTag:"↑ Probieren Sie es aus — die echte Oberfläche des neuen Tabs",
     addToEdge:"Zu Edge hinzufügen", tryWeb:"Webversion ausprobieren", free:"Komplett kostenlos · Ohne Werbung",
     featuresTitle:"Warum Jianye's Homepage?",
     f1t:"Minimales Design", f1d:"Keine Pop-ups, redundanten Empfehlungen oder grellen Werbung. Ein aufgeräumtes, zurückhaltendes Layout ohne Ablenkung.",
     f2t:"Blitzschnell", f2d:"Kein Warten auf das Rendern umfangreicher Ressourcen — reagiert bei jeder Netzverbindung schnell und öffnet sofort.",
-    f3t:"Sofort suchen", f3d:"Das Suchfeld sitzt in der Seitenmitte und ist beim Öffnen eines Tabs sofort fokussiert. Schlüsselwörter eingeben und loslegen — ohne Umleitungen.",
-    f4t:"Einfach & nützlich", f4d:"Behält praktische Grundfunktionen, entfernt Nutzloses. Zurück zum Wesen der Suche — jede Abfrage direkt und effizient.",
+    f3t:"11 Suchmaschinen, ein Klick", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso und mehr — mit einem Klick wechseln oder jede eigene Suchmaschine hinzufügen.",
+    f4t:"Vorschläge & direkte URLs", f4d:"Vorschläge erscheinen beim Tippen, URLs öffnen sich direkt. Mit Tab einmalig mit einer anderen Suchmaschine suchen.",
+    f5t:"Dein eigenes Hintergrundbild", f5d:"Lokales Bild oder Video als Hintergrund festlegen und Unschärfe, Zoom und Helligkeit anpassen. Helle Hintergründe wechseln automatisch zu dunklem Glas.",
+    f6t:"Designs & 20 Sprachen", f6d:"Folgt dem hellen oder dunklen Systemdesign – oder manuell festlegen. Die Oberfläche unterstützt 20 Sprachen, inklusive RTL-Arabisch und -Hebräisch.",
+    f7t:"Einstellungen per Rechtsklick", f7d:"Design, Sprache, Hintergrund und Bildanpassungen liegen im Rechtsklick-Menü — mit einem Klick wechseln, ohne Einstellungsseite.",
+    f8t:"Daten bleiben bei dir", f8d:"Eigene Suchmaschinen, Hintergründe und Einstellungen werden nur im Browser gespeichert. Kein Konto, keine Uploads auf Server.",
     download:"Herunterladen", footerMade:"Für fokussiertes Surfen gebaut",
     dateFmt:"EEEE, d. MMMM yyyy"
   },
   "pt": {
     tagline:"Uma nova aba minimalista, limpa e eficiente",
-    subtagline:"Deixe para trás pop-ups cheios, recomendações redundantes e anúncios chamativos. Um design limpio e contido para um portal puro e eficiente para a web.",
-    searchPlaceholder:"Pesquisar na web com o Bing…",
-    demoTag:"↑ Experimente — esta é a visão padrão da extensão",
+    subtagline:"Deixe para trás pop-ups cheios, recomendações redundantes e anúncios chamativos. Um design limpo e contido para um portal puro e eficiente para a web.",
+    ph:"Pesquisar na web…",
+    demoTag:"↑ Experimente — esta é a interface real da nova aba",
     addToEdge:"Adicionar ao Edge", tryWeb:"Experimentar a versão web", free:"Totalmente grátis · Sem anúncios",
     featuresTitle:"Por que o Jianye's Homepage?",
     f1t:"Design minimalista", f1d:"Sem pop-ups, recomendações redundantes ou anúncios chamativos. Um layout limpo e contido, sem distrações.",
     f2t:"Carregamento rápido", f2d:"Sem esperar pela renderização de recursos pesados — responde rápido em qualquer rede e abre instantaneamente.",
-    f3t:"Pesquisa instantânea", f3d:"A caixa de pesquisa fica no centro da página, já focada ao abrir uma aba. Digite e pesquise na hora, sem redirecionamentos.",
-    f4t:"Simples e útil", f4d:"Mantém o essencial e remove o inútil. De volta à essência da busca — cada consulta é direta e eficiente.",
+    f3t:"11 motores, um clique", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso e mais: troque de mecanismo com um clique ou adicione qualquer mecanismo personalizado.",
+    f4t:"Sugestões e URL diretas", f4d:"As sugestões aparecem enquanto você digita e as URL abrem diretamente. Pressione Tab para pesquisar uma vez com outro mecanismo.",
+    f5t:"Seu próprio plano de fundo", f5d:"Use uma imagem ou vídeo local como fundo e ajuste desfoque, zoom e brilho. Fundos claros mudam automaticamente para vidro escuro.",
+    f6t:"Temas e 20 idiomas", f6d:"Segue o tema claro ou escuro do sistema, ou defina manualmente. A interface oferece 20 idiomas, incluindo árabe e hebraico (RTL).",
+    f7t:"Ajustes com clique direito", f7d:"Tema, idioma, fundo e ajustes do plano de fundo ficam no menu de contexto: troque com um clique, sem abrir uma página de configurações.",
+    f8t:"Seus dados ficam com você", f8d:"Mecanismos personalizados, fundos e preferências são salvos apenas no navegador. Sem conta e sem envio para servidores.",
     download:"Baixar", footerMade:"Feito para uma navegação focada",
     dateFmt:"EEEE, d 'de' MMMM 'de' yyyy"
   },
   "it": {
     tagline:"Una nuova scheda minimale, pulita ed efficiente",
     subtagline:"Addio pop-up ingombranti, raccomandazioni ridondanti e pubblicità appariscenti. Un design pulito e sobrio per un accesso al web puro ed efficiente.",
-    searchPlaceholder:"Cerca sul web con Bing…",
-    demoTag:"↑ Provala — questa è la vista predefinita dell'estensione",
+    ph:"Cerca sul web…",
+    demoTag:"↑ Provala — questa è l'interfaccia reale della nuova scheda",
     addToEdge:"Aggiungi a Edge", tryWeb:"Prova la versione web", free:"Completamente gratuita · Senza pubblicità",
     featuresTitle:"Perché Jianye's Homepage?",
     f1t:"Design minimale", f1d:"Nessun pop-up, raccomandazioni ridondanti o pubblicità appariscenti. Un layout pulito e sobrio, senza distrazioni.",
     f2t:"Caricamento rapido", f2d:"Niente attese per il rendering di risorse pesanti — risponde rapidamente su qualsiasi rete e si apre all'istante.",
-    f3t:"Ricerca immediata", f3d:"La casella di ricerca è al centro della pagina, già attiva all'apertura della scheda. Digita e cerca subito, senza reindirizzamenti.",
-    f4t:"Semplice e utile", f4d:"Mantiene l'essenziale e rimuove l'inutile. Ritorno all'essenza della ricerca — ogni query è diretta ed efficiente.",
+    f3t:"11 motori, un clic", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso e altri: cambia motore con un clic o aggiungi il tuo.",
+    f4t:"Suggerimenti e URL dirette", f4d:"I suggerimenti compaiono mentre digiti e gli URL si aprono subito. Premi Tab per cercare una volta con un altro motore.",
+    f5t:"Il tuo sfondo", f5d:"Imposta un'immagine o un video locale come sfondo e regola sfocatura, zoom e luminosità. Gli sfondi chiari passano automaticamente al vetro scuro.",
+    f6t:"Temi e 20 lingue", f6d:"Segue il tema chiaro o scuro del sistema o scegli manualmente. L'interfaccia supporta 20 lingue, tra cui arabo ed ebraico (RTL).",
+    f7t:"Impostazioni col tasto destro", f7d:"Tema, lingua, sfondo e regolazioni dello sfondo sono nel menu contestuale: cambia con un clic senza aprire una pagina di impostazioni.",
+    f8t:"I tuoi dati restano locali", f8d:"Motori personalizzati, sfondi e preferenze sono salvati solo nel browser. Nessun account e nessun invio a server.",
     download:"Scarica", footerMade:"Fatto per una navigazione mirata",
     dateFmt:"EEEE d MMMM yyyy"
   },
   "ru": {
     tagline:"Минималистичная, чистая и эффективная новая вкладка",
     subtagline:"Никаких навязчивых всплывающих окон, лишних рекомендаций и кричащей рекламы. Чистый сдержанный дизайн — простой и эффективный вход в интернет.",
-    searchPlaceholder:"Искать в интернете с Bing…",
-    demoTag:"↑ Попробуйте — это стандартный вид расширения",
+    ph:"Поиск в интернете…",
+    demoTag:"↑ Попробуйте — это настоящий интерфейс новой вкладки",
     addToEdge:"Добавить в Edge", tryWeb:"Попробовать веб-версию", free:"Полностью бесплатно · Без рекламы",
     featuresTitle:"Почему Jianye's Homepage?",
     f1t:"Минималистичный дизайн", f1d:"Никаких всплывающих окон, лишних рекомендаций и кричащей рекламы. Чистый сдержанный макет без отвлекающих факторов.",
     f2t:"Молниеносная скорость", f2d:"Не нужно ждать загрузки тяжёлых ресурсов — быстро работает при любом соединении и открывается мгновенно.",
-    f3t:"Мгновенный поиск", f3d:"Строка поиска в центре страницы, фокус — сразу при открытии вкладки. Введите запрос и ищите мгновенно, без лишних переходов.",
-    f4t:"Просто и практично", f4d:"Сохраняет полезное, убирает лишнее. Возвращение к сути поиска — каждый запрос прям и эффективен.",
+    f3t:"11 поисковиков в один клик", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso и другие — переключайтесь одним кликом или добавьте свой поисковик.",
+    f4t:"Подсказки и переход по ссылкам", f4d:"Подсказки появляются во время ввода, а ссылки открываются сразу. Нажмите Tab, чтобы разово поискать в другой системе.",
+    f5t:"Свои обои", f5d:"Поставьте локальное изображение или видео на фон и настройте размытие, масштаб и яркость. Светлые обои автоматически включают тёмное стекло.",
+    f6t:"Темы и 20 языков", f6d:"Следует светлой или тёмной теме системы либо задаётся вручную. Интерфейс поддерживает 20 языков, включая арабский и иврит (RTL).",
+    f7t:"Настройки по правой кнопке", f7d:"Тема, язык, фон и настройки обоев собраны в контекстном меню — переключайтесь одним кликом без страницы настроек.",
+    f8t:"Данные остаются у вас", f8d:"Свои поисковики, обои и настройки хранятся только в браузере. Без аккаунта и без отправки на серверы.",
     download:"Скачать", footerMade:"Создано для сфокусированного сёрфинга",
     dateFmt:"EEEE, d MMMM yyyy 'г'."
   },
   "ar": {
     tagline:"علامة تبويب جديدة بسيطة ونظيفة وفعالة",
     subtagline:"وداعًا للنوافذ المنبثقة المزدحمة والتوصيات الزائدة والإعلانات الصارخة. تصميم نظيف ومتحفظ يوفر لك مدخلًا نقيًا وفعالًا إلى الويب.",
-    searchPlaceholder:"ابحث في الويب مع Bing…",
-    demoTag:"↑ جرّبها الآن — هذه هي الواجهة الافتراضية للإضافة",
+    ph:"ابحث في الويب…",
+    demoTag:"↑ جرّبها الآن — هذه هي واجهة علامة التبويب الحقيقية",
     addToEdge:"أضف إلى Edge", tryWeb:"جرّب نسخة الويب", free:"مجاني تمامًا · بلا إعلانات",
     featuresTitle:"لماذا Jianye's Homepage؟",
     f1t:"تصميم بسيط", f1d:"بلا نوافذ منبثقة أو توصيات زائدة أو إعلانات صارخة. تصميم نظيف ومتحفظ بلا أي تشتيت.",
     f2t:"تحميل فوري", f2d:"لا انتظار لتحميل موارد ثقيلة — استجابة سريعة في جميع ظروف الشبكة وفتح فوري.",
-    f3t:"بحث فوري", f3d:"مربع البحث في منتصف الصفحة، والتركيز عليه فور فتح علامة التبويب. اكتب الكلمات وابحث فورًا دون خطوات إضافية.",
-    f4t:"بسيط وعملي", f4d:"يحتفظ بالأساسيات المفيدة ويزيل عديم الفائدة. العودة إلى جوهر البحث — كل استعلام مباشر وفعال.",
+    f3t:"11 محركًا بنقرة واحدة", f3d:"Bing وBaidu وGoogle وSogou وDuckDuckGo وMetaso وغيرها — بدّل المحرك بنقرة واحدة أو أضف محركك الخاص.",
+    f4t:"اقتراحات وروابط مباشرة", f4d:"تظهر الاقتراحات أثناء الكتابة وتُفتح الروابط مباشرة. اضغط Tab للبحث مرة واحدة بمحرك آخر.",
+    f5t:"خلفيتك الخاصة", f5d:"عيّن صورة أو فيديو من جهازك كخلفية واضبط التمويه والتكبير والسطوع. تتحول الخلفيات الفاتحة تلقائيًا إلى زجاج داكن.",
+    f6t:"المظهر و20 لغة", f6d:"يتبع مظهر النظام الفاتح أو الداكن أو يمكن ضبطه يدويًا. تدعم الواجهة 20 لغة، بما فيها العربية والعبرية (RTL).",
+    f7t:"الإعدادات بنقرة يمين", f7d:"المظهر واللغة والخلفية وإعدادات الخلفية كلها في قائمة النقر بزر الفأرة الأيمن — بدّلها بنقرة دون فتح صفحة إعدادات.",
+    f8t:"بياناتك تبقى لديك", f8d:"المحركات المخصصة والخلفيات والتفضيلات تُحفظ في متصفحك فقط. بلا حساب وبلا رفع إلى أي خادم.",
     download:"تنزيل الإضافة", footerMade:"صُمم لتصفح مركّز",
     dateFmt:"EEEE، d MMMM yyyy"
   },
   "hi": {
     tagline:"एक सरल, स्वच्छ और कुशल नया टैब",
     subtagline:"भीड़भाड़ वाले पॉप-अप, अनावश्यक सुझाव और चमकीले विज्ञापनों को अलविदा। स्वच्छ और संयत डिज़ाइन आपको वेब का एक शुद्ध और कुशल प्रवेश द्वार देता है।",
-    searchPlaceholder:"Bing से वेब खोजें…",
-    demoTag:"↑ आज़माएँ — यह एक्सटेंशन का डिफ़ॉल्ट दृश्य है",
+    ph:"वेब पर खोजें…",
+    demoTag:"↑ आज़माएँ — यह नए टैब का असली इंटरफ़ेस है",
     addToEdge:"Edge में जोड़ें", tryWeb:"वेब संस्करण आज़माएँ", free:"पूरी तरह मुफ़्त · कोई विज्ञापन नहीं",
     featuresTitle:"Jianye's Homepage क्यों?",
     f1t:"न्यूनतम डिज़ाइन", f1d:"पॉप-अप, अनावश्यक सुझाव या चमकीले विज्ञापन नहीं। स्वच्छ, संयत लेआउट, बिना किसी व्यवधान के।",
     f2t:"बिजली जैसी गति", f2d:"भारी एसेट रेंडर होने की प्रतीक्षा नहीं — हर नेटवर्क परिस्थिति में तेज़ प्रतिक्रिया, तुरंत खुलता है।",
-    f3t:"तुरंत खोजें", f3d:"सर्च बॉक्स पेज के केंद्र में है, टैब खोलते ही फ़ोकस हो जाता है। कीवर्ड टाइप करें और तुरंत खोजें — बिना कई चरणों के।",
-    f4t:"सरल और उपयोगी", f4d:"उपयोगी आवश्यक सुविधाएँ रखता है, बेकार चीज़ें हटाता है। खोज के सार पर लौटता है — हर खोज सीधी और कुशल।",
+    f3t:"11 इंजन, एक क्लिक", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso आदि — एक क्लिक में इंजन बदलें या अपना कस्टम इंजन जोड़ें।",
+    f4t:"सुझाव और सीधे URL", f4d:"टाइप करते ही सुझाव दिखते हैं और URL सीधे खुलते हैं। किसी दूसरे इंजन से एक बार खोजने के लिए Tab दबाएँ।",
+    f5t:"अपना वॉलपेपर", f5d:"स्थानीय चित्र या वीडियो को बैकग्राउंड बनाएँ और धुंधलापन, ज़ूम व चमक समायोजित करें। हल्के वॉलपेपर अपने आप डार्क ग्लास में बदल जाते हैं।",
+    f6t:"थीम और 20 भाषाएँ", f6d:"सिस्टम की लाइट या डार्क थीम का पालन करता है, या मैन्युअल रूप से सेट करें। इंटरफ़ेस 20 भाषाओं का समर्थन करता है, जिनमें RTL अरबी और हिब्रू शामिल हैं।",
+    f7t:"राइट-क्लिक से सेटिंग", f7d:"थीम, भाषा, बैकग्राउंड और वॉलपेपर समायोजन सब राइट-क्लिक मेनू में हैं — सेटिंग पेज खोले बिना एक क्लिक में बदलें।",
+    f8t:"डेटा सिर्फ आपके पास", f8d:"कस्टम इंजन, वॉलपेपर और प्राथमिकताएँ केवल आपके ब्राउज़र में सहेजी जाती हैं। कोई खाता नहीं, किसी सर्वर पर अपलोड नहीं।",
     download:"डाउनलोड करें", footerMade:"केंद्रित ब्राउज़िंग के लिए बना",
     dateFmt:"EEEE, d MMMM yyyy"
   },
   "th": {
     tagline:"แท็บใหม่ที่เรียบง่าย สะอาด และมีประสิทธิภาพ",
     subtagline:"บอกลาป๊อปอัปที่รกครึก คำแนะนำที่ซ้ำซ้อน และโฆษณาที่ฉูดฉาด ดีไซน์เรียบสะอาดเป็นทางเข้าเว็บที่บริสุทธิ์และมีประสิทธิภาพ",
-    searchPlaceholder:"ค้นหาเว็บด้วย Bing…",
-    demoTag:"↑ ลองใช้เลย — นี่คือหน้าเริ่มต้นของส่วนขยาย",
+    ph:"ค้นหาเว็บ…",
+    demoTag:"↑ ลองใช้เลย — นี่คือหน้าจริงของแท็บใหม่",
     addToEdge:"เพิ่มไปยัง Edge", tryWeb:"ลองใช้เวอร์ชันเว็บ", free:"ฟรีทั้งหมด · ไม่มีโฆษณา",
     featuresTitle:"ทำไมต้อง Jianye's Homepage?",
     f1t:"ดีไซน์มินิมอล", f1d:"ไม่มีป๊อปอัป คำแนะนำที่ซ้ำซ้อน หรือโฆษณาที่ฉูดฉาด เลย์เอาต์เรียบสะอาด ไร้สิ่งรบกวน",
     f2t:"โหลดรวดเร็ว", f2d:"ไม่ต้องรอเรนเดอร์ทรัพยากรจำนวนมาก ตอบสนองได้เร็วในทุกสภาพเครือข่ายและเปิดทันที",
-    f3t:"ค้นหาทันที", f3d:"ช่องค้นหาอยู่กลางหน้า เปิดแท็บแล้วโฟกัสทันที พิมพ์คำค้นหาได้เลย ไม่ต้องผ่านหลายขั้นตอน",
-    f4t:"เรียบง่าย ใช้งานจริง", f4d:"เก็บฟีเจอร์พื้นฐานที่ใช้งานจริง ตัดสิ่งที่ไม่จำเป็น กลับสู่แก่นแท้ของการค้นหา ทุกการค้นหาตรงประเด็นและรวดเร็ว",
+    f3t:"11 เครื่องมือ คลิกเดียว", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso และอื่น ๆ — สลับเครื่องมือด้วยการคลิกหรือเพิ่มเครื่องมือของคุณเอง",
+    f4t:"แนะนำคำค้นและเปิด URL ตรง", f4d:"คำแนะนำปรากฏขณะพิมพ์ และ URL จะเปิดทันที กด Tab เพื่อค้นหาด้วยเครื่องมืออื่นหนึ่งครั้ง",
+    f5t:"วอลเปเปอร์ของคุณเอง", f5d:"ตั้งรูปภาพหรือวิดีโอในเครื่องเป็นพื้นหลัง ปรับความเบลอ การขยาย และความสว่างได้ วอลเปเปอร์สว่างจะเปลี่ยนเป็นกระจกเข้มอัตโนมัติ",
+    f6t:"ธีมและ 20 ภาษา", f6d:"ตามธีมสว่างหรือมืดของระบบ หรือตั้งค่าเอง อินเทอร์เฟซรองรับ 20 ภาษา รวมถึงอาหรับและฮีบรูที่เป็น RTL",
+    f7t:"ตั้งค่าด้วยคลิกขวา", f7d:"ธีม ภาษา พื้นหลัง และการปรับวอลเปเปอร์อยู่ในเมนูคลิกขวา สลับได้ในคลิกเดียวโดยไม่ต้องเปิดหน้าตั้งค่า",
+    f8t:"ข้อมูลอยู่กับคุณ", f8d:"เครื่องมือค้นหาที่กำหนดเอง วอลเปเปอร์ และการตั้งค่าถูกเก็บไว้ในเบราว์เซอร์เท่านั้น ไม่ต้องมีบัญชีและไม่มีการอัปโหลดไปยังเซิร์ฟเวอร์",
     download:"ดาวน์โหลด", footerMade:"สร้างมาเพื่อการท่องเว็บที่มีสมาธิ",
     dateFmt:"EEEEที่ d MMMM yyyy"
   },
   "vi": {
     tagline:"Thẻ mới tối giản, tinh gọn và hiệu quả",
     subtagline:"Tạm biệt pop-up chen chúc, gợi ý thừa thãi và quảng cáo lòe loẹt. Thiết kế tinh gọn, tiết chế mang đến cho bạn cổng vào web thuần khiết và hiệu quả.",
-    searchPlaceholder:"Tìm kiếm web với Bing…",
-    demoTag:"↑ Hãy thử — đây là giao diện mặc định của tiện ích",
+    ph:"Tìm kiếm trên web…",
+    demoTag:"↑ Hãy thử — đây là giao diện thật của thẻ mới",
     addToEdge:"Thêm vào Edge", tryWeb:"Dùng thử phiên bản web", free:"Hoàn toàn miễn phí · Không quảng cáo",
     featuresTitle:"Tại sao chọn Jianye's Homepage?",
     f1t:"Thiết kế tối giản", f1d:"Không pop-up, gợi ý thừa hay quảng cáo lòe loẹt. Bố cục tinh gọn, tiết chế, không phiền nhiễu.",
     f2t:"Tải siêu nhanh", f2d:"Không phải chờ tải tài nguyên nặng — phản hồi nhanh trong mọi điều kiện mạng và mở ngay lập tức.",
-    f3t:"Tìm ngay lập tức", f3d:"Ô tìm kiếm nằm giữa trang, tự động lấy tiêu điểm khi mở thẻ. Nhập từ khóa là tìm ngay, không qua nhiều bước chuyển hướng.",
-    f4t:"Đơn giản & thiết thực", f4d:"Giữ những tính năng thiết thực, loại bỏ thứ vô dụng. Trở về bản chất của tìm kiếm — mọi truy vấn đều trực tiếp và hiệu quả.",
+    f3t:"11 công cụ, một cú nhấp", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso và hơn thế — đổi công cụ bằng một cú nhấp hoặc thêm công cụ tùy chỉnh.",
+    f4t:"Gợi ý và mở URL trực tiếp", f4d:"Gợi ý xuất hiện khi bạn nhập và URL mở ngay. Nhấn Tab để tìm một lần bằng công cụ khác.",
+    f5t:"Hình nền của riêng bạn", f5d:"Đặt ảnh hoặc video cục bộ làm nền và chỉnh độ mờ, tỷ lệ phóng, độ sáng. Hình nền sáng tự động chuyển sang kính tối.",
+    f6t:"Giao diện và 20 ngôn ngữ", f6d:"Theo giao diện sáng/tối của hệ thống hoặc tự đặt. Giao diện hỗ trợ 20 ngôn ngữ, gồm tiếng Ả Rập và Do Thái (RTL).",
+    f7t:"Tùy chỉnh bằng chuột phải", f7d:"Giao diện, ngôn ngữ, nền và các điều chỉnh hình nền đều nằm trong menu chuột phải — đổi bằng một cú nhấp, không cần mở trang cài đặt.",
+    f8t:"Dữ liệu ở lại với bạn", f8d:"Công cụ tùy chỉnh, hình nền và tùy chọn chỉ lưu trong trình duyệt của bạn. Không cần tài khoản và không tải lên máy chủ nào.",
     download:"Tải xuống", footerMade:"Được tạo ra cho việc duyệt web tập trung",
     dateFmt:"EEEE, ngày d tháng M năm yyyy"
   },
   "tr": {
     tagline:"Sade, temiz ve verimli bir yeni sekme",
     subtagline:"Kalabalık pop-uplara, gereksiz önerilere ve gösterişli reklamlara veda edin. Sade ve ölçülü bir tasarım, web'e saf ve verimli bir giriş sunar.",
-    searchPlaceholder:"Bing ile internette ara…",
-    demoTag:"↑ Deneyin — eklentinin varsayılan görünümü budur",
+    ph:"Web'de ara…",
+    demoTag:"↑ Deneyin — bu, yeni sekmenin gerçek arayüzü",
     addToEdge:"Edge'e ekle", tryWeb:"Web sürümünü dene", free:"Tamamen ücretsiz · Reklamsız",
     featuresTitle:"Neden Jianye's Homepage?",
     f1t:"Minimalist tasarım", f1d:"Pop-up, gereksiz öneri veya gösterişli reklam yok. Sade ve ölçülü bir düzen, hiçbir dikkat dağıtıcı olmadan.",
     f2t:"Hızlı yükleme", f2d:"Ağır varlıkların yüklenmesini beklemeyin — her ağ koşulunda hızlı yanıt verir ve anında açılır.",
-    f3t:"Anında ara", f3d:"Arama kutusu sayfanın ortasındadır ve sekme açılır açılmaz odağı alır. Anahtar kelimeleri yazın, hemen arayın — çok adımlı yönlendirme yok.",
-    f4t:"Basit ve kullanışlı", f4d:"Kullanışlı temel işlevleri korur, gereksizleri kaldırır. Aramanın özüne dönüş — her sorgu doğrudan ve verimli.",
+    f3t:"11 motor, tek tık", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso ve daha fazlası — tek tıkla değiştirin veya kendi motorunuzu ekleyin.",
+    f4t:"Öneriler ve doğrudan URL", f4d:"Yazarken öneriler belirir ve URL'ler doğrudan açılır. Başka bir motorla bir kez aramak için Tab'a basın.",
+    f5t:"Kendi duvar kağıdınız", f5d:"Yerel bir görsel veya videoyu arka plan yapın; bulanıklık, yakınlaştırma ve parlaklığı ayarlayın. Açık duvar kağıtları otomatik olarak koyu cama geçer.",
+    f6t:"Temalar ve 20 dil", f6d:"Sistemin açık veya koyu temasını izler ya da elle ayarlanır. Arayüz, RTL Arapça ve İbranice dahil 20 dili destekler.",
+    f7t:"Sağ tıkla ayarla", f7d:"Tema, dil, arka plan ve duvar kağıdı ayarları sağ tık menüsünde — ayarlar sayfasını açmadan tek tıkla değiştirin.",
+    f8t:"Veriler sizde kalır", f8d:"Özel motorlar, duvar kağıtları ve tercihler yalnızca tarayıcınızda saklanır. Hesap yok, sunucuya yükleme yok.",
     download:"İndir", footerMade:"Odaklanmış gezinme için yapıldı",
     dateFmt:"d MMMM yyyy EEEE"
   },
   "id": {
     tagline:"Tab baru yang minimalis, bersih, dan efisien",
     subtagline:"Tinggalkan pop-up yang penuh sesak, rekomendasi berlebih, dan iklan mencolok. Desain bersih dan terkendali untuk gerbang web yang murni dan efisien.",
-    searchPlaceholder:"Telusuri web dengan Bing…",
-    demoTag:"↑ Coba sekarang — ini tampilan bawaan ekstensi",
+    ph:"Telusuri web…",
+    demoTag:"↑ Coba sekarang — ini antarmuka asli tab baru",
     addToEdge:"Tambahkan ke Edge", tryWeb:"Coba versi web", free:"Sepenuhnya gratis · Tanpa iklan",
     featuresTitle:"Mengapa Jianye's Homepage?",
     f1t:"Desain minimalis", f1d:"Tanpa pop-up, rekomendasi berlebih, atau iklan mencolok. Tata letak bersih dan terkendali, tanpa gangguan.",
     f2t:"Pemuatan kilat", f2d:"Tak perlu menunggu render aset berat — merespons cepat dalam kondisi jaringan apa pun dan terbuka seketika.",
-    f3t:"Cari langsung", f3d:"Kotak pencarian di tengah halaman, langsung fokus saat tab dibuka. Ketik kata kunci dan cari seketanya — tanpa banyak langkah.",
-    f4t:"Sederhana & berguna", f4d:"Mempertahankan fungsi dasar yang berguna, membuang yang tidak perlu. Kembali ke esensi pencarian — setiap kueri langsung dan efisien.",
+    f3t:"11 mesin, sekali klik", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso dan lainnya — ganti mesin dengan sekali klik atau tambahkan mesin khusus.",
+    f4t:"Saran & URL langsung", f4d:"Saran muncul saat mengetik dan URL langsung terbuka. Tekan Tab untuk mencari sekali dengan mesin lain.",
+    f5t:"Wallpaper Anda sendiri", f5d:"Pasang gambar atau video lokal sebagai latar dan atur buram, zoom, serta kecerahan. Wallpaper terang otomatis beralih ke kaca gelap.",
+    f6t:"Tema & 20 bahasa", f6d:"Mengikuti tema terang atau gelap sistem, atau atur sendiri. Antarmuka mendukung 20 bahasa, termasuk Arab dan Ibrani (RTL).",
+    f7t:"Atur lewat klik kanan", f7d:"Tema, bahasa, latar, dan penyesuaian wallpaper ada di menu klik kanan — ganti dengan sekali klik tanpa membuka halaman pengaturan.",
+    f8t:"Data tetap di perangkat Anda", f8d:"Mesin khusus, wallpaper, dan preferensi hanya disimpan di peramban Anda. Tanpa akun dan tanpa mengunggah ke server mana pun.",
     download:"Unduh", footerMade:"Dibuat untuk penjelajahan yang fokus",
     dateFmt:"EEEE, d MMMM yyyy"
   },
   "nl": {
     tagline:"Een minimalistisch, overzichtelijk en efficiënt nieuw tabblad",
     subtagline:"Vaarwel drukke pop-ups, overbodige aanbevelingen en opzichtige advertenties. Een strak, ingetogen ontwerp als pure en efficiënte toegang tot het web.",
-    searchPlaceholder:"Zoek het web met Bing…",
-    demoTag:"↑ Probeer het — dit is de standaardweergave van de extensie",
+    ph:"Zoek op het web…",
+    demoTag:"↑ Probeer het — dit is de echte interface van het nieuwe tabblad",
     addToEdge:"Toevoegen aan Edge", tryWeb:"Probeer de webversie", free:"Volledig gratis · Geen advertenties",
     featuresTitle:"Waarom Jianye's Homepage?",
     f1t:"Minimalistisch ontwerp", f1d:"Geen pop-ups, overbodige aanbevelingen of opzichtige advertenties. Een strak, ingetogen ontwerp zonder afleiding.",
     f2t:"Bliksemsnel", f2d:"Geen wachten op het renderen van zware bronnen — reageert snel onder alle netwerkomstandigheden en opent direct.",
-    f3t:"Direct zoeken", f3d:"Het zoekvak staat in het midden van de pagina en is direct gefocust bij het openen van een tabblad. Typ en zoek meteen — zonder omleidingen.",
-    f4t:"Eenvoudig & nuttig", f4d:"Behoudt nuttige basisfuncties, verwijdert overbodigs. Terug naar de essentie van zoeken — elke zoekopdracht direct en efficiënt.",
+    f3t:"11 zoekmachines, één klik", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso en meer — wissel met één klik of voeg je eigen zoekmachine toe.",
+    f4t:"Suggesties & directe URL's", f4d:"Suggesties verschijnen tijdens het typen en URL's openen direct. Druk op Tab om één keer met een andere zoekmachine te zoeken.",
+    f5t:"Je eigen achtergrond", f5d:"Stel een lokale afbeelding of video in als achtergrond en pas vervaging, zoom en helderheid aan. Lichte achtergronden schakelen automatisch over op donker glas.",
+    f6t:"Thema's & 20 talen", f6d:"Volgt het lichte of donkere systeemthema, of stel het handmatig in. De interface ondersteunt 20 talen, waaronder RTL-Arabisch en -Hebreeuws.",
+    f7t:"Instellen met rechtsklik", f7d:"Thema, taal, achtergrond en wallpaper-instellingen staan in het rechtermuisknopmenu — wissel met één klik zonder een instellingenpagina.",
+    f8t:"Je gegevens blijven bij jou", f8d:"Aangepaste zoekmachines, achtergronden en voorkeuren worden alleen in je browser opgeslagen. Geen account en geen uploads naar servers.",
     download:"Downloaden", footerMade:"Gebouwd voor gericht browsen",
     dateFmt:"EEEE d MMMM yyyy"
   },
   "pl": {
     tagline:"Minimalistyczna, przejrzysta i wydajna nowa karta",
     subtagline:"Pożegnaj zatłoczone pop-upy, zbędne rekomendacje i krzykliwe reklamy. Czysty, powściągliwy design to czyste i wydajne wejście do internetu.",
-    searchPlaceholder:"Szukaj w internecie przez Bing…",
-    demoTag:"↑ Wypróbuj — to domyślny widok rozszerzenia",
+    ph:"Przeszukaj sieć…",
+    demoTag:"↑ Wypróbuj — to prawdziwy interfejs nowej karty",
     addToEdge:"Dodaj do Edge", tryWeb:"Wypróbuj wersję web", free:"Całkowicie darmowe · Bez reklam",
     featuresTitle:"Dlaczego Jianye's Homepage?",
     f1t:"Minimalistyczny design", f1d:"Bez wyskakujących okien, zbędnych rekomendacji i krzykliwych reklam. Czysty, powściągliwy układ bez rozpraszaczy.",
     f2t:"Błyskawiczne ładowanie", f2d:"Bez czekania na renderowanie ciężkich zasobów — szybka reakcja w każdych warunkach sieciowych i natychmiastowe otwieranie.",
-    f3t:"Natychmiastowe wyszukiwanie", f3d:"Pole wyszukiwania znajduje się na środku strony i jest od razu aktywne po otwarciu karty. Wpisz frazę i szukaj natychmiast — bez przekierowań.",
-    f4t:"Prosty i praktyczny", f4d:"Zachowuje praktyczne podstawy, usuwa zbędne. Powrót do istoty wyszukiwania — każde zapytanie jest bezpośrednie i wydajne.",
+    f3t:"11 wyszukiwarek, jedno kliknięcie", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso i inne — przełączaj jednym kliknięciem lub dodaj własną wyszukiwarkę.",
+    f4t:"Podpowiedzi i bezpośrednie adresy", f4d:"Podpowiedzi pojawiają się podczas pisania, a adresy URL otwierają się od razu. Naciśnij Tab, aby raz wyszukać w innej wyszukiwarce.",
+    f5t:"Własna tapeta", f5d:"Ustaw lokalny obraz lub wideo jako tło i dostosuj rozmycie, powiększenie i jasność. Jasne tapety automatycznie przełączają się na ciemne szkło.",
+    f6t:"Motywy i 20 języków", f6d:"Podąża za jasnym lub ciemnym motywem systemu albo ustawia się ręcznie. Interfejs obsługuje 20 języków, w tym arabski i hebrajski (RTL).",
+    f7t:"Ustawienia pod prawym przyciskiem", f7d:"Motyw, język, tło i ustawienia tapety są w menu kontekstowym — zmieniaj jednym kliknięciem, bez otwierania strony ustawień.",
+    f8t:"Dane zostają u Ciebie", f8d:"Własne wyszukiwarki, tapety i preferencje są przechowywane tylko w przeglądarce. Bez konta i bez wysyłania na serwery.",
     download:"Pobierz", footerMade:"Stworzone dla skupionego przeglądania",
     dateFmt:"EEEE, d MMMM yyyy"
   },
   "uk": {
     tagline:"Мінімалістична, чиста та ефективна нова вкладка",
     subtagline:"Прощавайте з перевантаженими спливаючими вікнами, зайвими рекомендаціями та яскравою рекламою. Чистий стриманий дизайн — простий і ефективний вхід в інтернет.",
-    searchPlaceholder:"Шукати в інтернеті за допомогою Bing…",
-    demoTag:"↑ Спробуйте — це стандартний вигляд розширення",
+    ph:"Шукати в інтернеті…",
+    demoTag:"↑ Спробуйте — це справжній інтерфейс нової вкладки",
     addToEdge:"Додати в Edge", tryWeb:"Спробувати веб-версію", free:"Повністю безкоштовно · Без реклами",
     featuresTitle:"Чому Jianye's Homepage?",
     f1t:"Мінімалістичний дизайн", f1d:"Без спливаючих вікон, зайвих рекомендацій та яскравої реклами. Чистий стриманий макет без відволікань.",
     f2t:"Блискавичне завантаження", f2d:"Не чекайте на рендеринг важких ресурсів — швидка реакція за будь-яких мережевих умов та миттєве відкриття.",
-    f3t:"Миттєвий пошук", f3d:"Поле пошуку в центрі сторінки, фокус одразу після відкриття вкладки. Введіть запит і шукайте миттєво, без зайвих переходів.",
-    f4t:"Просто і практично", f4d:"Зберігає корисні основи, прибирає зайве. Повернення до суті пошуку — кожен запит прямий та ефективний.",
+    f3t:"11 пошуковиків одним кліком", f3d:"Bing, Baidu, Google, Sogou, DuckDuckGo, Metaso та інші — перемикайте одним кліком або додайте власний пошуковик.",
+    f4t:"Підказки й прямі посилання", f4d:"Підказки з'являються під час введення, а посилання відкриваються одразу. Натисніть Tab, щоб один раз пошукати в іншій системі.",
+    f5t:"Ваші власні шпалери", f5d:"Встановіть локальне зображення чи відео як тло та налаштуйте розмиття, масштаб і яскравість. Світлі шпалери автоматично переходять на темне скло.",
+    f6t:"Теми й 20 мов", f6d:"Дотримується світлої чи темної теми системи або задається вручну. Інтерфейс підтримує 20 мов, зокрема арабську та іврит (RTL).",
+    f7t:"Налаштування правою кнопкою", f7d:"Тема, мова, тло й налаштування шпалер зібрані в контекстному меню — перемикайтеся одним кліком без сторінки налаштувань.",
+    f8t:"Дані залишаються у вас", f8d:"Власні пошуковики, шпалери й налаштування зберігаються лише у браузері. Без акаунта й без надсилання на сервери.",
     download:"Завантажити", footerMade:"Створено для зосередженого серфінгу",
     dateFmt:"EEEE, d MMMM yyyy"
   }
@@ -629,9 +795,8 @@ const LANG_NAMES = {
   "ru":"Русский","ar":"العربية","hi":"हिन्दी","th":"ไทย","vi":"Tiếng Việt",
   "tr":"Türkçe","id":"Bahasa Indonesia","nl":"Nederlands","pl":"Polski","uk":"Українська"
 };
-const RTL_LANGS = new Set(["ar"]);
 
-/* Label of the "Auto (follow system)" option, localized in the current UI language */
+/* “自动（跟随系统）”选项按当前界面语言显示 */
 const AUTO_LABEL = {
   "zh-CN":"自动（跟随系统）","zh-TW":"自動（跟隨系統）","en":"Auto (system)","ja":"自動（システム設定）",
   "ko":"자동 (시스템)","es":"Automático (sistema)","fr":"Auto (système)","de":"Automatisch (System)",
@@ -640,13 +805,12 @@ const AUTO_LABEL = {
   "id":"Otomatis (sistem)","nl":"Automatisch (systeem)","pl":"Automatyczny (system)","uk":"Авто (системна)"
 };
 
-/* ============ Language detection ============ */
-/* Match the OS / browser language against the 20 supported languages */
+/* ============ 语言识别 ============ */
 function systemLanguage(){
   const candidates = (navigator.languages && navigator.languages.length)
     ? [...navigator.languages] : [navigator.language || "en"];
   for (const c of candidates){
-    if (I18N[c]) return c;                                  // exact match, e.g. zh-CN, pt-PT
+    if (I18N[c]) return c;
     const base = c.toLowerCase().split("-")[0];
     if (base === "zh"){
       const isTrad = /hant|tw|hk|mo/i.test(c);
@@ -666,63 +830,149 @@ function detectLanguage(){
   if (saved === "auto") return "auto";
   if (saved && I18N[saved]) return saved;
 
-  return "auto";                                            // default: follow the system
+  return "auto"; // 默认跟随系统
 }
 
-/* ============ Apply language ============ */
+/* ============ 搜索引擎（演示用，默认必应） ============ */
+const ENGINES = [
+  { id:"bing",   name:"Bing",       url:"https://www.bing.com/search?q=%s" },
+  { id:"baidu",  name:"Baidu",      url:"https://www.baidu.com/s?wd=%s" },
+  { id:"google", name:"Google",     url:"https://www.google.com/search?q=%s" },
+  { id:"ddg",    name:"DuckDuckGo", url:"https://duckduckgo.com/?q=%s" }
+];
+const ENGINE_NAMES_ZH = { bing:"必应", baidu:"百度", google:"谷歌", ddg:"DuckDuckGo" };
+
+/* 官方 logo，内联以避免额外请求 */
+const ENGINE_ICONS = { bing: '<svg class="bing-mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 388"><defs><radialGradient id="SVGGZQEKcDW" cx="93.717%" cy="77.818%" r="143.121%" fx="93.717%" fy="77.818%" gradientTransform="matrix(-.65486 -.5438 .75575 -.4712 .963 1.654)"><stop offset="0%" stop-color="#00cacc"/><stop offset="100%" stop-color="#048fce"/></radialGradient><radialGradient id="SVG8Pn4lbDv" cx="13.893%" cy="71.448%" r="150.086%" fx="13.893%" fy="71.448%" gradientTransform="matrix(.55155 -.39387 .23634 .91917 -.107 .112)"><stop offset="0%" stop-color="#00bbec"/><stop offset="100%" stop-color="#2756a9"/></radialGradient><linearGradient id="SVGavx67sXC" x1="50%" x2="50%" y1="0%" y2="100%"><stop offset="0%" stop-color="#00bbec"/><stop offset="100%" stop-color="#2756a9"/></linearGradient></defs><path fill="url(#SVGGZQEKcDW)" d="M129.424 122.047c-7.133.829-12.573 6.622-13.079 13.928c-.218 3.147-.15 3.36 6.986 21.722c16.233 41.774 20.166 51.828 20.827 53.243c1.603 3.427 3.856 6.65 6.672 9.544c2.16 2.22 3.585 3.414 5.994 5.024c4.236 2.829 6.337 3.61 22.818 8.49c16.053 4.754 24.824 7.913 32.381 11.664c9.791 4.86 16.623 10.387 20.944 16.946c3.1 4.706 5.846 13.145 7.04 21.64c.468 3.321.47 10.661.006 13.663c-1.008 6.516-3.021 11.976-6.101 16.545c-1.638 2.43-1.068 2.023 1.313-.939c6.74-8.379 13.605-22.7 17.108-35.687c4.24-15.718 4.817-32.596 1.66-48.57c-6.147-31.108-25.786-57.955-53.444-73.06c-1.738-.95-8.357-4.42-17.331-9.085a1633 1633 0 0 1-4.127-2.154c-.907-.477-2.764-1.447-4.126-2.154c-1.362-.708-5.282-2.75-8.711-4.539l-8.528-4.446a6021 6021 0 0 1-8.344-4.357c-8.893-4.655-12.657-6.537-13.73-6.863c-1.125-.343-3.984-.782-4.701-.723c-.152.012-.838.088-1.527.168"/><path fill="url(#SVG8Pn4lbDv)" d="M148.81 277.994c-.493.292-1.184.714-1.537.938c-.354.225-1.137.712-1.743 1.083a8315 8315 0 0 0-13.204 8.137a2848 2848 0 0 0-8.07 4.997a388 388 0 0 1-3.576 2.198c-.454.271-2.393 1.465-4.31 2.654a2652 2652 0 0 1-7.427 4.586a3958 3958 0 0 0-8.62 5.316a3011 3011 0 0 1-7.518 4.637c-1.564.959-3.008 1.885-3.21 2.058c-.3.257-14.205 8.87-21.182 13.121c-5.3 3.228-11.43 5.387-17.705 6.235c-2.921.395-8.45.396-11.363.003c-7.9-1.067-15.176-4.013-21.409-8.666c-2.444-1.826-7.047-6.425-8.806-8.8c-4.147-5.598-6.829-11.602-8.218-18.396c-.32-1.564-.622-2.884-.672-2.935c-.13-.13.105 2.231.528 5.319c.44 3.211 1.377 7.856 2.387 11.829c7.814 30.743 30.05 55.749 60.15 67.646c8.668 3.424 17.415 5.582 26.932 6.64c3.576.4 13.699.56 17.43.276c17.117-1.296 32.02-6.334 47.308-15.996c1.362-.86 3.92-2.474 5.685-3.585a877 877 0 0 0 4.952-3.14c.958-.615 2.114-1.341 2.567-1.614a91 91 0 0 0 2.018-1.268c.656-.424 3.461-2.2 6.235-3.944l11.092-7.006l3.809-2.406l.137-.086l.42-.265l.199-.126l2.804-1.771l9.69-6.121c12.348-7.759 16.03-10.483 21.766-16.102c2.392-2.342 5.997-6.34 6.176-6.848c.037-.104.678-1.092 1.424-2.197c3.036-4.492 5.06-9.995 6.064-16.484c.465-3.002.462-10.342-.005-13.663c-.903-6.42-2.955-13.702-5.167-18.339c-3.627-7.603-11.353-14.512-22.453-20.076c-3.065-1.537-6.23-2.943-6.583-2.924c-.168.009-10.497 6.322-22.954 14.03c-12.457 7.71-23.268 14.4-24.025 14.87s-2.056 1.263-2.888 1.764z"/><path fill="url(#SVGavx67sXC)" d="m.053 241.013l.054 53.689l.695 3.118c2.172 9.747 5.937 16.775 12.482 23.302c3.078 3.07 5.432 4.922 8.768 6.896c7.06 4.177 14.657 6.238 22.978 6.235c8.716-.005 16.256-2.179 24.025-6.928c1.311-.801 6.449-3.964 11.416-7.029l9.032-5.572v-127.4l-.002-58.273c-.002-37.177-.07-59.256-.188-60.988c-.74-10.885-5.293-20.892-12.948-28.461c-2.349-2.323-4.356-3.875-10.336-7.99a25160 25160 0 0 1-12.104-8.336L28.617 5.835C22.838 1.85 22.386 1.574 20.639.949C18.367.136 15.959-.163 13.67.084C6.998.804 1.657 5.622.269 12.171C.053 13.191.013 26.751.01 100.35l-.003 86.975H0z"/></svg>',
+    baidu: '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAHQ0lEQVR42u1b6XMURRTfT/wvIopCOAPIEYQIyhExgAhFBRWJBJAAkcMKBUJZSAWR+1BBBaG4AuEQSDSKKCIeQLiCKHtfYe97d57z2izs7PbMds9ONquhq96Hrdk30+/X3e9unS5tAEB3kepEahHJB//94WuXBWXqrpMb4sNuIm0WKQH/35Fol7EbTfhG6DqjUQJCOypdbWxOPfOJLghAguiEduWg2QiFBNjxiQfGlVvg2YEGGFRihIU1Trh1J8rEf/V6BKqqHTBwhJHwT5xigc++8EI02iEg1OnaNaQmw2SJw5gyMzzR634GPdVXDw2nA4r8Bw774MkiPZV/wmQLOJyab9QWnVamDleodAJd+FQQ/r4fo/LfuBmF7r31ivxlUy2Q0BYDn06rN+E2VZp8khYtc1L5Z8+zM/EfOubXFAFNAPD7BRgw3MgkAG5xvUG6C27ejjLxIg0rNUEkUmAAnDwTYBYACf+ffvZ5+JsvhAoLgFUfPOASYONWt4R/zTo+/o82uwsLgMoFDi4BFr4r1QNvzrVz8descBYWAG+8zSfA0to2Cf/cak4AawoMAFxRHgHWbXBJ+N9b3cbFX/v+g8ICYNceL5cAe7/0Sp3y7R4uflSaBQXAndYolwDpZvDGLXZ+NKMmc7ywAMBRMYdND0yaZqXyl443M/HPX+zIvyP0x7UIUVT9hxqIOzt6nBm27fZANGUhDcYY9BliyCrA2cYg9RuH6/1ZeTFAcjge+cLhsEBM6sgXTdCjj548RwWJO0ozANDFlQtQyqdbwecTJJEcRn9yAtRtcqv2J9ADxKOWHC5XgkSctP8+3U8PBxn1hCIAX58PZl2V6qVSk4SAbNruhrJXLcQ9HjzSCLOr7HDhIpv31vhtEGZV2qFYXE1cUQQZw+tAUJDGDlX2rLqC5ZuyAAhC9uguSb9fjUA+BwrGMq+XxUVQDcC5piCzZsYVy+eYPMPKPLcffw6rA4DHuXlmgF6iEDs0xy0eMTmdpMZpkgUAzx6Pbb/yWzgvADR/H+KaV8VbNnUAoALi+dCpswEmAa7fiBBrgOZq+us2okQ3bnHD7VY203WQM3QeJZpsVQBgQpLnQ3L2PVXwaRU2xXfMnG2D1rvKQLD4C6k05HmjOgDQ2eH5UFNzUHHSPfuzndvexQbF3VR/ki/5ks0SyAKwrJYvQrPa6P75oaN8K5akM+foINy9F+N6z9r1LnUA4JZl1bZlMihfa4kwr3w6FQ0yQOuf9OMwinF3okd476+Yek+QNU5Hd5lmrkrGmlQJn6SxZWbi76ePj7e5VeUduAFAfzsb2lNnWiFO2f2o3XMRXsmOIyhYKFHie2mSBQIBIfdgqO1BgoSg6UUL/L14uZP6kWMn/JoIn6Tz32QqWLcnAfMWOagxwBJxXl6fwGRWmfMBGO4ePe6Hz/f7oL7BT8pgtPGT6HqiZ6glAKgPMCSnDUyuPJyXaCHMFr5kiU5LLw2DIjRj6QJMnGImE03Shk0ubhAwF8FaYO0UAC5dDkPf5+jOU/kMS1qOwaNqJ6B3KrcTOhWAE6cC0LOf/LbXCgAk9FBpOqHTANiyI7swWgKQVHQ005tXAIIhAd6pYTN1WgOQpOUr23JunFAFAFoEtLNKk+vRBz2xf+m1CqssAAOGG8S4w/SQkC/9XSVjjQ+fDys1Zvj6Nns8fwC0iC5ysUyoXLnADt/9ECQ2WjnR+giA3Xs8kmdDR2e+22iOpbjX4YznQ0ebSIzQ4QCgb07rA0AT1XCavXFBawBI2DvKSHZmhwGAZ16ueHHxEl+9viMASPYR8abmmAFYLZOzX74ys1J7525E9M588NUhL6FzTYG8AKCmd4AJAIwH5MLa1MnhoHl5kxWsgNYAFA02MAVBXABgYYL2sREvSNNNLTcj1P/lEwCk/Qd92gIwZ76Dyb7v3ectCAAwGtQUgJIx9MTGuFekGVc894UAwPhyi7YAyBU8iwbrIR4XUhIoceg/zJATAFjpzRUAtFaaAiDX/kpKT2kmEHOJk6ZZRH+dDYDtu6Vae+WatpwBwNKZpgBMn2VT2G5miMUytW4kKoDfnyAUDCZkAaCZUeTxeh+RIAhcAKDO0hSArTuVg5etu/hsbyoAaElCIfYGYBYAUBlrCsBthh6gqmo72B1xbgCQltU6qdlftQDw9BAxe4LZylpIfYfoYckKJ+w74CWFjaZmOuG2T+dF5bd+owsO1/tk+ZCyhdLYdN0hrjDW7LA/SMtkp9aEyVjegIgrGsRW9Ww9/Z1FuDinGSvU6QBwdR0ePxUg/nYhCY/h+PkmVXlCn6orMxZrnPT7stb9Roie5IIlDtj5qYc0QWHyAhUmFi8wm4PHCwXA1ju8L4QJDpb39io2kMpRDldpWnK6NOURbTR2kmHDA9YRV6xqg7UfukSz6CHVoV9+DWfNDimV5S5fCcOR435ihrGlHt+P38GQFwHDixo5jrrH1+a6/MXJx1dnH1+e7trX5/8BAIuWVWwZvR4AAAAASUVORK5CYII=" alt="">',
+    google: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 262"><path fill="#4285f4" d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622l38.755 30.023l2.685.268c24.659-22.774 38.875-56.282 38.875-96.027"/><path fill="#34a853" d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055c-34.523 0-63.824-22.773-74.269-54.25l-1.531.13l-40.298 31.187l-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1"/><path fill="#fbbc05" d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82c0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602z"/><path fill="#eb4335" d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0C79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251"/></svg>',
+    ddg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 255"><defs><linearGradient id="SVGG0F7Qb6R" x1="71.005%" x2="0%" y1="100%" y2="100%"><stop offset="0%" stop-color="#394a9f"/><stop offset="100%" stop-color="#6176b9"/></linearGradient></defs><path fill="#de5833" d="M128.145 18.841c60.002 0 108.643 48.641 108.643 108.643c0 60.001-48.641 108.642-108.643 108.642c-60.001 0-108.642-48.641-108.642-108.642c0-60.002 48.641-108.643 108.642-108.643"/><path fill="#de5833" d="M128.143 254.922c70.383 0 127.44-57.057 127.44-127.44S198.526.042 128.143.042S.703 57.099.703 127.482s57.057 127.44 127.44 127.44m0-10.62c-64.518 0-116.82-52.302-116.82-116.82s52.302-116.82 116.82-116.82s116.82 52.302 116.82 116.82s-52.302 116.82-116.82 116.82"/><path fill="#d5d7d8" d="M75.219 54.13c-.021-1.827 1.306-2.85 3.069-3.567c-.807.132-1.58.334-2.276.646c-1.838.833-3.212 3.987-3.199 5.48c8.923-.902 22.118-.278 31.767 2.602c.712-.1 1.424-.2 2.147-.283c-9.624-4.273-21.066-5.923-31.508-4.878m1.829-10.98c.201-.036.405-.061.607-.095c-1.925.239-2.94.927-4.385 1.164c1.569.139 7.514 2.914 11.25 4.44c.524-.199.996-.42 1.381-.681c-1.937-.286-6.75-4.636-8.853-4.828m9.278 21.606c-.535.206-1.043.421-1.483.652c-14.545 7.663-20.97 25.562-17.141 47.01c3.495 19.518 17.82 86.205 24.379 117.571c1.915.673 3.853 1.298 5.815 1.865c-5.841-28.24-21.784-102.24-25.504-123.023c-3.771-21.143-.102-36.314 13.934-44.075"/><path fill="#fff" d="M145.184 218.618c-.24.16-.526.31-.831.456c-.226.876-.571 1.54-1.074 1.874c-3.004 1.993-11.489 2.997-15.969 1.993c-.771-.171-1.355-.454-1.811-.843c-7.649 4.247-18.649 9.901-20.883 8.627c-3.49-2.001-3.996-28.451-3.49-34.942c.369-4.9 17.581 3.037 25.954 7.2c1.851-1.729 6.386-2.886 10.4-3.279c-6.065-14.761-10.538-31.645-7.796-43.618c-3.79-2.641-8.813-8.766-7.767-15.159c.806-4.866 13.38-14.072 22.283-14.628c8.923-.563 11.704-.436 19.138-2.216l1.209-.29c4.576-16.087-6.399-44.074-18.641-56.321c-3.991-3.991-10.127-6.503-17.041-7.829c-2.659-3.649-6.948-7.138-13.02-10.369c-11.275-5.986-25.209-8.423-38.19-6.219c-.202.034-.406.059-.607.095c2.103.192 6.916 4.542 8.853 4.828c-.385.261-.857.482-1.381.681c-1.818.692-4.289 1.112-6.232 1.904c-1.763.717-3.09 1.74-3.069 3.567c10.442-1.045 21.884.605 31.508 4.878c-.723.083-1.435.183-2.147.283c-6.825.96-13.098 2.728-17.63 5.119c-.213.111-.415.231-.624.346c-14.036 7.761-17.705 22.932-13.934 44.075C76.112 129.614 92.159 204.76 98 233c9.603 2.779 18.582 5 29.08 5c8.912 0 19.631-1.975 27.92-4c-2.911-5.613-6.656-11.82-8.964-16.271c-.308.367-.551.688-.852.889m5.873-106.561c-3.804 0-6.907-3.094-6.907-6.92c0-3.808 3.103-6.903 6.907-6.903c3.825 0 6.916 3.095 6.916 6.903a6.91 6.91 0 0 1-6.916 6.92m4.161-26.008s-4.357-2.489-7.738-2.447c-6.948.091-8.84 3.161-8.84 3.161s1.166-7.318 10.051-5.85c4.817.801 6.527 5.136 6.527 5.136m-73.255 8.997s-3.129-6.973 5.21-10.39c8.348-3.418 12.413 1.945 12.413 1.945s-6.062-2.742-11.956.962c-5.884 3.7-5.667 7.483-5.667 7.483m7.29 14.862a8.04 8.04 0 0 1 8.047-8.044a8.04 8.04 0 0 1 8.04 8.044c0 4.447-3.6 8.041-8.04 8.041a8.034 8.034 0 0 1-8.047-8.041"/><path fill="#2d4f8e" d="M105.34 109.908a8.04 8.04 0 0 0-8.04-8.044a8.04 8.04 0 0 0-8.047 8.044a8.034 8.034 0 0 0 8.047 8.041c4.44 0 8.04-3.594 8.04-8.041m-4.478-.591a2.09 2.09 0 0 1-2.081-2.09a2.085 2.085 0 1 1 4.171 0a2.09 2.09 0 0 1-2.09 2.09"/><path fill="#fff" d="M100.862 105.139a2.085 2.085 0 0 0-2.081 2.088c0 1.154.939 2.093 2.081 2.09a2.09 2.09 0 0 0 2.09-2.09a2.087 2.087 0 0 0-2.09-2.088"/><path fill="#2d4f8e" d="M151.057 98.234c-3.804 0-6.907 3.095-6.907 6.903c0 3.826 3.103 6.92 6.907 6.92a6.91 6.91 0 0 0 6.916-6.92c0-3.808-3.091-6.903-6.916-6.903m3.067 6.394c-.975 0-1.78-.793-1.78-1.789c0-.983.805-1.79 1.78-1.79c1.017 0 1.797.807 1.797 1.79c0 .996-.78 1.789-1.797 1.789"/><path fill="#fff" d="M154.124 101.049c-.975 0-1.78.807-1.78 1.79c0 .996.805 1.789 1.78 1.789a1.773 1.773 0 0 0 1.797-1.789c0-.983-.78-1.79-1.797-1.79"/><path fill="url(#SVGG0F7Qb6R)" d="M33.586 44.601s-4.065-5.363-12.413-1.945c-8.339 3.417-5.21 10.39-5.21 10.39s-.217-3.783 5.667-7.483c5.894-3.704 11.956-.962 11.956-.962" transform="translate(66 42)"/><path fill="url(#SVGG0F7Qb6R)" d="M82.691 38.913c-8.885-1.468-10.051 5.85-10.051 5.85s1.892-3.07 8.84-3.161c3.381-.042 7.738 2.447 7.738 2.447s-1.71-4.335-6.527-5.136" transform="translate(66 42)"/><path fill="#fdd209" d="M144.2 126.299c-8.903.556-21.477 9.762-22.283 14.628c-1.046 6.393 3.977 12.518 7.767 15.159l.031.023c3.789 2.636 29.018 11.147 41.535 10.911c12.531-.244 33.111-7.918 30.851-14.067c-2.25-6.151-22.689 5.427-44.007 3.451c-15.788-1.467-18.575-8.54-15.079-13.706c4.397-6.493 12.406 1.232 25.616-2.721c13.23-3.942 31.732-10.998 38.597-14.84c15.873-8.849-6.642-12.519-11.96-10.064c-5.041 2.329-22.587 6.757-30.721 8.72l-1.209.29c-7.434 1.78-10.215 1.653-19.138 2.216"/><path fill="#65bc46" d="M124.316 206.97c0-.921.741-1.736 1.917-2.431c.033-.559.337-1.079.847-1.556c-8.373-4.163-25.585-12.1-25.954-7.2c-.506 6.491 0 32.941 3.49 34.942c2.234 1.274 13.234-4.38 20.883-8.627c-2.207-1.881-1.183-6.447-1.183-15.128m21.609 10.716l.111.043c6.854 2.645 20.498 7.624 23.461 6.537c3.995-1.527 2.995-33.453-1.489-34.47c-3.592-.797-17.343 8.892-22.753 12.839c.957 4.041 2.115 12.045.67 15.051"/><path fill="#43a244" d="M129.214 220.611c-4.495-.996-2.993-5.493-2.993-15.971c0-.034.01-.067.012-.101c-1.176.695-1.917 1.51-1.917 2.431c0 8.681-1.024 13.247 1.183 15.128c.456.389 1.04.672 1.811.843c4.48 1.004 12.965 0 15.969-1.993c.503-.334.848-.998 1.074-1.874c-3.516 1.684-11.024 2.473-15.139 1.537"/><path fill="#65bc46" d="M127.08 202.983c-.51.477-.814.997-.847 1.556c-.002.034-.012.067-.012.101c0 10.478-1.502 14.975 2.993 15.971c4.115.936 11.623.147 15.139-1.537c.305-.146.591-.296.831-.456c.301-.201.544-.522.741-.932c1.445-3.006.287-11.01-.67-15.051c-.211-.889-.411-1.589-.572-1.999c-.413-1.022-3.594-1.285-7.203-.932c-4.014.393-8.549 1.55-10.4 3.279"/></svg>' };
+
+let currentEngine = "bing";
+const engineBtn = document.getElementById("engineBtn");
+const enginePanel = document.getElementById("enginePanel");
+const searchWrap = document.querySelector(".search-wrap");
+const searchForm = document.getElementById("searchForm");
+const searchInput = document.getElementById("searchInput");
+
+function engineLabel(eng){
+  if (document.documentElement.lang.toLowerCase().indexOf("zh") === 0){
+    return ENGINE_NAMES_ZH[eng.id] || eng.name;
+  }
+  return eng.name;
+}
+function currentEngineObj(){
+  return ENGINES.find(e => e.id === currentEngine) || ENGINES[0];
+}
+function updateEngineButton(){
+  engineBtn.innerHTML = '<span class="engine-icon">' + ENGINE_ICONS[currentEngine] + "</span>";
+}
+function renderEnginePanel(){
+  enginePanel.innerHTML = ENGINES.map(e =>
+    '<div class="engine-item' + (e.id === currentEngine ? " active" : "") + '" role="menuitemradio" aria-checked="' +
+      (e.id === currentEngine) + '" data-id="' + e.id + '">' +
+      '<span class="engine-icon">' + ENGINE_ICONS[e.id] + "</span>" +
+      "<span>" + engineLabel(e) + "</span>" +
+      '<span class="check">✓</span></div>'
+  ).join("");
+}
+function openEnginePanel(){
+  renderEnginePanel();
+  enginePanel.classList.add("show");
+  searchWrap.classList.add("panel-open");
+}
+function closeEnginePanel(){
+  enginePanel.classList.remove("show");
+  searchWrap.classList.remove("panel-open");
+}
+engineBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  if (enginePanel.classList.contains("show")) closeEnginePanel();
+  else openEnginePanel();
+});
+enginePanel.addEventListener("click", e => {
+  const item = e.target.closest(".engine-item");
+  if (!item) return;
+  currentEngine = item.dataset.id;
+  updateEngineButton();
+  closeEnginePanel();
+  searchInput.focus();
+});
+document.addEventListener("click", e => {
+  if (!searchWrap.contains(e.target)) closeEnginePanel();
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeEnginePanel();
+});
+searchForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const q = searchInput.value.trim();
+  if (!q){ searchInput.focus(); return; }
+  const eng = currentEngineObj();
+  window.open(eng.url.replace("%s", encodeURIComponent(q)), "_blank", "noopener");
+});
+
+/* ============ 应用语言 ============ */
 function setLanguage(lang, persist = true){
   const isAuto = (lang === "auto");
   const resolved = isAuto ? systemLanguage() : (I18N[lang] ? lang : "en");
   if (persist) localStorage.setItem("jh-lang", isAuto ? "auto" : resolved);
 
   document.documentElement.lang = resolved;
-  document.body.dir = RTL_LANGS.has(resolved) ? "rtl" : "ltr";
+  document.documentElement.dir = "ltr";
 
   const dict = I18N[resolved];
   document.querySelectorAll("[data-i18n]").forEach(el => {
     const key = el.getAttribute("data-i18n");
     if (dict[key] !== undefined) el.textContent = dict[key];
   });
-  document.getElementById("searchInput").placeholder = dict.searchPlaceholder;
-  document.title = "Jianye's Homepage — " + dict.tagline;
+  const brand = dict.brand || "Jianye's Homepage";
+  document.getElementById("brandName").textContent = brand;
+  searchInput.placeholder = dict.ph;
+  document.title = brand + " — " + dict.tagline;
 
   const sel = document.getElementById("langSelect");
   if (sel.options[0]) sel.options[0].textContent = AUTO_LABEL[resolved] || AUTO_LABEL.en;
   const target = isAuto ? "auto" : resolved;
   if (sel.value !== target) sel.value = target;
+
+  renderEnginePanel();
+  updateEngineButton();
   renderDate(resolved);
 }
 
-/* ============ Clock & localized date ============ */
-function tickClock(){
-  const now = new Date();
-  document.getElementById("clock").textContent =
-    String(now.getHours()).padStart(2,"0") + ":" + String(now.getMinutes()).padStart(2,"0");
-}
+/* ============ 时钟与本地化日期 ============ */
 function formatDatePattern(pattern, d, locale){
   const map = {
     yyyy: String(d.getFullYear()),
-    M: String(d.getMonth()+1),
+    M: String(d.getMonth() + 1),
     d: String(d.getDate())
   };
   let out = pattern.replace(/yyyy|M|d/g, m => map[m]);
-  // replace weekday token with localized weekday name
   if (/E+/.test(out)){
-    const wd = d.toLocaleDateString(locale, {weekday:"long"});
+    const wd = d.toLocaleDateString(locale, { weekday:"long" });
     out = out.replace(/E+/u, wd);
   }
   return out;
 }
 function renderDate(lang){
   const d = new Date();
-  const el = document.getElementById("date");
-  const pattern = I18N[lang] ? I18N[lang].dateFmt : I18N.en.dateFmt;
-  el.textContent = formatDatePattern(pattern, d, lang);
+  const dict = I18N[lang] || I18N.en;
+  document.getElementById("date").textContent = formatDatePattern(dict.dateFmt, d, lang);
+}
+function tickClock(){
+  const now = new Date();
+  const t = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+  const el = document.getElementById("clock");
+  if (el._time !== t){
+    el._time = t;
+    el.innerHTML = t.replace(":", '<span class="colon">:</span>');
+  }
 }
 
-/* ============ Init ============ */
+/* ============ 初始化 ============ */
 (function init(){
-  // build language dropdown: "Auto (system)" first, then the 20 languages
+  // 语言下拉：自动识别 + 20 种语言
   const sel = document.getElementById("langSelect");
   const autoOpt = document.createElement("option");
   autoOpt.value = "auto";
@@ -730,34 +980,33 @@ function renderDate(lang){
   sel.appendChild(autoOpt);
   Object.keys(I18N).forEach(code => {
     const opt = document.createElement("option");
-    opt.value = code; opt.textContent = LANG_NAMES[code] || code;
+    opt.value = code;
+    opt.textContent = LANG_NAMES[code] || code;
     sel.appendChild(opt);
   });
   sel.addEventListener("change", () => setLanguage(sel.value));
 
   setLanguage(detectLanguage(), false);
-  // if the OS language changes while "Auto" is selected, re-apply it
   window.addEventListener("languagechange", () => {
     if (document.getElementById("langSelect").value === "auto") setLanguage("auto", false);
   });
+
   tickClock();
   setInterval(tickClock, 1000);
   setInterval(() => renderDate(document.documentElement.lang), 30000);
+  searchInput.focus({ preventScroll:true });
 
-  // search (demo -> Bing)
-  document.getElementById("searchForm").addEventListener("submit", e => {
-    e.preventDefault();
-    const q = document.getElementById("searchInput").value.trim();
-    if (q) window.open("https://www.bing.com/search?q=" + encodeURIComponent(q), "_blank");
-  });
-  document.getElementById("searchInput").focus();
-
-  // reveal feature cards on scroll
+  // 功能卡片滚动浮现
   const io = new IntersectionObserver(entries => {
-    entries.forEach(en => { if (en.isIntersecting){ en.target.classList.add("visible"); io.unobserve(en.target); } });
-  }, {threshold:.15});
-  document.querySelectorAll(".feature-card").forEach((c,i) => {
-    c.style.transitionDelay = (i * 80) + "ms";
+    entries.forEach(en => {
+      if (en.isIntersecting){
+        en.target.classList.add("visible");
+        io.unobserve(en.target);
+      }
+    });
+  }, { threshold:.12 });
+  document.querySelectorAll(".feature-card").forEach((c, i) => {
+    c.style.transitionDelay = (i * 70) + "ms";
     io.observe(c);
   });
 })();
