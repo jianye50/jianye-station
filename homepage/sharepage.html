@@ -413,6 +413,10 @@
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
       <span data-i18n="download"></span>
     </a>
+    <a href="https://jianye.pages.dev/homepage/File/jianyes-homepage.zip" download>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></svg>
+      <span data-i18n="offlineZip">Offline package</span>
+    </a>
     <a href="https://jianye.pages.dev/homepage" target="_blank" rel="noopener">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20 15.3 15.3 0 0 1 0-20z"/></svg>
       <span data-i18n="tryWeb"></span>
@@ -440,7 +444,7 @@ const I18N = {
     f6t:"主题与 20 种语言", f6d:"明暗主题跟随系统，也可手动指定；界面支持 20 种语言，包括从右到左的阿拉伯语和希伯来语。",
     f7t:"右键即设置", f7d:"外观、语言、背景和壁纸调节都在右键菜单里，点一下就能切换，无需进入设置页。",
     f8t:"数据只留在本地", f8d:"自定义引擎、壁纸和偏好全部保存在本机浏览器中，无需账号，也不会上传到任何服务器。",
-    download:"下载插件", footerMade:"为高效浏览而生",
+    download:"下载插件", offlineZip:"离线扩展包", footerMade:"为高效浏览而生",
     dateFmt:"yyyy 年 M 月 d 日 · EEEE"
   },
   "zh-TW": {
@@ -459,7 +463,7 @@ const I18N = {
     f6t:"主題與 20 種語言", f6d:"明暗主題跟隨系統，也可手動指定；介面支援 20 種語言，包括從右到左的阿拉伯語和希伯來語。",
     f7t:"右鍵即設定", f7d:"外觀、語言、背景和桌布調節都在右鍵選單裡，點一下就能切換，無需進入設定頁。",
     f8t:"資料只留在本機", f8d:"自訂引擎、桌布和偏好全部保存在本機瀏覽器中，無需帳號，也不會上傳到任何伺服器。",
-    download:"下載擴充功能", footerMade:"為高效瀏覽而生",
+    download:"下載擴充功能", offlineZip:"離線擴充套件", footerMade:"為高效瀏覽而生",
     dateFmt:"yyyy 年 M 月 d 日 · EEEE"
   },
   "en": {
@@ -478,7 +482,7 @@ const I18N = {
     f6t:"Themes & 20 Languages", f6d:"Follows your system light or dark theme — or set it manually. The interface supports 20 languages, including right-to-left Arabic and Hebrew.",
     f7t:"Right-Click to Customize", f7d:"Theme, language, background and wallpaper adjustments all live in the right-click menu — switch in one click without opening a settings page.",
     f8t:"Data Stays on Your Device", f8d:"Custom engines, wallpapers and preferences are stored in your browser only. No account, nothing uploaded to any server.",
-    download:"Download", footerMade:"Built for focused browsing",
+    download:"Download", offlineZip:"Offline package", footerMade:"Built for focused browsing",
     dateFmt:"EEEE, MMMM d, yyyy"
   },
   "ja": {
@@ -496,7 +500,7 @@ const I18N = {
     f6t:"テーマと 20 言語", f6d:"システムのライト／ダークテーマに追従し、手動での切り替えも可能。右から左に書くアラビア語・ヘブライ語を含む 20 言語に対応します。",
     f7t:"右クリックで設定", f7d:"テーマ、言語、背景、壁紙の調整は右クリックメニューにまとまっています。設定画面を開かずにワンクリックで切り替えられます。",
     f8t:"データは端末内だけに", f8d:"カスタムエンジン、壁紙、設定はすべてブラウザ内に保存されます。アカウント不要で、サーバーへのアップロードもありません。",
-    download:"拡張機能をダウンロード", footerMade:"集中するブラウジングのために",
+    download:"拡張機能をダウンロード", offlineZip:"オフラインパッケージ", footerMade:"集中するブラウジングのために",
     dateFmt:"yyyy年M月d日 EEEE"
   },
   "ko": {
@@ -514,7 +518,7 @@ const I18N = {
     f6t:"테마와 20개 언어", f6d:"시스템의 라이트/다크 테마를 따르거나 직접 지정할 수 있습니다. 아랍어·히브리어의 RTL 배열을 포함해 20개 언어를 지원합니다.",
     f7t:"우클릭으로 설정", f7d:"테마, 언어, 배경, 배경 화면 조정이 모두 우클릭 메뉴에 있습니다. 설정 페이지를 열지 않고 클릭 한 번으로 전환하세요.",
     f8t:"데이터는 기기에만", f8d:"사용자 엔진, 배경 화면, 환경설정은 모두 브라우저에만 저장됩니다. 계정이 필요 없고 서버로 업로드되지 않습니다.",
-    download:"다운로드", footerMade:"집중력 있는 브라우징을 위해",
+    download:"다운로드", offlineZip:"오프라인 패키지", footerMade:"집중력 있는 브라우징을 위해",
     dateFmt:"yyyy년 M월 d일 EEEE"
   },
   "es": {
@@ -532,7 +536,7 @@ const I18N = {
     f6t:"Temas y 20 idiomas", f6d:"Sigue el tema claro u oscuro del sistema o elígelo manualmente. La interfaz admite 20 idiomas, incluidos el árabe y el hebreo (RTL).",
     f7t:"Ajustes con clic derecho", f7d:"Tema, idioma, fondo y ajustes del fondo de pantalla están en el menú contextual: cambia con un clic sin abrir una página de ajustes.",
     f8t:"Tus datos se quedan contigo", f8d:"Los motores personalizados, los fondos y las preferencias se guardan solo en tu navegador. Sin cuenta y sin subir nada a ningún servidor.",
-    download:"Descargar", footerMade:"Hecho para una navegación enfocada",
+    download:"Descargar", offlineZip:"Paquete sin conexión", footerMade:"Hecho para una navegación enfocada",
     dateFmt:"EEEE, d 'de' MMMM 'de' yyyy"
   },
   "fr": {
@@ -550,7 +554,7 @@ const I18N = {
     f6t:"Thèmes et 20 langues", f6d:"Suit le thème clair ou sombre du système, ou se règle manuellement. L'interface prend en charge 20 langues, dont l'arabe et l'hébreu (RTL).",
     f7t:"Réglages au clic droit", f7d:"Thème, langue, arrière-plan et réglages du fond d'écran sont dans le menu contextuel : changez d'un clic, sans ouvrir de page de réglages.",
     f8t:"Vos données restent locales", f8d:"Moteurs personnalisés, fonds d'écran et préférences sont stockés uniquement dans votre navigateur. Sans compte et sans envoi vers un serveur.",
-    download:"Télécharger", footerMade:"Conçu pour une navigation concentrée",
+    download:"Télécharger", offlineZip:"Package hors ligne", footerMade:"Conçu pour une navigation concentrée",
     dateFmt:"EEEE d MMMM yyyy"
   },
   "de": {
@@ -568,7 +572,7 @@ const I18N = {
     f6t:"Designs & 20 Sprachen", f6d:"Folgt dem hellen oder dunklen Systemdesign – oder manuell festlegen. Die Oberfläche unterstützt 20 Sprachen, inklusive RTL-Arabisch und -Hebräisch.",
     f7t:"Einstellungen per Rechtsklick", f7d:"Design, Sprache, Hintergrund und Bildanpassungen liegen im Rechtsklick-Menü — mit einem Klick wechseln, ohne Einstellungsseite.",
     f8t:"Daten bleiben bei dir", f8d:"Eigene Suchmaschinen, Hintergründe und Einstellungen werden nur im Browser gespeichert. Kein Konto, keine Uploads auf Server.",
-    download:"Herunterladen", footerMade:"Für fokussiertes Surfen gebaut",
+    download:"Herunterladen", offlineZip:"Offline-Paket", footerMade:"Für fokussiertes Surfen gebaut",
     dateFmt:"EEEE, d. MMMM yyyy"
   },
   "pt": {
@@ -586,7 +590,7 @@ const I18N = {
     f6t:"Temas e 20 idiomas", f6d:"Segue o tema claro ou escuro do sistema, ou defina manualmente. A interface oferece 20 idiomas, incluindo árabe e hebraico (RTL).",
     f7t:"Ajustes com clique direito", f7d:"Tema, idioma, fundo e ajustes do plano de fundo ficam no menu de contexto: troque com um clique, sem abrir uma página de configurações.",
     f8t:"Seus dados ficam com você", f8d:"Mecanismos personalizados, fundos e preferências são salvos apenas no navegador. Sem conta e sem envio para servidores.",
-    download:"Baixar", footerMade:"Feito para uma navegação focada",
+    download:"Baixar", offlineZip:"Pacote offline", footerMade:"Feito para uma navegação focada",
     dateFmt:"EEEE, d 'de' MMMM 'de' yyyy"
   },
   "it": {
@@ -604,7 +608,7 @@ const I18N = {
     f6t:"Temi e 20 lingue", f6d:"Segue il tema chiaro o scuro del sistema o scegli manualmente. L'interfaccia supporta 20 lingue, tra cui arabo ed ebraico (RTL).",
     f7t:"Impostazioni col tasto destro", f7d:"Tema, lingua, sfondo e regolazioni dello sfondo sono nel menu contestuale: cambia con un clic senza aprire una pagina di impostazioni.",
     f8t:"I tuoi dati restano locali", f8d:"Motori personalizzati, sfondi e preferenze sono salvati solo nel browser. Nessun account e nessun invio a server.",
-    download:"Scarica", footerMade:"Fatto per una navigazione mirata",
+    download:"Scarica", offlineZip:"Pacchetto offline", footerMade:"Fatto per una navigazione mirata",
     dateFmt:"EEEE d MMMM yyyy"
   },
   "ru": {
@@ -622,7 +626,7 @@ const I18N = {
     f6t:"Темы и 20 языков", f6d:"Следует светлой или тёмной теме системы либо задаётся вручную. Интерфейс поддерживает 20 языков, включая арабский и иврит (RTL).",
     f7t:"Настройки по правой кнопке", f7d:"Тема, язык, фон и настройки обоев собраны в контекстном меню — переключайтесь одним кликом без страницы настроек.",
     f8t:"Данные остаются у вас", f8d:"Свои поисковики, обои и настройки хранятся только в браузере. Без аккаунта и без отправки на серверы.",
-    download:"Скачать", footerMade:"Создано для сфокусированного сёрфинга",
+    download:"Скачать", offlineZip:"Офлайн-пакет", footerMade:"Создано для сфокусированного сёрфинга",
     dateFmt:"EEEE, d MMMM yyyy 'г'."
   },
   "ar": {
@@ -640,7 +644,7 @@ const I18N = {
     f6t:"المظهر و20 لغة", f6d:"يتبع مظهر النظام الفاتح أو الداكن أو يمكن ضبطه يدويًا. تدعم الواجهة 20 لغة، بما فيها العربية والعبرية (RTL).",
     f7t:"الإعدادات بنقرة يمين", f7d:"المظهر واللغة والخلفية وإعدادات الخلفية كلها في قائمة النقر بزر الفأرة الأيمن — بدّلها بنقرة دون فتح صفحة إعدادات.",
     f8t:"بياناتك تبقى لديك", f8d:"المحركات المخصصة والخلفيات والتفضيلات تُحفظ في متصفحك فقط. بلا حساب وبلا رفع إلى أي خادم.",
-    download:"تنزيل الإضافة", footerMade:"صُمم لتصفح مركّز",
+    download:"تنزيل الإضافة", offlineZip:"حزمة دون اتصال", footerMade:"صُمم لتصفح مركّز",
     dateFmt:"EEEE، d MMMM yyyy"
   },
   "hi": {
@@ -658,7 +662,7 @@ const I18N = {
     f6t:"थीम और 20 भाषाएँ", f6d:"सिस्टम की लाइट या डार्क थीम का पालन करता है, या मैन्युअल रूप से सेट करें। इंटरफ़ेस 20 भाषाओं का समर्थन करता है, जिनमें RTL अरबी और हिब्रू शामिल हैं।",
     f7t:"राइट-क्लिक से सेटिंग", f7d:"थीम, भाषा, बैकग्राउंड और वॉलपेपर समायोजन सब राइट-क्लिक मेनू में हैं — सेटिंग पेज खोले बिना एक क्लिक में बदलें।",
     f8t:"डेटा सिर्फ आपके पास", f8d:"कस्टम इंजन, वॉलपेपर और प्राथमिकताएँ केवल आपके ब्राउज़र में सहेजी जाती हैं। कोई खाता नहीं, किसी सर्वर पर अपलोड नहीं।",
-    download:"डाउनलोड करें", footerMade:"केंद्रित ब्राउज़िंग के लिए बना",
+    download:"डाउनलोड करें", offlineZip:"ऑफ़लाइन पैकेज", footerMade:"केंद्रित ब्राउज़िंग के लिए बना",
     dateFmt:"EEEE, d MMMM yyyy"
   },
   "th": {
@@ -676,7 +680,7 @@ const I18N = {
     f6t:"ธีมและ 20 ภาษา", f6d:"ตามธีมสว่างหรือมืดของระบบ หรือตั้งค่าเอง อินเทอร์เฟซรองรับ 20 ภาษา รวมถึงอาหรับและฮีบรูที่เป็น RTL",
     f7t:"ตั้งค่าด้วยคลิกขวา", f7d:"ธีม ภาษา พื้นหลัง และการปรับวอลเปเปอร์อยู่ในเมนูคลิกขวา สลับได้ในคลิกเดียวโดยไม่ต้องเปิดหน้าตั้งค่า",
     f8t:"ข้อมูลอยู่กับคุณ", f8d:"เครื่องมือค้นหาที่กำหนดเอง วอลเปเปอร์ และการตั้งค่าถูกเก็บไว้ในเบราว์เซอร์เท่านั้น ไม่ต้องมีบัญชีและไม่มีการอัปโหลดไปยังเซิร์ฟเวอร์",
-    download:"ดาวน์โหลด", footerMade:"สร้างมาเพื่อการท่องเว็บที่มีสมาธิ",
+    download:"ดาวน์โหลด", offlineZip:"แพ็กเกจออฟไลน์", footerMade:"สร้างมาเพื่อการท่องเว็บที่มีสมาธิ",
     dateFmt:"EEEEที่ d MMMM yyyy"
   },
   "vi": {
@@ -694,7 +698,7 @@ const I18N = {
     f6t:"Giao diện và 20 ngôn ngữ", f6d:"Theo giao diện sáng/tối của hệ thống hoặc tự đặt. Giao diện hỗ trợ 20 ngôn ngữ, gồm tiếng Ả Rập và Do Thái (RTL).",
     f7t:"Tùy chỉnh bằng chuột phải", f7d:"Giao diện, ngôn ngữ, nền và các điều chỉnh hình nền đều nằm trong menu chuột phải — đổi bằng một cú nhấp, không cần mở trang cài đặt.",
     f8t:"Dữ liệu ở lại với bạn", f8d:"Công cụ tùy chỉnh, hình nền và tùy chọn chỉ lưu trong trình duyệt của bạn. Không cần tài khoản và không tải lên máy chủ nào.",
-    download:"Tải xuống", footerMade:"Được tạo ra cho việc duyệt web tập trung",
+    download:"Tải xuống", offlineZip:"Gói ngoại tuyến", footerMade:"Được tạo ra cho việc duyệt web tập trung",
     dateFmt:"EEEE, ngày d tháng M năm yyyy"
   },
   "tr": {
@@ -712,7 +716,7 @@ const I18N = {
     f6t:"Temalar ve 20 dil", f6d:"Sistemin açık veya koyu temasını izler ya da elle ayarlanır. Arayüz, RTL Arapça ve İbranice dahil 20 dili destekler.",
     f7t:"Sağ tıkla ayarla", f7d:"Tema, dil, arka plan ve duvar kağıdı ayarları sağ tık menüsünde — ayarlar sayfasını açmadan tek tıkla değiştirin.",
     f8t:"Veriler sizde kalır", f8d:"Özel motorlar, duvar kağıtları ve tercihler yalnızca tarayıcınızda saklanır. Hesap yok, sunucuya yükleme yok.",
-    download:"İndir", footerMade:"Odaklanmış gezinme için yapıldı",
+    download:"İndir", offlineZip:"Çevrimdışı paket", footerMade:"Odaklanmış gezinme için yapıldı",
     dateFmt:"d MMMM yyyy EEEE"
   },
   "id": {
@@ -730,7 +734,7 @@ const I18N = {
     f6t:"Tema & 20 bahasa", f6d:"Mengikuti tema terang atau gelap sistem, atau atur sendiri. Antarmuka mendukung 20 bahasa, termasuk Arab dan Ibrani (RTL).",
     f7t:"Atur lewat klik kanan", f7d:"Tema, bahasa, latar, dan penyesuaian wallpaper ada di menu klik kanan — ganti dengan sekali klik tanpa membuka halaman pengaturan.",
     f8t:"Data tetap di perangkat Anda", f8d:"Mesin khusus, wallpaper, dan preferensi hanya disimpan di peramban Anda. Tanpa akun dan tanpa mengunggah ke server mana pun.",
-    download:"Unduh", footerMade:"Dibuat untuk penjelajahan yang fokus",
+    download:"Unduh", offlineZip:"Paket offline", footerMade:"Dibuat untuk penjelajahan yang fokus",
     dateFmt:"EEEE, d MMMM yyyy"
   },
   "nl": {
@@ -748,7 +752,7 @@ const I18N = {
     f6t:"Thema's & 20 talen", f6d:"Volgt het lichte of donkere systeemthema, of stel het handmatig in. De interface ondersteunt 20 talen, waaronder RTL-Arabisch en -Hebreeuws.",
     f7t:"Instellen met rechtsklik", f7d:"Thema, taal, achtergrond en wallpaper-instellingen staan in het rechtermuisknopmenu — wissel met één klik zonder een instellingenpagina.",
     f8t:"Je gegevens blijven bij jou", f8d:"Aangepaste zoekmachines, achtergronden en voorkeuren worden alleen in je browser opgeslagen. Geen account en geen uploads naar servers.",
-    download:"Downloaden", footerMade:"Gebouwd voor gericht browsen",
+    download:"Downloaden", offlineZip:"Offline pakket", footerMade:"Gebouwd voor gericht browsen",
     dateFmt:"EEEE d MMMM yyyy"
   },
   "pl": {
@@ -766,7 +770,7 @@ const I18N = {
     f6t:"Motywy i 20 języków", f6d:"Podąża za jasnym lub ciemnym motywem systemu albo ustawia się ręcznie. Interfejs obsługuje 20 języków, w tym arabski i hebrajski (RTL).",
     f7t:"Ustawienia pod prawym przyciskiem", f7d:"Motyw, język, tło i ustawienia tapety są w menu kontekstowym — zmieniaj jednym kliknięciem, bez otwierania strony ustawień.",
     f8t:"Dane zostają u Ciebie", f8d:"Własne wyszukiwarki, tapety i preferencje są przechowywane tylko w przeglądarce. Bez konta i bez wysyłania na serwery.",
-    download:"Pobierz", footerMade:"Stworzone dla skupionego przeglądania",
+    download:"Pobierz", offlineZip:"Pakiet offline", footerMade:"Stworzone dla skupionego przeglądania",
     dateFmt:"EEEE, d MMMM yyyy"
   },
   "uk": {
@@ -784,7 +788,7 @@ const I18N = {
     f6t:"Теми й 20 мов", f6d:"Дотримується світлої чи темної теми системи або задається вручну. Інтерфейс підтримує 20 мов, зокрема арабську та іврит (RTL).",
     f7t:"Налаштування правою кнопкою", f7d:"Тема, мова, тло й налаштування шпалер зібрані в контекстному меню — перемикайтеся одним кліком без сторінки налаштувань.",
     f8t:"Дані залишаються у вас", f8d:"Власні пошуковики, шпалери й налаштування зберігаються лише у браузері. Без акаунта й без надсилання на сервери.",
-    download:"Завантажити", footerMade:"Створено для зосередженого серфінгу",
+    download:"Завантажити", offlineZip:"Офлайн-пакет", footerMade:"Створено для зосередженого серфінгу",
     dateFmt:"EEEE, d MMMM yyyy"
   }
 };
