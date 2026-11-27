@@ -894,16 +894,8 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 }
 .lightbox.lb-busy .lb-spin{opacity:1;transition-delay:.15s}
 @keyframes lbSpin{to{transform:rotate(360deg)}}
-/* 放大查看：点图片在「适应屏幕」与「原始尺寸」之间切换。
-   放大后容器变成可滚动，按钮固定在视口上，随时能关掉 / 翻页。 */
-.lightbox img{cursor:zoom-in}
-.lightbox.lb-zoom{display:block;overflow:auto;padding:26px;text-align:center}
-.lightbox.lb-zoom img{
-  max-width:none;max-height:none;width:auto!important;height:auto!important;
-  margin:0;display:inline-block;cursor:zoom-out;animation:none;
-}
-.lightbox.lb-zoom .lb-btn,.lightbox.lb-zoom .lb-count{position:fixed}
-.lightbox.lb-zoom .lb-spin{position:fixed;left:50%;top:50%;margin:-18px 0 0 -18px}
+/* 灯箱里的图片只做「看」：点击不再放大成原始尺寸，保持适应屏幕的大小 */
+.lightbox img{cursor:default}
 /* 只有一张时没有「上一张 / 下一张」可翻，箭头直接藏掉 */
 .lightbox.lb-single .lb-prev,.lightbox.lb-single .lb-next{display:none}
 /* ---------- 灯箱：从缩略图原位长大（FLIP） ----------
@@ -7267,13 +7259,8 @@ $("#lbVideo").addEventListener("ended",()=>{
   if(lbMotionOn){ lbMotionOn=false; applyLbMotion(); }
 });
 $("#lightbox").addEventListener("click",e=>{if(e.target.id==="lightbox")closeLb()});
-/* 点图片 = 在「适应屏幕」与「原始尺寸」之间切换；放大后容器可滚动，
-   想看哪一块就拖/滚到哪一块（手机上直接双指缩放也行） */
-$("#lbImg").addEventListener("click",e=>{
-  if(!$("#lightbox").classList.contains("open"))return;
-  e.stopPropagation();
-  $("#lightbox").classList.toggle("lb-zoom");
-});
+/* 图片只用于查看：点击不再切换「原始尺寸」放大态（文章配图与相册共用这个灯箱） */
+
 /* 移动端：灯箱里左右滑动切上一张/下一张。
    垂直位移过大不触发；手势落在箭头/控制条/视频上时不抢（视频可能是在拖进度） */
 let lbTouch=null;
