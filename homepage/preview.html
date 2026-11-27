@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>节日彩蛋预览</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #1a1a1a; font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
+  #toolbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    padding: 8px 12px; background: rgba(20,20,20,0.92);
+    backdrop-filter: blur(8px); border-bottom: 1px solid #333;
+  }
+  #toolbar .title { color: #eee; font-size: 13px; margin-right: 6px; font-weight: 600; }
+  #toolbar button {
+    border: 1px solid #444; background: #2a2a2a; color: #eee;
+    padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    transition: transform .08s, box-shadow .15s; white-space: nowrap;
+  }
+  #toolbar button:hover { transform: translateY(-1px); }
+  #toolbar button.active { color: #fff; font-weight: 600; }
+  #toolbar button.reset { border-color: #666; background: #333; }
+  #frame-wrap { position: fixed; top: 0; left: 0; right: 0; bottom: 0; padding-top: 48px; }
+  iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
+  #hint { color: #888; font-size: 11px; margin-left: 8px; }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <span class="title">🎑 节日预览</span>
+  <button class="reset" id="btn-reset">恢复今天</button>
+  <span id="hint">点击切换，看主页里的节日动画效果</span>
+</div>
+<div id="frame-wrap">
+  <iframe id="home" src="index.html"></iframe>
+</div>
+<script>
+  const FEST = [
+    { name: '元旦',       emoji: '🎉', date: '2026-01-01', accent: '#ffb300' },
+    { name: '情人节',     emoji: '💕', date: '2026-02-14', accent: '#ff4d6d' },
+    { name: '愚人节',     emoji: '🃏', date: '2026-04-01', accent: '#9b59b6' },
+    { name: '劳动节',     emoji: '',   date: '2026-05-01', accent: '#e67e22' },
+    { name: '儿童节',     emoji: '🎈', date: '2026-06-01', accent: '#1abc9c' },
+    { name: '万圣节',     emoji: '🎃', date: '2026-10-31', accent: '#f39c12' },
+    { name: '圣诞节',     emoji: '🎄', date: '2026-12-25', accent: '#2ecc71' },
+    { name: '春节',       emoji: '🧧', date: '2026-02-17', accent: '#e74c3c' },
+    { name: '元宵节',     emoji: '🏮', date: '2026-03-03', accent: '#ff6b35' },
+    { name: '端午节',     emoji: '',   date: '2026-06-19', accent: '#27ae60' },
+    { name: '中秋节',     emoji: '🌕', date: '2026-09-25', accent: '#f1c40f' },
+    { name: '重阳节',     emoji: '',   date: '2026-10-18', accent: '#d35400' },
+  ];
+
+  const bar = document.getElementById('toolbar');
+  const frame = document.getElementById('home');
+  let win = null;
+
+  frame.addEventListener('load', () => {
+    win = frame.contentWindow;
+    bar.querySelectorAll('button.fest').forEach(b => b.disabled = false);
+  });
+
+  FEST.forEach(f => {
+    const b = document.createElement('button');
+    b.className = 'fest';
+    b.disabled = true;
+    b.textContent = (f.emoji ? f.emoji + ' ' : '') + f.name;
+    b.style.borderColor = f.accent;
+    b.title = f.date;
+    b.addEventListener('click', () => {
+      if (!win) return;
+      try {
+        win.refreshFestival(new Date(f.date + 'T12:00:00'));
+      } catch (e) { console.error(e); }
+      bar.querySelectorAll('button.fest').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      b.style.boxShadow = '0 0 0 2px ' + f.accent;
+      setTimeout(() => b.style.boxShadow = '', 400);
+    });
+    bar.appendChild(b);
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    if (!win) return;
+    win.refreshFestival(new Date());
+    bar.querySelectorAll('button.fest').forEach(x => { x.classList.remove('active'); x.style.boxShadow = ''; });
+  });
+</script>
+</body>
+</html>
