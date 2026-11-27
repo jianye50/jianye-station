@@ -2125,6 +2125,55 @@ html[lang="en"] .boot-tip .bt-en{display:inline}
   }
   .post-body a:hover{background-size:100% 1.5px}
 }
+
+/* ===================== 自定义右键菜单 =====================
+   取代浏览器默认右键菜单。面板沿用站点的液态玻璃材质，
+   从鼠标落点处轻轻展开；触屏长按不接管（保留系统原生的选字菜单）。 */
+.ctx-menu{
+  position:fixed;left:0;top:0;z-index:600;
+  min-width:188px;max-width:min(280px,calc(100% - 20px));
+  padding:6px;border-radius:14px;
+  /* 与顶部导航同一套液态玻璃材质：高透 + 折射感模糊 + 提亮 */
+  background:var(--glass-grad);
+  -webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
+  border:none;
+  /* 棱边与落影也照搬导航：外圈微光 + 顶部受光 + 底部收光 + 柔和投影 */
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.22),
+    inset 0 1.5px .5px -1px rgba(255,255,255,.65),
+    inset 0 -1px .5px -1px rgba(255,255,255,.28),
+    inset 0 12px 18px -12px rgba(255,255,255,.30),
+    0 2px 6px rgba(6,10,25,.10),
+    0 14px 38px rgba(6,10,25,.28);
+  font-size:13.5px;line-height:1.35;color:var(--text-1);
+  display:none;transform-origin:var(--ctx-origin,50% 0%);
+  user-select:none;-webkit-user-select:none;
+}
+.ctx-menu.show{display:block;animation:ctxIn .16s cubic-bezier(.2,.8,.2,1) both}
+@keyframes ctxIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.ctx-item{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:8px 10px;border-radius:9px;
+  color:inherit;font:inherit;text-align:left;
+  transition:background .14s,color .14s;
+}
+.ctx-item:hover,.ctx-item:focus-visible{background:rgba(255,255,255,.1);outline:none}
+.ctx-icon{width:16px;height:16px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--text-2);transition:color .14s}
+.ctx-item:hover .ctx-icon,.ctx-item:focus-visible .ctx-icon{color:#9dc2ff}
+.ctx-icon svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ctx-sep{height:1px;margin:5px 8px;background:rgba(255,255,255,.09)}
+/* 操作结果的小气泡：复制成功 / 剪贴板读不到等 */
+.ctx-toast{
+  position:fixed;left:50%;bottom:34px;z-index:610;pointer-events:none;
+  padding:8px 16px;border-radius:999px;
+  background:rgba(20,26,40,.92);border:1px solid var(--card-border);
+  box-shadow:var(--shadow);color:var(--text-1);
+  font-size:12.5px;letter-spacing:.01em;white-space:nowrap;
+  opacity:0;transform:translate(-50%,8px);
+  transition:opacity .18s ease,transform .22s cubic-bezier(.2,.8,.2,1);
+}
+.ctx-toast.on{opacity:1;transform:translate(-50%,0)}
 </style>
 </head>
 <body>
@@ -2280,6 +2329,10 @@ html[lang="en"] .boot-tip .bt-en{display:inline}
   <span class="lb-count" id="lbCount"></span>
 </div>
 
+<!-- 自定义右键菜单：内容按「有没有选中文字 / 是不是可分享页面」实时生成 -->
+<div class="ctx-menu" id="ctxMenu" role="menu" aria-hidden="true"></div>
+<div class="ctx-toast" id="ctxToast" role="status" aria-live="polite"></div>
+
 <script>
 /* =====================================================================
  *  鉴业の小站（Jianye）· 主脚本
@@ -2315,12 +2368,13 @@ let PROJECTS=[];         /* 由 loadProjects() 从 projects.txt 读入 */
    关于页的个人介绍卡整体隐藏，页面其余功能不受影响。 */
 let PROFILE=null;        /* 由 loadProfile() 从 profile.txt 读入 */
 let quietRender=false;   /* 配置晚到触发的「静默重绘」：不播首屏入场动画，避免又闪一下 */
-let SITE={name:null,icon:"",bg:"",bgSm:"",badge:null,desc:null,domain:"",footer:null,feed:"",feedEn:""};   /* 站点级配置：站名/图标/背景/背景小图/徽章/描述/域名/页脚/订阅源 */
+let SITE={name:null,icon:"",bg:"",bgSm:"",badge:null,desc:null,domain:"",footer:null,feed:"",feedEn:"",feedback:""};   /* 站点级配置：站名/图标/背景/背景小图/徽章/描述/域名/页脚/订阅源/反馈地址 */
 
 /* 解析 profile.txt 的行式配置（键名不区分大小写，中文英文键名都认） */
 function parseProfileText(text){
   const out={hello:null,tagline:null,bios:[],avatar:"",email:"",chips:[],socials:[],
-             name:null,icon:"",bg:"",bgSm:"",badge:null,desc:null,domain:"",footer:null,feed:"",feedEn:""};
+             name:null,icon:"",bg:"",bgSm:"",badge:null,desc:null,domain:"",footer:null,feed:"",feedEn:"",
+             feedback:""};
   String(text||"").split(/\r?\n/).forEach(raw=>{
     const line=raw.trim();
     if(!line||line.charAt(0)==="#")return;
@@ -2344,6 +2398,8 @@ function parseProfileText(text){
     else if(k==="页脚"||k==="版权"||k==="footer"||k==="copyright"){ if(p[1]||p[2])out.footer={zh:p[1]||p[2],en:p[2]||p[1]}; }
     else if(k==="订阅"||k==="rss"||k==="feed"||k==="订阅地址"){ if(p[1])out.feed=p[1]; }
     else if(k==="英文订阅"||k==="rss-en"||k==="feed-en"){ if(p[1])out.feedEn=p[1]; }
+    /* 右键菜单「反馈」的跳转地址：没配就留空，菜单里不出现这一项 */
+    else if(k==="反馈"||k==="feedback"){ if(p[1])out.feedback=p[1]; }
   });
   return out;
 }
@@ -2485,11 +2541,11 @@ async function loadProfile(){
   }catch(e){}
   if(!j)return;
   const valid=j.hello||j.tagline||j.bios.length||j.avatar||j.email||j.chips.length||j.socials.length
-             ||j.name||j.icon||j.bg||j.badge||j.desc||j.domain||j.footer||j.feed||j.feedEn;
+             ||j.name||j.icon||j.bg||j.badge||j.desc||j.domain||j.footer||j.feed||j.feedEn||j.feedback;
   if(!valid)return;
   PROFILE=j;
   /* 站点级字段单独存一份，回填到标题 / 图标 / meta / 首屏 / 页脚 */
-  SITE={name:j.name,icon:j.icon,bg:j.bg,bgSm:j.bgSm,badge:j.badge,desc:j.desc,domain:j.domain||"",footer:j.footer,feed:j.feed||"",feedEn:j.feedEn||""};
+  SITE={name:j.name,icon:j.icon,bg:j.bg,bgSm:j.bgSm,badge:j.badge,desc:j.desc,domain:j.domain||"",footer:j.footer,feed:j.feed||"",feedEn:j.feedEn||"",feedback:j.feedback||""};
   applySiteConfig();
   /* 配置到得比首屏晚、人已经停在博客页 → 只把 RSS 按钮补进搜索行，不重绘整页列表 */
   if(window.__JY_STARTED&&/^#\/blog/.test(location.hash)){
@@ -2937,6 +2993,7 @@ const I18N={
       steamAchFull:"满成就",
       steamProfile:"前往 Steam 主页 →"
     },
+    ctx:{refresh:"刷新",feedback:"反馈",copy:"复制",paste:"粘贴",selectAll:"全选",share:"分享此页",sharePost:"分享此文章",copied:"已复制",copiedLink:"链接已复制",pasteTip:"无法读取剪贴板，请按 Ctrl+V 粘贴"},
     footer:""   /* 页脚文案只来自 profile.txt 的「页脚」，读不到就整块隐藏 */
   },
   en:{
@@ -3011,6 +3068,7 @@ const I18N={
       steamAchFull:"100%",
       steamProfile:"Open Steam profile →"
     },
+    ctx:{refresh:"Refresh",feedback:"Feedback",copy:"Copy",paste:"Paste",selectAll:"Select all",share:"Share this page",sharePost:"Share this article",copied:"Copied",copiedLink:"Link copied",pasteTip:"Can't read the clipboard — press Ctrl+V"},
     footer:""
   }
 };
@@ -7332,6 +7390,204 @@ document.addEventListener("keydown",e=>{
     openLb((grid&&grid._items)||photos,Number(tile.dataset.idx),grid);
   }
 });
+
+/* ---------- 自定义右键菜单 ----------
+   取代浏览器默认菜单，内容跟着「当前有没有选中文字」走：
+     · 平常            → 刷新 + 反馈（反馈地址只认 profile.txt 的「反馈」，
+                          没配就整个不显示，只剩刷新）
+     · 选中文字        → 复制（在输入框里另有 粘贴 / 全选）
+     · 文章 / 子相册页 → 再多一项「分享」（优先系统分享，否则复制链接）
+   触屏长按不接管：手机上选字、复制仍然是系统那套，别抢它的活。 */
+const ctxMenu=$("#ctxMenu"),ctxToast=$("#ctxToast");
+let ctxState=null,ctxToastTid=0;
+const CTX_ICONS={
+  refresh:'<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>',
+  feedback:'<svg viewBox="0 0 24 24"><path d="M20 15a2 2 0 0 1-2 2H8l-4 3V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 12.5h5"/></svg>',
+  copy:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
+  paste:'<svg viewBox="0 0 24 24"><path d="M9 4h6v3H9z"/><path d="M15 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg>',
+  selectAll:'<svg viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M8 12h8"/></svg>',
+  share:'<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>'
+};
+function ctxItemHTML(act,label,icon){
+  return '<button type="button" class="ctx-item" role="menuitem" data-act="'+act+'">'+
+    '<span class="ctx-icon">'+icon+'</span><span>'+esc(label)+'</span></button>';
+}
+/* 右键落在输入框 / 可编辑区域里 → 返回那个元素（这些地方保留复制 / 粘贴 / 全选） */
+function ctxField(el){
+  if(!el||!el.closest)return null;
+  const f=el.closest("input,textarea,[contenteditable]:not([contenteditable='false'])");
+  if(!f)return null;
+  if(f.tagName==="INPUT"&&!/^(text|search|url|email|tel|password)$/i.test(f.type||"text"))return null;
+  return f;
+}
+/* 取当前选中的文字：输入框读 selectionStart/End，正文读 window.getSelection */
+function ctxSelection(field){
+  if(field&&typeof field.selectionStart==="number"){
+    const a=field.selectionStart||0,b=field.selectionEnd||0;
+    return b>a?String(field.value).slice(a,b):"";
+  }
+  try{ return String(window.getSelection?window.getSelection().toString():"") }catch(e){ return "" }
+}
+/* 可分享的目标：
+   · 右键落在博客列表的卡片上 → 直接分享这篇文章（不用先点进去）
+   · 当前正停在文章 / 子相册页 → 分享本页
+   其它页面（首页 / 列表页）不出现「分享」。返回 {url,title,card} 或 null */
+function ctxShareInfo(target){
+  const card=target&&target.closest?target.closest("a.post-card[href]"):null;
+  if(card){
+    try{
+      const u=new URL(card.getAttribute("href"),location.href);
+      u.search="";                                  /* 别把 ?h= 这类临时参数带进分享链接 */
+      const title=(card.querySelector(".post-title")||card).textContent.trim();
+      return {url:u.href,title:pageTitle(title,T().brand),card:true};
+    }catch(e){}
+  }
+  const parts=location.hash.replace(/^#\/?/,"").split("/").filter(Boolean);
+  if((parts[0]==="blog"||parts[0]==="gallery")&&parts[1])
+    return {url:location.href,title:document.title,card:false};
+  return null;
+}
+/* 反馈地址只认 profile.txt 的「反馈」。只允许 http(s) 或站内绝对路径，
+   防止配置文件里误写 javascript: 之类的东西 */
+function ctxFeedbackURL(){
+  const u=String((SITE&&SITE.feedback)||"").trim();
+  return /^(https?:)?\/\//i.test(u)||u.charAt(0)==="/"?u:"";
+}
+function ctxToastShow(msg){
+  if(!ctxToast)return;
+  ctxToast.textContent=msg;
+  ctxToast.classList.add("on");
+  clearTimeout(ctxToastTid);
+  ctxToastTid=setTimeout(()=>ctxToast.classList.remove("on"),1800);
+}
+/* 分享：先调系统分享面板；浏览器不支持 / 调用失败时才退回复制链接 */
+function ctxShareNow(info,t){
+  if(!info||!info.url)return;
+  const fallback=()=>copyText(info.url).then(()=>ctxToastShow(t.copiedLink));
+  if(!navigator.share){ fallback(); return; }
+  let ret;
+  try{ ret=navigator.share({title:info.title,url:info.url}); }
+  catch(e){ fallback(); return; }
+  Promise.resolve(ret).catch(err=>{
+    if(err&&err.name==="AbortError")return;          /* 用户自己取消：不打扰 */
+    fallback();
+  });
+}
+/* 贴着鼠标摆放；超出窗口就翻到另一侧，并让动画从落点处展开。
+   用 documentElement.clientWidth/clientHeight 而不是 innerWidth/innerHeight：
+   后者包含右侧滚动条，贴右边缘右键时菜单会钻到滚动条底下被挡住一截 */
+function ctxPlace(x,y){
+  const pad=10;
+  const vw=document.documentElement.clientWidth||window.innerWidth;
+  const vh=document.documentElement.clientHeight||window.innerHeight;
+  const mw=ctxMenu.offsetWidth,mh=ctxMenu.offsetHeight;
+  const left=Math.max(pad,Math.min(x,vw-mw-pad));
+  const top=Math.max(pad,Math.min(y,vh-mh-pad));
+  ctxMenu.style.left=left+"px";
+  ctxMenu.style.top=top+"px";
+  ctxMenu.style.setProperty("--ctx-origin",(x-left)+"px "+(y-top)+"px");
+}
+function ctxRender(field,text,share){
+  const t=T().ctx,rows=[];
+  if(text)rows.push(ctxItemHTML("copy",t.copy,CTX_ICONS.copy));
+  if(field){
+    rows.push(ctxItemHTML("paste",t.paste,CTX_ICONS.paste));
+    rows.push(ctxItemHTML("selectAll",t.selectAll,CTX_ICONS.selectAll));
+  }
+  let html=rows.join("");
+  if(html)html+='<div class="ctx-sep"></div>';
+  if(share)html+=ctxItemHTML("share",share.card?t.sharePost:t.share,CTX_ICONS.share);
+  html+=ctxItemHTML("refresh",t.refresh,CTX_ICONS.refresh);
+  if(ctxFeedbackURL())html+=ctxItemHTML("feedback",t.feedback,CTX_ICONS.feedback);
+  ctxMenu.innerHTML=html;
+}
+function ctxOpen(x,y,target){
+  const field=ctxField(target);
+  const text=ctxSelection(field);
+  const share=ctxShareInfo(target);
+  /* 选中内容 / 分享目标先存下来：点菜单按钮会抢走焦点，正文选区可能当场消失 */
+  ctxState={field,text,share,
+    start:field&&typeof field.selectionStart==="number"?field.selectionStart:0,
+    end:field&&typeof field.selectionEnd==="number"?field.selectionEnd:0};
+  ctxRender(field,text,share);
+  ctxMenu.classList.remove("show");
+  void ctxMenu.offsetWidth;          /* 连开两次也要重播入场动画 */
+  ctxMenu.classList.add("show");
+  ctxMenu.setAttribute("aria-hidden","false");
+  ctxPlace(x,y);
+}
+function ctxClose(){
+  if(!ctxMenu.classList.contains("show"))return;
+  ctxMenu.classList.remove("show");
+  ctxMenu.setAttribute("aria-hidden","true");
+  ctxState=null;
+}
+/* 把剪贴板文字插回输入框原来的位置（粘贴失败就提示按 Ctrl+V） */
+function ctxInsert(text,st){
+  const f=st&&st.field;
+  if(!f)return;
+  try{ f.focus(); }catch(e){}
+  if(typeof f.selectionStart==="number"){
+    try{ f.setRangeText(text,st.start,st.end,"end"); }
+    catch(e){ f.value=f.value.slice(0,st.start)+text+f.value.slice(st.end); }
+  }else{
+    try{ document.execCommand("insertText",false,text); }catch(e){}
+  }
+  try{ f.dispatchEvent(new Event("input",{bubbles:true})); }catch(e){}
+}
+ctxMenu.addEventListener("click",e=>{
+  const btn=e.target.closest(".ctx-item");
+  if(!btn)return;
+  e.preventDefault();e.stopPropagation();
+  const act=btn.dataset.act||"",st=ctxState,t=T().ctx;
+  if(act==="copy"){
+    ctxClose();
+    const text=(st&&st.text)||"";
+    if(text)copyText(text).then(()=>ctxToastShow(t.copied));
+    return;
+  }
+  if(act==="paste"){
+    ctxClose();
+    if(!navigator.clipboard||!navigator.clipboard.readText){ ctxToastShow(t.pasteTip); return; }
+    navigator.clipboard.readText().then(txt=>{ if(txt)ctxInsert(txt,st); })
+      .catch(()=>ctxToastShow(t.pasteTip));
+    return;
+  }
+  if(act==="selectAll"){
+    ctxClose();
+    const f=st&&st.field;
+    if(f&&f.select){ f.focus(); f.select(); }
+    else{ try{ document.execCommand("selectAll"); }catch(err){} }
+    return;
+  }
+  if(act==="share"){
+    ctxClose();
+    ctxShareNow(st&&st.share,t);
+    return;
+  }
+  if(act==="refresh"){ ctxClose(); location.reload(); return; }
+  if(act==="feedback"){
+    ctxClose();
+    const u=ctxFeedbackURL();
+    if(u)window.open(u,"_blank","noopener,noreferrer");
+  }
+});
+document.addEventListener("contextmenu",e=>{
+  if(window.__JY_REDIRECTING)return;
+  if(e.pointerType&&e.pointerType!=="mouse")return;   /* 触屏长按：保留系统选字菜单 */
+  if(e.button!==2)return;                             /* 键盘菜单键等：也交给系统 */
+  e.preventDefault();
+  ctxOpen(e.clientX,e.clientY,e.target);
+});
+/* 点空白 / 按 Esc / 滚动 / 切页都收起 */
+document.addEventListener("pointerdown",e=>{
+  if(ctxMenu.classList.contains("show")&&!ctxMenu.contains(e.target))ctxClose();
+},true);
+document.addEventListener("keydown",e=>{ if(e.key==="Escape")ctxClose(); });
+window.addEventListener("scroll",()=>ctxClose(),{passive:true});
+window.addEventListener("resize",()=>ctxClose());
+window.addEventListener("hashchange",()=>ctxClose());
+window.addEventListener("blur",()=>ctxClose());
 
 /* ---------- 启动 ----------
    思路就一句话：加载屏掀开之前，把该准备的全准备好，页面已经是最终样子。
