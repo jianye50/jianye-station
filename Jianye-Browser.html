@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鉴业浏览器 · Jianye Browser</title>
+<meta name="description" content="鉴业浏览器 —— 基于 PySide6 / QtWebEngine 的 WinUI 3 Fluent 设计多标签桌面浏览器。">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&family=Segoe+UI:wght@400;600&display=swap">
+<style>
+/* ================================================================
+   鉴业浏览器官网 · 设计令牌（对齐 WinUI 3 Fluent）
+   ================================================================ */
+:root{
+  --layer:        #202020;
+  --layer-alt:    #1a1a1a;
+  --card:         #2b2b2b;
+  --card-hover:   #333333;
+  --control:      #383838;
+  --stroke:       #484848;
+  --stroke-soft:  #3d3d3d;
+  --text:         #ffffff;
+  --text-secondary:#c8c8c8;
+  --text-caption: #9e9e9e;
+  --accent:       #4cc2ff;
+  --accent-2:     #0078d4;
+  --accent-soft:  rgba(76,194,255,.14);
+  --success:      #6ccb5f;
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --radius-l: 12px;
+  --shadow: 0 12px 40px rgba(0,0,0,.45);
+  --font: "Noto Sans SC","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);
+  background:var(--layer);
+  color:var(--text);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+
+/* ---------- 背景光斑 ---------- */
+.aurora{position:fixed;inset:0;z-index:-1;overflow:hidden}
+.aurora::before,.aurora::after{
+  content:"";position:absolute;width:60vw;height:60vw;border-radius:50%;
+  filter:blur(120px);opacity:.22;
+}
+.aurora::before{background:#0078d4;top:-25vw;left:-15vw}
+.aurora::after{background:#3a3ff0;bottom:-30vw;right:-15vw;opacity:.15}
+
+/* ---------- 顶部导航 ---------- */
+header{
+  position:sticky;top:0;z-index:50;
+  backdrop-filter:blur(18px);
+  background:rgba(32,32,32,.72);
+  border-bottom:1px solid var(--stroke-soft);
+}
+.nav{display:flex;align-items:center;gap:28px;height:60px}
+.brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:17px}
+.logo{
+  width:32px;height:32px;border-radius:8px;flex:none;
+  background:linear-gradient(135deg,#4cc2ff 0%,#0078d4 60%,#005a9e 100%);
+  display:grid;place-items:center;font-weight:900;font-size:17px;color:#fff;
+  box-shadow:0 4px 14px rgba(0,120,212,.4);
+}
+.nav-links{display:flex;gap:22px;font-size:14px;color:var(--text-secondary)}
+.nav-links a{transition:color .2s}
+.nav-links a:hover{color:var(--accent)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.badge{
+  font-size:12px;color:var(--accent);background:var(--accent-soft);
+  border:1px solid rgba(76,194,255,.3);padding:3px 10px;border-radius:999px;
+}
+
+/* ---------- 按钮 ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 22px;border-radius:var(--radius-s);font-size:15px;font-weight:600;
+  border:1px solid transparent;cursor:pointer;transition:all .2s;
+}
+.btn-primary{background:var(--accent-2);color:#fff}
+.btn-primary:hover{background:#1a86d8}
+.btn-ghost{background:transparent;border-color:var(--stroke);color:var(--text)}
+.btn-ghost:hover{background:var(--control)}
+
+/* ---------- Hero ---------- */
+.hero{padding:88px 0 70px}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--accent);
+  letter-spacing:.08em;text-transform:uppercase;margin-bottom:18px;
+}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--accent)}
+.hero h1{font-size:52px;font-weight:900;line-height:1.15;letter-spacing:-.01em;margin-bottom:20px}
+.hero h1 .grad{
+  background:linear-gradient(120deg,#4cc2ff,#0078d4);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero p.lead{font-size:18px;color:var(--text-secondary);max-width:480px;margin-bottom:32px}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap}
+.hero-meta{display:flex;gap:26px;margin-top:34px;font-size:13px;color:var(--text-caption)}
+.hero-meta b{display:block;font-size:18px;color:var(--text);font-weight:700}
+
+/* ---------- 浏览器窗口 mockup ---------- */
+.mockup{
+  background:var(--card);border:1px solid var(--stroke);border-radius:12px;
+  box-shadow:var(--shadow);overflow:hidden;transform:perspective(1200px) rotateY(-4deg);
+  transition:transform .4s;
+}
+.mockup:hover{transform:perspective(1200px) rotateY(0)}
+.m-titlebar{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#262626;border-bottom:1px solid var(--stroke-soft)}
+.m-tabs{display:flex;gap:6px;flex:1;overflow:hidden}
+.m-tab{
+  display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-secondary);
+  background:var(--control);padding:6px 12px;border-radius:6px 6px 0 0;max-width:150px;white-space:nowrap;
+}
+.m-tab.active{background:var(--card);color:#fff}
+.m-tab .dot{width:10px;height:10px;border-radius:3px;background:linear-gradient(135deg,#4cc2ff,#0078d4);flex:none}
+.m-winbtns{display:flex;gap:14px;color:var(--text-caption);font-size:13px}
+.m-addressbar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--stroke-soft)}
+.m-navbtns{display:flex;gap:14px;color:var(--text-caption)}
+.m-url{
+  flex:1;background:var(--control);border-radius:6px;padding:8px 12px;font-size:13px;
+  color:var(--text-secondary);display:flex;align-items:center;gap:8px;
+}
+.m-url .lock{color:var(--success);font-size:12px}
+.m-body{padding:22px;min-height:230px;background:linear-gradient(180deg,#222,#1e1e1e)}
+.m-page-title{font-size:20px;font-weight:700;margin-bottom:8px}
+.m-page-sub{font-size:13px;color:var(--text-caption);margin-bottom:18px}
+.m-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.m-card{background:var(--control);border:1px solid var(--stroke-soft);border-radius:8px;padding:14px}
+.m-card .ic{width:30px;height:30px;border-radius:7px;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent);margin-bottom:10px;font-size:15px}
+.m-card .t{font-size:13px;font-weight:600}
+.m-card .d{font-size:11.5px;color:var(--text-caption);margin-top:3px}
+
+/* ---------- 通用 Section ---------- */
+section{padding:80px 0}
+.sec-head{max-width:640px;margin-bottom:44px}
+.sec-head .eyebrow{margin-bottom:12px}
+.sec-head h2{font-size:34px;font-weight:800;margin-bottom:12px}
+.sec-head p{color:var(--text-secondary);font-size:16px}
+
+/* ---------- 特性网格 ---------- */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.feature{
+  background:var(--card);border:1px solid var(--stroke-soft);border-radius:var(--radius-l);
+  padding:26px;transition:all .25s;
+}
+.feature:hover{background:var(--card-hover);border-color:var(--stroke);transform:translateY(-3px)}
+.feature .ic{
+  width:42px;height:42px;border-radius:10px;background:var(--accent-soft);
+  display:grid;place-items:center;color:var(--accent);margin-bottom:18px;
+}
+.feature .ic svg{width:22px;height:22px}
+.feature h3{font-size:17px;font-weight:700;margin-bottom:8px}
+.feature p{font-size:14px;color:var(--text-secondary)}
+
+/* ---------- 设计亮点 ---------- */
+.design{background:var(--layer-alt);border-top:1px solid var(--stroke-soft);border-bottom:1px solid var(--stroke-soft)}
+.design-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:40px;align-items:center}
+.design-list{display:flex;flex-direction:column;gap:22px}
+.d-item{display:flex;gap:16px}
+.d-item .num{
+  flex:none;width:38px;height:38px;border-radius:9px;background:var(--control);
+  display:grid;place-items:center;font-weight:700;color:var(--accent);font-size:15px;
+}
+.d-item h4{font-size:16px;margin-bottom:4px}
+.d-item p{font-size:14px;color:var(--text-secondary)}
+.token-panel{
+  background:var(--card);border:1px solid var(--stroke-soft);border-radius:14px;padding:26px;
+}
+.token-panel h4{font-size:14px;color:var(--text-caption);margin-bottom:18px;font-weight:500}
+.swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.sw{border-radius:8px;overflow:hidden;border:1px solid var(--stroke-soft)}
+.sw .color{height:56px}
+.sw .label{font-size:11px;padding:7px 9px;color:var(--text-caption)}
+.token-row{display:flex;justify-content:space-between;font-size:13px;padding:9px 0;border-top:1px solid var(--stroke-soft)}
+.token-row span:last-child{color:var(--text-secondary)}
+
+/* ---------- 快捷键 ---------- */
+.kbd-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 32px}
+.kbd-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--stroke-soft)}
+.kbd-item .name{font-size:14.5px;color:var(--text-secondary)}
+.keys{display:flex;gap:6px}
+kbd{
+  font-family:var(--font);font-size:12px;color:var(--text);
+  background:var(--control);border:1px solid var(--stroke);border-bottom-width:2px;
+  border-radius:6px;padding:4px 9px;min-width:28px;text-align:center;
+}
+
+/* ---------- 技术 / 隐私 ---------- */
+.stack-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.stack{background:var(--card);border:1px solid var(--stroke-soft);border-radius:var(--radius-l);padding:24px;text-align:center}
+.stack .ic{font-size:26px;margin-bottom:12px}
+.stack h4{font-size:16px;margin-bottom:6px}
+.stack p{font-size:13px;color:var(--text-caption)}
+.privacy-note{
+  margin-top:32px;display:flex;gap:16px;background:var(--accent-soft);
+  border:1px solid rgba(76,194,255,.25);border-radius:var(--radius-l);padding:22px 26px;
+}
+.privacy-note .ic{color:var(--accent);flex:none}
+.privacy-note p{font-size:14.5px;color:var(--text-secondary)}
+.privacy-note b{color:var(--text)}
+
+/* ---------- CTA ---------- */
+.cta{text-align:center;padding:90px 0}
+.cta h2{font-size:36px;font-weight:900;margin-bottom:16px}
+.cta p{color:var(--text-secondary);margin-bottom:30px;font-size:16px}
+
+/* ---------- 页脚 ---------- */
+footer{border-top:1px solid var(--stroke-soft);padding:34px 0}
+.foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--text-caption)}
+.foot .links{display:flex;gap:20px}
+.foot a:hover{color:var(--accent)}
+
+/* ---------- 响应式 ---------- */
+@media(max-width:960px){
+  .hero{padding:56px 0}
+  .hero .wrap{grid-template-columns:1fr}
+  .hero h1{font-size:38px}
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .design-grid{grid-template-columns:1fr}
+  .stack-grid{grid-template-columns:repeat(2,1fr)}
+  .nav-links{display:none}
+}
+@media(max-width:600px){
+  .grid,.kbd-grid,.stack-grid{grid-template-columns:1fr}
+  .hero h1{font-size:30px}
+  section{padding:56px 0}
+}
+</style>
+</head>
+<body>
+<div class="aurora"></div>
+
+<!-- ==================== 导航 ==================== -->
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top">
+      <span class="logo">鉴</span>
+      <span>鉴业浏览器</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#features">核心功能</a>
+      <a href="#design">设计语言</a>
+      <a href="#shortcuts">快捷键</a>
+      <a href="#stack">技术栈</a>
+    </nav>
+    <div class="nav-right">
+      <span class="badge">v2.1.0</span>
+      <a class="btn btn-primary" href="#download" style="padding:8px 16px;font-size:14px">获取浏览器</a>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== Hero ==================== -->
+<section id="top" class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Jianye Browser · 桌面端</span>
+      <h1>为效率而生的<br><span class="grad">Fluent 设计浏览器</span></h1>
+      <p class="lead">鉴业浏览器基于 Python 与 PySide6 / QtWebEngine 构建，完整遵循 WinUI 3 Fluent Design 规范：无边框沉浸式窗口、内嵌标签栏、原生圆角与自动跟随的深浅色主题，把熟悉的桌面浏览体验装进一个轻量、清爽的窗口里。</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#download">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          立即了解
+        </a>
+        <a class="btn btn-ghost" href="https://jianye.pages.dev/homepage" target="_blank" rel="noopener">访问默认主页</a>
+      </div>
+      <div class="hero-meta">
+        <div><b>2.1.0</b>当前版本</div>
+        <div><b>Chromium</b>网页内核</div>
+        <div><b>WinUI 3</b>设计规范</div>
+        <div><b>本地存储</b>隐私优先</div>
+      </div>
+    </div>
+
+    <!-- 浏览器窗口示意 -->
+    <div class="mockup">
+      <div class="m-titlebar">
+        <div class="m-tabs">
+          <div class="m-tab active"><span class="dot"></span>鉴业浏览器 · 主页</div>
+          <div class="m-tab"><span class="dot"></span>新标签页</div>
+        </div>
+        <div class="m-winbtns"><span>—</span><span>□</span><span>✕</span></div>
+      </div>
+      <div class="m-addressbar">
+        <div class="m-navbtns"><span>←</span><span>→</span><span>⟳</span></div>
+        <div class="m-url"><span class="lock">🔒</span>jianye.pages.dev/homepage</div>
+      </div>
+      <div class="m-body">
+        <div class="m-page-title">欢迎使用鉴业浏览器</div>
+        <div class="m-page-sub">多标签 · 收藏夹 · 历史记录 · 下载管理</div>
+        <div class="m-cards">
+          <div class="m-card"><div class="ic">★</div><div class="t">收藏此页</div><div class="d">Ctrl+D 一键收藏</div></div>
+          <div class="m-card"><div class="ic">⇣</div><div class="t">下载内容</div><div class="d">实时进度跟踪</div></div>
+          <div class="m-card"><div class="ic">🕘</div><div class="t">历史记录</div><div class="d">关键词快速检索</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 核心功能 ==================== -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Core Features</span>
+      <h2>为日常浏览打磨的核心功能</h2>
+      <p>从标签管理到收藏、历史与下载，桌面浏览器该有的能力一应俱全，并围绕 Fluent 交互规范做了细致的体验打磨。</p>
+    </div>
+    <div class="grid">
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+        <h3>多标签页管理</h3>
+        <p>标签内嵌于标题栏，支持拖动排序、中键关闭、双击空白处新建；弹出窗口自动接管为新标签页并前台切换。</p>
+      </div>
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>智能地址栏</h3>
+        <p>自动识别输入内容是网址还是关键词：合法地址直达访问，其余交由默认搜索引擎检索，搜索引擎可自定义。</p>
+      </div>
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6L12 16.7 6.7 19.6l1.1-6L3.4 9.4l6-.8L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+        <h3>收藏夹管理</h3>
+        <p>一键收藏与取消，支持导入 / 导出 Netscape 书签 HTML 与 JSON，兼容 Chrome、Edge、Firefox，重复条目自动去重。</p>
+      </div>
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>浏览历史记录</h3>
+        <p>按日期分组展示，支持关键词检索；同一地址连续访问自动合并更新时间戳，默认最多保留 1000 条。</p>
+      </div>
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>下载中心</h3>
+        <p>独立下载面板展示实时进度与状态，可随时取消任务；下载历史本地留存，最多记录 200 条。</p>
+      </div>
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+        <h3>三态主题跟随</h3>
+        <p>支持跟随系统、浅色、深色三种模式；系统切换深浅色时自动感知并同步界面与网页底色，DevTools 一并跟随。</p>
+      </div>
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M4 8h16M4 16h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="17" cy="16" r="3" stroke="currentColor" stroke-width="1.8"/></svg></div>
+        <h3>页面缩放调节</h3>
+        <p>放大、缩小、一键重置 100%，缩放因子随配置持久保存，下次启动自动恢复到上次的阅读比例。</p>
+      </div>
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M8 3l4 4 4-4M8 21l4-4 4 4M3 8v8M21 8v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>开发者工具</h3>
+        <p>内置 Chromium 开发者工具，快捷键唤起；右键菜单支持在新标签页打开链接，方便调试与浏览。</p>
+      </div>
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M7 9h10M7 13h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>本地配置持久化</h3>
+        <p>主页、搜索引擎、缩放比例等偏好写入本地配置文件；收藏、历史、下载各自独立存储，结构清晰易管理。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 设计语言 ==================== -->
+<section id="design" class="design">
+  <div class="wrap">
+    <div class="design-grid">
+      <div>
+        <div class="sec-head" style="margin-bottom:28px">
+          <span class="eyebrow">Fluent Design</span>
+          <h2>完整对齐 WinUI 3 设计规范</h2>
+          <p>界面从窗口边框到控件圆角、图标与排版层级，均遵循 Microsoft Store 应用的 Fluent 设计语言。</p>
+        </div>
+        <div class="design-list">
+          <div class="d-item">
+            <div class="num">01</div>
+            <div>
+              <h4>无边框沉浸式窗口</h4>
+              <p>自定义标题栏承载标签页，Edge / Store 应用同款布局；标题栏双击最大化，窗口边缘可拖拽缩放。</p>
+            </div>
+          </div>
+          <div class="d-item">
+            <div class="num">02</div>
+            <div>
+              <h4>Win11 原生圆角与边框</h4>
+              <p>通过 DWM 窗口属性套用原生圆角与沉浸式深色边框，Win10 自动回退对应效果，视觉贴合系统。</p>
+            </div>
+          </div>
+          <div class="d-item">
+            <div class="num">03</div>
+            <div>
+              <h4>Fluent 图标与字体层级</h4>
+              <p>Segoe Fluent Icons 矢量图标（Win10 回退 MDL2 Assets），Segoe UI Variable 字体，14px 正文 / 12px 说明排版层级。</p>
+            </div>
+          </div>
+          <div class="d-item">
+            <div class="num">04</div>
+            <div>
+              <h4>分层颜色令牌体系</h4>
+              <p>Layer / Card / ControlFill / Text / Stroke / Accent 分层取色，控件 4px 圆角、浮出层 8px 圆角，规范统一。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="token-panel">
+        <h4>设计令牌预览</h4>
+        <div class="swatches">
+          <div class="sw"><div class="color" style="background:#202020"></div><div class="label">Layer 层底</div></div>
+          <div class="sw"><div class="color" style="background:#2b2b2b"></div><div class="label">Card 卡片</div></div>
+          <div class="sw"><div class="color" style="background:#383838"></div><div class="label">Control 控件</div></div>
+          <div class="sw"><div class="color" style="background:#0078d4"></div><div class="label">Accent 强调</div></div>
+        </div>
+        <div class="token-row"><span>标题栏高度</span><span>40 px</span></div>
+        <div class="token-row"><span>命令栏高度</span><span>48 px（WinUI 标准）</span></div>
+        <div class="token-row"><span>命令栏控件尺寸</span><span>32 × 32 px</span></div>
+        <div class="token-row"><span>窗口按钮宽度</span><span>46 × 32 px</span></div>
+        <div class="token-row"><span>浮出层圆角</span><span>8 px</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 快捷键 ==================== -->
+<section id="shortcuts">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Shortcuts</span>
+      <h2>熟悉的桌面快捷键</h2>
+      <p>沿用主流桌面浏览器的操作习惯，双手不离键盘即可完成标签、收藏、历史与工具的快速切换。</p>
+    </div>
+    <div class="kbd-grid">
+      <div class="kbd-item"><span class="name">新建标签页</span><div class="keys"><kbd>Ctrl</kbd><kbd>T</kbd></div></div>
+      <div class="kbd-item"><span class="name">关闭标签页</span><div class="keys"><kbd>Ctrl</kbd><kbd>W</kbd></div></div>
+      <div class="kbd-item"><span class="name">聚焦地址栏</span><div class="keys"><kbd>Ctrl</kbd><kbd>L</kbd></div></div>
+      <div class="kbd-item"><span class="name">刷新页面</span><div class="keys"><kbd>Ctrl</kbd><kbd>R</kbd></div></div>
+      <div class="kbd-item"><span class="name">切换标签页</span><div class="keys"><kbd>Ctrl</kbd><kbd>Tab</kbd></div></div>
+      <div class="kbd-item"><span class="name">反向切换标签</span><div class="keys"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Tab</kbd></div></div>
+      <div class="kbd-item"><span class="name">放大页面</span><div class="keys"><kbd>Ctrl</kbd><kbd>=</kbd></div></div>
+      <div class="kbd-item"><span class="name">缩小页面</span><div class="keys"><kbd>Ctrl</kbd><kbd>-</kbd></div></div>
+      <div class="kbd-item"><span class="name">重置缩放 100%</span><div class="keys"><kbd>Ctrl</kbd><kbd>0</kbd></div></div>
+      <div class="kbd-item"><span class="name">收藏此页</span><div class="keys"><kbd>Ctrl</kbd><kbd>D</kbd></div></div>
+      <div class="kbd-item"><span class="name">下载内容</span><div class="keys"><kbd>Ctrl</kbd><kbd>J</kbd></div></div>
+      <div class="kbd-item"><span class="name">历史记录</span><div class="keys"><kbd>Ctrl</kbd><kbd>H</kbd></div></div>
+      <div class="kbd-item"><span class="name">收藏夹面板</span><div class="keys"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>O</kbd></div></div>
+      <div class="kbd-item"><span class="name">开发者工具</span><div class="keys"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>J</kbd></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 技术栈 ==================== -->
+<section id="stack" class="design">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Under the Hood</span>
+      <h2>轻量、现代的技术构成</h2>
+      <p>基于成熟的 Qt Web 引擎技术栈，兼顾网页兼容性与桌面原生体验。</p>
+    </div>
+    <div class="stack-grid">
+      <div class="stack"><div class="ic">🐍</div><h4>Python 3</h4><p>清晰易维护的上层逻辑与界面编排</p></div>
+      <div class="stack"><div class="ic">🖼️</div><h4>PySide6</h4><p>Qt 官方 Python 绑定，构建原生桌面窗口</p></div>
+      <div class="stack"><div class="ic">🌐</div><h4>QtWebEngine</h4><p>Chromium 内核渲染，兼容现代网页标准</p></div>
+      <div class="stack"><div class="ic">🗂️</div><h4>JSON 本地存储</h4><p>配置 / 收藏 / 历史 / 下载独立文件保存</p></div>
+    </div>
+    <div class="privacy-note">
+      <div class="ic">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <p><b>数据留在本地。</b>收藏夹、浏览历史与下载记录均以 JSON 文件保存在本机用户目录（<code>~/.jianye_browser</code>），不强制联网、不上传个人浏览数据；书签可随时通过标准 HTML 格式导出迁移到其他浏览器。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== CTA ==================== -->
+<section id="download" class="cta">
+  <div class="wrap">
+    <h2>现在就体验鉴业浏览器</h2>
+    <p>一款贴合 Fluent 设计语言、开箱即用的轻量桌面浏览器，默认带你进入鉴业主页。</p>
+    <div class="hero-cta" style="justify-content:center">
+      <a class="btn btn-primary" href="https://1drv.ms/u/c/f07355ecebb8c114/IQATRXP59cEWQq5DnHuGUhYJAfHw7WTU5p-aHhzd02kpxkU?e=wHk4mu" target="_blank" rel="noopener">立即下载</a>
+      <a class="btn btn-ghost" href="https://jype.top" target="_blank" rel="noopener">个人小站</a>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 页脚 ==================== -->
+<footer>
+  <div class="wrap foot">
+    <div class="brand" style="font-size:15px">
+      <span class="logo" style="width:26px;height:26px;font-size:14px">鉴</span>
+      鉴业浏览器 <span style="color:var(--text-caption);font-weight:400">v2.1.0</span>
+    </div>
+    <div class="links">
+      <a href="https://jype.top" target="_blank" rel="noopener">主页</a>
+      <a href="#features">功能</a>
+      <a href="#shortcuts">快捷键</a>
+    </div>
+    <div>© 2026 鉴业 Jianye. 基于 PySide6 / QtWebEngine 构建。</div>
+  </div>
+</footer>
+
+</body>
+</html>
