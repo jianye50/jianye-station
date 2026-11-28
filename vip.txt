@@ -3,3 +3,4 @@
 # VIP类型 / 到期时间 / 备注 / 密码 全部打包藏在密文里，这里只露用户名和一串乱码
 # 用同目录的 vip-admin.html 生成新行粘贴到这里即可
 Jianye|JY1.RIhbinfwYYnER9Y8Rho8CEsmwh6gxvc4jZbYyMROwr_Uq0U-MVMvk4N5nnNcXd52hFqrwaLStnPjYKNezzaBvwaacqbkQ9b9453jL1R-g26bhGw-GXGb3mnOKqlGqk2NbqAVgkmQjfsgulURz5FsW_lF0MKvkjlaZ1zHjmBiQtH6vNP3T8b2sz71dU6Zp4JtVj6JjJo2Jw
+visitor|JY1.ZUtbinfwYYnER9Y8Rho8NEs0xROqlvk238TA0NdX2KrG6lcyMRFiicRhkCFcDYk1yBPn1KLEtjTteO9e2TbCsR7Wf_CqEYfr7turbBUslC_DzXZtXyDfjyue
