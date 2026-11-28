@@ -2142,8 +2142,15 @@ html[lang="en"] .boot-tip .bt-en{display:inline}
   display:none;transform-origin:var(--ctx-origin,50% 0%);
   user-select:none;-webkit-user-select:none;
 }
-.ctx-menu.show{display:block;animation:ctxIn .16s cubic-bezier(.2,.8,.2,1) both}
-@keyframes ctxIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.ctx-menu.show{display:block;animation:ctxIn .21s cubic-bezier(.16,1.12,.32,1) both;will-change:transform,opacity}
+/* 从鼠标落点弹出：轻微回弹 + 淡入；菜单项再错峰上浮一点，层次更轻快 */
+@keyframes ctxIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+.ctx-menu.show .ctx-item{animation:ctxItemIn .2s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--i,0) * 16ms)}
+@keyframes ctxItemIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* 收起时朝鼠标落点缩回去，动画播完才真正隐藏 */
+.ctx-menu.closing{display:block;pointer-events:none;animation:ctxOut .14s cubic-bezier(.4,0,.8,.25) both;will-change:transform,opacity}
+@keyframes ctxOut{from{opacity:1;transform:none}to{opacity:0;transform:scale(.92)}}
+@media (prefers-reduced-motion:reduce){.ctx-menu.show,.ctx-menu.show .ctx-item{animation:none}.ctx-menu.closing{display:none}}
 .ctx-item{
   display:flex;align-items:center;gap:10px;width:100%;
   padding:8px 10px;border-radius:9px;
@@ -7386,7 +7393,7 @@ document.addEventListener("keydown",e=>{
      · 文章 / 子相册页 → 再多一项「分享」（优先系统分享，否则复制链接）
    触屏长按不接管：手机上选字、复制仍然是系统那套，别抢它的活。 */
 const ctxMenu=$("#ctxMenu"),ctxToast=$("#ctxToast");
-let ctxState=null,ctxToastTid=0;
+let ctxState=null,ctxToastTid=0,ctxCloseTid=0;
 const CTX_ICONS={
   refresh:'<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>',
   feedback:'<svg viewBox="0 0 24 24"><path d="M20 15a2 2 0 0 1-2 2H8l-4 3V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 12.5h5"/></svg>',
@@ -7497,7 +7504,10 @@ function ctxOpen(x,y,target){
     start:field&&typeof field.selectionStart==="number"?field.selectionStart:0,
     end:field&&typeof field.selectionEnd==="number"?field.selectionEnd:0};
   ctxRender(field,text,share);
-  ctxMenu.classList.remove("show");
+  /* 给菜单项编号，CSS 据此做一点点错峰入场 */
+  ctxMenu.querySelectorAll(".ctx-item").forEach((el,i)=>el.style.setProperty("--i",i));
+  clearTimeout(ctxCloseTid);                 /* 上次还没缩完就又右键：直接接管 */
+  ctxMenu.classList.remove("show","closing");
   void ctxMenu.offsetWidth;          /* 连开两次也要重播入场动画 */
   ctxMenu.classList.add("show");
   ctxMenu.setAttribute("aria-hidden","false");
@@ -7506,8 +7516,13 @@ function ctxOpen(x,y,target){
 function ctxClose(){
   if(!ctxMenu.classList.contains("show"))return;
   ctxMenu.classList.remove("show");
+  ctxMenu.classList.add("closing");          /* 先缩回鼠标落点，再隐藏 */
   ctxMenu.setAttribute("aria-hidden","true");
   ctxState=null;
+  clearTimeout(ctxCloseTid);
+  ctxCloseTid=setTimeout(()=>{
+    if(!ctxMenu.classList.contains("show"))ctxMenu.classList.remove("closing");
+  },160);
 }
 /* 把剪贴板文字插回输入框原来的位置（粘贴失败就提示按 Ctrl+V） */
 function ctxInsert(text,st){
