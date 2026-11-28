@@ -937,9 +937,20 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
   width:min(500px,100%);
   max-height:min(72vh,600px);
   display:flex;flex-direction:column;
-  background:var(--card);border:1px solid var(--card-border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow),0 30px 80px rgba(0,0,0,.5);
+  /* 材质对齐「鉴业音乐」歌单面板：同款液态玻璃基体 + 棱边 */
+  background:var(--glass-grad);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  border:none;
+  border-radius:22px;
+  isolation:isolate;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.22),
+    inset 0 1.5px .5px -1px rgba(255,255,255,.65),
+    inset 0 -1px .5px -1px rgba(255,255,255,.28),
+    inset 0 12px 18px -12px rgba(255,255,255,.30),
+    0 2px 6px rgba(6,10,25,.10),
+    0 14px 38px rgba(6,10,25,.28);
   transform:translateY(16px) scale(.97);
   transition:transform .26s cubic-bezier(.22,1,.36,1);
   overflow:hidden;
@@ -9689,69 +9700,61 @@ input[type=range].mp-range::-moz-range-thumb{
 .acc-avatar-ico{width:19px;height:19px;fill:currentColor;display:block}
 /* 密文里带了头像网址：图片填满小圆；没有就保持人形图标，两种形态同样低调 */
 
-/* ---------- 账号 / VIP 弹窗 ---------- */
-.acc-mask{
-  position:fixed;inset:0;z-index:900;
-  display:grid;place-items:center;padding:20px;
-  background:rgba(4,6,12,.55);
-  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-  opacity:0;pointer-events:none;transition:opacity .28s ease;
+/* ---------- 账号 / VIP 面板（与「鉴业音乐」歌单面板同款：挂在导航栏正下方，
+   同一套液态玻璃材质；不用遮罩盖住页面，顶部导航保持可见可点） ---------- */
+.acc-wrap{
+  position:fixed;left:50%;top:72px;transform:translateX(-50%);
+  z-index:120;width:min(360px,calc(100vw - 24px));
+  pointer-events:none;
 }
-.acc-mask.open{opacity:1;pointer-events:auto}
-.acc-modal{
-  width:min(400px,100%);
-  border-radius:20px;
-  background:linear-gradient(120deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.07) 38%,rgba(255,255,255,.12) 62%,rgba(255,255,255,.05) 100%),#10131a;
-  backdrop-filter:blur(22px) saturate(200%) brightness(1.12);
-  -webkit-backdrop-filter:blur(22px) saturate(200%) brightness(1.12);
+.acc-panel{
+  pointer-events:auto;display:none;position:relative;
+  border-radius:22px;overflow:hidden;isolation:isolate;
+  /* 液态玻璃基体 + 棱边：与歌单面板逐字一致 */
+  background:var(--glass-grad);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  border:none;
   box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.18),
-    inset 0 1.5px .5px -1px rgba(255,255,255,.5),
-    0 24px 60px rgba(0,0,0,.55);
-  padding:26px 24px 24px;
-  position:relative;
-  transform:translateY(16px) scale(.97);
-  transition:transform .32s cubic-bezier(.2,.7,.2,1);
-  max-height:calc(100vh - 40px);overflow-y:auto;
+    inset 0 0 0 1px rgba(255,255,255,.22),
+    inset 0 1.5px .5px -1px rgba(255,255,255,.65),
+    inset 0 -1px .5px -1px rgba(255,255,255,.28),
+    inset 0 12px 18px -12px rgba(255,255,255,.30),
+    0 2px 6px rgba(6,10,25,.10),
+    0 14px 38px rgba(6,10,25,.28);
+  padding:18px 20px 20px;
+  max-height:min(560px,calc(100vh - 96px));overflow-y:auto;
 }
-.acc-mask.open .acc-modal{transform:translateY(0) scale(1)}
+/* 开合动画直接复用歌单面板的 mpIn / mpOut（从导航栏底下淡入坠下 / 原路缩回） */
+.acc-panel{transform-origin:top center}
+.acc-wrap.open .acc-panel{display:block;animation:mpIn .26s cubic-bezier(.2,.7,.2,1) both}
+.acc-wrap.closing .acc-panel{display:block;animation:mpOut .18s cubic-bezier(.4,0,.75,.2) both}
 .acc-close{
-  position:absolute;top:12px;right:12px;
-  width:32px;height:32px;border-radius:50%;
-  display:grid;place-items:center;color:var(--text-3);
-  transition:color .2s,background .2s;
-}
-.acc-close:hover{color:var(--text-1);background:rgba(255,255,255,.1)}
-.acc-close svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
-/* 头部：大头像 + 用户名 + 徽章 */
-.acc-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-.acc-big{
-  width:54px;height:54px;border-radius:18px;flex:none;overflow:hidden;
+  position:absolute;top:10px;right:10px;
+  width:30px;height:30px;border-radius:50%;
   display:grid;place-items:center;color:var(--text-2);
-  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
-  transition:background .3s;
+  transition:color .2s,background .2s,transform .2s;
 }
-.acc-big svg{width:26px;height:26px;fill:currentColor}
-.acc-big .acc-big-txt{
-  display:none;font-size:23px;font-weight:800;color:#fff;
-  width:100%;height:100%;place-items:center;
-  background:linear-gradient(135deg,#4d8dff,#b44dff);
-  text-shadow:0 1px 3px rgba(0,0,0,.25);
+.acc-close:hover{color:var(--text-1);background:rgba(255,255,255,.12)}
+.acc-close:active{transform:scale(.9)}
+.acc-close svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+/* 头部：圆头像 + 用户名 + 徽章（头像同样收敛成素色小圆） */
+.acc-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.acc-big{
+  width:46px;height:46px;border-radius:50%;flex:none;overflow:hidden;
+  display:grid;place-items:center;color:var(--text-2);
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
 }
-.acc-mask.logged .acc-big svg{display:none}
-.acc-mask.logged .acc-big .acc-big-txt{display:grid}
-.acc-mask.logged .acc-big{border-color:rgba(77,141,255,.4);box-shadow:0 6px 18px rgba(77,141,255,.3)}
-/* 密文里带了头像网址：显示图片头像（规则放在 logged 之后，同特异性后者生效） */
+.acc-big svg{width:22px;height:22px;fill:currentColor}
+/* 密文里带了头像网址：显示图片头像（面板里与导航栏同步） */
 .acc-avatar .acc-img,.acc-big .acc-img{
   display:none;width:100%;height:100%;
   object-fit:cover;object-position:center;
 }
 .acc-nav-btn.has-img .acc-avatar .acc-img{display:block}
-.acc-nav-btn.has-img .acc-avatar-txt,.acc-nav-btn.has-img .acc-avatar-ico{display:none}
-.acc-nav-btn.has-img .acc-avatar{box-shadow:0 0 0 2px rgba(77,141,255,.45)}
-.acc-mask.has-img .acc-big .acc-img{display:block}
-.acc-mask.has-img .acc-big svg,.acc-mask.has-img .acc-big .acc-big-txt{display:none}
-.acc-mask.has-img .acc-big{border-color:rgba(77,141,255,.4);box-shadow:0 6px 18px rgba(77,141,255,.3)}
+.acc-nav-btn.has-img .acc-avatar-ico{display:none}
+.acc-wrap.has-img .acc-big .acc-img{display:block}
+.acc-wrap.has-img .acc-big svg{display:none}
 .acc-name{font-size:17px;font-weight:800;line-height:1.3}
 .acc-sub{font-size:12px;color:var(--text-3);margin-top:2px}
 .acc-badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}
@@ -9835,8 +9838,8 @@ input[type=range].mp-range::-moz-range-thumb{
 }
 /* 登录后的信息区 */
 .acc-info{display:none}
-.acc-mask.logged .acc-form{display:none}
-.acc-mask.logged .acc-info{display:block}
+.acc-wrap.logged .acc-form{display:none}
+.acc-wrap.logged .acc-info{display:block}
 .acc-rows{border-radius:14px;overflow:hidden;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.07)}
 .acc-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:11px 14px;font-size:13.5px}
 .acc-row+.acc-row{border-top:1px solid rgba(255,255,255,.06)}
@@ -9867,24 +9870,24 @@ input[type=range].mp-range::-moz-range-thumb{
 }
 .acc-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media (prefers-reduced-motion:reduce){
-  .acc-mask,.acc-modal,.acc-btn,.acc-btn::before{animation:none!important;transition:none!important}
+  .acc-wrap.open .acc-panel,.acc-wrap.closing .acc-panel,.acc-btn,.acc-btn::before{animation:none!important}
+  .acc-btn{transition:none!important}
 }
 @media (max-width:640px){
-  .acc-modal{padding:22px 18px 20px}
+  .acc-panel{padding:16px 16px 18px}
 }
 </style>
 
-<!-- 账号 / VIP 弹窗：放在 body 下而不是 <nav> 里，原因同「记录」二级菜单——
-     导航条自带 backdrop-filter，嵌进去的磨砂就废了 -->
-<div class="acc-mask" id="accMask" aria-hidden="true">
-  <div class="acc-modal" id="accModal" role="dialog" aria-modal="true" aria-labelledby="accTitle">
+<!-- 账号 / VIP 面板：与歌单面板同款，挂在导航栏正下方、放在 body 下而不是 <nav> 里——
+     导航条自带 backdrop-filter，嵌进去的磨砂就废了。不用遮罩盖页面，顶部导航保持可见可点 -->
+<div class="acc-wrap" id="accMask" aria-hidden="true">
+  <div class="acc-panel" id="accModal" role="dialog" aria-modal="false" aria-labelledby="accTitle">
     <button class="acc-close" id="accClose" type="button" aria-label="关闭">
       <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button>
     <div class="acc-head">
-      <div class="acc-big" id="accBig" aria-hidden="true">
+      <div class="acc-big" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-        <span class="acc-big-txt"></span>
         <img class="acc-img" id="accBigImg" alt="">
       </div>
       <div style="min-width:0">
@@ -10027,9 +10030,8 @@ function applyAccLang(){
 
 /* ---------- 元素 ---------- */
 var $=function(id){ return document.getElementById(id); };
-var mask=$("accMask"), accBtn=$("accBtn"), avatar=$("accAvatar"),
-    avatarTxt=avatar.querySelector(".acc-avatar-txt"),
-    vipDot=$("accVipDot"), bigTxt=document.querySelector(".acc-big-txt"),
+var mask=$("accMask"), accBtn=$("accBtn"),
+    navImg=$("accNavImg"), bigImg=$("accBigImg"),
     form=$("accForm"), errEl=$("accErr"), toastEl=$("accToast");
 var toastTimer=0;
 function toast(msg){
@@ -10110,28 +10112,25 @@ function renderInfo(d){
   $("accNote").innerHTML=d.n?'<span class="nk">'+t.note+'</span>'+esc(d.n):"";
 }
 function paintAvatar(u, av){
-  var ch=(u||"").trim().charAt(0).toUpperCase();
-  avatarTxt.textContent=ch||"?";
-  bigTxt.textContent=ch||"?";
-  /* 密文里带头像网址（a 字段）→ 显示图片头像；没有 → 首字渐变头像 */
+  /* 密文里带头像网址（a 字段）→ 导航栏小圆与面板头像都显示图片；
+     没有 → 保持同款低调小圆里的人形图标，不搞渐变首字、不亮角标 */
   var hasImg=!!av;
-  var navImg=$("accNavImg"), bigImg=$("accBigImg");
   if(navImg){ if(hasImg)navImg.src=av; }
   if(bigImg){ if(hasImg)bigImg.src=av; }
   accBtn.classList.toggle("has-img",hasImg);
   mask.classList.toggle("has-img",hasImg);
-  accBtn.classList.toggle("logged-in",!!u);
 }
 
-/* ---------- 弹窗开关 ---------- */
-var lastFocus=null;
+/* ---------- 面板开关（歌单面板同款：开=坠下淡入，关=先播退场动画再隐藏） ---------- */
+var lastFocus=null, accCloseTimer=0;
 function openModal(){
   applyAccLang();
   lastFocus=document.activeElement;
+  clearTimeout(accCloseTimer);
+  mask.classList.remove("closing");
   mask.classList.add("open");
   mask.setAttribute("aria-hidden","false");
   accBtn.setAttribute("aria-expanded","true");
-  document.body.style.overflow="hidden";
   /* 已存过登录态 → 静默重验证一次直接进信息页；否则进登录页 */
   var saved=readSession();
   if(saved&&saved.u&&saved.p){
@@ -10142,15 +10141,23 @@ function openModal(){
   }
 }
 function closeModal(){
+  if(!mask.classList.contains("open")) return;
   mask.classList.remove("open");
+  mask.classList.add("closing");        /* 先撑住 DOM 播完退场动画（同歌单面板做法） */
   mask.setAttribute("aria-hidden","true");
   accBtn.setAttribute("aria-expanded","false");
-  document.body.style.overflow="";
+  accCloseTimer=setTimeout(function(){ mask.classList.remove("closing"); },200);
   if(lastFocus&&lastFocus.focus){ try{ lastFocus.focus(); }catch(e){} }
 }
 accBtn.addEventListener("click",function(){ mask.classList.contains("open")?closeModal():openModal(); });
 $("accClose").addEventListener("click",closeModal);
-mask.addEventListener("click",function(e){ if(e.target===mask) closeModal(); });
+/* 点面板外面就收起（面板用 pointer-events:none 的壳定位，点不到壳本身就是点外面） */
+document.addEventListener("click",function(e){
+  if(!mask.classList.contains("open")) return;
+  if(e.target===accBtn||accBtn.contains(e.target)) return;
+  if(mask.contains(e.target)) return;
+  closeModal();
+});
 document.addEventListener("keydown",function(e){
   if(e.key==="Escape"&&mask.classList.contains("open")) closeModal();
 });
@@ -10183,13 +10190,11 @@ function enter(u,p,silent){
     paintAvatar(d.u,d.a);
     renderInfo(d);
     setLogged(true);
-    vipDot.hidden=!judgeVIP(d).active;
     if(!silent) toast(T().welcome+d.u);
   },function(err){
     btn.disabled=false; btn.textContent=old;
     writeSession(null);
     paintAvatar("","");
-    vipDot.hidden=true;
     setLogged(false);
     if(err&&(err.message==="cfg"||err.name==="TypeError")){
       errEl.textContent=T().cfgFail;         /* 环境问题如实提示 */
@@ -10215,7 +10220,6 @@ $("accLogout").addEventListener("click",function(){
   currentData=null;
   writeSession(null);
   paintAvatar("","");
-  vipDot.hidden=true;
   setLogged(false);
   $("accTitle").textContent=T().accTitle;
   $("accSub").textContent=T().loginSub;
@@ -10239,7 +10243,6 @@ $("accEye").addEventListener("click",function(){
   verify(s.u,s.p).then(function(d){
     currentData=d;
     paintAvatar(d.u,d.a);
-    vipDot.hidden=!judgeVIP(d).active;
   },function(){ writeSession(null); });
 })();
 })();
