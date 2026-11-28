@@ -10195,7 +10195,7 @@ function enter(u,p,silent){
   verify(u,p).then(function(d){
     currentData=d;
     writeSession({u:u,p:p});
-    paintAvatar(d.u);
+    paintAvatar(d.u,d.a);
     renderInfo(d);
     setLogged(true);
     vipDot.hidden=!judgeVIP(d).active;
@@ -10203,7 +10203,7 @@ function enter(u,p,silent){
     if(!silent) toast(T().welcome+d.u);
   },function(err){
     writeSession(null);
-    paintAvatar("");
+    paintAvatar("","");
     vipDot.hidden=true;
     setLogged(false);
     btn.disabled=false; btn.textContent=old;
@@ -10230,7 +10230,7 @@ form.addEventListener("submit",function(e){
 $("accLogout").addEventListener("click",function(){
   currentData=null;
   writeSession(null);
-  paintAvatar("");
+  paintAvatar("","");
   vipDot.hidden=true;
   setLogged(false);
   $("accTitle").textContent=T().accTitle;
@@ -10254,7 +10254,7 @@ $("accEye").addEventListener("click",function(){
   if(!(s&&s.u&&s.p)) return;
   verify(s.u,s.p).then(function(d){
     currentData=d;
-    paintAvatar(d.u);
+    paintAvatar(d.u,d.a);
     vipDot.hidden=!judgeVIP(d).active;
   },function(){ writeSession(null); });
 })();

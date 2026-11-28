@@ -201,6 +201,12 @@ h1{font-size:clamp(24px,5vw,32px);font-weight:800;margin-bottom:8px}
     </div>
 
     <div class="field">
+      <label for="fAvatar">头像网址 <span style="color:var(--text-3);font-weight:400">（可选，存进密文）</span></label>
+      <input class="inp" id="fAvatar" type="url" placeholder="https://…/avatar.jpg（留空则显示用户名首字）">
+      <div class="hint">推荐图床直链，正方形图显示效果最佳；主站登录后自动显示，没有就退回首字头像</div>
+    </div>
+
+    <div class="field">
       <label for="fNote">备注 <span style="color:var(--text-3);font-weight:400">（可选，随密文隐藏存放）</span></label>
       <input class="inp" id="fNote" type="text" maxlength="200" placeholder="如：内部测试账号 / 2026 年度会员">
     </div>
@@ -308,7 +314,7 @@ $("genForm").addEventListener("submit",function(e){
     exp=fExp.value;
     if(!exp){ toast("限时 VIP 请选择到期日期"); fExp.focus(); return; }
   }
-  var cipher=encrypt({v:1,u:u,p:p,t:type,e:exp,n:$("fNote").value.trim(),i:Date.now()},JY_SECRET);
+  var cipher=encrypt({v:1,u:u,p:p,t:type,e:exp,a:$("fAvatar").value.trim(),n:$("fNote").value.trim(),i:Date.now()},JY_SECRET);
   var line=u+"|"+cipher;
   $("outLine").innerHTML='<span class="u">'+
     u.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+
