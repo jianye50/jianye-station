@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户VIP状态查询｜Jianye</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui, -apple-system, sans-serif;}
+body{
+    background:#12141a;
+    color:#e8e8ed;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
+.wrap{
+    width:100%;
+    max-width:480px;
+    background:#1b1e27;
+    border-radius:14px;
+    padding:36px 30px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.35);
+}
+.title{
+    text-align:center;
+    font-size:24px;
+    margin-bottom:28px;
+    color:#ffffff;
+}
+.form-item{
+    margin-bottom:20px;
+}
+label{
+    display:block;
+    margin-bottom:8px;
+    font-size:14px;
+    color:#b0b4c0;
+}
+input[type="text"]{
+    width:100%;
+    padding:13px 16px;
+    background:#272b36;
+    border:1px solid #333846;
+    border-radius:8px;
+    color:#fff;
+    font-size:16px;
+    outline:none;
+}
+input:focus{
+    border-color:#4080ff;
+}
+button{
+    width:100%;
+    padding:13px;
+    background:#2563eb;
+    border:none;
+    border-radius:8px;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    transition:0.2s;
+}
+button:hover{
+    background:#1d4ed8;
+}
+.msg-error{
+    margin-top:16px;
+    padding:12px;
+    background:#381e23;
+    border-radius:8px;
+    color:#f8a0a8;
+}
+.card-info{
+    margin-top:22px;
+    padding:20px;
+    background:#222733;
+    border-radius:10px;
+}
+.card-info h4{
+    font-size:18px;
+    margin-bottom:14px;
+}
+.info-row{
+    display:flex;
+    justify-content:space-between;
+    padding:10px 0;
+    border-bottom:1px solid #2e3442;
+}
+.info-row:last-child{
+    border-bottom:none;
+}
+.label-text{
+    color:#a1a6b8;
+}
+.vip-tag{
+    display:inline-block;
+    padding:3px 10px;
+    border-radius:4px;
+    background:#0e422e;
+    color:#4ade80;
+}
+.normal-tag{
+    background:#2c313f;
+    color:#b0b4c0;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <h2 class="title">用户VIP状态查询</h2>
+    <div class="form-item">
+        <label>输入用户名称</label>
+        <input type="text" id="username" placeholder="请输入要查询的用户名">
+    </div>
+    <button onclick="searchUser()">查询用户信息</button>
+
+    <div id="errBox" class="msg-error" style="display:none;"></div>
+    <div id="resultBox" class="card-info" style="display:none;">
+        <h4>查询结果</h4>
+        <div class="info-row">
+            <span class="label-text">用户名</span>
+            <span id="r-name"></span>
+        </div>
+        <div class="info-row">
+            <span class="label-text">VIP状态</span>
+            <span id="r-vip"></span>
+        </div>
+        <div class="info-row">
+            <span class="label-text">VIP到期时间</span>
+            <span id="r-expire"></span>
+        </div>
+        <div class="info-row">
+            <span class="label-text">备注</span>
+            <span id="r-note"></span>
+        </div>
+    </div>
+</div>
+
+<script>
+async function searchUser(){
+    const nameInput = document.getElementById('username').value.trim();
+    const errBox = document.getElementById('errBox');
+    const resultBox = document.getElementById('resultBox');
+    errBox.style.display = 'none';
+    resultBox.style.display = 'none';
+
+    if(!nameInput){
+        errBox.innerText = "请输入用户名称";
+        errBox.style.display = 'block';
+        return;
+    }
+
+    // 读取同目录 users.txt
+    const res = await fetch('./users.txt');
+    const text = await res.text();
+    const lines = text.split('\n');
+    let target = null;
+
+    for(let line of lines){
+        line = line.trim();
+        if(!line) continue;
+        const arr = line.split('|');
+        const uName = arr[0].trim();
+        if(uName === nameInput){
+            target = {
+                username: arr[0].trim(),
+                vip: arr[1]?.trim() || '普通用户',
+                expire: arr[2]?.trim() || '无',
+                note: arr[3]?.trim() || '无'
+            };
+            break;
+        }
+    }
+
+    if(!target){
+        errBox.innerText = "未找到该用户";
+        errBox.style.display = 'block';
+        return;
+    }
+
+    // 填充结果
+    document.getElementById('r-name').innerText = target.username;
+    if(target.vip === 'VIP'){
+        document.getElementById('r-vip').innerHTML = '<span class="vip-tag">VIP会员</span>';
+    }else{
+        document.getElementById('r-vip').innerHTML = '<span class="normal-tag">普通用户</span>';
+    }
+    document.getElementById('r-expire').innerText = target.expire;
+    document.getElementById('r-note').innerText = target.note;
+    resultBox.style.display = 'block';
+}
+</script>
+</body>
+</html>
+<!-- （注：内容由AI生成） -->
