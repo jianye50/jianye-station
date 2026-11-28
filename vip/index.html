@@ -29,9 +29,7 @@ body{
     margin-bottom:28px;
     color:#ffffff;
 }
-.form-item{
-    margin-bottom:20px;
-}
+.form-item{margin-bottom:20px;}
 label{
     display:block;
     margin-bottom:8px;
@@ -48,9 +46,7 @@ input[type="text"]{
     font-size:16px;
     outline:none;
 }
-input:focus{
-    border-color:#4080ff;
-}
+input:focus{border-color:#4080ff;}
 button{
     width:100%;
     padding:13px;
@@ -62,9 +58,7 @@ button{
     cursor:pointer;
     transition:0.2s;
 }
-button:hover{
-    background:#1d4ed8;
-}
+button:hover{background:#1d4ed8;}
 .msg-error{
     margin-top:16px;
     padding:12px;
@@ -88,12 +82,8 @@ button:hover{
     padding:10px 0;
     border-bottom:1px solid #2e3442;
 }
-.info-row:last-child{
-    border-bottom:none;
-}
-.label-text{
-    color:#a1a6b8;
-}
+.info-row:last-child{border-bottom:none;}
+.label-text{color:#a1a6b8;}
 .vip-tag{
     display:inline-block;
     padding:3px 10px;
@@ -104,6 +94,10 @@ button:hover{
 .normal-tag{
     background:#2c313f;
     color:#b0b4c0;
+}
+.expired-tag{
+    background:#3a2025;
+    color:#f8a0a8;
 }
 </style>
 </head>
@@ -139,6 +133,17 @@ button:hover{
 </div>
 
 <script>
+// 把 2026-9-01 / 2026-09-01 解析成当天 0 点的日期，避免时区偏差
+function parseDate(str){
+    const parts = str.trim().split(/[-/]/);
+    if(parts.length !== 3) return null;
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    if(isNaN(y) || isNaN(m) || isNaN(d)) return null;
+    return new Date(y, m, d);
+}
+
 async function searchUser(){
     const nameInput = document.getElementById('username').value.trim();
     const errBox = document.getElementById('errBox');
@@ -152,7 +157,6 @@ async function searchUser(){
         return;
     }
 
-    // 读取同目录 users.txt
     const res = await fetch('./users.txt');
     const text = await res.text();
     const lines = text.split('\n');
@@ -167,7 +171,7 @@ async function searchUser(){
             target = {
                 username: arr[0].trim(),
                 vip: arr[1]?.trim() || '普通用户',
-                expire: arr[2]?.trim() || '无',
+                expire: arr[2]?.trim() || '',
                 note: arr[3]?.trim() || '无'
             };
             break;
@@ -180,18 +184,27 @@ async function searchUser(){
         return;
     }
 
-    // 填充结果
-    document.getElementById('r-name').innerText = target.username;
-    if(target.vip === 'VIP'){
-        document.getElementById('r-vip').innerHTML = '<span class="vip-tag">VIP会员</span>';
+    // 判断状态：先看到期时间是否已过期
+    const today = new Date();
+    const today0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const expireDate = target.expire ? parseDate(target.expire) : null;
+    const isExpired = expireDate !== null && expireDate < today0;
+
+    let vipHtml;
+    if(target.vip !== 'VIP'){
+        vipHtml = '<span class="normal-tag">普通用户</span>';
+    }else if(isExpired){
+        vipHtml = '<span class="expired-tag">已过期</span>';
     }else{
-        document.getElementById('r-vip').innerHTML = '<span class="normal-tag">普通用户</span>';
+        vipHtml = '<span class="vip-tag">VIP会员</span>';
     }
-    document.getElementById('r-expire').innerText = target.expire;
+
+    document.getElementById('r-name').innerText = target.username;
+    document.getElementById('r-vip').innerHTML = vipHtml;
+    document.getElementById('r-expire').innerText = target.expire || '无';
     document.getElementById('r-note').innerText = target.note;
     resultBox.style.display = 'block';
 }
 </script>
 </body>
 </html>
-<!-- （注：内容由AI生成） -->
