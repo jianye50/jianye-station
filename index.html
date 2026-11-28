@@ -2260,7 +2260,7 @@ html[lang="en"] .boot-tip .bt-en{display:inline}
     <span class="acc-avatar" id="accAvatar" aria-hidden="true">
       <svg class="acc-avatar-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
       <span class="acc-avatar-txt"></span>
-      <img class="acc-img" alt="">
+      <img class="acc-img" id="accNavImg" alt="">
     </span>
     <span class="acc-vip-dot" id="accVipDot" hidden></span>
   </button>
@@ -9904,7 +9904,7 @@ input[type=range].mp-range::-moz-range-thumb{
       <div class="acc-big" id="accBig" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
         <span class="acc-big-txt"></span>
-        <img class="acc-img" alt="">
+        <img class="acc-img" id="accBigImg" alt="">
       </div>
       <div style="min-width:0">
         <div class="acc-name" id="accTitle" data-i18n="accTitle">账号</div>
@@ -10134,7 +10134,9 @@ function paintAvatar(u, av){
   bigTxt.textContent=ch||"?";
   /* 密文里带头像网址（a 字段）→ 显示图片头像；没有 → 首字渐变头像 */
   var hasImg=!!av;
-  if(hasImg){ $("accNavImg").src=av; $("accBigImg").src=av; }
+  var navImg=$("accNavImg"), bigImg=$("accBigImg");
+  if(navImg){ if(hasImg)navImg.src=av; }
+  if(bigImg){ if(hasImg)bigImg.src=av; }
   accBtn.classList.toggle("has-img",hasImg);
   mask.classList.toggle("has-img",hasImg);
   accBtn.classList.toggle("logged-in",!!u);
@@ -10193,20 +10195,21 @@ function enter(u,p,silent){
   var btn=$("accSubmit"), old=btn.textContent;
   if(!silent) { btn.disabled=true; btn.textContent=T().querying; }
   verify(u,p).then(function(d){
+    /* 先恢复按钮再渲染：就算渲染环节出意外，也绝不会卡在「查询中…」 */
+    btn.disabled=false; btn.textContent=old;
     currentData=d;
     writeSession({u:u,p:p});
     paintAvatar(d.u,d.a);
     renderInfo(d);
     setLogged(true);
     vipDot.hidden=!judgeVIP(d).active;
-    btn.disabled=false; btn.textContent=old;
     if(!silent) toast(T().welcome+d.u);
   },function(err){
+    btn.disabled=false; btn.textContent=old;
     writeSession(null);
     paintAvatar("","");
     vipDot.hidden=true;
     setLogged(false);
-    btn.disabled=false; btn.textContent=old;
     if(err&&(err.message==="cfg"||err.name==="TypeError")){
       errEl.textContent=T().cfgFail;         /* 环境问题如实提示 */
       errEl.classList.add("show");
