@@ -2251,18 +2251,15 @@ html[lang="en"] .boot-tip .bt-en{display:inline}
   <a class="nav-link" data-nav="about" href="#/about"><span data-navlabel="about">关于</span><span class="nav-top-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.4 3.9h13.2M12 20.1V9.1M7 14.1 12 9.1l5 5"/></svg></span></a>
   <span class="nav-sep"></span>
   <button class="nav-icon" id="langBtn" title="切换到英文" aria-label="切换到英文">EN</button>
-  <!-- 账号入口：圆形头像按钮（音乐按钮左边）。
-       未登录时是一枚「人形」图标按钮；登录成功后变成用户名首字的渐变圆头像，
-       有生效中的 VIP 时右上角还会亮一枚金色小圆点（accVipDot）。
-       点一下弹出账号 / VIP 面板（accModal，结构在文件末尾的账号系统区块里）。 -->
+  <!-- 账号入口：圆形头像按钮（音乐按钮左边，同款小圆形态）。
+       未登录时是低调的「人形」图标；登录后密文里带了头像网址就显示圆头像图片，
+       没有头像网址也保持同款小圆，不搞渐变、不亮角标——详情点开面板才看。 -->
   <button class="nav-icon acc-nav-btn" id="accBtn" title="账号" aria-label="账号"
           aria-haspopup="dialog" aria-expanded="false" aria-controls="accModal">
-    <span class="acc-avatar" id="accAvatar" aria-hidden="true">
+    <span class="acc-avatar" aria-hidden="true">
       <svg class="acc-avatar-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-      <span class="acc-avatar-txt"></span>
       <img class="acc-img" id="accNavImg" alt="">
     </span>
-    <span class="acc-vip-dot" id="accVipDot" hidden></span>
   </button>
   <!-- 音乐入口：点一下展开歌单面板（进度环画在按钮外圈） -->
   <button class="nav-icon mp-nav-btn" id="musicBtn" title="音乐（点击展开歌单）" aria-label="音乐"
@@ -9680,33 +9677,17 @@ input[type=range].mp-range::-moz-range-thumb{
  *  整个区块（本注释 + style + 弹窗 + script）都是增量式追加，删掉即整体下线。
  * ===================================================================== -->
 <style>
-/* ---------- 导航栏头像按钮 ---------- */
+/* ---------- 导航栏头像按钮（与音乐按钮同款小圆，低调不突兀） ---------- */
 .acc-nav-btn{position:relative;overflow:visible}
 .acc-avatar{
   width:34px;height:34px;border-radius:50%;
   display:grid;place-items:center;overflow:hidden;
   color:var(--text-2);
-  transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s,color .25s;
+  transition:transform .25s cubic-bezier(.2,.7,.2,1),color .25s;
 }
 .acc-nav-btn:hover .acc-avatar{transform:scale(1.08)}
 .acc-avatar-ico{width:19px;height:19px;fill:currentColor;display:block}
-.acc-avatar-txt{
-  display:none;place-items:center;width:100%;height:100%;
-  font-size:14.5px;font-weight:800;color:#fff;user-select:none;
-  background:linear-gradient(135deg,#4d8dff,#b44dff);
-  text-shadow:0 1px 3px rgba(0,0,0,.25);
-}
-.acc-nav-btn.logged-in .acc-avatar{box-shadow:0 0 0 2px rgba(77,141,255,.45)}
-.acc-nav-btn.logged-in .acc-avatar-ico{display:none}
-.acc-nav-btn.logged-in .acc-avatar-txt{display:grid}
-/* VIP 生效中：头像右上角金色小圆点 */
-.acc-vip-dot{
-  position:absolute;top:0;right:0;width:9px;height:9px;border-radius:99px;
-  background:linear-gradient(135deg,#ffd23f,#ff9f43);
-  box-shadow:0 0 0 2px rgba(11,13,18,.9),0 0 8px rgba(255,190,63,.8);
-  animation:accDotPulse 2.4s ease-in-out infinite;
-}
-@keyframes accDotPulse{0%,100%{opacity:1}50%{opacity:.45}}
+/* 密文里带了头像网址：图片填满小圆；没有就保持人形图标，两种形态同样低调 */
 
 /* ---------- 账号 / VIP 弹窗 ---------- */
 .acc-mask{
