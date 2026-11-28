@@ -3,5 +3,4 @@
 # VIP类型 / 到期时间 / 备注 / 密码 全部打包藏在密文里，这里只露用户名和一串乱码
 # 用同目录的 vip-admin.html 生成新行粘贴到这里即可
 # ── 以下为演示账号，可在主站头像按钮里直接试用 ──
-demo|JY1.VmhbinfwYYnER9Y8Rho8Jkcqw0Xpxqs4x5bT2MZDz7DGsld8MUUvl8Qx0WJXSt1jyBPn0KLEtjTteO9e2TYGIahfvmh4hwMiQwWplJM7S6pMEPraOVm_UKdv8Qb_YIRX5H-ijEfcxuM4bt6oHybKi0r1xNq9zyE
-jianye|JY1.DWpbinfwYYnER9Y8Rho8KEsmwh6gxvc4jZbYyIESifLcpk0qP115xZthyGpUSpE7yFrnj6LMpCT2d7BOzifRvxCadPCqEUB-eFcz8MCnN_9lbGOd2DAGJosFjyomzWoOsETQCtHcg-NrfdOgHSfIi074wdu7yGxLIA
+Jianye|JY1.t0BbinfwYYnER9Y8Rho8CEsmwh6gxvc4jZbYyMROwr_Uq0U-MVMvk4N5nnNcXd52hFqrwaLStnPjYKNezzaOvwaa_24Q1ipWJDIMdAg5xDjOxXRmWijYhinTIatCsEc
