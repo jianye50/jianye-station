@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b0d12">
+<meta name="robots" content="noindex,nofollow">
+<title>VIP 管理台 · 鉴业の小站</title>
+<style>
+/* =====================================================================
+ * 鉴业VIP查询系统 · 管理员生成页
+ * 设计语言与用户查询页 / 主站一致：深色 + 液态玻璃 + 彩虹流光按钮
+ * ===================================================================== */
+:root{
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",
+         "PingFang SC","HarmonyOS Sans SC","Microsoft YaHei","Segoe UI",sans-serif;
+  --radius:20px;
+  --accent:#4d8dff;
+  --accent-soft:rgba(77,141,255,.14);
+  --bg:#0b0d12;
+  --text-1:#f4f5f7;
+  --text-2:rgba(244,245,247,.68);
+  --text-3:rgba(244,245,247,.42);
+  --card-border:rgba(255,255,255,.08);
+  --ok:#3dd68c;
+  --gold:#ffd23f;
+  --glass-grad:linear-gradient(120deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.07) 38%,rgba(255,255,255,.12) 62%,rgba(255,255,255,.05) 100%);
+  --glass-blur:blur(22px) saturate(200%) brightness(1.12);
+  color-scheme:dark;   /* 让原生下拉、日期控件的弹层也走深色 */
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text-1);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+  background-image:
+    radial-gradient(900px 500px at 85% -10%,rgba(180,77,255,.12),transparent 60%),
+    radial-gradient(700px 460px at -10% 110%,rgba(77,141,255,.10),transparent 60%);
+  background-attachment:fixed;
+}
+button{font-family:inherit;color:inherit;border:none;background:none;cursor:pointer}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--accent);color:#fff}
+
+/* ===================== 液态玻璃胶囊导航 ===================== */
+.nav{
+  position:fixed;top:14px;left:50%;transform:translateX(-50%);
+  z-index:100;display:flex;align-items:center;gap:10px;
+  height:48px;padding:0 18px;border-radius:999px;white-space:nowrap;
+  max-width:calc(100vw - 24px);isolation:isolate;
+  background:var(--glass-grad);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.22),
+    inset 0 1.5px .5px -1px rgba(255,255,255,.65),
+    inset 0 -1px .5px -1px rgba(255,255,255,.28),
+    0 2px 6px rgba(6,10,25,.10),0 14px 38px rgba(6,10,25,.28);
+}
+.nav-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
+.nav-brand .dot{width:9px;height:9px;border-radius:99px;background:#b44dff;box-shadow:0 0 10px rgba(180,77,255,.9);animation:dotPulse 2.4s ease-in-out infinite}
+@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.45}}
+.nav-link{
+  font-size:13px;font-weight:600;color:var(--text-2);
+  padding:6px 14px;border-radius:999px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
+  transition:background .2s,color .2s,transform .2s;
+}
+.nav-link:hover{background:rgba(255,255,255,.18);color:var(--text-1);transform:translateY(-1px)}
+
+/* ===================== 主体 ===================== */
+.wrap{max-width:560px;margin:0 auto;padding:120px 20px 60px;animation:fadeUp .6s cubic-bezier(.2,.7,.2,1) both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.section-label{
+  display:flex;align-items:center;gap:14px;
+  font-size:12.5px;font-weight:700;letter-spacing:.22em;
+  color:var(--text-2);text-transform:uppercase;margin-bottom:14px;
+}
+.section-label::before{content:"";width:34px;height:2.5px;border-radius:99px;background:#b44dff}
+h1{font-size:clamp(26px,5vw,34px);font-weight:800;margin-bottom:8px}
+.subtitle{font-size:15px;line-height:1.7;color:var(--text-2);margin-bottom:28px}
+
+/* ===================== 玻璃卡片 ===================== */
+.card{
+  border-radius:var(--radius);
+  background:var(--glass-grad);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.18),
+    inset 0 1.5px .5px -1px rgba(255,255,255,.5),
+    0 14px 38px rgba(6,10,25,.28);
+  padding:26px 24px;margin-bottom:18px;
+}
+
+/* ===================== 表单控件 ===================== */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:7px;letter-spacing:.02em}
+.field .hint{font-size:12px;color:var(--text-3);margin-top:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:460px){.grid2{grid-template-columns:1fr}}
+.inp{
+  width:100%;padding:12px 14px;border-radius:12px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  color:var(--text-1);font-size:15px;font-family:inherit;
+  transition:border-color .2s,box-shadow .2s,background .2s;
+}
+.inp::placeholder{color:var(--text-3)}
+.inp:focus{outline:none;border-color:rgba(180,120,255,.55);box-shadow:0 0 0 3px rgba(180,77,255,.14);background:rgba(255,255,255,.09)}
+.inp:disabled{opacity:.45;cursor:not-allowed}
+
+/* ============ 正常的下拉选择组件（原生 select + 自定义外观） ============ */
+.select-wrap{position:relative}
+.sel{
+  width:100%;appearance:none;-webkit-appearance:none;
+  padding:12px 42px 12px 14px;border-radius:12px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  color:var(--text-1);font-size:15px;font-family:inherit;cursor:pointer;
+  transition:border-color .2s,box-shadow .2s,background .2s;
+}
+.sel:focus{outline:none;border-color:rgba(180,120,255,.55);box-shadow:0 0 0 3px rgba(180,77,255,.14);background:rgba(255,255,255,.09)}
+.sel:hover{background:rgba(255,255,255,.09)}
+/* 自定义下拉箭头（SVG data URI，颜色随主题） */
+.select-wrap::after{
+  content:"";position:absolute;right:15px;top:50%;
+  width:10px;height:10px;margin-top:-7px;pointer-events:none;
+  border-right:2px solid var(--text-2);border-bottom:2px solid var(--text-2);
+  transform:rotate(45deg);
+  transition:transform .2s;
+}
+.select-wrap:focus-within::after{transform:rotate(225deg);margin-top:-3px}
+/* 原生 option 弹层靠 color-scheme:dark 自动深色，再把选中项高亮成主题色 */
+.sel option{background:#151923;color:var(--text-1);font-size:15px;padding:10px}
+.sel option:checked{background:linear-gradient(0deg,rgba(77,141,255,.35),rgba(77,141,255,.35))}
+
+/* ===================== 主按钮（彩虹流光，与主站同款） ===================== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 26px;border-radius:12px;font-size:15px;font-weight:600;transition:transform .2s,background .2s}
+.btn:hover{transform:translateY(-2px)}
+.btn:active{transform:scale(.97)}
+.btn-primary{
+  position:relative;z-index:0;width:100%;color:#fff;border:1.5px solid transparent;
+  background:linear-gradient(#0b0f1a,#0b0f1a) padding-box,
+    linear-gradient(115deg,#4d8dff,#b44dff,#ff5fa2,#ff8a3d,#ffd23f,#4d8dff) border-box;
+  background-size:100% 100%,300% 100%;
+  animation:rb-border 6s linear infinite;
+}
+@keyframes rb-border{from{background-position:0% 50%,0% 50%}to{background-position:0% 50%,300% 50%}}
+.btn-primary::before{
+  content:"";position:absolute;inset:-3px;z-index:-1;border-radius:inherit;
+  background:linear-gradient(115deg,#4d8dff,#b44dff,#ff5fa2,#ff8a3d,#ffd23f,#4d8dff);
+  background-size:300% 100%;filter:blur(16px);opacity:.55;
+  animation:rb-glow 6s linear infinite;transition:opacity .25s,filter .25s;
+}
+@keyframes rb-glow{from{background-position:0% 50%}to{background-position:300% 50%}}
+.btn-primary:hover::before{opacity:.85;filter:blur(20px)}
+.btn-ghost{
+  background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);color:var(--text-1);
+  padding:9px 18px;border-radius:12px;font-size:13.5px;
+}
+.btn-ghost:hover{background:rgba(255,255,255,.18)}
+
+/* ===================== 生成结果 ===================== */
+.out-card{display:none}
+.out-card.show{display:block;animation:fadeUp .45s cubic-bezier(.2,.7,.2,1) both}
+.out-label{font-size:12.5px;font-weight:700;letter-spacing:.1em;color:var(--text-3);margin-bottom:9px}
+.out-box{
+  display:flex;gap:10px;align-items:stretch;
+}
+.out-line{
+  flex:1;min-width:0;padding:13px 14px;border-radius:12px;
+  background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.10);
+  font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;
+  font-size:13px;line-height:1.6;color:#8fb8ff;
+  word-break:break-all;user-select:all;
+}
+.out-line .u{color:var(--gold);font-weight:700}
+.copy-btn{
+  flex:none;align-self:center;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:11px 16px;border-radius:12px;
+  background:var(--accent);color:#fff;font-size:13.5px;font-weight:700;
+  transition:transform .2s,background .2s;
+}
+.copy-btn:hover{background:#669dff;transform:translateY(-1px)}
+.copy-btn:active{transform:scale(.96)}
+.tip{
+  margin-top:12px;padding:11px 14px;border-radius:12px;
+  font-size:13px;line-height:1.7;color:var(--text-2);
+  background:rgba(77,141,255,.08);border:1px solid rgba(77,141,255,.2);
+}
+
+/* 本次会话生成记录 */
+.hist{margin-top:6px}
+.hist-item{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:11px 14px;border-radius:12px;margin-top:10px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  font-size:13.5px;
+}
+.hist-item .who{font-weight:700}
+.hist-item .tag{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;margin-left:8px}
+.hist-item .tag.perm{color:#14110a;background:linear-gradient(115deg,#ffd23f,#ff9f43)}
+.hist-item .tag.time{color:var(--ok);background:rgba(61,214,140,.12)}
+.hist-item .tag.none{color:var(--text-3);background:rgba(255,255,255,.08)}
+.hist-item .time{font-size:12px;color:var(--text-3)}
+.hist-empty{font-size:13px;color:var(--text-3);padding:6px 2px}
+
+/* Toast */
+.toast{
+  position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);
+  z-index:200;padding:11px 20px;border-radius:999px;
+  font-size:13.5px;font-weight:600;color:#fff;
+  background:var(--glass-grad);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 14px 38px rgba(6,10,25,.35);
+  opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+footer{text-align:center;padding:30px 0 36px;font-size:12.5px;color:var(--text-3)}
+footer a{color:var(--text-2);border-bottom:1px dashed rgba(255,255,255,.2)}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media (max-width:460px){.wrap{padding-top:104px}.card{padding:22px 18px}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-brand"><span class="dot"></span>鉴业のVIP管理台</span>
+  <a class="nav-link" href="index.html">返回查询页</a>
+</nav>
+
+<main class="wrap">
+  <div class="section-label">Admin Panel</div>
+  <h1>VIP 密文生成</h1>
+  <p class="subtitle">填写账号信息，一键生成配置行。VIP 类型、到期时间、备注全部打包进密文，<br>只需把生成的整行粘贴进 <b>vip.txt</b>，查询页即可识别。</p>
+
+  <!-- 生成表单 -->
+  <form class="card" id="genForm" autocomplete="off">
+    <div class="grid2">
+      <div class="field">
+        <label for="fUser">用户名</label>
+        <input class="inp" id="fUser" type="text" placeholder="如：jianye" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="fPwd">密码</label>
+        <input class="inp" id="fPwd" type="text" placeholder="如：abc123456" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="fType">VIP 类型</label>
+        <div class="select-wrap">
+          <select class="sel" id="fType">
+            <option value="permanent">永久 VIP</option>
+            <option value="time" selected>限时 VIP</option>
+            <option value="none">普通用户（无 VIP）</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" id="fExpField">
+        <label for="fExp">到期日期</label>
+        <input class="inp" id="fExp" type="date">
+        <div class="hint" id="fExpHint">过期后查询页自动判定为「已过期」</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="fNote">备注 <span style="color:var(--text-3);font-weight:400">（可选，随密文隐藏存放）</span></label>
+      <input class="inp" id="fNote" type="text" maxlength="200" placeholder="如：内部测试账号 / 2026 年度会员">
+    </div>
+
+    <button class="btn btn-primary" type="submit">生成配置行</button>
+  </form>
+
+  <!-- 生成结果 -->
+  <section class="card out-card" id="outCard" aria-live="polite">
+    <div class="out-label">CONFIG LINE · 复制到 vip.txt</div>
+    <div class="out-box">
+      <div class="out-line" id="outLine"></div>
+      <button class="copy-btn" id="copyBtn" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        复制
+      </button>
+    </div>
+    <div class="tip">把上面整行（用户名|密文）粘贴到 <b>vip.txt</b> 新的一行即可生效。同一用户名重复生成会并存两条，查询时命中第一条；建议替换旧行而不是追加。</div>
+    <div class="hist" id="hist">
+      <div class="out-label" style="margin-top:18px">本次会话已生成</div>
+      <div class="hist-empty" id="histEmpty">还没有生成过，填好表单点上面的按钮试试。</div>
+    </div>
+  </section>
+</main>
+
+<footer>鉴业の小站 · 纯前端 VIP 查询系统 · <a href="index.html">用户查询页</a></footer>
+<div class="toast" id="toast"></div>
+
+<script src="cipher.js"></script>
+<script>
+/* =====================================================================
+ * 管理员生成页逻辑
+ *
+ * ⚠ 密钥必须与 index.html 顶部的完全一致，改的时候两个文件一起改！
+ *   （换密钥后，旧密文将全部无法解密，需要重新生成所有账号）
+ * ===================================================================== */
+const JY_SECRET = "jianye-vip-secret-2026";   /* ← 与 index.html 保持一致，请改成你自己的 */
+
+const $ = id => document.getElementById(id);
+let toastTimer = 0;
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2400);
+}
+
+/* ---------- VIP 类型切换：永久 VIP 不需要到期日期 ---------- */
+const fType = $("fType"), fExp = $("fExp");
+function syncType(){
+  const perm = fType.value === "permanent";
+  $("fExpField").style.display = perm ? "none" : "";
+  fExp.disabled = perm || fType.value === "none";
+  $("fExpHint").textContent =
+    fType.value === "time" ? "过期后查询页自动判定为「已过期」"
+    : fType.value === "none" ? "普通用户无需到期日期" : "永久 VIP 无需到期日期";
+}
+fType.addEventListener("change", syncType);
+syncType();
+
+/* ---------- 生成 ---------- */
+const hist = [];   /* 本次会话生成记录（仅内存，刷新即清） */
+$("genForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const u = $("fUser").value.trim();
+  const p = $("fPwd").value;
+  if (!u || !p){ toast("请先填写用户名和密码"); $("fUser").focus(); return; }
+  const type = fType.value;
+  let exp = "";
+  if (type === "time"){
+    exp = fExp.value;
+    if (!exp){ toast("限时 VIP 请选择到期日期"); fExp.focus(); return; }
+  }
+  const payload = {
+    v: 1,                       /* 协议版本 */
+    u: u,                       /* 用户名 */
+    p: p,                       /* 密码 */
+    t: type,                    /* permanent=永久VIP / time=限时VIP / none=普通用户 */
+    e: exp,                     /* 到期日期 YYYY-MM-DD（永久为空） */
+    n: $("fNote").value.trim(), /* 备注 */
+    i: Date.now()               /* 签发时间 */
+  };
+  const cipher = JYCipher.encrypt(payload, JY_SECRET);
+  const line = u + "|" + cipher;
+
+  $("outLine").innerHTML = '<span class="u">' +
+    u.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;") +
+    '</span>|' + cipher;
+  $("outCard").classList.add("show");
+  $("outCard").scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+  /* 记入本次会话列表 */
+  hist.unshift({ line, u, type, exp });
+  const empty = $("histEmpty");
+  if (empty) empty.remove();
+  $("hist").insertAdjacentHTML("beforeend",
+    '<div class="hist-item"><span><span class="who">' +
+    u.replace(/</g,"&lt;") + '</span><span class="tag ' + type + '">' +
+    (type === "permanent" ? "永久" : type === "time" ? "至 " + exp : "普通") +
+    '</span></span><span class="time">' +
+    new Date().toLocaleTimeString("zh-CN") +
+    '</span></div>');
+  toast("已生成，复制后粘贴进 vip.txt 即可");
+});
+
+/* ---------- 复制 ---------- */
+$("copyBtn").addEventListener("click", async () => {
+  const text = $("outLine").textContent;
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    toast("已复制到剪贴板");
+  } catch (e) {
+    /* 剪贴板 API 不可用（file:// 等）→ 选中让用户手动 Ctrl+C */
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents($("outLine"));
+    sel.removeAllRanges(); sel.addRange(range);
+    toast("已全选，请按 Ctrl+C 复制");
+  }
+});
+</script>
+</body>
+</html>
