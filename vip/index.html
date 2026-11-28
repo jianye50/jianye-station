@@ -2,346 +2,364 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>用户VIP状态查询｜Jianye</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>用户VIP状态查询 | Jianye</title>
 <style>
 :root{
-    --bg:#0b0d13;
-    --card:rgba(255,255,255,.045);
-    --line:rgba(255,255,255,.10);
-    --text:#eef0f6;
-    --muted:#9aa1b5;
-    --accent:#4f7cff;
-    --accent2:#8b5cf6;
-    --green:#4ade80;
-    --red:#f87171;
+  --bg:#080a10;
+  --line:rgba(255,255,255,.09);
+  --text:#eef1f8;
+  --muted:#8b93a8;
+  --blue:#4f7cff;
+  --violet:#8b5cf6;
+  --green:#37d67a;
+  --red:#ff5f6d;
 }
-*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;}
-html,body{height:100%;}
+*{margin:0;padding:0;box-sizing:border-box;
+  font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;}
 body{
-    background:var(--bg);
-    color:var(--text);
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:24px 16px;
-    overflow-x:hidden;
-    position:relative;
+  min-height:100vh;display:grid;place-items:center;padding:28px 18px;
+  background:var(--bg);color:var(--text);overflow-x:hidden;position:relative;
+  -webkit-font-smoothing:antialiased;
 }
-
-/* 背景光斑 */
-.orbs{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
-.orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.35;animation:float 14s ease-in-out infinite;}
-.orb1{width:420px;height:420px;background:#3b63e8;top:-120px;left:-100px;}
-.orb2{width:380px;height:380px;background:#7c3aed;bottom:-120px;right:-90px;animation-delay:-7s;}
-@keyframes float{
-    0%,100%{transform:translate(0,0) scale(1);}
-    50%{transform:translate(40px,30px) scale(1.08);}
+/* ---------- 背景 ---------- */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.bg i{position:absolute;border-radius:50%;filter:blur(110px);}
+.bg i:nth-child(1){width:520px;height:520px;background:#2f4fd4;opacity:.42;top:-180px;left:-140px;animation:drift1 18s ease-in-out infinite;}
+.bg i:nth-child(2){width:460px;height:460px;background:#7b2ff7;opacity:.34;bottom:-190px;right:-120px;animation:drift2 22s ease-in-out infinite;}
+.bg i:nth-child(3){width:320px;height:320px;background:#0fb6a8;opacity:.16;top:45%;left:60%;animation:drift1 26s ease-in-out infinite reverse;}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(60px,44px) scale(1.12);}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-52px,-38px) scale(1.1);}}
+.bg::after{
+  content:"";position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);
+  background-size:52px 52px;
+  -webkit-mask-image:radial-gradient(circle at 50% 42%,#000 20%,transparent 78%);
+          mask-image:radial-gradient(circle at 50% 42%,#000 20%,transparent 78%);
 }
-/* 细网格 */
-body::before{
-    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
-    background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
-                     linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
-    background-size:44px 44px;
-    mask-image:radial-gradient(circle at 50% 40%,#000 30%,transparent 75%);
-}
-
+/* ---------- 卡片 ---------- */
 .wrap{
-    position:relative;z-index:1;
-    width:100%;max-width:460px;
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:22px;
-    padding:40px 32px 32px;
-    backdrop-filter:blur(18px);
-    -webkit-backdrop-filter:blur(18px);
-    box-shadow:0 24px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06);
-    animation:fadeUp .6s cubic-bezier(.22,1,.36,1) both;
+  position:relative;z-index:1;width:100%;max-width:452px;
+  padding:42px 34px 34px;border-radius:26px;
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.028));
+  border:1px solid var(--line);
+  -webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
+  box-shadow:0 30px 70px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.09);
+  animation:in .7s cubic-bezier(.16,1,.3,1) both;
 }
-@keyframes fadeUp{
-    from{opacity:0;transform:translateY(24px);}
-    to{opacity:1;transform:translateY(0);}
+.wrap::before{
+  content:"";position:absolute;inset:-1px;border-radius:26px;z-index:-1;
+  background:linear-gradient(140deg,rgba(79,124,255,.55),transparent 42%,transparent 62%,rgba(139,92,246,.5));
+  opacity:.5;filter:blur(1px);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;padding:1px;
+  animation:ring 9s linear infinite;
 }
+@keyframes ring{0%{opacity:.25;}50%{opacity:.6;}100%{opacity:.25;}}
+@keyframes in{from{opacity:0;transform:translateY(26px) scale(.985);}to{opacity:1;transform:none;}}
 
-.head{text-align:center;margin-bottom:30px;animation:fadeUp .6s .05s cubic-bezier(.22,1,.36,1) both;}
-.logo{
-    width:46px;height:46px;margin:0 auto 14px;
-    display:flex;align-items:center;justify-content:center;
-    border-radius:14px;font-size:22px;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    box-shadow:0 8px 22px rgba(79,124,255,.35);
+/* ---------- 头部 ---------- */
+.head{text-align:center;margin-bottom:32px;animation:up .6s .06s cubic-bezier(.16,1,.3,1) both;}
+.mark{
+  width:52px;height:52px;margin:0 auto 16px;border-radius:16px;
+  display:grid;place-items:center;
+  background:linear-gradient(140deg,var(--blue),var(--violet));
+  box-shadow:0 12px 28px rgba(79,124,255,.4),inset 0 1px 0 rgba(255,255,255,.4);
+  font-size:23px;animation:pulse 3.4s ease-in-out infinite;
 }
+@keyframes pulse{0%,100%{box-shadow:0 12px 28px rgba(79,124,255,.35),inset 0 1px 0 rgba(255,255,255,.4);}
+  50%{box-shadow:0 12px 38px rgba(139,92,246,.55),inset 0 1px 0 rgba(255,255,255,.4);}}
 .head h1{
-    font-size:24px;font-weight:700;letter-spacing:.5px;
-    background:linear-gradient(90deg,#fff,#c8d2ff);
-    -webkit-background-clip:text;background-clip:text;color:transparent;
+  font-size:25px;font-weight:700;letter-spacing:.6px;
+  background:linear-gradient(96deg,#fff 30%,#b6c6ff 70%,#dcc8ff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.head .sub{margin-top:8px;font-size:13px;color:var(--muted);}
+.head p{margin-top:9px;font-size:13px;color:var(--muted);letter-spacing:.3px;}
+@keyframes up{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
 
-.form-item{margin-bottom:18px;animation:fadeUp .6s .12s cubic-bezier(.22,1,.36,1) both;}
-.form-item:nth-of-type(2){animation-delay:.18s;}
-label{display:block;margin-bottom:8px;font-size:13px;color:var(--muted);letter-spacing:.3px;}
-
-.field{position:relative;}
-input[type="text"],input[type="password"]{
-    width:100%;
-    padding:14px 16px;
-    background:rgba(255,255,255,.05);
-    border:1px solid var(--line);
-    border-radius:12px;
-    color:var(--text);
-    font-size:15px;
-    outline:none;
-    transition:border-color .25s,box-shadow .25s,background .25s;
+/* ---------- 表单 ---------- */
+.field{margin-bottom:19px;animation:up .6s cubic-bezier(.16,1,.3,1) both;}
+.field:nth-of-type(1){animation-delay:.13s;}
+.field:nth-of-type(2){animation-delay:.19s;}
+.field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:9px;letter-spacing:.4px;}
+.inp{
+  width:100%;padding:15px 16px 15px 44px;font-size:15px;color:var(--text);
+  background:rgba(255,255,255,.045);border:1px solid var(--line);border-radius:14px;
+  outline:none;transition:border-color .28s,box-shadow .28s,background .28s;
 }
-input::placeholder{color:#6b7286;}
-input:focus{
-    border-color:var(--accent);
-    background:rgba(79,124,255,.06);
-    box-shadow:0 0 0 4px rgba(79,124,255,.15);
+.inp::placeholder{color:#616a80;}
+.inp:focus{
+  border-color:rgba(79,124,255,.85);background:rgba(79,124,255,.08);
+  box-shadow:0 0 0 4px rgba(79,124,255,.14),0 0 24px rgba(79,124,255,.12);
 }
+.box{position:relative;}
+.box .ico{
+  position:absolute;left:16px;top:50%;transform:translateY(-50%);
+  font-size:15px;opacity:.55;pointer-events:none;transition:opacity .28s,transform .28s;
+}
+.inp:focus+.ico,.box:focus-within .ico{opacity:.95;}
 
 .btn{
-    position:relative;
-    width:100%;
-    padding:14px;
-    border:none;border-radius:12px;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    color:#fff;font-size:15px;font-weight:600;letter-spacing:.5px;
-    cursor:pointer;
-    transition:transform .2s,box-shadow .2s,filter .2s;
-    box-shadow:0 10px 24px rgba(79,124,255,.30);
-    animation:fadeUp .6s .24s cubic-bezier(.22,1,.36,1) both;
+  width:100%;padding:15px;margin-top:8px;border:0;border-radius:14px;cursor:pointer;
+  font-size:15px;font-weight:600;letter-spacing:.7px;color:#fff;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--blue),var(--violet));
+  box-shadow:0 12px 28px rgba(79,124,255,.32);
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .22s,filter .22s;
+  animation:up .6s .25s cubic-bezier(.16,1,.3,1) both;
 }
-.btn:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(79,124,255,.42);filter:brightness(1.06);}
-.btn:active{transform:translateY(0) scale(.98);}
-.btn:disabled{opacity:.7;cursor:not-allowed;transform:none;}
-.btn .spin{
-    display:inline-block;width:15px;height:15px;margin-right:8px;vertical-align:-2px;
-    border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;
-    animation:spin .8s linear infinite;
+.btn:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(79,124,255,.44);filter:brightness(1.07);}
+.btn:active{transform:translateY(0) scale(.985);}
+.btn:disabled{opacity:.72;cursor:not-allowed;transform:none;filter:none;}
+.btn::after{
+  content:"";position:absolute;top:0;left:-60%;width:45%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);
+  transform:skewX(-18deg);animation:sheen 3.6s ease-in-out infinite;
+}
+@keyframes sheen{0%{left:-60%;}55%{left:130%;}100%{left:130%;}}
+.spinner{
+  display:inline-block;width:14px;height:14px;margin-right:9px;vertical-align:-2px;
+  border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;
+  animation:spin .75s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg);}}
 
-.msg-error{
-    margin-top:18px;padding:13px 15px;
-    background:rgba(248,113,113,.10);
-    border:1px solid rgba(248,113,113,.25);
-    border-radius:12px;color:var(--red);font-size:14px;
+/* ---------- 提示 ---------- */
+.err{
+  margin-top:18px;padding:13px 15px;font-size:13.5px;border-radius:13px;
+  color:#ffb4ba;background:rgba(255,95,109,.09);border:1px solid rgba(255,95,109,.28);
+  display:none;
 }
-.msg-error.shake{animation:shake .4s ease;}
+.err.on{display:block;animation:shake .45s cubic-bezier(.36,.07,.19,.97) both;}
 @keyframes shake{
-    0%,100%{transform:translateX(0);}
-    20%{transform:translateX(-8px);}
-    40%{transform:translateX(8px);}
-    60%{transform:translateX(-5px);}
-    80%{transform:translateX(5px);}
+  10%,90%{transform:translateX(-2px);}
+  25%,75%{transform:translateX(5px);}
+  45%,55%{transform:translateX(-7px);}
+  60%{transform:translateX(6px);}
 }
 
-.card-info{
-    margin-top:22px;padding:22px;
-    background:rgba(255,255,255,.04);
-    border:1px solid var(--line);
-    border-radius:16px;
+/* ---------- 结果 ---------- */
+.card{
+  margin-top:22px;border-radius:18px;overflow:hidden;
+  background:rgba(255,255,255,.04);border:1px solid var(--line);
+  max-height:0;opacity:0;transform:translateY(10px);
+  transition:max-height .55s cubic-bezier(.16,1,.3,1),opacity .4s,transform .45s,margin .4s;
 }
-.card-info.show{animation:cardIn .5s cubic-bezier(.22,1,.36,1) both;}
-@keyframes cardIn{
-    from{opacity:0;transform:translateY(16px) scale(.98);}
-    to{opacity:1;transform:translateY(0) scale(1);}
+.card.open{max-height:420px;opacity:1;transform:none;}
+.card-top{
+  display:flex;align-items:center;gap:11px;padding:17px 18px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  background:linear-gradient(90deg,rgba(79,124,255,.12),transparent 70%);
 }
-.card-info h4{font-size:16px;margin-bottom:14px;color:#fff;}
-.info-row{
-    display:flex;justify-content:space-between;align-items:center;
-    padding:12px 0;border-bottom:1px solid rgba(255,255,255,.07);
-    animation:rowIn .45s both;
+.avatar{
+  width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto;
+  font-size:15px;font-weight:700;color:#fff;
+  background:linear-gradient(140deg,var(--blue),var(--violet));
+  box-shadow:0 6px 16px rgba(79,124,255,.3);
 }
-.info-row:last-child{border-bottom:none;}
-.info-row:nth-child(2){animation-delay:.05s;}
-.info-row:nth-child(3){animation-delay:.10s;}
-.info-row:nth-child(4){animation-delay:.15s;}
-.info-row:nth-child(5){animation-delay:.20s;}
-@keyframes rowIn{from{opacity:0;transform:translateX(10px);}to{opacity:1;transform:translateX(0);}}
-.label-text{color:var(--muted);font-size:14px;}
-.value-text{font-size:14px;font-weight:500;}
+.card-top .who{font-size:15.5px;font-weight:600;}
+.card-top .who small{display:block;font-size:11.5px;color:var(--muted);font-weight:400;margin-top:2px;}
+.row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:13px 18px;font-size:14px;border-bottom:1px solid rgba(255,255,255,.055);
+  opacity:0;transform:translateX(12px);
+}
+.card.open .row{animation:rowin .45s cubic-bezier(.16,1,.3,1) both;}
+.card.open .row:nth-child(3){animation-delay:.06s;}
+.card.open .row:nth-child(4){animation-delay:.12s;}
+.card.open .row:nth-child(5){animation-delay:.18s;}
+.card.open .row:nth-child(6){animation-delay:.24s;}
+@keyframes rowin{to{opacity:1;transform:none;}}
+.row:last-child{border-bottom:0;}
+.row .k{color:var(--muted);}
+.row .v{font-weight:500;}
 
-.tag{display:inline-block;padding:4px 12px;border-radius:8px;font-size:13px;font-weight:600;}
-.vip-tag{background:rgba(74,222,128,.14);color:var(--green);box-shadow:0 0 16px rgba(74,222,128,.15) inset;}
-.normal-tag{background:rgba(255,255,255,.08);color:var(--muted);}
-.expired-tag{background:rgba(248,113,113,.14);color:var(--red);}
+.tag{padding:5px 13px;border-radius:9px;font-size:12.5px;font-weight:600;letter-spacing:.3px;}
+.t-vip{color:var(--green);background:rgba(55,214,122,.13);border:1px solid rgba(55,214,122,.28);box-shadow:0 0 18px rgba(55,214,122,.14);}
+.t-perm{color:#ffd166;background:rgba(255,209,102,.12);border:1px solid rgba(255,209,102,.3);box-shadow:0 0 18px rgba(255,209,102,.15);}
+.t-exp{color:var(--red);background:rgba(255,95,109,.11);border:1px solid rgba(255,95,109,.28);}
+.t-normal{color:var(--muted);background:rgba(255,255,255,.07);border:1px solid var(--line);}
 
-@media (max-width:480px){
-    .wrap{padding:32px 22px 24px;border-radius:18px;}
-    .head h1{font-size:21px;}
+@media(max-width:420px){
+  .wrap{padding:34px 22px 26px;border-radius:20px;}
+  .head h1{font-size:21.5px;}
+  .inp{padding-left:42px;}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;}
 }
 </style>
 </head>
 <body>
-<div class="orbs"><span class="orb orb1"></span><span class="orb orb2"></span></div>
+<div class="bg"><i></i><i></i><i></i></div>
 
 <main class="wrap">
-    <header class="head">
-        <div class="logo">◆</div>
-        <h1>用户VIP状态查询</h1>
-        <p class="sub">登录以查看你的会员状态</p>
-    </header>
+  <header class="head">
+    <div class="mark">◆</div>
+    <h1>用户VIP状态查询</h1>
+    <p>登录以查看你的会员状态</p>
+  </header>
 
-    <div class="form-item">
-        <label>用户名称</label>
-        <div class="field"><input type="text" id="username" placeholder="请输入用户名" autocomplete="off"></div>
+  <div class="field">
+    <label>用户名称</label>
+    <div class="box"><input class="inp" id="username" placeholder="请输入用户名" autocomplete="off"><span class="ico">◍</span></div>
+  </div>
+
+  <div class="field">
+    <label>密码</label>
+    <div class="box"><input class="inp" id="password" type="password" placeholder="请输入密码"><span class="ico">⌘</span></div>
+  </div>
+
+  <button class="btn" id="btn" onclick="searchUser()">查询用户信息</button>
+
+  <div class="err" id="err"></div>
+
+  <section class="card" id="card">
+    <div class="card-top">
+      <div class="avatar" id="ava">A</div>
+      <div class="who"><span id="r-user">用户名</span><small>查询结果</small></div>
     </div>
-    <div class="form-item">
-        <label>密码</label>
-        <div class="field"><input type="password" id="password" placeholder="请输入密码"></div>
-    </div>
-
-    <button class="btn" id="submitBtn" onclick="searchUser()">查询用户信息</button>
-
-    <div id="errBox" class="msg-error" hidden></div>
-
-    <section id="resultBox" class="card-info" hidden>
-        <h4>查询结果</h4>
-        <div class="info-row">
-            <span class="label-text">用户名</span>
-            <span class="value-text" id="r-name"></span>
-        </div>
-        <div class="info-row">
-            <span class="label-text">VIP状态</span>
-            <span id="r-vip"></span>
-        </div>
-        <div class="info-row">
-            <span class="label-text">VIP到期时间</span>
-            <span class="value-text" id="r-expire"></span>
-        </div>
-        <div class="info-row">
-            <span class="label-text">备注</span>
-            <span class="value-text" id="r-note"></span>
-        </div>
-    </section>
+    <div class="row"><span class="k">VIP状态</span><span class="v" id="r-vip"></span></div>
+    <div class="row"><span class="k">VIP到期时间</span><span class="v" id="r-exp"></span></div>
+    <div class="row"><span class="k">备注</span><span class="v" id="r-note"></span></div>
+  </section>
 </main>
 
 <script>
-// 与 hash.html 保持一致：盐值、迭代次数、算法都不能改，否则校验失败
+/* ===== 必须与 hash.html 完全一致，否则解密失败 ===== */
 const SALT = 'jype-top-salt-2026';
 const ITERATIONS = 100000;
 
-// 单向哈希：PBKDF2-SHA256，无法从结果反推原密码
-async function hashPassword(password){
-    const enc = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey(
-        'raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveBits']
-    );
-    const bits = await crypto.subtle.deriveBits(
-        {name:'PBKDF2', salt:enc.encode(SALT), iterations:ITERATIONS, hash:'SHA-256'},
-        keyMaterial, 256
-    );
-    return btoa(String.fromCharCode(...new Uint8Array(bits)));
+function b64ToBytes(b64){
+  const bin = atob(b64.replace(/\s+/g,''));
+  const arr = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+async function deriveKey(password){
+  const enc = new TextEncoder();
+  const material = await crypto.subtle.importKey(
+    'raw', enc.encode(password + SALT), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt:enc.encode(SALT), iterations:ITERATIONS, hash:'SHA-256'},
+    material, {name:'AES-GCM', length:256}, false, ['decrypt']
+  );
+}
+
+/* 解密失败（密码错误）返回 null */
+async function decryptPayload(b64, password){
+  try{
+    const raw = b64ToBytes(b64);
+    const iv = raw.slice(0, 12);
+    const data = raw.slice(12);
+    const key = await deriveKey(password);
+    const buf = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, data);
+    return JSON.parse(new TextDecoder().decode(buf));
+  }catch(e){
+    return null;
+  }
 }
 
 function parseDate(str){
-    const parts = str.trim().split(/[-/]/);
-    if(parts.length !== 3) return null;
-    const y = parseInt(parts[0], 10);
-    const m = parseInt(parts[1], 10) - 1;
-    const d = parseInt(parts[2], 10);
-    if(isNaN(y) || isNaN(m) || isNaN(d)) return null;
-    return new Date(y, m, d);
+  const p = String(str).trim().split(/[-/.]/);
+  if(p.length !== 3) return null;
+  const y = parseInt(p[0],10), m = parseInt(p[1],10) - 1, d = parseInt(p[2],10);
+  if([y,m,d].some(isNaN)) return null;
+  return new Date(y, m, d, 23, 59, 59); // 到期日当天仍有效
 }
 
 function showError(msg){
-    const errBox = document.getElementById('errBox');
-    errBox.innerText = msg;
-    errBox.hidden = false;
-    errBox.classList.remove('shake');
-    void errBox.offsetWidth; // 重启动画
-    errBox.classList.add('shake');
+  const err = document.getElementById('err');
+  err.textContent = msg;
+  err.classList.remove('on');
+  void err.offsetWidth;
+  err.classList.add('on');
+}
+
+function statusTag(vip, expire){
+  const v = String(vip||'').trim();
+  const e = String(expire||'').trim();
+  if(v.toUpperCase() !== 'VIP'){
+    return '<span class="tag t-normal">' + (v || '普通用户') + '</span>';
+  }
+  if(e === '永久' || e === '永久VIP'){
+    return '<span class="tag t-perm">永久VIP</span>';
+  }
+  const d = parseDate(e);
+  if(d && d < new Date()){
+    return '<span class="tag t-exp">已过期</span>';
+  }
+  return '<span class="tag t-vip">VIP会员</span>';
 }
 
 async function searchUser(){
-    const nameInput = document.getElementById('username').value.trim();
-    const passInput = document.getElementById('password').value;
-    const errBox = document.getElementById('errBox');
-    const resultBox = document.getElementById('resultBox');
-    const btn = document.getElementById('submitBtn');
-    errBox.hidden = true;
-    resultBox.hidden = true;
+  const name = document.getElementById('username').value.trim();
+  const pwd  = document.getElementById('password').value;
+  const err  = document.getElementById('err');
+  const card = document.getElementById('card');
+  const btn  = document.getElementById('btn');
 
-    if(!nameInput || !passInput){
-        showError("请输入用户名和密码");
-        return;
+  err.classList.remove('on');
+  card.classList.remove('open');
+
+  if(!name || !pwd){
+    showError('用户名和密码不能为空');
+    return;
+  }
+
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.innerHTML = '<span class="spinner"></span>验证中…';
+
+  try{
+    const res = await fetch('./users.txt', {cache:'no-store'});
+    if(!res.ok) throw new Error('read fail');
+    const text = await res.text();
+
+    let cipher = null;
+    for(const rawLine of text.split(/\r?\n/)){
+      const line = rawLine.trim();
+      if(!line || line.startsWith('#')) continue;
+      const parts = line.split('|');
+      if(parts[0].trim() === name){
+        cipher = (parts[1] || '').trim();
+        break;
+      }
     }
 
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spin"></span>查询中…';
-
-    try{
-        const res = await fetch('./users.txt');
-        const text = await res.text();
-        const lines = text.split('\n');
-        let target = null;
-
-        for(let line of lines){
-            line = line.trim();
-            if(!line || line.startsWith('#')) continue; // 跳过注释和空行
-            const arr = line.split('|');
-            if(arr[0].trim() === nameInput){
-                target = {
-                    username: arr[0].trim(),
-                    hash: arr[1]?.trim() || '',
-                    vip: arr[2]?.trim() || '普通用户',
-                    expire: arr[3]?.trim() || '',
-                    note: arr[4]?.trim() || '无'
-                };
-                break;
-            }
-        }
-
-        if(!target){
-            showError("用户名或密码错误");
-            return;
-        }
-
-        const inputHash = await hashPassword(passInput);
-        if(inputHash !== target.hash){
-            showError("用户名或密码错误");
-            return;
-        }
-
-        const today = new Date();
-        const today0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const expireDate = target.expire ? parseDate(target.expire) : null;
-        const isPermanent = target.expire === '永久';
-        const isExpired = !isPermanent && expireDate !== null && expireDate < today0;
-
-        let vipHtml;
-        if(target.vip !== 'VIP'){
-            vipHtml = '<span class="tag normal-tag">普通用户</span>';
-        }else if(isPermanent){
-            vipHtml = '<span class="tag vip-tag">永久VIP</span>';
-        }else if(isExpired){
-            vipHtml = '<span class="tag expired-tag">已过期</span>';
-        }else{
-            vipHtml = '<span class="tag vip-tag">VIP会员</span>';
-        }
-
-        document.getElementById('r-name').innerText = target.username;
-        document.getElementById('r-vip').innerHTML = vipHtml;
-        document.getElementById('r-expire').innerText = target.expire || '无';
-        document.getElementById('r-note').innerText = target.note || '无';
-        resultBox.hidden = false;
-        resultBox.classList.add('show');
-    }catch(e){
-        showError("配置文件读取失败，请检查部署环境");
-    }finally{
-        btn.disabled = false;
-        btn.innerText = "查询用户信息";
+    if(!cipher){
+      showError('用户名或密码错误');
+      return;
     }
+
+    const info = await decryptPayload(cipher, pwd);
+    if(!info){
+      showError('用户名或密码错误');
+      return;
+    }
+
+    const uname = info.username || name;
+    document.getElementById('r-user').textContent = uname;
+    document.getElementById('ava').textContent = uname.slice(0,1).toUpperCase();
+    document.getElementById('r-vip').innerHTML = statusTag(info.vip, info.expire);
+    document.getElementById('r-exp').textContent = String(info.expire||'').trim() || '无';
+    document.getElementById('r-note').textContent = String(info.note||'').trim() || '无';
+    card.classList.add('open');
+  }catch(e){
+    showError('配置文件读取失败，请确认已通过 http(s) 访问并存在 users.txt');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
 }
 
-// 回车提交
-document.getElementById('password').addEventListener('keydown', e => {
-    if(e.key === 'Enter') searchUser();
+document.getElementById('password').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') searchUser();
+});
+document.getElementById('username').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') document.getElementById('password').focus();
 });
 </script>
 </body>
