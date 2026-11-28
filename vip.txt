@@ -2,4 +2,4 @@
 # 格式：每行一条  用户名|JY1.xxxxx   （# 开头为注释，空行忽略）
 # VIP类型 / 到期时间 / 备注 / 密码 全部打包藏在密文里，这里只露用户名和一串乱码
 # 用同目录的 vip-admin.html 生成新行粘贴到这里即可
-Jianye|JY1.t0BbinfwYYnER9Y8Rho8CEsmwh6gxvc4jZbYyMROwr_Uq0U-MVMvk4N5nnNcXd52hFqrwaLStnPjYKNezzaOvwaa_24Q1ipWJDIMdAg5xDjOxXRmWijYhinTIatCsEc
+Jianye|JY1.7Z9binfwYYnER9Y8Rho8CEsmwh6gxvc4jZbYyMROwr_Uq0U-MVMvk4N5nnNcXd52hFqrwaLStnPjYKNezzaBvwaacqbkQ9b9453jL1R-g26bhGw-GXGb3mnOKqlGqk2NbqAVgkmQjfsgulURz5FsW_lF0MKvlX5CbEm63i4wF42y4ZLnUJk
