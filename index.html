@@ -4,11 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
-<title>鉴业の小站</title>
-<!-- 下面三行是「兜底值」：正常访问时由 functions/index.js 在服务器端
-     用 profile.txt 的「站名」「SEO描述」覆盖，改名字只需改配置文件；
-     只有 Function 未生效（如本地直接打开文件）时才会露出来。 -->
-<meta name="description" content="鉴业の小站（也叫鉴业小站）：鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。这里有一键重装、文件加密、Jianye PE、米家网页控制台、RSS 阅读器、在线音乐播放器等自制工具。">
+<title></title>
+<!-- 站名 / 描述一律只来自 profile.txt（服务器端由 functions/index.js 注入，
+     本地由 JS 启动后按配置覆盖）。【不设任何静态兜底】：配置读不到就留空，
+     标签页、导航站名、SEO 描述都不会凭空显示写死的文字。 -->
+<meta name="description" content="">
+<!-- 描述只来自 profile.txt 的「SEO描述」，不设静态兜底：读不到就留空 -->
 <!-- 语言：首次访问先按系统语言定好（中文→中文，其它语言→英文），
      免得英文用户先看到一闪而过的中文标题 / 语言标记。手动切换过的以本地保存为准。 -->
 <script>
@@ -142,39 +143,20 @@
   },function(){ passBoot(); return "ok"; });
 })();
 </script>
-<!-- 分享卡片预览（静态兜底值供爬虫抓取，JS 启动后按 profile.txt 覆盖） -->
+<!-- 分享卡片（og / twitter）：站名、标题、描述、图片、链接全部只来自 profile.txt，
+     JS 启动后按配置回填。【不设任何静态兜底】：配置读不到就留空，不显示写死内容 -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="鉴业の小站">
-<meta property="og:title" content="鉴业の小站">
-<meta property="og:description" content="鉴业の小站（也叫鉴业小站）：鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。">
-<meta property="og:url" content="https://jype.top/">
-<meta property="og:image" content="https://jype.top/hero-1600.webp">
-<meta property="og:image:width" content="1600">
-<meta property="og:image:height" content="1066">
+<meta property="og:site_name" content="">
+<meta property="og:title" content="">
+<meta property="og:description" content="">
+<meta property="og:url" content="">
+<meta property="og:image" content="">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:locale:alternate" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="鉴业の小站">
-<meta name="twitter:description" content="鉴业の小站：鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。">
-<meta name="twitter:image" content="https://jype.top/hero-1600.webp">
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "鉴业の小站",
-  "alternateName": ["鉴业小站", "鉴业的小站", "鉴业的博客", "鉴业个人博客", "鉴业", "Jianye's Corner", "jype.top"],
-  "url": "https://jype.top/",
-  "description": "鉴业的个人博客与数字空间，记录项目作品、相册、技术折腾和生活随想。",
-  "inLanguage": "zh-CN",
-  "author": {
-    "@type": "Person",
-    "name": "鉴业",
-    "alternateName": "Jianye",
-    "url": "https://jype.top/",
-    "sameAs": ["https://github.com/jianye50"]
-  }
-}
-</script>
+<meta name="twitter:title" content="">
+<meta name="twitter:description" content="">
+<meta name="twitter:image" content="">
 <!-- 规范地址：hash 路由的 #/xxx 都是同一个文档，统一指向站点根。
      由 profile.txt 的「域名」在 JS 里生成；没配域名就不输出 canonical -->
 <!-- 订阅源：中文 rss-zh.xml / 英文 rss-en.xml，都由 GitHub Action 在每次发文后
@@ -2269,6 +2251,19 @@ html[lang="en"] .boot-tip .bt-en{display:inline}
   <a class="nav-link" data-nav="about" href="#/about"><span data-navlabel="about">关于</span><span class="nav-top-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.4 3.9h13.2M12 20.1V9.1M7 14.1 12 9.1l5 5"/></svg></span></a>
   <span class="nav-sep"></span>
   <button class="nav-icon" id="langBtn" title="切换到英文" aria-label="切换到英文">EN</button>
+  <!-- 账号入口：圆形头像按钮（音乐按钮左边）。
+       未登录时是一枚「人形」图标按钮；登录成功后变成用户名首字的渐变圆头像，
+       有生效中的 VIP 时右上角还会亮一枚金色小圆点（accVipDot）。
+       点一下弹出账号 / VIP 面板（accModal，结构在文件末尾的账号系统区块里）。 -->
+  <button class="nav-icon acc-nav-btn" id="accBtn" title="账号" aria-label="账号"
+          aria-haspopup="dialog" aria-expanded="false" aria-controls="accModal">
+    <span class="acc-avatar" id="accAvatar" aria-hidden="true">
+      <svg class="acc-avatar-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <span class="acc-avatar-txt"></span>
+      <img class="acc-img" alt="">
+    </span>
+    <span class="acc-vip-dot" id="accVipDot" hidden></span>
+  </button>
   <!-- 音乐入口：点一下展开歌单面板（进度环画在按钮外圈） -->
   <button class="nav-icon mp-nav-btn" id="musicBtn" title="音乐（点击展开歌单）" aria-label="音乐"
           aria-haspopup="true" aria-expanded="false" aria-controls="mpWrap">
@@ -3107,10 +3102,12 @@ const T=()=>I18N[lang];
 function setLang(v,persist){
   lang=v;
   document.documentElement.lang=v==="zh"?"zh-CN":"en";
-  /* 站名只来自 profile.txt。配置读不到（文件被删 / CDN 出错）时别把标题清成空字符串 ——
-     退回服务端注入的 data-brand-*，再退回当前标题（静态兜底），至少标签页不会一片空白 */
-  const brandFallback=document.documentElement.getAttribute("data-brand-"+v)||"";
-  const brandText=T().brand||brandFallback||document.title||"";
+  /* 站名只来自配置（profile.txt），【不设静态兜底】：
+     ① 优先用 JS 从 profile.txt 读到的「站名」；
+     ② 退回服务端注入的 data-brand-*（服务器读了同一份配置后写进标签的，仍是配置，不是兜底）；
+     ③ 两处都读不到（文件被删 / CDN 出错 / 本地直开）→ 站名留空，
+        标签页标题与导航品牌名都不显示任何写死的文字 */
+  const brandText=T().brand||document.documentElement.getAttribute("data-brand-"+v)||"";
   document.title=brandText;
   /* 只有用户自己点 EN/中 才落盘（persist!==false）。启动时那句 setLang 不写，
      否则第一次访问就把「系统语言探测结果」固定下来，之后换系统语言也再不跟随 */
@@ -9671,6 +9668,598 @@ input[type=range].mp-range::-moz-range-thumb{
   .egg-term-body{font-size:11.5px;padding:10px 12px}
 }
 </style>
+
+<!-- =====================================================================
+ *  账号 / VIP 系统（纯前端）
+ *  ---------------------------------------------------------------------
+ *  · 配置文件 vip.txt 与本 HTML 同目录，每行一条：用户名|JY1.xxxxx
+ *    （# 开头为注释；VIP类型/到期时间/备注全部打包藏在密文里）
+ *  · 管理员用同目录的 vip-admin.html 生成配置行，粘进 vip.txt 即可
+ *  · 验证失败统一提示「账号或密码错误」，不泄露具体原因
+ *  · 登录状态存 localStorage（jy-vip-session），头像显示首字、VIP 亮金点
+ *  整个区块（本注释 + style + 弹窗 + script）都是增量式追加，删掉即整体下线。
+ * ===================================================================== -->
+<style>
+/* ---------- 导航栏头像按钮 ---------- */
+.acc-nav-btn{position:relative;overflow:visible}
+.acc-avatar{
+  width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;overflow:hidden;
+  color:var(--text-2);
+  transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s,color .25s;
+}
+.acc-nav-btn:hover .acc-avatar{transform:scale(1.08)}
+.acc-avatar-ico{width:19px;height:19px;fill:currentColor;display:block}
+.acc-avatar-txt{
+  display:none;place-items:center;width:100%;height:100%;
+  font-size:14.5px;font-weight:800;color:#fff;user-select:none;
+  background:linear-gradient(135deg,#4d8dff,#b44dff);
+  text-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+.acc-nav-btn.logged-in .acc-avatar{box-shadow:0 0 0 2px rgba(77,141,255,.45)}
+.acc-nav-btn.logged-in .acc-avatar-ico{display:none}
+.acc-nav-btn.logged-in .acc-avatar-txt{display:grid}
+/* VIP 生效中：头像右上角金色小圆点 */
+.acc-vip-dot{
+  position:absolute;top:0;right:0;width:9px;height:9px;border-radius:99px;
+  background:linear-gradient(135deg,#ffd23f,#ff9f43);
+  box-shadow:0 0 0 2px rgba(11,13,18,.9),0 0 8px rgba(255,190,63,.8);
+  animation:accDotPulse 2.4s ease-in-out infinite;
+}
+@keyframes accDotPulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* ---------- 账号 / VIP 弹窗 ---------- */
+.acc-mask{
+  position:fixed;inset:0;z-index:900;
+  display:grid;place-items:center;padding:20px;
+  background:rgba(4,6,12,.55);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;transition:opacity .28s ease;
+}
+.acc-mask.open{opacity:1;pointer-events:auto}
+.acc-modal{
+  width:min(400px,100%);
+  border-radius:20px;
+  background:linear-gradient(120deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.07) 38%,rgba(255,255,255,.12) 62%,rgba(255,255,255,.05) 100%),#10131a;
+  backdrop-filter:blur(22px) saturate(200%) brightness(1.12);
+  -webkit-backdrop-filter:blur(22px) saturate(200%) brightness(1.12);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.18),
+    inset 0 1.5px .5px -1px rgba(255,255,255,.5),
+    0 24px 60px rgba(0,0,0,.55);
+  padding:26px 24px 24px;
+  position:relative;
+  transform:translateY(16px) scale(.97);
+  transition:transform .32s cubic-bezier(.2,.7,.2,1);
+  max-height:calc(100vh - 40px);overflow-y:auto;
+}
+.acc-mask.open .acc-modal{transform:translateY(0) scale(1)}
+.acc-close{
+  position:absolute;top:12px;right:12px;
+  width:32px;height:32px;border-radius:50%;
+  display:grid;place-items:center;color:var(--text-3);
+  transition:color .2s,background .2s;
+}
+.acc-close:hover{color:var(--text-1);background:rgba(255,255,255,.1)}
+.acc-close svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+/* 头部：大头像 + 用户名 + 徽章 */
+.acc-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.acc-big{
+  width:54px;height:54px;border-radius:18px;flex:none;overflow:hidden;
+  display:grid;place-items:center;color:var(--text-2);
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
+  transition:background .3s;
+}
+.acc-big svg{width:26px;height:26px;fill:currentColor}
+.acc-big .acc-big-txt{
+  display:none;font-size:23px;font-weight:800;color:#fff;
+  width:100%;height:100%;place-items:center;
+  background:linear-gradient(135deg,#4d8dff,#b44dff);
+  text-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+.acc-mask.logged .acc-big svg{display:none}
+.acc-mask.logged .acc-big .acc-big-txt{display:grid}
+.acc-mask.logged .acc-big{border-color:rgba(77,141,255,.4);box-shadow:0 6px 18px rgba(77,141,255,.3)}
+/* 密文里带了头像网址：显示图片头像（规则放在 logged 之后，同特异性后者生效） */
+.acc-avatar .acc-img,.acc-big .acc-img{
+  display:none;width:100%;height:100%;
+  object-fit:cover;object-position:center;
+}
+.acc-nav-btn.has-img .acc-avatar .acc-img{display:block}
+.acc-nav-btn.has-img .acc-avatar-txt,.acc-nav-btn.has-img .acc-avatar-ico{display:none}
+.acc-nav-btn.has-img .acc-avatar{box-shadow:0 0 0 2px rgba(77,141,255,.45)}
+.acc-mask.has-img .acc-big .acc-img{display:block}
+.acc-mask.has-img .acc-big svg,.acc-mask.has-img .acc-big .acc-big-txt{display:none}
+.acc-mask.has-img .acc-big{border-color:rgba(77,141,255,.4);box-shadow:0 6px 18px rgba(77,141,255,.3)}
+.acc-name{font-size:17px;font-weight:800;line-height:1.3}
+.acc-sub{font-size:12px;color:var(--text-3);margin-top:2px}
+.acc-badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}
+.acc-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3.5px 11px;border-radius:999px;
+  font-size:11.5px;font-weight:700;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:var(--text-2);
+}
+.acc-badge .bd{width:6px;height:6px;border-radius:99px;background:currentColor}
+.acc-badge.ok{color:#3dd68c;background:rgba(61,214,140,.10);border-color:rgba(61,214,140,.28)}
+.acc-badge.gold{color:#14110a;background:linear-gradient(115deg,#ffd23f,#ff9f43);border-color:rgba(255,210,63,.5)}
+.acc-badge.gold .bd{background:#14110a}
+.acc-badge.bad{color:#ff5d5d;background:rgba(255,93,93,.10);border-color:rgba(255,93,93,.28)}
+.acc-badge.dim{color:var(--text-3)}
+/* 表单 */
+.acc-field{margin-bottom:14px}
+.acc-field label{display:block;font-size:12.5px;font-weight:600;color:var(--text-2);margin-bottom:6px}
+.acc-inp{
+  width:100%;padding:11px 14px;border-radius:12px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  color:var(--text-1);font-size:14.5px;font-family:inherit;
+  transition:border-color .2s,box-shadow .2s,background .2s;
+}
+.acc-inp::placeholder{color:var(--text-3)}
+.acc-inp:focus{outline:none;border-color:rgba(77,141,255,.55);box-shadow:0 0 0 3px var(--accent-soft);background:rgba(255,255,255,.09)}
+.acc-pwd{position:relative}
+.acc-pwd .acc-inp{padding-right:42px}
+.acc-eye{
+  position:absolute;right:5px;top:50%;transform:translateY(-50%);
+  width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+  color:var(--text-3);transition:color .2s,background .2s;
+}
+.acc-eye:hover{color:var(--text-1);background:rgba(255,255,255,.10)}
+.acc-eye svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.acc-eye .e-off{display:none}
+.acc-eye.off .e-open{display:none}
+.acc-eye.off .e-off{display:block}
+/* 主按钮：全站同款彩虹流光描边 */
+.acc-btn{
+  position:relative;z-index:0;width:100%;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:12px 26px;border-radius:12px;
+  font-size:14.5px;font-weight:600;color:#fff;
+  border:1.5px solid transparent;
+  background:linear-gradient(#0b0f1a,#0b0f1a) padding-box,
+    linear-gradient(115deg,#4d8dff,#b44dff,#ff5fa2,#ff8a3d,#ffd23f,#4d8dff) border-box;
+  background-size:100% 100%,300% 100%;
+  animation:rb-border 6s linear infinite;
+  transition:transform .2s;
+}
+.acc-btn:hover{transform:translateY(-2px)}
+.acc-btn:active{transform:scale(.97)}
+.acc-btn::before{
+  content:"";position:absolute;inset:-3px;z-index:-1;border-radius:inherit;
+  background:linear-gradient(115deg,#4d8dff,#b44dff,#ff5fa2,#ff8a3d,#ffd23f,#4d8dff);
+  background-size:300% 100%;filter:blur(16px);opacity:.55;
+  animation:rb-glow 6s linear infinite;transition:opacity .25s,filter .25s;
+}
+.acc-btn:hover::before{opacity:.85;filter:blur(20px)}
+.acc-btn:disabled{cursor:wait;opacity:.75;transform:none}
+/* 次按钮（退出登录） */
+.acc-btn-ghost{
+  width:100%;padding:10px;border-radius:12px;margin-top:10px;
+  font-size:13.5px;font-weight:600;color:var(--text-2);
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
+  transition:background .2s,color .2s;
+}
+.acc-btn-ghost:hover{background:rgba(255,93,93,.14);color:#ff8a8a;border-color:rgba(255,93,93,.3)}
+/* 错误条（统一话术） */
+.acc-err{
+  display:none;margin-top:13px;padding:10px 13px;border-radius:12px;
+  font-size:13px;font-weight:600;color:#ff5d5d;
+  background:rgba(255,93,93,.10);border:1px solid rgba(255,93,93,.25);
+}
+.acc-err.show{display:block}
+.acc-form.shake{animation:accShake .4s ease}
+@keyframes accShake{
+  0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}
+  40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}
+}
+/* 登录后的信息区 */
+.acc-info{display:none}
+.acc-mask.logged .acc-form{display:none}
+.acc-mask.logged .acc-info{display:block}
+.acc-rows{border-radius:14px;overflow:hidden;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.07)}
+.acc-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:11px 14px;font-size:13.5px}
+.acc-row+.acc-row{border-top:1px solid rgba(255,255,255,.06)}
+.acc-row .k{color:var(--text-3);font-size:12px;font-weight:600;flex:none}
+.acc-row .v{color:var(--text-1);font-weight:600;text-align:right;word-break:break-all}
+.acc-row .v.gold{background:linear-gradient(115deg,#ffd23f,#ff9f43);-webkit-background-clip:text;background-clip:text;color:transparent}
+.acc-row .v.bad{color:#ff5d5d}
+.acc-note{
+  margin-top:12px;padding:11px 14px;border-radius:14px;
+  font-size:13px;line-height:1.7;color:var(--text-2);
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  white-space:pre-wrap;word-break:break-all;
+}
+.acc-note:empty{display:none}
+.acc-note .nk{display:block;color:var(--text-3);font-size:11px;font-weight:700;letter-spacing:.08em;margin-bottom:3px}
+.acc-foot-tip{margin-top:14px;text-align:center;font-size:11.5px;color:var(--text-3)}
+/* Toast */
+.acc-toast{
+  position:fixed;left:50%;bottom:34px;z-index:960;
+  transform:translateX(-50%) translateY(20px);
+  padding:11px 20px;border-radius:999px;
+  font-size:13.5px;font-weight:600;color:#fff;
+  background:linear-gradient(120deg,rgba(255,255,255,.16),rgba(255,255,255,.07)),#10131a;
+  backdrop-filter:blur(22px) saturate(200%);-webkit-backdrop-filter:blur(22px) saturate(200%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 14px 38px rgba(6,10,25,.35);
+  opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;
+  max-width:calc(100vw - 40px);text-align:center;
+}
+.acc-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){
+  .acc-mask,.acc-modal,.acc-btn,.acc-btn::before{animation:none!important;transition:none!important}
+}
+@media (max-width:640px){
+  .acc-modal{padding:22px 18px 20px}
+}
+</style>
+
+<!-- 账号 / VIP 弹窗：放在 body 下而不是 <nav> 里，原因同「记录」二级菜单——
+     导航条自带 backdrop-filter，嵌进去的磨砂就废了 -->
+<div class="acc-mask" id="accMask" aria-hidden="true">
+  <div class="acc-modal" id="accModal" role="dialog" aria-modal="true" aria-labelledby="accTitle">
+    <button class="acc-close" id="accClose" type="button" aria-label="关闭">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <div class="acc-head">
+      <div class="acc-big" id="accBig" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <span class="acc-big-txt"></span>
+        <img class="acc-img" alt="">
+      </div>
+      <div style="min-width:0">
+        <div class="acc-name" id="accTitle" data-i18n="accTitle">账号</div>
+        <div class="acc-sub" id="accSub"></div>
+        <div class="acc-badges" id="accBadges"></div>
+      </div>
+    </div>
+
+    <!-- 登录视图 -->
+    <form class="acc-form" id="accForm" autocomplete="off">
+      <div class="acc-field">
+        <label for="accUser" data-i18n="user">用户名</label>
+        <input class="acc-inp" id="accUser" type="text" spellcheck="false" autocomplete="off">
+      </div>
+      <div class="acc-field">
+        <label for="accPass" data-i18n="pass">密码</label>
+        <div class="acc-pwd">
+          <input class="acc-inp" id="accPass" type="password" autocomplete="off">
+          <button class="acc-eye" id="accEye" type="button" aria-label="显示或隐藏密码">
+            <svg class="e-open" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/><path class="e-off" d="M4 4l16 16"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="acc-btn" id="accSubmit" type="submit" data-i18n="btn">查 询</button>
+      <div class="acc-err" id="accErr" data-i18n="err">账号或密码错误</div>
+      <div class="acc-foot-tip" data-i18n="tip">账号由站长发放</div>
+    </form>
+
+    <!-- 登录后的信息视图 -->
+    <div class="acc-info">
+      <div class="acc-rows" id="accRows"></div>
+      <div class="acc-note" id="accNote"></div>
+      <button class="acc-btn-ghost" id="accLogout" type="button" data-i18n="logout">退出登录</button>
+    </div>
+  </div>
+</div>
+<div class="acc-toast" id="accToast" role="status" aria-live="polite"></div>
+
+<script>
+/* =====================================================================
+ * 账号 / VIP 系统逻辑（与 vip-admin.html 共用同一套密文格式与密钥）
+ * ===================================================================== */
+(function(){
+"use strict";
+
+/* ---------- 密文工具（内联版，格式与 vip-admin.html 完全一致） ---------- */
+var PREFIX = "JY1.";
+function xmur3(str){
+  var h = 1779033703 ^ str.length;
+  for (var i = 0; i < str.length; i++){
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return function(){
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return (h ^= h >>> 16) >>> 0;
+  };
+}
+function sfc32(a,b,c,d){
+  return function(){
+    a>>>=0;b>>>=0;c>>>=0;d>>>=0;
+    var t=(a+b)|0; a=b^(b>>>9); b=(c+(c<<3))|0;
+    c=(c<<21)|(c>>>11); d=(d+1)|0; t=(t+d)|0; c=(c+t)|0;
+    return (t>>>0)/4294967296;
+  };
+}
+function keystream(secret,length){
+  var seed=xmur3("JY-VIP::"+secret), next=sfc32(seed(),seed(),seed(),seed());
+  var out=new Uint8Array(length);
+  for(var i=0;i<length;i++) out[i]=(next()*256)|0;
+  return out;
+}
+function b64urlEncode(bytes){
+  var bin=""; for(var i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function b64urlDecode(str){
+  var s=str.replace(/-/g,"+").replace(/_/g,"/");
+  while(s.length%4) s+="=";
+  var bin=atob(s), out=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i);
+  return out;
+}
+function decrypt(text,secret){
+  if(typeof text!=="string"||text.indexOf(PREFIX)!==0) throw new Error("格式不符");
+  var buf=b64urlDecode(text.slice(PREFIX.length)), ks=keystream(secret,buf.length), i;
+  for(i=0;i<buf.length;i++) buf[i]^=ks[i];
+  var len=buf[1]|(buf[2]<<8);
+  if(3+len!==buf.length) throw new Error("长度校验失败");
+  var sum=0;
+  for(i=0;i<len;i++) sum=(sum+buf[3+i]+(i+1))&0xff;
+  if(sum!==buf[0]) throw new Error("校验和失败");
+  return JSON.parse(new TextDecoder().decode(buf.subarray(3)));
+}
+
+/* ⚠ 密钥：必须与 vip-admin.html 顶部的完全一致，改的时候两个文件一起改！ */
+var JY_SECRET = "jianye-vip-secret-2026";
+
+/* ---------- i18n：跟随站点的中/英文切换（jy-lang） ---------- */
+var I18N = {
+  zh:{user:"用户名",pass:"密码",btn:"查 询",err:"账号或密码错误",tip:"账号由站长发放",
+      logout:"退出登录",querying:"查询中…",welcome:"验证通过，欢迎回来，",bye:"已退出登录",
+      accTitle:"账号",accTip:"账号",loginSub:"登录后查看你的账户信息",noVip:"未开通 VIP",
+      permBadge:"永久 VIP",vipOn:"VIP 生效中",vipExp:"VIP 已过期",dead:"已失效",
+      type:"会员类型",exp:"到期时间",status:"当前状态",note:"备注 NOTE",
+      permType:"永久 VIP",timeType:"限时 VIP",noneType:"普通用户",
+      permStatus:"永久有效，无需续期",remain:"有效（剩 {n} 天）",
+      expiredAt:"已于 {d} 过期",issued:"签发于 ",cfgFail:"配置文件读取失败：请确认 vip.txt 与本页面在同一目录并通过 HTTP 访问"},
+  en:{user:"Username",pass:"Password",btn:"QUERY",err:"Incorrect username or password",tip:"Accounts are issued by the site owner",
+      logout:"Sign out",querying:"Querying…",welcome:"Verified. Welcome back, ",bye:"Signed out",
+      accTitle:"Account",accTip:"Account",loginSub:"Sign in to view your account info",noVip:"No VIP",
+      permBadge:"Permanent VIP",vipOn:"VIP Active",vipExp:"VIP Expired",dead:"Expired",
+      type:"Plan",exp:"Expires",status:"Status",note:"NOTE",
+      permType:"Permanent VIP",timeType:"Timed VIP",noneType:"Standard",
+      permStatus:"Permanent — no renewal needed",remain:"Active ({n} days left)",
+      expiredAt:"Expired on {d}",issued:"Issued ",cfgFail:"Failed to read config: make sure vip.txt sits next to this page and is served over HTTP"}
+};
+function curLang(){ return document.documentElement.lang==="en" ? "en" : "zh"; }
+function T(){ return I18N[curLang()]; }
+function fmt(s,o){ return String(s).replace(/\{(\w+)\}/g,function(m,k){ return o[k]!=null?o[k]:m; }); }
+function esc(s){
+  return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+/* 把弹窗里所有 data-i18n 文案刷成当前语言。
+   登录态下标题显示的是用户名，别被词典值覆盖回去 */
+function applyAccLang(){
+  var t=T(), logged=mask.classList.contains("logged");
+  document.querySelectorAll("#accModal [data-i18n]").forEach(function(el){
+    var k=el.getAttribute("data-i18n");
+    if(k==="accTitle"&&logged) return;
+    if(t[k]!=null) el.textContent=t[k];
+  });
+  if(!logged) $("accSub").textContent=t.loginSub;   /* 登录页副标题 */
+  /* 导航栏头像按钮的悬停提示 / 无障碍名称也跟随语言 */
+  accBtn.title=t.accTip;
+  accBtn.setAttribute("aria-label",t.accTip);
+}
+
+/* ---------- 元素 ---------- */
+var $=function(id){ return document.getElementById(id); };
+var mask=$("accMask"), accBtn=$("accBtn"), avatar=$("accAvatar"),
+    avatarTxt=avatar.querySelector(".acc-avatar-txt"),
+    vipDot=$("accVipDot"), bigTxt=document.querySelector(".acc-big-txt"),
+    form=$("accForm"), errEl=$("accErr"), toastEl=$("accToast");
+var toastTimer=0;
+function toast(msg){
+  toastEl.textContent=msg; toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){ toastEl.classList.remove("show"); },2400);
+}
+
+/* ---------- VIP 状态判定：永久VIP / 限时VIP / 普通用户，过期自动识别 ---------- */
+function judgeVIP(d){
+  var st={perm:false,active:false,expired:false,expText:"",remain:null};
+  if(d.t==="permanent"){ st.perm=true; st.active=true; st.expText=""; }
+  else if(d.t==="time"&&d.e){
+    var exp=new Date(d.e+"T23:59:59");
+    st.expText=d.e;
+    if(new Date()>exp) st.expired=true;
+    else { st.active=true; st.remain=Math.max(1,Math.ceil((exp-new Date())/86400000)); }
+  }
+  return st;
+}
+
+/* ---------- 配置读取与验证（所有失败统一「账号或密码错误」） ---------- */
+function loadDB(){
+  return fetch("vip.txt",{cache:"no-cache"}).then(function(r){
+    if(!r.ok) throw new Error("cfg");
+    return r.text();
+  }).then(function(text){
+    if(/^\s*</.test(text)) throw new Error("cfg");   /* 读到 404 兜底页等 */
+    var list=[];
+    text.split(/\r?\n/).forEach(function(line){
+      line=line.trim();
+      if(!line||line.charAt(0)==="#") return;
+      var i=line.indexOf("|");
+      if(i<1) return;
+      list.push({user:line.slice(0,i).trim(),cipher:line.slice(i+1).trim()});
+    });
+    return list;
+  });
+}
+function verify(u,p){
+  return loadDB().then(function(db){
+    var hit=null;
+    for(var i=0;i<db.length;i++){
+      if(db[i].user.toLowerCase()===u.toLowerCase()){ hit=db[i]; break; }
+    }
+    if(!hit) throw new Error("bad");
+    var d=decrypt(hit.cipher,JY_SECRET);
+    if(String(d.u).toLowerCase()!==u.toLowerCase()||String(d.p)!==p) throw new Error("bad");
+    return d;
+  });
+}
+
+/* ---------- 登录态渲染 ---------- */
+function badgesHTML(t,st){
+  var b=[];
+  if(st.perm) b.push('<span class="acc-badge gold"><span class="bd"></span>'+t.permBadge+'</span>');
+  else if(st.active) b.push('<span class="acc-badge ok"><span class="bd"></span>'+t.vipOn+'</span>');
+  else if(st.expired) b.push('<span class="acc-badge bad"><span class="bd"></span>'+t.vipExp+'</span>');
+  else b.push('<span class="acc-badge dim"><span class="bd"></span>'+t.noVip+'</span>');
+  if(st.active&&!st.perm&&st.remain!=null)
+    b.push('<span class="acc-badge ok"><span class="bd"></span>'+st.remain+'d</span>');
+  return b.join("");
+}
+function renderInfo(d){
+  var t=T(), st=judgeVIP(d);
+  $("accTitle").textContent=d.u;
+  $("accSub").textContent=t.issued+(d.i?new Date(d.i).toLocaleDateString(curLang()==="zh"?"zh-CN":"en"):"—");
+  $("accBadges").innerHTML=badgesHTML(t,st);
+  var typeName=st.perm?t.permType:(d.t==="time"?t.timeType:t.noneType);
+  var statusText=st.perm?t.permStatus
+    :st.active?fmt(t.remain,{n:st.remain})
+    :st.expired?fmt(t.expiredAt,{d:st.expText})
+    :t.noVip;
+  $("accRows").innerHTML=
+    '<div class="acc-row"><span class="k">'+t.type+'</span><span class="v'+(st.perm?" gold":"")+'">'+esc(typeName)+'</span></div>'+
+    '<div class="acc-row"><span class="k">'+t.exp+'</span><span class="v'+(st.expired?" bad":(st.perm?" gold":""))+'">'+esc(st.perm?(curLang()==="zh"?"永久有效":"Permanent"):st.expText)+'</span></div>'+
+    '<div class="acc-row"><span class="k">'+t.status+'</span><span class="v'+(st.expired?" bad":(st.perm?" gold":""))+'">'+esc(statusText)+'</span></div>';
+  $("accNote").innerHTML=d.n?'<span class="nk">'+t.note+'</span>'+esc(d.n):"";
+}
+function paintAvatar(u, av){
+  var ch=(u||"").trim().charAt(0).toUpperCase();
+  avatarTxt.textContent=ch||"?";
+  bigTxt.textContent=ch||"?";
+  /* 密文里带头像网址（a 字段）→ 显示图片头像；没有 → 首字渐变头像 */
+  var hasImg=!!av;
+  if(hasImg){ $("accNavImg").src=av; $("accBigImg").src=av; }
+  accBtn.classList.toggle("has-img",hasImg);
+  mask.classList.toggle("has-img",hasImg);
+  accBtn.classList.toggle("logged-in",!!u);
+}
+
+/* ---------- 弹窗开关 ---------- */
+var lastFocus=null;
+function openModal(){
+  applyAccLang();
+  lastFocus=document.activeElement;
+  mask.classList.add("open");
+  mask.setAttribute("aria-hidden","false");
+  accBtn.setAttribute("aria-expanded","true");
+  document.body.style.overflow="hidden";
+  /* 已存过登录态 → 静默重验证一次直接进信息页；否则进登录页 */
+  var saved=readSession();
+  if(saved&&saved.u&&saved.p){
+    enter(saved.u,saved.p,true);
+  } else {
+    setLogged(false);
+    setTimeout(function(){ try{ $("accUser").focus(); }catch(e){} },120);
+  }
+}
+function closeModal(){
+  mask.classList.remove("open");
+  mask.setAttribute("aria-hidden","true");
+  accBtn.setAttribute("aria-expanded","false");
+  document.body.style.overflow="";
+  if(lastFocus&&lastFocus.focus){ try{ lastFocus.focus(); }catch(e){} }
+}
+accBtn.addEventListener("click",function(){ mask.classList.contains("open")?closeModal():openModal(); });
+$("accClose").addEventListener("click",closeModal);
+mask.addEventListener("click",function(e){ if(e.target===mask) closeModal(); });
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape"&&mask.classList.contains("open")) closeModal();
+});
+/* 站点切中/英文时同步刷一遍弹窗文案 */
+var langBtn=$("langBtn");
+if(langBtn) langBtn.addEventListener("click",function(){
+  setTimeout(function(){
+    applyAccLang();
+    if(mask.classList.contains("open")&&mask.classList.contains("logged")&&currentData) renderInfo(currentData);
+  },0);
+});
+
+/* ---------- 登录 / 退出 ---------- */
+var currentData=null;
+function setLogged(on){
+  mask.classList.toggle("logged",on);
+}
+function readSession(){ try{ return JSON.parse(localStorage.getItem("jy-vip-session")||"null"); }catch(e){ return null; } }
+function writeSession(s){ try{ s?localStorage.setItem("jy-vip-session",JSON.stringify(s)):localStorage.removeItem("jy-vip-session"); }catch(e){} }
+function enter(u,p,silent){
+  setLogged(false);
+  errEl.classList.remove("show");
+  var btn=$("accSubmit"), old=btn.textContent;
+  if(!silent) { btn.disabled=true; btn.textContent=T().querying; }
+  verify(u,p).then(function(d){
+    currentData=d;
+    writeSession({u:u,p:p});
+    paintAvatar(d.u);
+    renderInfo(d);
+    setLogged(true);
+    vipDot.hidden=!judgeVIP(d).active;
+    btn.disabled=false; btn.textContent=old;
+    if(!silent) toast(T().welcome+d.u);
+  },function(err){
+    writeSession(null);
+    paintAvatar("");
+    vipDot.hidden=true;
+    setLogged(false);
+    btn.disabled=false; btn.textContent=old;
+    if(err&&(err.message==="cfg"||err.name==="TypeError")){
+      errEl.textContent=T().cfgFail;         /* 环境问题如实提示 */
+      errEl.classList.add("show");
+    } else {
+      errEl.textContent=T().err;             /* 其余一律统一话术 */
+      errEl.classList.add("show");
+      form.classList.remove("shake"); void form.offsetWidth; form.classList.add("shake");
+    }
+  });
+}
+form.addEventListener("submit",function(e){
+  e.preventDefault();
+  var u=$("accUser").value.trim(), p=$("accPass").value;
+  if(!u||!p){
+    errEl.textContent=T().err; errEl.classList.add("show");
+    form.classList.remove("shake"); void form.offsetWidth; form.classList.add("shake");
+    return;
+  }
+  enter(u,p,false);
+});
+$("accLogout").addEventListener("click",function(){
+  currentData=null;
+  writeSession(null);
+  paintAvatar("");
+  vipDot.hidden=true;
+  setLogged(false);
+  $("accTitle").textContent=T().accTitle;
+  $("accSub").textContent=T().loginSub;
+  $("accBadges").innerHTML="";
+  $("accUser").value=""; $("accPass").value="";
+  errEl.classList.remove("show");
+  toast(T().bye);
+  setTimeout(function(){ try{ $("accUser").focus(); }catch(e){} },50);
+});
+$("accEye").addEventListener("click",function(){
+  var inp=$("accPass"), off=inp.type==="text";
+  inp.type=off?"password":"text";
+  $("accEye").classList.toggle("off",!off);
+});
+
+/* ---------- 启动：已有登录态就先把头像/金点亮起来（不弹窗） ---------- */
+(function(){
+  applyAccLang();
+  var s=readSession();
+  if(!(s&&s.u&&s.p)) return;
+  verify(s.u,s.p).then(function(d){
+    currentData=d;
+    paintAvatar(d.u);
+    vipDot.hidden=!judgeVIP(d).active;
+  },function(){ writeSession(null); });
+})();
+})();
+</script>
 
 </body>
 </html>

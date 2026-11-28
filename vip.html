@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex,nofollow">
+<title>VIP 密文生成</title>
+<style>
+/* =====================================================================
+ * VIP 密文生成页（独立单页，只做一件事：生成配置行）
+ * 生成的整行粘贴到同目录 vip.txt，主站导航栏头像按钮的账号系统即可识别
+ * ===================================================================== */
+:root{
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",
+         "PingFang SC","HarmonyOS Sans SC","Microsoft YaHei","Segoe UI",sans-serif;
+  --radius:20px;
+  --accent:#4d8dff;
+  --accent-soft:rgba(77,141,255,.14);
+  --bg:#0b0d12;
+  --text-1:#f4f5f7;
+  --text-2:rgba(244,245,247,.68);
+  --text-3:rgba(244,245,247,.42);
+  --ok:#3dd68c;
+  --gold:#ffd23f;
+  --glass-grad:linear-gradient(120deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.07) 38%,rgba(255,255,255,.12) 62%,rgba(255,255,255,.05) 100%);
+  --glass-blur:blur(22px) saturate(200%) brightness(1.12);
+  color-scheme:dark;   /* 原生下拉、日期弹层自动深色 */
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--text-1);
+  min-height:100vh;-webkit-font-smoothing:antialiased;
+  display:grid;place-items:center;padding:40px 20px;
+  background-image:
+    radial-gradient(900px 500px at 85% -10%,rgba(180,77,255,.12),transparent 60%),
+    radial-gradient(700px 460px at -10% 110%,rgba(77,141,255,.10),transparent 60%);
+  background-attachment:fixed;
+}
+button{font-family:inherit;color:inherit;border:none;background:none;cursor:pointer}
+::selection{background:var(--accent);color:#fff}
+
+.wrap{width:min(520px,100%);animation:fadeUp .6s cubic-bezier(.2,.7,.2,1) both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.section-label{
+  display:flex;align-items:center;gap:14px;
+  font-size:12.5px;font-weight:700;letter-spacing:.22em;
+  color:var(--text-2);text-transform:uppercase;margin-bottom:14px;
+}
+.section-label::before{content:"";width:34px;height:2.5px;border-radius:99px;background:#b44dff}
+h1{font-size:clamp(24px,5vw,32px);font-weight:800;margin-bottom:8px}
+.subtitle{font-size:14.5px;line-height:1.7;color:var(--text-2);margin-bottom:26px}
+
+.card{
+  border-radius:var(--radius);
+  background:var(--glass-grad);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.18),
+    inset 0 1.5px .5px -1px rgba(255,255,255,.5),
+    0 14px 38px rgba(6,10,25,.28);
+  padding:26px 24px;margin-bottom:18px;
+}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:7px}
+.field .hint{font-size:12px;color:var(--text-3);margin-top:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:460px){.grid2{grid-template-columns:1fr}}
+.inp{
+  width:100%;padding:12px 14px;border-radius:12px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  color:var(--text-1);font-size:15px;font-family:inherit;
+  transition:border-color .2s,box-shadow .2s,background .2s;
+}
+.inp::placeholder{color:var(--text-3)}
+.inp:focus{outline:none;border-color:rgba(180,120,255,.55);box-shadow:0 0 0 3px rgba(180,77,255,.14);background:rgba(255,255,255,.09)}
+.inp:disabled{opacity:.45;cursor:not-allowed}
+/* 正常的下拉选择组件：原生 select + 自定义外观 */
+.select-wrap{position:relative}
+.sel{
+  width:100%;appearance:none;-webkit-appearance:none;
+  padding:12px 42px 12px 14px;border-radius:12px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  color:var(--text-1);font-size:15px;font-family:inherit;cursor:pointer;
+  transition:border-color .2s,box-shadow .2s,background .2s;
+}
+.sel:focus{outline:none;border-color:rgba(180,120,255,.55);box-shadow:0 0 0 3px rgba(180,77,255,.14);background:rgba(255,255,255,.09)}
+.sel:hover{background:rgba(255,255,255,.09)}
+.select-wrap::after{
+  content:"";position:absolute;right:15px;top:50%;
+  width:10px;height:10px;margin-top:-7px;pointer-events:none;
+  border-right:2px solid var(--text-2);border-bottom:2px solid var(--text-2);
+  transform:rotate(45deg);transition:transform .2s;
+}
+.select-wrap:focus-within::after{transform:rotate(225deg);margin-top:-3px}
+.sel option{background:#151923;color:var(--text-1);padding:10px}
+.sel option:checked{background:linear-gradient(0deg,rgba(77,141,255,.35),rgba(77,141,255,.35))}
+
+/* 主按钮：彩虹流光描边（主站同款） */
+.btn{
+  position:relative;z-index:0;width:100%;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:13px 26px;border-radius:12px;
+  font-size:15px;font-weight:600;color:#fff;
+  border:1.5px solid transparent;
+  background:linear-gradient(#0b0f1a,#0b0f1a) padding-box,
+    linear-gradient(115deg,#4d8dff,#b44dff,#ff5fa2,#ff8a3d,#ffd23f,#4d8dff) border-box;
+  background-size:100% 100%,300% 100%;
+  animation:rb-border 6s linear infinite;
+  transition:transform .2s;
+}
+@keyframes rb-border{from{background-position:0% 50%,0% 50%}to{background-position:0% 50%,300% 50%}}
+.btn:hover{transform:translateY(-2px)}
+.btn:active{transform:scale(.97)}
+.btn::before{
+  content:"";position:absolute;inset:-3px;z-index:-1;border-radius:inherit;
+  background:linear-gradient(115deg,#4d8dff,#b44dff,#ff5fa2,#ff8a3d,#ffd23f,#4d8dff);
+  background-size:300% 100%;filter:blur(16px);opacity:.55;
+  animation:rb-glow 6s linear infinite;transition:opacity .25s,filter .25s;
+}
+@keyframes rb-glow{from{background-position:0% 50%}to{background-position:300% 50%}}
+.btn:hover::before{opacity:.85;filter:blur(20px)}
+
+/* 生成结果 */
+.out-card{display:none}
+.out-card.show{display:block;animation:fadeUp .45s cubic-bezier(.2,.7,.2,1) both}
+.out-label{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--text-3);margin-bottom:9px}
+.out-box{display:flex;gap:10px;align-items:stretch}
+.out-line{
+  flex:1;min-width:0;padding:13px 14px;border-radius:12px;
+  background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.10);
+  font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;
+  font-size:13px;line-height:1.6;color:#8fb8ff;
+  word-break:break-all;user-select:all;
+}
+.out-line .u{color:var(--gold);font-weight:700}
+.copy-btn{
+  flex:none;align-self:center;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:11px 16px;border-radius:12px;
+  background:var(--accent);color:#fff;font-size:13.5px;font-weight:700;
+  transition:transform .2s,background .2s;
+}
+.copy-btn:hover{background:#669dff;transform:translateY(-1px)}
+.copy-btn:active{transform:scale(.96)}
+.tip{
+  margin-top:12px;padding:11px 14px;border-radius:12px;
+  font-size:13px;line-height:1.7;color:var(--text-2);
+  background:rgba(77,141,255,.08);border:1px solid rgba(77,141,255,.2);
+}
+.toast{
+  position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);
+  z-index:200;padding:11px 20px;border-radius:999px;
+  font-size:13.5px;font-weight:600;color:#fff;
+  background:var(--glass-grad),#10131a;
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 14px 38px rgba(6,10,25,.35);
+  opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media (max-width:460px){.card{padding:22px 18px}}
+</style>
+</head>
+<body>
+
+<main class="wrap">
+  <div class="section-label">Cipher Generator</div>
+  <h1>VIP 密文生成</h1>
+  <p class="subtitle">填写账号信息生成配置行，复制整行粘贴到同目录 <b>vip.txt</b> 即可生效。</p>
+
+  <!-- 生成表单 -->
+  <form class="card" id="genForm" autocomplete="off">
+    <div class="grid2">
+      <div class="field">
+        <label for="fUser">用户名</label>
+        <input class="inp" id="fUser" type="text" placeholder="如：jianye" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="fPwd">密码</label>
+        <input class="inp" id="fPwd" type="text" placeholder="如：abc123456" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="fType">VIP 类型</label>
+        <div class="select-wrap">
+          <select class="sel" id="fType">
+            <option value="permanent">永久 VIP</option>
+            <option value="time" selected>限时 VIP</option>
+            <option value="none">普通用户（无 VIP）</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" id="fExpField">
+        <label for="fExp">到期日期</label>
+        <input class="inp" id="fExp" type="date">
+        <div class="hint" id="fExpHint">过期后主站自动判定为「已过期」</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="fNote">备注 <span style="color:var(--text-3);font-weight:400">（可选，随密文隐藏存放）</span></label>
+      <input class="inp" id="fNote" type="text" maxlength="200" placeholder="如：内部测试账号 / 2026 年度会员">
+    </div>
+
+    <button class="btn" type="submit">生成配置行</button>
+  </form>
+
+  <!-- 生成结果 -->
+  <section class="card out-card" id="outCard" aria-live="polite">
+    <div class="out-label">CONFIG LINE · 复制到 vip.txt</div>
+    <div class="out-box">
+      <div class="out-line" id="outLine"></div>
+      <button class="copy-btn" id="copyBtn" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        复制
+      </button>
+    </div>
+    <div class="tip">把整行（用户名|密文）粘贴到 <b>vip.txt</b> 新的一行。同一用户名重复生成会并存两条，主站命中靠前那条；建议替换旧行而不是追加。</div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+ * 密文生成逻辑（格式与主站 index.html 内的账号系统完全一致）
+ * ---------------------------------------------------------------------
+ * 打包：{用户名,密码,VIP类型,到期时间,备注,签发时间} → JSON → 校验和+长度
+ *       → 异或密钥流 → Base64URL → JY1. 前缀
+ * ===================================================================== */
+var PREFIX = "JY1.";
+function xmur3(str){
+  var h = 1779033703 ^ str.length;
+  for (var i = 0; i < str.length; i++){
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return function(){
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return (h ^= h >>> 16) >>> 0;
+  };
+}
+function sfc32(a,b,c,d){
+  return function(){
+    a>>>=0;b>>>=0;c>>>=0;d>>>=0;
+    var t=(a+b)|0; a=b^(b>>>9); b=(c+(c<<3))|0;
+    c=(c<<21)|(c>>>11); d=(d+1)|0; t=(t+d)|0; c=(c+t)|0;
+    return (t>>>0)/4294967296;
+  };
+}
+function keystream(secret,length){
+  var seed=xmur3("JY-VIP::"+secret), next=sfc32(seed(),seed(),seed(),seed());
+  var out=new Uint8Array(length);
+  for(var i=0;i<length;i++) out[i]=(next()*256)|0;
+  return out;
+}
+function b64urlEncode(bytes){
+  var bin=""; for(var i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function encrypt(obj,secret){
+  var data=new TextEncoder().encode(JSON.stringify(obj)), sum=0, i;
+  for(i=0;i<data.length;i++) sum=(sum+data[i]+(i+1))&0xff;
+  var buf=new Uint8Array(data.length+3);
+  buf[0]=sum; buf[1]=data.length&0xff; buf[2]=(data.length>>8)&0xff;
+  buf.set(data,3);
+  var ks=keystream(secret,buf.length);
+  for(i=0;i<buf.length;i++) buf[i]^=ks[i];
+  return PREFIX+b64urlEncode(buf);
+}
+
+/* ⚠ 密钥：必须与主站 index.html 账号系统里的 JY_SECRET 完全一致，改的时候两个文件一起改！ */
+var JY_SECRET = "jianye-vip-secret-2026";
+
+var $=function(id){ return document.getElementById(id); };
+var toastTimer=0;
+function toast(msg){
+  var t=$("toast");
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){ t.classList.remove("show"); },2400);
+}
+
+/* VIP 类型切换：永久 VIP / 普通用户都不需要到期日期 */
+var fType=$("fType"), fExp=$("fExp");
+function syncType(){
+  var perm=fType.value==="permanent";
+  $("fExpField").style.display=perm?"none":"";
+  fExp.disabled=perm||fType.value==="none";
+  $("fExpHint").textContent=
+    fType.value==="time"?"过期后主站自动判定为「已过期」"
+    :fType.value==="none"?"普通用户无需到期日期":"永久 VIP 无需到期日期";
+}
+fType.addEventListener("change",syncType);
+syncType();
+
+/* 生成 */
+$("genForm").addEventListener("submit",function(e){
+  e.preventDefault();
+  var u=$("fUser").value.trim(), p=$("fPwd").value;
+  if(!u||!p){ toast("请先填写用户名和密码"); $("fUser").focus(); return; }
+  var type=fType.value, exp="";
+  if(type==="time"){
+    exp=fExp.value;
+    if(!exp){ toast("限时 VIP 请选择到期日期"); fExp.focus(); return; }
+  }
+  var cipher=encrypt({v:1,u:u,p:p,t:type,e:exp,n:$("fNote").value.trim(),i:Date.now()},JY_SECRET);
+  var line=u+"|"+cipher;
+  $("outLine").innerHTML='<span class="u">'+
+    u.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+
+    '</span>|'+cipher;
+  $("outCard").classList.add("show");
+  $("outCard").scrollIntoView({behavior:"smooth",block:"nearest"});
+  toast("已生成，复制后粘贴进 vip.txt 即可");
+});
+
+/* 复制 */
+$("copyBtn").addEventListener("click",function(){
+  var text=$("outLine").textContent;
+  if(!text) return;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(
+      function(){ toast("已复制到剪贴板"); },
+      function(){ fallbackCopy(text); });
+  } else fallbackCopy(text);
+});
+function fallbackCopy(text){
+  var ta=document.createElement("textarea");
+  ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); toast("已复制到剪贴板"); }
+  catch(e){ toast("复制失败，请手动选择复制"); }
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>
