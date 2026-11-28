@@ -201,6 +201,12 @@ h1{font-size:clamp(24px,5vw,32px);font-weight:800;margin-bottom:8px}
     </div>
 
     <div class="field">
+      <label for="fIssue">签发日期 <span style="color:var(--text-3);font-weight:400">（可选，默认今天，随密文隐藏存放）</span></label>
+      <input class="inp" id="fIssue" type="date">
+      <div class="hint">主站登录后显示「签发于 …」的就是这个日期</div>
+    </div>
+
+    <div class="field">
       <label for="fAvatar">头像网址 <span style="color:var(--text-3);font-weight:400">（可选，存进密文）</span></label>
       <input class="inp" id="fAvatar" type="url" placeholder="https://…/avatar.jpg（留空则显示用户名首字）">
       <div class="hint">推荐图床直链，正方形图显示效果最佳；主站登录后自动显示，没有就退回首字头像</div>
@@ -304,6 +310,12 @@ function syncType(){
 fType.addEventListener("change",syncType);
 syncType();
 
+/* 签发日期默认今天，可自行修改；留空则按生成那一刻的时间算 */
+(function(){
+  var d=new Date(), m=d.getMonth()+1, day=d.getDate();
+  $("fIssue").value=d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(day<10?"0":"")+day;
+})();
+
 /* 生成 */
 $("genForm").addEventListener("submit",function(e){
   e.preventDefault();
@@ -314,7 +326,9 @@ $("genForm").addEventListener("submit",function(e){
     exp=fExp.value;
     if(!exp){ toast("限时 VIP 请选择到期日期"); fExp.focus(); return; }
   }
-  var cipher=encrypt({v:1,u:u,p:p,t:type,e:exp,a:$("fAvatar").value.trim(),n:$("fNote").value.trim(),i:Date.now()},JY_SECRET);
+  var issueV=$("fIssue").value;
+  var cipher=encrypt({v:1,u:u,p:p,t:type,e:exp,a:$("fAvatar").value.trim(),n:$("fNote").value.trim(),
+    i:issueV?new Date(issueV+"T00:00:00").getTime():Date.now()},JY_SECRET);
   var line=u+"|"+cipher;
   $("outLine").innerHTML='<span class="u">'+
     u.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+

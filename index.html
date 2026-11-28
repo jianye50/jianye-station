@@ -9691,13 +9691,13 @@ input[type=range].mp-range::-moz-range-thumb{
 /* ---------- 导航栏头像按钮（与音乐按钮同款小圆，低调不突兀） ---------- */
 .acc-nav-btn{position:relative;overflow:visible}
 .acc-avatar{
-  width:34px;height:34px;border-radius:50%;
+  width:27px;height:27px;border-radius:50%;
   display:grid;place-items:center;overflow:hidden;
   color:var(--text-2);
   transition:transform .25s cubic-bezier(.2,.7,.2,1),color .25s;
 }
 .acc-nav-btn:hover .acc-avatar{transform:scale(1.08)}
-.acc-avatar-ico{width:19px;height:19px;fill:currentColor;display:block}
+.acc-avatar-ico{width:16px;height:16px;fill:currentColor;display:block}
 /* 密文里带了头像网址：图片填满小圆；没有就保持人形图标，两种形态同样低调 */
 
 /* ---------- 账号 / VIP 面板（与「鉴业音乐」歌单面板同款：挂在导航栏正下方，
@@ -9840,6 +9840,24 @@ input[type=range].mp-range::-moz-range-thumb{
 .acc-info{display:none}
 .acc-wrap.logged .acc-form{display:none}
 .acc-wrap.logged .acc-info{display:block}
+/* 加载态：打开面板静默重验证时，内容隐掉（visibility 保住布局不跳），中央转圈 */
+.acc-loading{
+  position:absolute;inset:0;z-index:6;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  color:var(--text-3);font-size:12.5px;font-weight:600;letter-spacing:.04em;
+}
+.acc-spin{
+  width:30px;height:30px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.14);
+  border-top-color:#4d8dff;
+  animation:accSpin .8s linear infinite;
+}
+@keyframes accSpin{to{transform:rotate(360deg)}}
+.acc-wrap.loading .acc-loading{display:flex}
+.acc-wrap.loading .acc-head,
+.acc-wrap.loading .acc-form,
+.acc-wrap.loading .acc-info,
+.acc-wrap.loading .acc-foot-tip{visibility:hidden}
 .acc-rows{border-radius:14px;overflow:hidden;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.07)}
 .acc-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:11px 14px;font-size:13.5px}
 .acc-row+.acc-row{border-top:1px solid rgba(255,255,255,.06)}
@@ -9885,6 +9903,11 @@ input[type=range].mp-range::-moz-range-thumb{
     <button class="acc-close" id="accClose" type="button" aria-label="关闭">
       <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button>
+    <!-- 静默重验证时的加载层：转圈 + 「验证中」，盖住表单/信息，验证完自动消失 -->
+    <div class="acc-loading" id="accLoading" aria-hidden="true">
+      <span class="acc-spin"></span>
+      <span data-i18n="loading">验证中…</span>
+    </div>
     <div class="acc-head">
       <div class="acc-big" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
@@ -9992,15 +10015,15 @@ var JY_SECRET = "jianye-vip-secret-2026";
 var I18N = {
   zh:{user:"用户名",pass:"密码",btn:"查 询",err:"账号或密码错误",tip:"账号由站长发放",
       logout:"退出登录",querying:"查询中…",welcome:"验证通过，欢迎回来，",bye:"已退出登录",
-      accTitle:"账号",accTip:"账号",loginSub:"登录后查看你的账户信息",noVip:"未开通 VIP",
+      accTitle:"账号",accTip:"账号",loginSub:"登录后查看你的账户信息",noVip:"未开通 VIP",loading:"验证中…",
       permBadge:"永久 VIP",vipOn:"VIP 生效中",vipExp:"VIP 已过期",dead:"已失效",
-      type:"会员类型",exp:"到期时间",status:"当前状态",note:"备注 NOTE",
+      type:"会员类型",exp:"到期时间",status:"当前状态",note:"备注",
       permType:"永久 VIP",timeType:"限时 VIP",noneType:"普通用户",
       permStatus:"永久有效，无需续期",remain:"有效（剩 {n} 天）",
       expiredAt:"已于 {d} 过期",issued:"签发于 ",cfgFail:"配置文件读取失败：请确认 vip.txt 与本页面在同一目录并通过 HTTP 访问"},
   en:{user:"Username",pass:"Password",btn:"QUERY",err:"Incorrect username or password",tip:"Accounts are issued by the site owner",
       logout:"Sign out",querying:"Querying…",welcome:"Verified. Welcome back, ",bye:"Signed out",
-      accTitle:"Account",accTip:"Account",loginSub:"Sign in to view your account info",noVip:"No VIP",
+      accTitle:"Account",accTip:"Account",loginSub:"Sign in to view your account info",noVip:"No VIP",loading:"Verifying…",
       permBadge:"Permanent VIP",vipOn:"VIP Active",vipExp:"VIP Expired",dead:"Expired",
       type:"Plan",exp:"Expires",status:"Status",note:"NOTE",
       permType:"Permanent VIP",timeType:"Timed VIP",noneType:"Standard",
@@ -10131,9 +10154,11 @@ function openModal(){
   mask.classList.add("open");
   mask.setAttribute("aria-hidden","false");
   accBtn.setAttribute("aria-expanded","true");
-  /* 已存过登录态 → 静默重验证一次直接进信息页；否则进登录页 */
+  /* 已存过登录态 → 先转圈（加载层盖住内容），静默验证完成后再揭示信息页；
+     否则直接进登录页 */
   var saved=readSession();
   if(saved&&saved.u&&saved.p){
+    setLoading(true);
     enter(saved.u,saved.p,true);
   } else {
     setLogged(false);
@@ -10175,16 +10200,30 @@ var currentData=null;
 function setLogged(on){
   mask.classList.toggle("logged",on);
 }
+/* 加载态开关：转圈层盖住面板内容，验证完关掉。
+   静默重验证通常几十毫秒就完成，转圈一闪而过反而难看——
+   所以保证加载层至少展示 450ms 再揭示内容，观感是「转了一下 → 出信息」 */
+var loadStart=0;
+function setLoading(on){
+  mask.classList.toggle("loading",on);
+}
+function endLoad(silent){
+  if(!silent){ setLoading(false); return; }   /* 手动登录本来就没有加载层 */
+  var wait=Math.max(0,450-(Date.now()-loadStart));
+  setTimeout(setLoading.bind(null,false),wait);
+}
 function readSession(){ try{ return JSON.parse(localStorage.getItem("jy-vip-session")||"null"); }catch(e){ return null; } }
 function writeSession(s){ try{ s?localStorage.setItem("jy-vip-session",JSON.stringify(s)):localStorage.removeItem("jy-vip-session"); }catch(e){} }
 function enter(u,p,silent){
   setLogged(false);
   errEl.classList.remove("show");
   var btn=$("accSubmit"), old=btn.textContent;
-  if(!silent) { btn.disabled=true; btn.textContent=T().querying; }
+  if(!silent){ btn.disabled=true; btn.textContent=T().querying; }
+  else loadStart=Date.now();          /* 静默重验证：记下转圈起点，保证动画至少转一小会儿 */
   verify(u,p).then(function(d){
     /* 先恢复按钮再渲染：就算渲染环节出意外，也绝不会卡在「查询中…」 */
     btn.disabled=false; btn.textContent=old;
+    endLoad(silent);
     currentData=d;
     writeSession({u:u,p:p});
     paintAvatar(d.u,d.a);
@@ -10193,6 +10232,7 @@ function enter(u,p,silent){
     if(!silent) toast(T().welcome+d.u);
   },function(err){
     btn.disabled=false; btn.textContent=old;
+    endLoad(silent);
     writeSession(null);
     paintAvatar("","");
     setLogged(false);
