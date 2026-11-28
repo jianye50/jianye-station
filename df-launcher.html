@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>启动三角洲行动</title>
+<style>
+  :root{
+    --bg:#0d1117;
+    --card:#161b22;
+    --accent:#e8551f;
+    --text:#e6edf3;
+    --sub:#8b949e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;
+    background:radial-gradient(1200px 600px at 50% -10%, #1f2937, var(--bg));
+    color:var(--text);
+    font-family:-apple-system,"HarmonyOS Sans","Noto Sans SC",system-ui,sans-serif;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+  }
+  .card{
+    width:100%;max-width:380px;
+    background:var(--card);
+    border:1px solid #30363d;
+    border-radius:24px;
+    padding:32px 24px;
+    text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+  }
+  .logo{
+    width:72px;height:72px;border-radius:18px;
+    background:linear-gradient(135deg,#e8551f,#7c2d12);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:900;font-size:30px;margin:0 auto 18px;
+    box-shadow:0 10px 30px rgba(232,85,31,.35);
+  }
+  h1{font-size:20px;font-weight:700;margin-bottom:8px}
+  p{font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:24px}
+  .btn{
+    display:block;width:100%;
+    padding:16px;border:none;border-radius:16px;
+    background:linear-gradient(135deg,#e8551f,#c2410c);
+    color:#fff;font-size:16px;font-weight:700;
+    cursor:pointer;transition:transform .15s,opacity .15s;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.secondary{
+    margin-top:12px;background:transparent;
+    border:1px solid #30363d;color:var(--sub);font-weight:500;
+  }
+  .status{margin-top:18px;font-size:12px;color:var(--sub);min-height:18px}
+  .tip{
+    margin-top:20px;padding:12px 14px;border-radius:12px;
+    background:#0d1117;border:1px dashed #30363d;
+    font-size:12px;color:var(--sub);text-align:left;line-height:1.7;
+  }
+  .tip b{color:var(--text)}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Δ</div>
+    <h1>三角洲行动</h1>
+    <p>点击下方按钮，尝试在本机直接启动游戏</p>
+    <button class="btn" id="launchBtn">启动游戏</button>
+    <button class="btn secondary" id="fallbackBtn">前往官网下载 / 查看</button>
+    <div class="status" id="status"></div>
+    <div class="tip">
+      <b>说明：</b><br>
+      · 本页只能拉起游戏首页，无法直达房间或组队页（游戏未开放该路由）。<br>
+      · 请用系统浏览器或系统扫一扫打开；微信 / QQ 内可能拦截跳转。<br>
+      · 若未安装游戏，会自动停留在本页并可前往官网。
+    </div>
+  </div>
+
+<script>
+  // 国服 Scheme；鸿蒙 Next / 安卓兼容层同用
+  const SCHEME = 'deltaforce://';
+  // 官网（唤起失败兜底）
+  const FALLBACK_URL = 'https://df.qq.com/index.shtml';
+
+  const statusEl = document.getElementById('status');
+  const launchBtn = document.getElementById('launchBtn');
+  const fallbackBtn = document.getElementById('fallbackBtn');
+
+  let launched = false;
+
+  function openScheme(){
+    launched = false;
+    statusEl.textContent = '正在尝试启动游戏…';
+
+    // 记录页面隐藏时间，用于判断是否成功拉起 App
+    const startTime = Date.now();
+    const onHide = () => { if(document.hidden) launched = true; };
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', onHide);
+
+    // 方式1：location 跳转 scheme（鸿蒙/安卓浏览器通用）
+    window.location.href = SCHEME;
+
+    // 超时后判断是否被拉起；未拉起则提示并展示兜底入口
+    setTimeout(() => {
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', onHide);
+      if(!launched && !document.hidden){
+        statusEl.textContent = '未检测到已安装游戏，可前往官网查看。';
+      }
+    }, 1500);
+  }
+
+  launchBtn.addEventListener('click', openScheme);
+  fallbackBtn.addEventListener('click', () => {
+    window.location.href = FALLBACK_URL;
+  });
+
+  // 页面打开后自动尝试一次（需用户浏览器允许自动跳转，部分浏览器会拦截）
+  // 保留手动按钮为主，避免被浏览器判定为恶意跳转
+</script>
+</body>
+</html>
