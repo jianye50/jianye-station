@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>密码哈希生成器｜Jianye</title>
+<style>
+:root{
+    --bg:#0b0d13;
+    --card:rgba(255,255,255,.045);
+    --line:rgba(255,255,255,.10);
+    --text:#eef0f6;
+    --muted:#9aa1b5;
+    --accent:#4f7cff;
+    --accent2:#8b5cf6;
+    --green:#4ade80;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;}
+body{
+    background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:24px 16px;overflow-x:hidden;position:relative;
+}
+.orbs{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.35;animation:float 14s ease-in-out infinite;}
+.orb1{width:420px;height:420px;background:#3b63e8;top:-120px;left:-100px;}
+.orb2{width:380px;height:380px;background:#7c3aed;bottom:-120px;right:-90px;animation-delay:-7s;}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(40px,30px) scale(1.08);}}
+body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+    background-size:44px 44px;
+    mask-image:radial-gradient(circle at 50% 40%,#000 30%,transparent 75%);
+}
+
+.wrap{
+    position:relative;z-index:1;width:100%;max-width:460px;
+    background:var(--card);border:1px solid var(--line);border-radius:22px;
+    padding:40px 32px 32px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    box-shadow:0 24px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06);
+    animation:fadeUp .6s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+
+.head{text-align:center;margin-bottom:28px;animation:fadeUp .6s .05s both;}
+.logo{
+    width:46px;height:46px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;
+    border-radius:14px;font-size:22px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+    box-shadow:0 8px 22px rgba(79,124,255,.35);
+}
+.head h1{font-size:22px;font-weight:700;background:linear-gradient(90deg,#fff,#c8d2ff);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.head .sub{margin-top:8px;font-size:13px;color:var(--muted);}
+
+.form-item{margin-bottom:16px;animation:fadeUp .6s .12s both;}
+.form-item:nth-of-type(2){animation-delay:.16s;}
+.form-item:nth-of-type(3){animation-delay:.20s;}
+.form-item:nth-of-type(4){animation-delay:.24s;}
+.form-item:nth-of-type(5){animation-delay:.28s;}
+label{display:block;margin-bottom:8px;font-size:13px;color:var(--muted);letter-spacing:.3px;}
+
+input,select{
+    width:100%;padding:14px 16px;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;
+    color:var(--text);font-size:15px;outline:none;appearance:none;
+    transition:border-color .25s,box-shadow .25s,background .25s;
+}
+input::placeholder{color:#6b7286;}
+input:focus,select:focus{border-color:var(--accent);background:rgba(79,124,255,.06);box-shadow:0 0 0 4px rgba(79,124,255,.15);}
+select{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239aa1b5' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 16px center;cursor:pointer;
+}
+select option{background:#1b1e27;color:var(--text);}
+
+.btn{
+    position:relative;width:100%;padding:14px;border:none;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff;font-size:15px;font-weight:600;letter-spacing:.5px;cursor:pointer;
+    transition:transform .2s,box-shadow .2s,filter .2s;
+    box-shadow:0 10px 24px rgba(79,124,255,.30);
+    animation:fadeUp .6s .32s both;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(79,124,255,.42);filter:brightness(1.06);}
+.btn:active{transform:translateY(0) scale(.98);}
+.btn.secondary{
+    background:rgba(255,255,255,.08);box-shadow:none;margin-top:12px;
+}
+.btn.secondary:hover{background:rgba(255,255,255,.13);box-shadow:none;}
+.btn .spin{display:inline-block;width:15px;height:15px;margin-right:8px;vertical-align:-2px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.out-box{margin-top:22px;padding:20px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:16px;}
+.out-box.show{animation:cardIn .5s cubic-bezier(.22,1,.36,1) both;}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+.out-box h4{font-size:15px;margin-bottom:12px;color:#fff;}
+.out-line{
+    word-break:break-all;font-size:12.5px;color:var(--green);
+    background:#10141c;border:1px solid rgba(74,222,128,.15);
+    padding:13px;border-radius:10px;line-height:1.7;font-family:ui-monospace,Menlo,Consolas,monospace;
+}
+.tip{margin-top:16px;font-size:12px;color:var(--muted);line-height:1.7;}
+
+.toast{
+    position:fixed;left:50%;bottom:36px;transform:translateX(-50%) translateY(20px);
+    background:rgba(255,255,255,.1);border:1px solid var(--line);backdrop-filter:blur(10px);
+    padding:11px 18px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;
+    transition:opacity .3s,transform .3s;z-index:10;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="orbs"><span class="orb orb1"></span><span class="orb orb2"></span></div>
+
+<main class="wrap">
+    <header class="head">
+        <div class="logo">⚙</div>
+        <h1>密码哈希生成器</h1>
+        <p class="sub">生成可直接粘贴进 users.txt 的配置行</p>
+    </header>
+
+    <div class="form-item">
+        <label>用户名称</label>
+        <input type="text" id="username" placeholder="和配置文件里的用户名一致" autocomplete="off">
+    </div>
+    <div class="form-item">
+        <label>原始密码</label>
+        <input type="password" id="password" placeholder="仅在本地浏览器计算，不会上传">
+    </div>
+    <div class="form-item">
+        <label>VIP状态</label>
+        <select id="vip">
+            <option value="VIP">VIP</option>
+            <option value="普通用户">普通用户</option>
+        </select>
+    </div>
+    <div class="form-item">
+        <label>到期时间（永久VIP填「永久」，普通用户留空）</label>
+        <input type="text" id="expire" placeholder="如 2027-12-31 / 永久">
+    </div>
+    <div class="form-item">
+        <label>备注</label>
+        <input type="text" id="note" placeholder="选填">
+    </div>
+
+    <button class="btn" id="genBtn" onclick="generate()">生成配置行</button>
+
+    <div class="out-box" id="outBox" hidden>
+        <h4>复制下面这一行，粘贴到 users.txt</h4>
+        <div class="out-line" id="outLine"></div>
+        <button class="btn secondary" onclick="copyLine()">复制配置行</button>
+    </div>
+
+    <p class="tip">
+        密码经 PBKDF2-SHA256 单向哈希后存入配置文件，拿到哈希也无法还原出原密码。
+        本页与查询页使用同一套盐值和算法，请勿改动代码里的 SALT。
+    </p>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// 必须与 index.html 完全一致
+const SALT = 'jype-top-salt-2026';
+const ITERATIONS = 100000;
+let finalLine = "";
+
+async function hashPassword(password){
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+        'raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveBits']
+    );
+    const bits = await crypto.subtle.deriveBits(
+        {name:'PBKDF2', salt:enc.encode(SALT), iterations:ITERATIONS, hash:'SHA-256'},
+        keyMaterial, 256
+    );
+    return btoa(String.fromCharCode(...new Uint8Array(bits)));
+}
+
+function toast(msg){
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+async function generate(){
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const vip = document.getElementById('vip').value;
+    const expire = document.getElementById('expire').value.trim();
+    const note = document.getElementById('note').value.trim();
+    const btn = document.getElementById('genBtn');
+
+    if(!username || !password){
+        toast('请填写用户名和密码');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span>生成中…';
+
+    try{
+        const hash = await hashPassword(password);
+        finalLine = `${username}|${hash}|${vip}|${expire}|${note}`;
+        document.getElementById('outLine').innerText = finalLine;
+        const box = document.getElementById('outBox');
+        box.hidden = false;
+        box.classList.add('show');
+    }finally{
+        btn.disabled = false;
+        btn.innerText = "生成配置行";
+    }
+}
+
+async function copyLine(){
+    if(!finalLine){ toast('请先生成配置行'); return; }
+    try{
+        await navigator.clipboard.writeText(finalLine);
+        toast('已复制，可粘贴到 users.txt');
+    }catch(e){
+        toast('复制失败，请手动选择复制');
+    }
+}
+</script>
+</body>
+</html>
