@@ -6,8 +6,15 @@
     <atom:link href="https://jype.top/rss-en.xml" rel="self" type="application/rss+xml"/>
     <description>May we not ruin what we have, nor regret what we lose.</description>
     <language>en-US</language>
-    <lastBuildDate>Sun, 22 Nov 2026 00:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Sat, 28 Nov 2026 00:00:00 GMT</lastBuildDate>
     <generator>gen-blog-index.mjs</generator>
+    <item>
+      <title>test</title>
+      <link>https://jype.top/#/blog/cs</link>
+      <guid isPermaLink="false">https://jype.top/#/blog/cs</guid>
+      <pubDate>Sat, 28 Nov 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[<p><a href="https://jype.top/#/blog/cs">Read more</a></p>]]></description>
+    </item>
     <item>
       <title>New tab page update: free wallpapers, direct access to the Internet, right-click shortcut settings, new secret tower AI search</title>
       <link>https://jype.top/#/blog/%E6%96%B0%E6%B5%8F%E8%A7%88%E5%99%A8%E6%A0%87%E7%AD%BE%E9%A1%B5%E6%94%AF%E6%8C%81%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87</link>

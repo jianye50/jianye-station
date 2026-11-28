@@ -6,8 +6,15 @@
     <atom:link href="https://jype.top/rss-zh.xml" rel="self" type="application/rss+xml"/>
     <description>愿我们拥有的时候不要毁，失去的时候不要悔。</description>
     <language>zh-CN</language>
-    <lastBuildDate>Sun, 22 Nov 2026 00:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Sat, 28 Nov 2026 00:00:00 GMT</lastBuildDate>
     <generator>gen-blog-index.mjs</generator>
+    <item>
+      <title>测试</title>
+      <link>https://jype.top/#/blog/cs</link>
+      <guid isPermaLink="false">https://jype.top/#/blog/cs</guid>
+      <pubDate>Sat, 28 Nov 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[<p><a href="https://jype.top/#/blog/cs">阅读全文</a></p>]]></description>
+    </item>
     <item>
       <title>新标签页更新：壁纸自由、直达上网、右键快捷设置，新增秘塔AI搜索</title>
       <link>https://jype.top/#/blog/%E6%96%B0%E6%B5%8F%E8%A7%88%E5%99%A8%E6%A0%87%E7%AD%BE%E9%A1%B5%E6%94%AF%E6%8C%81%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87</link>

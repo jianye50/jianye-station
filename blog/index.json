@@ -1,6 +1,22 @@
 {
-  "generated": "2026-11-28T16:11:16.812Z",
+  "generated": "2026-11-28T16:12:07.010Z",
   "posts": [
+    {
+      "slug": "cs",
+      "md": "blog/cs/index.md",
+      "imgBase": "blog/cs/",
+      "title": "测试",
+      "desc": "",
+      "tags": [],
+      "date": "2026-11-28",
+      "minutes": 1,
+      "cover": "",
+      "bg": "",
+      "mdEn": "blog/cs/index.en.md",
+      "titleEn": "test",
+      "mdZh": "blog/cs/index.zh.md",
+      "titleZh": "测试"
+    },
     {
       "slug": "新浏览器标签页支持视频图片",
       "md": "blog/新浏览器标签页支持视频图片/index.md",
