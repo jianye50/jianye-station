@@ -58,66 +58,83 @@
     font-size:12px;color:var(--sub);text-align:left;line-height:1.7;
   }
   .tip b{color:var(--text)}
+  .tip ul{padding-left:16px;margin-top:4px}
 </style>
 </head>
 <body>
   <div class="card">
     <div class="logo">Δ</div>
     <h1>三角洲行动</h1>
-    <p>点击下方按钮，尝试在本机直接启动游戏</p>
-    <button class="btn" id="launchBtn">启动游戏</button>
-    <button class="btn secondary" id="fallbackBtn">前往官网下载 / 查看</button>
+    <p>在已安装游戏的设备上，点击下方按钮尝试启动；未安装则跳转应用市场</p>
+
+    <!-- ① 主路径：填入游戏内分享的官方 https 邀请/活动链接（App Linking），鸿蒙 Next 浏览器可据此拉起 -->
+    <button class="btn" id="openAppBtn">启动 / 进入游戏</button>
+
+    <!-- ② 兜底：跳华为应用市场搜索页 -->
+    <button class="btn secondary" id="marketBtn">在应用市场打开</button>
+
     <div class="status" id="status"></div>
+
     <div class="tip">
-      <b>说明：</b><br>
-      · 本页只能拉起游戏首页，无法直达房间或组队页（游戏未开放该路由）。<br>
-      · 请用系统浏览器或系统扫一扫打开；微信 / QQ 内可能拦截跳转。<br>
-      · 若未安装游戏，会自动停留在本页并可前往官网。
+      <b>关于鸿蒙 Next 无法直接拉起</b>
+      <ul>
+        <li>纯血鸿蒙对网页自定义 Scheme 跳转三方应用有安全限制，`deltaforce://` 是安卓协议，原生 HAP 不一定注册，网页直拉常被拦截。</li>
+        <li>系统推荐的是 <b>App Linking（https 域名深链）</b>，需游戏官方在域名上配置校验；第三方网页没有该资格。</li>
+        <li>最稳的网页入口是游戏内「分享房间/活动」生成的官方 https 链接；把它填到下方 <code>OFFICIAL_LINK</code>。</li>
+        <li>若要完全不依赖网页，可用「智慧生活 → NFC 场景 → 打开应用」，按标签 ID 直接启动（需解锁）。</li>
+      </ul>
     </div>
   </div>
 
 <script>
-  // 国服 Scheme；鸿蒙 Next / 安卓兼容层同用
-  const SCHEME = 'deltaforce://';
-  // 官网（唤起失败兜底）
-  const FALLBACK_URL = 'https://df.qq.com/index.shtml';
+  // ===== 可配置项 =====
+  // 游戏内分享的官方 https 链接（邀请/活动页）；留空则只尝试 Scheme 与应用市场兜底
+  const OFFICIAL_LINK = "";
+  // 安卓兼容层使用的自定义协议（鸿蒙原生版不一定生效）
+  const SCHEME = "deltaforce://";
+  // 华为应用市场搜索页（无独立 App ID 时的兜底）
+  const MARKET_URL = "https://appgallery.huawei.com/search/" + encodeURIComponent("三角洲行动");
+  // 官网兜底
+  const WEB_URL = "https://df.qq.com/index.shtml";
+  // ====================
 
   const statusEl = document.getElementById('status');
-  const launchBtn = document.getElementById('launchBtn');
-  const fallbackBtn = document.getElementById('fallbackBtn');
 
-  let launched = false;
+  function setStatus(t){ statusEl.textContent = t; }
 
-  function openScheme(){
-    launched = false;
-    statusEl.textContent = '正在尝试启动游戏…';
-
-    // 记录页面隐藏时间，用于判断是否成功拉起 App
-    const startTime = Date.now();
-    const onHide = () => { if(document.hidden) launched = true; };
+  function tryScheme(){
+    // 仅作为安卓兼容层的辅助尝试；鸿蒙原生版可能无效
+    let hidden = false;
+    const onHide = () => { hidden = true; };
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('pagehide', onHide);
 
-    // 方式1：location 跳转 scheme（鸿蒙/安卓浏览器通用）
     window.location.href = SCHEME;
 
-    // 超时后判断是否被拉起；未拉起则提示并展示兜底入口
     setTimeout(() => {
       document.removeEventListener('visibilitychange', onHide);
       window.removeEventListener('pagehide', onHide);
-      if(!launched && !document.hidden){
-        statusEl.textContent = '未检测到已安装游戏，可前往官网查看。';
+      if(!hidden && !document.hidden){
+        setStatus('本机未能识别该协议，可走应用市场或官方链接。');
       }
-    }, 1500);
+    }, 1200);
   }
 
-  launchBtn.addEventListener('click', openScheme);
-  fallbackBtn.addEventListener('click', () => {
-    window.location.href = FALLBACK_URL;
+  document.getElementById('openAppBtn').addEventListener('click', () => {
+    if(OFFICIAL_LINK){
+      // 官方 https 深链优先：鸿蒙浏览器可走 App Linking 拉起
+      window.location.href = OFFICIAL_LINK;
+    }else{
+      tryScheme();
+    }
   });
 
-  // 页面打开后自动尝试一次（需用户浏览器允许自动跳转，部分浏览器会拦截）
-  // 保留手动按钮为主，避免被浏览器判定为恶意跳转
+  document.getElementById('marketBtn').addEventListener('click', () => {
+    window.location.href = MARKET_URL;
+  });
+
+  // 备注：官网链接可在需要时手动打开
+  window.__WEB_URL = WEB_URL;
 </script>
 </body>
 </html>
