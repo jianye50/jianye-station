@@ -65,22 +65,58 @@ body{
 .field:nth-of-type(4){animation-delay:.27s;}
 .field:nth-of-type(5){animation-delay:.32s;}
 .field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px;letter-spacing:.4px;}
-.inp,select{
+.inp{
   width:100%;padding:14px 16px;font-size:14.5px;color:var(--text);
   background:rgba(255,255,255,.045);border:1px solid var(--line);border-radius:13px;
   outline:none;transition:border-color .28s,box-shadow .28s,background .28s;
 }
 .inp::placeholder{color:#616a80;}
-.inp:focus,select:focus{
+.inp:focus{
   border-color:rgba(79,124,255,.85);background:rgba(79,124,255,.08);
   box-shadow:0 0 0 4px rgba(79,124,255,.14);
 }
-select{
-  appearance:none;cursor:pointer;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%238b93a8' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 16px center;
+
+/* ===== 自定义下拉（圆角 + 箭头固定不漂移） ===== */
+.select{position:relative;}
+.select-btn{
+  width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:14px 16px;font-size:14.5px;color:var(--text);
+  background:rgba(255,255,255,.045);border:1px solid var(--line);border-radius:13px;
+  cursor:pointer;outline:none;text-align:left;
+  transition:border-color .28s,box-shadow .28s,background .28s;
 }
-select option{background:#12151d;color:var(--text);}
+.select-btn:hover{background:rgba(255,255,255,.07);}
+.select-btn.open{
+  border-color:rgba(79,124,255,.85);background:rgba(79,124,255,.08);
+  box-shadow:0 0 0 4px rgba(79,124,255,.14);
+}
+.select-btn .label{flex:1;}
+.arrow{
+  width:12px;height:8px;flex:0 0 auto;position:relative;
+  transition:transform .25s cubic-bezier(.16,1,.3,1);
+}
+.arrow::before{
+  content:"";position:absolute;left:0;top:0;width:0;height:0;
+  border-left:6px solid transparent;border-right:6px solid transparent;
+  border-top:7px solid #8b93a8;
+}
+.select-btn.open .arrow{transform:rotate(180deg);}
+
+.menu{
+  position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:30;
+  background:#151822;border:1px solid var(--line);border-radius:15px;overflow:hidden;
+  box-shadow:0 20px 44px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);
+  opacity:0;transform:translateY(-8px) scale(.98);transform-origin:top center;
+  pointer-events:none;transition:opacity .22s,transform .22s cubic-bezier(.16,1,.3,1);
+}
+.menu.open{opacity:1;transform:none;pointer-events:auto;}
+.menu-item{
+  padding:13px 16px;font-size:14px;cursor:pointer;
+  transition:background .18s,color .18s;
+}
+.menu-item + .menu-item{border-top:1px solid rgba(255,255,255,.06);}
+.menu-item:hover{background:rgba(79,124,255,.14);color:#fff;}
+.menu-item.active{color:#9db4ff;font-weight:600;}
 
 .btn{
   width:100%;padding:15px;margin-top:6px;border:0;border-radius:14px;cursor:pointer;
@@ -158,10 +194,17 @@ select option{background:#12151d;color:var(--text);}
   </div>
   <div class="field">
     <label>VIP 状态</label>
-    <select id="s">
-      <option value="VIP">VIP</option>
-      <option value="普通用户">普通用户</option>
-    </select>
+    <div class="select" id="vipSelect">
+      <input type="hidden" id="s" value="VIP">
+      <button type="button" class="select-btn" id="selBtn" onclick="toggleMenu(event)">
+        <span class="label" id="selLabel">VIP</span>
+        <span class="arrow"></span>
+      </button>
+      <div class="menu" id="selMenu">
+        <div class="menu-item active" data-val="VIP" onclick="pickItem(event,'VIP')">VIP</div>
+        <div class="menu-item" data-val="普通用户" onclick="pickItem(event,'普通用户')">普通用户</div>
+      </div>
+    </div>
   </div>
   <div class="field">
     <label>到期时间（永久VIP填「永久」，普通用户留空）</label>
@@ -194,6 +237,34 @@ select option{background:#12151d;color:var(--text);}
 const SALT = 'jype-top-salt-2026';
 const ITERATIONS = 100000;
 let finalLine = '';
+
+/* ----- 自定义下拉 ----- */
+const selBtn = document.getElementById('selBtn');
+const selMenu = document.getElementById('selMenu');
+const selLabel = document.getElementById('selLabel');
+const selHidden = document.getElementById('s');
+
+function toggleMenu(e){
+  e.stopPropagation();
+  selMenu.classList.toggle('open');
+  selBtn.classList.toggle('open');
+}
+function pickItem(e, val){
+  e.stopPropagation();
+  selHidden.value = val;
+  selLabel.textContent = val;
+  [...selMenu.querySelectorAll('.menu-item')].forEach(it=>{
+    it.classList.toggle('active', it.dataset.val === val);
+  });
+  selMenu.classList.remove('open');
+  selBtn.classList.remove('open');
+}
+document.addEventListener('click', e=>{
+  if(!document.getElementById('vipSelect').contains(e.target)){
+    selMenu.classList.remove('open');
+    selBtn.classList.remove('open');
+  }
+});
 
 async function deriveKey(password){
   const enc = new TextEncoder();
@@ -238,7 +309,7 @@ function toast(msg, bad){
 async function generate(){
   const u = document.getElementById('u').value.trim();
   const p = document.getElementById('p').value;
-  const s = document.getElementById('s').value;
+  const s = selHidden.value;
   const e = document.getElementById('e').value.trim();
   const n = document.getElementById('n').value.trim();
   const btn = document.getElementById('gen');
