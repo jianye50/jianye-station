@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-28T16:12:07.010Z",
+  "generated": "2026-11-28T16:21:47.026Z",
   "posts": [
     {
       "slug": "cs",
@@ -7,15 +7,26 @@
       "imgBase": "blog/cs/",
       "title": "测试",
       "desc": "",
-      "tags": [],
+      "tags": [
+        "维护",
+        "工具"
+      ],
       "date": "2026-11-28",
       "minutes": 1,
       "cover": "",
       "bg": "",
       "mdEn": "blog/cs/index.en.md",
       "titleEn": "test",
+      "tagsEn": [
+        "maintain",
+        "tool"
+      ],
       "mdZh": "blog/cs/index.zh.md",
-      "titleZh": "测试"
+      "titleZh": "测试",
+      "tagsZh": [
+        "维护",
+        "工具"
+      ]
     },
     {
       "slug": "新浏览器标签页支持视频图片",
