@@ -1495,6 +1495,37 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 .post-mid{min-width:0;flex:1}
 .post-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
 .tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+/* VIP 文章角标（列表卡 + 文章页通用）：金色渐变字 */
+.tag.vip-tag{
+  background:rgba(255,190,63,.12);color:transparent;
+  background-image:linear-gradient(115deg,#ffd23f,#ff9f43);
+  -webkit-background-clip:text;background-clip:text;
+  border:1px solid rgba(255,190,63,.35);
+}
+/* 文章页 VIP 锁定卡：未登录 / 非 VIP 时替代正文 */
+.post-viplock{
+  margin:34px 0;padding:44px 26px;border-radius:20px;text-align:center;
+  background:var(--card);border:1px solid rgba(255,190,63,.25);
+  position:relative;overflow:hidden;
+}
+.post-viplock::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(420px 200px at 50% 0%,rgba(255,190,63,.10),transparent 70%);
+}
+.post-viplock .vl-ico{font-size:34px;line-height:1;margin-bottom:14px;filter:drop-shadow(0 0 14px rgba(255,190,63,.45))}
+.post-viplock .vl-t{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:8px;
+  background:linear-gradient(115deg,#ffd23f,#ff9f43);-webkit-background-clip:text;background-clip:text;color:transparent}
+.post-viplock .vl-d{font-size:13.5px;color:var(--text-2);line-height:1.8;margin-bottom:20px}
+.post-viplock .vl-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:40px;padding:0 22px;border-radius:12px;cursor:pointer;
+  font-size:13.5px;font-weight:700;color:#fff;border:1.5px solid transparent;
+  background:linear-gradient(#0b0f1a,#0b0f1a) padding-box,
+    linear-gradient(115deg,#ffd23f,#ff9f43,#ffd23f) border-box;
+  transition:transform .2s,box-shadow .2s;
+}
+.post-viplock .vl-btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(255,177,77,.28)}
+.post-viplock .vl-btn:active{transform:scale(.97)}
 .post-title{display:block;font-size:16.5px;font-weight:750;color:var(--text-1);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .2s}
 .post-card:hover .post-title{color:var(--accent)}
 .post-desc{display:block;font-size:13px;color:var(--text-2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2972,7 +3003,12 @@ const I18N={
       machineTrans:"机器翻译",
       trFail:"自动翻译暂不可用",
       trRetry:"重试",
-      rssTip:"订阅 RSS（中文源）· 想看英文源就切到 EN 再点一次"
+      rssTip:"订阅 RSS（中文源）· 想看英文源就切到 EN 再点一次",
+      /* VIP 文章门禁文案 */
+      vipTag:"👑 VIP",
+      vipOnly:"VIP 专享文章",
+      vipDesc:"这篇文章仅对 VIP 用户开放。登录 VIP 账号（永久或限时 VIP 生效中）即可阅读全文。",
+      vipBtn:"登录验证 VIP"
     },
     about:{
       title:"关于",
@@ -3047,7 +3083,12 @@ const I18N={
       machineTrans:"Machine-translated",
       trFail:"Auto-translation unavailable",
       trRetry:"Retry",
-      rssTip:"Subscribe via RSS (English feed) · switch to 中 for the Chinese one"
+      rssTip:"Subscribe via RSS (English feed) · switch to 中 for the Chinese one",
+      /* VIP gate */
+      vipTag:"👑 VIP",
+      vipOnly:"VIP-only article",
+      vipDesc:"This post is exclusive to VIP members. Sign in with a VIP account (permanent or timed VIP active) to read the full text.",
+      vipBtn:"Sign in to verify VIP"
     },
     about:{
       title:"About",
@@ -4456,6 +4497,7 @@ async function manifestPosts(){
       date:p.date||"",
       minutes:+p.minutes||1,
       cover:p.cover||"",bg:p.bg||p.background||"",
+      vip:!!p.vip,               /* 构建脚本若在清单里带上 vip 字段则直接用 */
       coverThumb:p.coverThumb?encodeURI(String(p.coverThumb)):"",
       bgThumb:p.bgThumb?encodeURI(String(p.bgThumb)):"",
       imgMap:(p.imgs&&typeof p.imgs==="object")?p.imgs:null,
@@ -4550,7 +4592,8 @@ async function grabPost(slug,mdURL,imgBase,found){
     title:meta.title||slug,desc:meta.desc||"",tags,
     date:meta.date||"",
     minutes:+meta.minutes||Math.max(1,Math.round(body.replace(/\s/g,"").length/450)),
-    cover:meta.cover||"",bg:meta.background||""
+    cover:meta.cover||"",bg:meta.background||"",
+    vip:isVipFlag(meta.vip)      /* 列表卡上的 VIP 角标用；文章页门禁以正文 front matter 为准 */
   });
 }
 /* ① 扫本地 / 托管的目录列表（多篇并行抓取） */
@@ -4660,6 +4703,8 @@ function prefetchBlog(){
 function isHTMLFallbackText(t){
   return /^\s*(?:\ufeff)?\s*<(!doctype|html|head|body)/i.test(String(t).slice(0,120));
 }
+/* front matter 的 vip 标志：vip: true / 1 / yes 都算 VIP 文章（编辑器写的是 true） */
+const isVipFlag=v=>/^(true|1|yes|on)$/i.test(String(v==null?"":v).trim());
 function parsePost(raw){
   const meta={};
   /* 先清掉 BOM 与开头的空行：记事本之类另存会加 BOM，手抖先敲个回车也很常见，
@@ -5178,7 +5223,7 @@ function blogListHTML(list,q,stagger){
     <a class="post-card ${stagger?"rv":"rvf"}"${dly} href="#/blog/${encodeURIComponent(p.slug)}" data-slug="${esc(p.slug)}">
       <span class="post-thumb">${thumbHTML}</span>
       <span class="post-mid">
-        <span class="post-tags">${cTags.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</span>
+        <span class="post-tags">${p.vip?'<span class="tag vip-tag">👑 VIP</span>':""}${cTags.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</span>
         <span class="post-title">${hiText(cTitle,q)}</span>
         ${cDesc?`<span class="post-desc">${hiText(cDesc,q)}</span>`:""}
       </span>
@@ -6715,13 +6760,46 @@ async function renderPost(slug,gen){
   const bgVideo=(!bgThumb&&bg&&isVideoFile(bg))
     ?`<video class="post-bg" src="${esc(postSrc(post,bg))}" autoplay muted loop playsinline preload="metadata"></video>`
     :"";
+  /* ---------- VIP 门禁：front matter 写了 vip: true 且当前登录账号没有生效中的 VIP
+     （永久 VIP / 未过期的限时 VIP）→ 只画标题头和锁卡，正文一个字都不渲染 ---------- */
+  const isVipPost=isVipFlag(meta.vip)||!!post.vip;
+  const vipBadge=isVipPost?`<span class="tag vip-tag">${esc(t.blog.vipTag)}</span>`:"";
+  if(isVipPost&&!(window.jyAccIsVIP&&window.jyAccIsVIP())){
+    app.innerHTML=`
+    <section class="${viewCls(gen,"soft")}${swapCls()}">
+      <div class="post-hero">${bgVideo||(bgImg?`<img class="post-bg" src="${bgImg}" alt="" decoding="async" onerror="this.remove()">`:"")}</div>
+      <div class="wrap">
+        <a class="post-back" href="#/blog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>${esc(t.blog.back)}</a>
+        <header class="post-head">
+          ${(tags.length||isVipPost)?`<div class="post-tags">${vipBadge}${tags.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div>`:""}
+          <h1>${esc(title)}</h1>
+          ${desc?`<p class="post-sub">${esc(desc)}</p>`:""}
+          <div class="post-meta"><span>${esc(fmtDate(date))}</span><span>·</span><span>${esc(t.blog.minutes(minutes))}</span></div>
+        </header>
+        <div class="post-viplock">
+          <div class="vl-ico">👑</div>
+          <div class="vl-t">${esc(t.blog.vipOnly)}</div>
+          <div class="vl-d">${esc(t.blog.vipDesc)}</div>
+          <button type="button" class="vl-btn" id="vipUnlockBtn">${esc(t.blog.vipBtn)}</button>
+        </div>
+      </div>
+    </section>`;
+    const ub=document.getElementById("vipUnlockBtn");
+    if(ub)ub.addEventListener("click",function(){
+      if(typeof window.jyAccOpen==="function")window.jyAccOpen();
+    });
+    document.title=pageTitle(title,t.brand);
+    xfadeReveal();
+    updateReadBar();
+    return;
+  }
   app.innerHTML=`
   <section class="${viewCls(gen,"soft")}${swapCls()}">
     <div class="post-hero">${bgVideo||(bgImg?`<img class="post-bg" src="${bgImg}" alt="" decoding="async" onerror="this.remove()">`:"")}</div>
     <div class="wrap">
       <a class="post-back" href="#/blog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>${esc(t.blog.back)}</a>
       <header class="post-head">
-        ${tags.length?`<div class="post-tags">${tags.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div>`:""}
+        ${(tags.length||isVipPost)?`<div class="post-tags">${vipBadge}${tags.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div>`:""}
         <h1>${esc(title)}</h1>
         ${desc?`<p class="post-sub">${esc(desc)}</p>`:""}
         <div class="post-meta"><span>${esc(fmtDate(date))}</span><span>·</span><span>${esc(t.blog.minutes(minutes))}</span></div>
@@ -6897,6 +6975,10 @@ function updateReadBar(){
   const p=Math.min(1,Math.max(0,(window.scrollY-start)/span));
   el.style.transform="scaleX("+p.toFixed(4)+")";
 }
+/* 账号面板登录/退出 VIP 后广播 jy-vip-changed：正停在文章页就整页重画（解锁/上锁） */
+window.addEventListener("jy-vip-changed",function(){
+  if(/^#\/blog\/.+/.test(location.hash||"")) route();
+});
 function route(){
   /* 切换路由（含浏览器后退 / 前进）时灯箱还开着 → 先关掉。
      实测复现：在图库开灯箱后按浏览器返回键，背景已换成上一页，
@@ -10231,6 +10313,8 @@ function enter(u,p,silent){
     paintAvatar(d.u,d.a);
     renderInfo(d);
     setLogged(true);
+    /* 广播给博客：VIP 文章门禁据此解锁（正在看的锁卡文章会自动重新渲染） */
+    try{window.dispatchEvent(new CustomEvent("jy-vip-changed"));}catch(e){}
     if(!silent) toast(T().welcome+d.u);
   },function(err){
     btn.disabled=false; btn.textContent=old;
@@ -10263,6 +10347,7 @@ $("accLogout").addEventListener("click",function(){
   writeSession(null);
   paintAvatar("","");
   setLogged(false);
+  try{window.dispatchEvent(new CustomEvent("jy-vip-changed"));}catch(e){}
   $("accTitle").textContent=T().accTitle;
   $("accSub").textContent=T().loginSub;
   $("accBadges").innerHTML="";
@@ -10277,6 +10362,16 @@ $("accEye").addEventListener("click",function(){
   $("accEye").classList.toggle("off",!off);
 });
 
+/* ---------- 对外暴露（博客 VIP 文章门禁用） ----------
+   jyAccIsVIP(): 当前登录账号是否有生效中的 VIP（永久 / 未过期限时）
+   jyAccOpen():  打开账号面板（锁卡上的「登录验证 VIP」按钮调它） */
+window.jyAccIsVIP=function(){
+  return !!(currentData&&judgeVIP(currentData).active);
+};
+window.jyAccOpen=function(){
+  if(!mask.classList.contains("open")) openModal();
+};
+
 /* ---------- 启动：已有登录态就先把头像/金点亮起来（不弹窗） ---------- */
 (function(){
   applyAccLang();
@@ -10285,6 +10380,8 @@ $("accEye").addEventListener("click",function(){
   verify(s.u,s.p).then(function(d){
     currentData=d;
     paintAvatar(d.u,d.a);
+    /* 有存登录态：广播一次，正在看的 VIP 锁卡文章据此解锁 */
+    try{window.dispatchEvent(new CustomEvent("jy-vip-changed"));}catch(e){}
   },function(){ writeSession(null); });
 })();
 })();

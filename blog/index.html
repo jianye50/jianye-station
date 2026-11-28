@@ -231,6 +231,18 @@ input,textarea,select{font-family:inherit}
 .field textarea{resize:vertical;min-height:56px;line-height:1.6}
 .field-row{display:flex;gap:10px}
 .field-row .field{flex:1}
+/* VIP 文章开关行：金色主题，勾选后整行点亮 */
+.vip-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:12px;cursor:pointer;
+  background:rgba(255,177,77,.05);border:1px solid rgba(255,177,77,.22);
+  transition:background .2s,border-color .2s;
+}
+.vip-row:hover{background:rgba(255,177,77,.10);border-color:rgba(255,177,77,.4)}
+.vip-row input[type=checkbox]{width:17px;height:17px;flex:none;accent-color:#ffb14d;cursor:pointer}
+.vip-row .vip-lab{font-size:13.5px;font-weight:700;color:var(--warn);flex:none;white-space:nowrap}
+.vip-row .vip-hint{font-size:11.5px;color:var(--text-3);line-height:1.5;min-width:0}
+.vip-row:has(input:checked){background:rgba(255,177,77,.14);border-color:rgba(255,177,77,.5)}
 .cover-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
 .cover-thumb{
   width:116px;height:66px;border-radius:11px;overflow:hidden;flex:none;
@@ -779,6 +791,13 @@ input,textarea,select{font-family:inherit}
             <div class="field" style="max-width:96px"><label data-t="分钟|Min">分钟</label><input type="number" id="fMinutes" min="1" placeholder="auto" data-tp="自动|auto"></div>
           </div>
           <div class="field"><label data-t="标签（逗号分隔）|Tags (comma separated)">标签（逗号分隔）</label><input id="fTags" placeholder="life, 随笔" data-tp="life, 随笔|life, notes"></div>
+          <!-- VIP 文章开关：勾上后保存时会在 front matter 写一行 vip: true，
+               站点读到这行就把正文锁住，只有登录 VIP 账号才能看 -->
+          <label class="field vip-row" for="fVip">
+            <input type="checkbox" id="fVip">
+            <span class="vip-lab">👑 <span data-t="VIP 文章|VIP-only post">VIP 文章</span></span>
+            <span class="vip-hint" data-t="开启后读者需登录 VIP 账号才能阅读正文|Readers must sign in with a VIP account to read the body">开启后读者需登录 VIP 账号才能阅读正文</span>
+          </label>
           <div class="field" style="margin-bottom:0">
             <label><span data-t="摘要（列表页显示）|Summary (shown in list)">摘要（列表页显示）</span><button class="mini" id="genDescBtn" data-t="从正文生成|From body">从正文生成</button></label>
             <textarea id="fDesc" placeholder="一句话介绍这篇文章" data-tp="一句话介绍这篇文章|One sentence about this post"></textarea>
@@ -1128,7 +1147,7 @@ function histSave(){
 function bakSnapshot(){
   return {t:Date.now(),md:mdText,title:meta.title||"",date:meta.date||"",
     minutes:meta.minutes||"",tags:meta.tags||[],desc:meta.desc||"",
-    cover:meta.cover||"",background:meta.background||""};
+    cover:meta.cover||"",background:meta.background||"",vip:!!meta.vip};
 }
 function bakNote(immediate){
   if(!bakOn||!editing())return;
@@ -1139,7 +1158,7 @@ function bakRecord(){
   if(!bakOn||!editing())return;
   const s=bakSnapshot();
   const last=histEntries[histEntries.length-1];
-  const sig=e=>JSON.stringify([e.md,e.title,e.desc,e.tags,e.date,e.minutes,e.cover,e.background]);
+  const sig=e=>JSON.stringify([e.md,e.title,e.desc,e.tags,e.date,e.minutes,e.cover,e.background,e.vip]);
   if(last&&sig(last)===sig(s))return;
   histEntries.push(s);
   if(histEntries.length>300)histEntries=histEntries.slice(-300);
@@ -1265,7 +1284,7 @@ document.addEventListener("keydown",e=>{
  *  打开一篇文章
  * ===================================================================== */
 const DEFAULT_MD="";
-const DEFAULT_META={title:"",desc:"",tags:[],date:today(),minutes:"",cover:"",background:""};
+const DEFAULT_META={title:"",desc:"",tags:[],date:today(),minutes:"",cover:"",background:"",vip:false};
 
 async function looksLikeArticle(dirHandle){
   try{await dirHandle.getFileHandle("index.md");return true;}catch(e){}
@@ -1348,6 +1367,8 @@ async function openArticle(cfg){
     meta={...DEFAULT_META,...p.meta};
     if(typeof meta.tags==="string")meta.tags=meta.tags.split(/[,，]/).map(s=>s.trim()).filter(Boolean);
     if(!Array.isArray(meta.tags))meta.tags=[];
+    /* vip 字段归一化：front matter 里写的是字符串（"true"/"1"），统一转成布尔 */
+    meta.vip=/^(true|1|yes|on)$/i.test(String(meta.vip==null?"":meta.vip).trim());
     mdText=p.body;
   }
   show("#scr-edit");
@@ -1371,6 +1392,7 @@ function fillForm(){
   $("#fMinutes").value=meta.minutes||"";
   $("#fTags").value=(meta.tags||[]).join(", ");
   $("#fDesc").value=meta.desc||"";
+  $("#fVip").checked=!!meta.vip;
   $("#mdBox").value=mdText;
   previewOn=false;setPreviewUI();
 }
@@ -2821,6 +2843,8 @@ function buildFrontMatter(m,body){
   L.push(`tags: [${(m.tags||[]).map(oneline).filter(Boolean).join(", ")}]`);
   L.push(`date: ${oneline(m.date)||today()}`);
   L.push(`minutes: ${oneline(m.minutes)||countStats(body).minutes}`);
+  /* VIP 文章：只在开启时写这行，普通文章的 front matter 保持原样不加垃圾字段 */
+  if(m.vip)L.push(`vip: true`);
   if(m.cover)L.push(`cover: ${oneline(m.cover)}`);
   if(m.background)L.push(`background: ${oneline(m.background)}`);
   L.push("---","");
@@ -2832,6 +2856,7 @@ function syncMetaFromForm(){
   meta.minutes=$("#fMinutes").value;
   meta.tags=$("#fTags").value.split(/[,，]/).map(s=>s.trim()).filter(Boolean);
   meta.desc=$("#fDesc").value.trim();
+  meta.vip=$("#fVip").checked;
   mdText=$("#mdBox").value;
 }
 function updateStats(){
@@ -3106,6 +3131,12 @@ $("#mdBox").addEventListener("input",()=>{
     bakNote(false);
   });
 });
+/* VIP 开关：checkbox 没有 input 时的文本变化，单独监听 change */
+$("#fVip").addEventListener("change",()=>{
+  meta.vip=$("#fVip").checked;
+  setDirty(true);markDirtySoon();
+  bakNote(false);
+});
 $("#genDescBtn").addEventListener("click",()=>{
   const plain=mdText
     .replace(/```[\s\S]*?```/g," ")
@@ -3193,7 +3224,7 @@ function saveDraft(){
   try{
     localStorage.setItem(draftKey(),JSON.stringify({
       ts:Date.now(),slug:slug,title:meta.title,date:meta.date,minutes:meta.minutes,
-      tags:meta.tags,desc:meta.desc,cover:meta.cover,background:meta.background,md:mdText
+      tags:meta.tags,desc:meta.desc,cover:meta.cover,background:meta.background,vip:!!meta.vip,md:mdText
     }));
     const t=new Date();
     $("#statDraft").textContent=T(`草稿已备份 · ${pad2(t.getHours())}:${pad2(t.getMinutes())}`,
@@ -3217,6 +3248,7 @@ async function maybeRestoreDraft(){
   mdText=d.md||"";
   meta.title=d.title||"";meta.date=d.date||"";meta.minutes=d.minutes||"";
   meta.tags=d.tags||[];meta.desc=d.desc||"";meta.cover=d.cover||"";meta.background=d.background||"";
+  meta.vip=!!d.vip;
   fillForm();setDirty(true);updateStats();
   hStack=[];hPtr=-1;histPushNow();
   await refreshImages();await refreshCovers();
