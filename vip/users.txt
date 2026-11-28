@@ -10,5 +10,5 @@
 #    用新生成的行替换旧行
 # 7) 本文件必须和 index.html、hash.html 放在同一个目录
 # ================================================================
-鉴业|鉴业|48z2z3ei562r7wEfA/1hOtmF6hGDYOnv6YB4DrzE/iffIpO3E6xauB3Xtm7eqGEtZs/oxb2kdTd/g0yLuZVlgn/3naW7uyZLR+z9vcAfjaySbKw4h+bvJVXItJsc6y+RqJw=
 Test|8tR4kEKj9ij1AknBwS+Fx07wjC8guUapwLNMWSX6MZ/X90OY+5oukc2f04kpgdpDiuUDykeV8ZBGw/xOi/w7xcUBvzmuvFKrPk0BojORwN/y01oO0sIQS1UhIfRQptRfsj5ob3sVYA==
+鉴业|鉴业|3WIS/+6fW1K/i/j1yq8tfAdmJa9pBfOJ0bMuZ/hlYdA/sVizLoE16D0RY9EiCxOCFbpEat6s+4ENDtKjDYZDl8ZB5NpkCeeVhle0UOCUYZdDK5EAUESKu9f8/5K1FzpRkk0=
