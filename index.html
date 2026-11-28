@@ -1495,12 +1495,11 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
 .post-mid{min-width:0;flex:1}
 .post-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
 .tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
-/* VIP 文章角标（列表卡 + 文章页通用）：金色渐变字 */
+/* VIP 文章角标（列表卡 + 文章页通用）：实色金字，保证任何浏览器都显示 */
 .tag.vip-tag{
-  background:rgba(255,190,63,.12);color:transparent;
-  background-image:linear-gradient(115deg,#ffd23f,#ff9f43);
-  -webkit-background-clip:text;background-clip:text;
-  border:1px solid rgba(255,190,63,.35);
+  background:rgba(255,190,63,.14);
+  color:#ffc555;
+  border:1px solid rgba(255,190,63,.38);
 }
 /* 文章页 VIP 锁定卡：未登录 / 非 VIP 时替代正文 */
 .post-viplock{
@@ -1513,8 +1512,7 @@ body.lb-lock .nav{left:calc(50% - var(--lb-half,0px))}
   background:radial-gradient(420px 200px at 50% 0%,rgba(255,190,63,.10),transparent 70%);
 }
 .post-viplock .vl-ico{font-size:34px;line-height:1;margin-bottom:14px;filter:drop-shadow(0 0 14px rgba(255,190,63,.45))}
-.post-viplock .vl-t{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:8px;
-  background:linear-gradient(115deg,#ffd23f,#ff9f43);-webkit-background-clip:text;background-clip:text;color:transparent}
+.post-viplock .vl-t{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:8px;color:#ffc555}
 .post-viplock .vl-d{font-size:13.5px;color:var(--text-2);line-height:1.8;margin-bottom:20px}
 .post-viplock .vl-btn{
   display:inline-flex;align-items:center;justify-content:center;gap:7px;
@@ -6761,8 +6759,20 @@ async function renderPost(slug,gen){
     ?`<video class="post-bg" src="${esc(postSrc(post,bg))}" autoplay muted loop playsinline preload="metadata"></video>`
     :"";
   /* ---------- VIP 门禁：front matter 写了 vip: true 且当前登录账号没有生效中的 VIP
-     （永久 VIP / 未过期的限时 VIP）→ 只画标题头和锁卡，正文一个字都不渲染 ---------- */
-  const isVipPost=isVipFlag(meta.vip)||!!post.vip;
+     （永久 VIP / 未过期的限时 VIP）→ 只画标题头和锁卡，正文一个字都不渲染。
+     双语都要可靠：中文界面读原文，meta.vip 直接可用；英文界面常命中 CI 生成的
+     index.en.md——译文版的 front matter 是翻译脚本重建的，vip 行会丢。
+     所以译文命中（usedAlt）而清单又没带 vip 时，补查一次原文 front matter
+     （TEXT_CACHE 会缓存，同一篇的原文请求不重复发） ---------- */
+  let isVipPost=isVipFlag(meta.vip)||!!post.vip;
+  if(!isVipPost&&usedAlt&&post._vip==null){
+    try{
+      const fr=await fetchText(post.mdURL);
+      post._vip=(fr&&fr.ok&&!isHTMLFallbackText(fr.text))?isVipFlag(parsePost(fr.text).meta.vip):false;
+    }catch(e){ post._vip=false; }
+    if(stale())return;   /* 补查期间用户切走了 → 放弃渲染 */
+  }
+  if(!isVipPost&&post._vip!=null)isVipPost=post._vip;
   const vipBadge=isVipPost?`<span class="tag vip-tag">${esc(t.blog.vipTag)}</span>`:"";
   if(isVipPost&&!(window.jyAccIsVIP&&window.jyAccIsVIP())){
     app.innerHTML=`
@@ -9961,10 +9971,18 @@ input[type=range].mp-range::-moz-range-thumb{
   position:fixed;left:50%;bottom:34px;z-index:960;
   transform:translateX(-50%) translateY(20px);
   padding:11px 20px;border-radius:999px;
-  font-size:13.5px;font-weight:600;color:#fff;
-  background:linear-gradient(120deg,rgba(255,255,255,.16),rgba(255,255,255,.07)),#10131a;
-  backdrop-filter:blur(22px) saturate(200%);-webkit-backdrop-filter:blur(22px) saturate(200%);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 14px 38px rgba(6,10,25,.35);
+  font-size:13.5px;font-weight:700;color:var(--text-1);
+  /* 材质对齐「鉴业音乐」歌单面板：同款液态玻璃基体 + 棱边光影 */
+  background:var(--glass-grad);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.22),
+    inset 0 1.5px .5px -1px rgba(255,255,255,.65),
+    inset 0 -1px .5px -1px rgba(255,255,255,.28),
+    inset 0 12px 18px -12px rgba(255,255,255,.30),
+    0 2px 6px rgba(6,10,25,.10),
+    0 14px 38px rgba(6,10,25,.28);
   opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;
   max-width:calc(100vw - 40px);text-align:center;
 }
