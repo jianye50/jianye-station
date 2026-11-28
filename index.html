@@ -10120,6 +10120,8 @@ function badgesHTML(t,st){
 }
 function renderInfo(d){
   var t=T(), st=judgeVIP(d);
+  /* 备注按语言取：英文界面优先用密文里的英文备注（ne），没写就退回中文那条 */
+  var noteText=(curLang()==="en"&&d.ne)?d.ne:d.n;
   $("accTitle").textContent=d.u;
   $("accSub").textContent=t.issued+(d.i?new Date(d.i).toLocaleDateString(curLang()==="zh"?"zh-CN":"en"):"—");
   $("accBadges").innerHTML=badgesHTML(t,st);
@@ -10132,7 +10134,7 @@ function renderInfo(d){
     '<div class="acc-row"><span class="k">'+t.type+'</span><span class="v'+(st.perm?" gold":"")+'">'+esc(typeName)+'</span></div>'+
     '<div class="acc-row"><span class="k">'+t.exp+'</span><span class="v'+(st.expired?" bad":(st.perm?" gold":""))+'">'+esc(st.perm?(curLang()==="zh"?"永久有效":"Permanent"):st.expText)+'</span></div>'+
     '<div class="acc-row"><span class="k">'+t.status+'</span><span class="v'+(st.expired?" bad":(st.perm?" gold":""))+'">'+esc(statusText)+'</span></div>';
-  $("accNote").innerHTML=d.n?'<span class="nk">'+t.note+'</span>'+esc(d.n):"";
+  $("accNote").innerHTML=noteText?'<span class="nk">'+t.note+'</span>'+esc(noteText):"";
 }
 function paintAvatar(u, av){
   /* 密文里带头像网址（a 字段）→ 导航栏小圆与面板头像都显示图片；

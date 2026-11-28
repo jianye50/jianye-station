@@ -217,6 +217,11 @@ h1{font-size:clamp(24px,5vw,32px);font-weight:800;margin-bottom:8px}
       <input class="inp" id="fNote" type="text" maxlength="200" placeholder="如：内部测试账号 / 2026 年度会员">
     </div>
 
+    <div class="field">
+      <label for="fNoteEn">英文备注 <span style="color:var(--text-3);font-weight:400">（可选，站点切英文时显示这条；留空则英文也显示上面那条）</span></label>
+      <input class="inp" id="fNoteEn" type="text" maxlength="200" placeholder="e.g. Internal test account / 2026 annual member">
+    </div>
+
     <button class="btn" type="submit">生成配置行</button>
   </form>
 
@@ -327,7 +332,7 @@ $("genForm").addEventListener("submit",function(e){
     if(!exp){ toast("限时 VIP 请选择到期日期"); fExp.focus(); return; }
   }
   var issueV=$("fIssue").value;
-  var cipher=encrypt({v:1,u:u,p:p,t:type,e:exp,a:$("fAvatar").value.trim(),n:$("fNote").value.trim(),
+  var cipher=encrypt({v:1,u:u,p:p,t:type,e:exp,a:$("fAvatar").value.trim(),n:$("fNote").value.trim(),ne:$("fNoteEn").value.trim(),
     i:issueV?new Date(issueV+"T00:00:00").getTime():Date.now()},JY_SECRET);
   var line=u+"|"+cipher;
   $("outLine").innerHTML='<span class="u">'+
