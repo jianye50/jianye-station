@@ -3,3 +3,4 @@
 # VIP类型/到期时间/备注全部藏在密文里；用 admin.html 生成新行粘贴到这里即可
 # ── 以下为演示账号，可直接在查询页试用 ──
 鉴业|JY1.qEBbinfwYYnER9Y8Rho8q6vzSN9fxvc4jZbYyMROwr_Uq0U-MVMvk4N5nnNcXd52hFqrwaLStnPjYKNezzaOvwaa_24Q1ipWJDIMdAg5xDjOxXRmWijYiC_SIKpAvEc
+小刚|JY1.bU1binfwYYnER9Y8Rho8p5LISe9fxvc4jZbYyNVV1qSQvE8qZxZggoNvnmYbFZEl2g3wmLDPuSbweK1ejTbavx6UOLuyCZTw9YexYRMunS3MxHIi
