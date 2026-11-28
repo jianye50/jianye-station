@@ -2,5 +2,4 @@
 # 格式：每行一条  用户名|JY1.xxxx   （# 开头为注释，空行忽略）
 # VIP类型/到期时间/备注全部藏在密文里；用 admin.html 生成新行粘贴到这里即可
 # ── 以下为演示账号，可直接在查询页试用 ──
-demo|JY1.SWhbinfwYYnER9Y8Rho8Jkcqw0Xpxqs4x5bT2MZDz7DGsld8MUUvl8Qx0WJXSt1jyBPn0KLEtjTteO9e2TYGIahfvmh4hwMiQwWplJM7S6pMEPraOVm_UKdv8Qb_YIRX5H-ijEfcxuM4bt6oHybKhEv3yt65zCE
-jianye|JY1.DGpbinfwYYnER9Y8Rho8KEsmwh6gxvc4jZbYyIESifLcpk0qP115xZthyGpUSpE7yFrnj6LMpCT2d7BOzifRvxCadPCqEUB-eFcz8MCnN_9lbGOd2DAGJosFjyomzWoOsETQCtHcg-NrfdOgHSfIi073wNm1zGhIIA
+鉴业|JY1.qEBbinfwYYnER9Y8Rho8q6vzSN9fxvc4jZbYyMROwr_Uq0U-MVMvk4N5nnNcXd52hFqrwaLStnPjYKNezzaOvwaa_24Q1ipWJDIMdAg5xDjOxXRmWijYiC_SIKpAvEc
